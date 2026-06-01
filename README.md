@@ -1,4 +1,16 @@
 # Buddy
+
+<!-- bright-builds-rules-readme-badges:begin -->
+
+<!-- Managed upstream by bright-builds-rules. If this badge block needs a fix, open an upstream PR or issue instead of editing the downstream managed block. Keep repo-local README content outside this managed badge block. -->
+
+[![GitHub Stars](https://img.shields.io/github/stars/pRizz/Prusa-Firmware-Buddy)](https://github.com/pRizz/Prusa-Firmware-Buddy)
+[![License](https://img.shields.io/github/license/pRizz/Prusa-Firmware-Buddy?style=flat-square)](./LICENSE.md)
+[![Bright Builds: Rules](https://raw.githubusercontent.com/bright-builds-llc/bright-builds-rules/main/public/badges/bright-builds-rules-flat.svg)](https://github.com/bright-builds-llc/bright-builds-rules)
+[![OpenLinks profile](https://img.shields.io/badge/OpenLinks-profile-0F172A)](https://openlinks.us/)
+
+<!-- bright-builds-rules-readme-badges:end -->
+
 This repository includes source code and firmware releases for the Original Prusa 3D printers based on the 32-bit ARM microcontrollers.
 
 The currently supported models are:
