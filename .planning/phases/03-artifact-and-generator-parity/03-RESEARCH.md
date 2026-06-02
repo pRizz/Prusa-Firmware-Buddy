@@ -372,22 +372,19 @@ Use shell only as thin orchestration and keep comparison logic in a checked Pyth
 |---|-------|---------|---------------|
 | - | No `[ASSUMED]` claims are used in this research. | All sections | The planner can treat cited and verified claims as evidence-backed. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **What should provide the Phase 3 firmware payload before Phase 4 Rust firmware exists?** [VERIFIED: .planning/ROADMAP.md]
    - What we know: Phase 3 must prove artifact/package surfaces, but Rust firmware implementation starts in Phase 4. [VERIFIED: .planning/ROADMAP.md]
-   - What's unclear: Whether the Phase 3 artifact target should use deterministic fixture payloads, guarded CMake reference payloads, or a minimal Bazel-built placeholder payload. [VERIFIED: .planning/phases/03-artifact-and-generator-parity/03-CONTEXT.md]
-   - Recommendation: Use deterministic fixture/minimal payloads for local package encoder checks and guarded reference payloads only for comparison manifests; label outputs clearly as package-surface evidence, not runtime parity. [VERIFIED: .planning/phases/03-artifact-and-generator-parity/03-CONTEXT.md]
+   - **RESOLVED:** Phase 3 local artifact actions must use deterministic package-surface fixture payloads produced through Bazel-owned actions, including declared `.bin`, `.map`, provenance, `.bbf`, `.dfu`, resource-image, and resource-package outputs for representative products. Guarded CMake reference payloads remain comparison-only behind `BUDDY_BAZEL_EXECUTE_REFERENCE=1`. Every local output must be labeled as package-surface evidence, not runtime, signing, simulator, hardware, or firmware byte-parity evidence. [VERIFIED: .planning/phases/03-artifact-and-generator-parity/03-CONTEXT.md]
 
 2. **Should Phase 3 add a native/test rule surface or keep `bazel run` checks?** [VERIFIED: tools/bazel/shell_rules.bzl]
    - What we know: Phase 2 uses a repo-local `shell_binary` wrapper, and `bazel query` succeeds for current workflow labels. [VERIFIED: tools/bazel/shell_rules.bzl; VERIFIED: local `bazel query`]
-   - What's unclear: Whether implementation should introduce `shell_test`/test-like rules or continue with run targets plus `phase3_verify.py`. [VERIFIED: tools/bazel/phase2_verify.py]
-   - Recommendation: Keep the Phase 2 wrapper pattern for continuity and add verifier checks; add test-style rules only if the implementation can verify them locally without broad refactor. [VERIFIED: .planning/phases/02-bazel-authority-and-developer-facade/02-01-SUMMARY.md]
+   - **RESOLVED:** Keep the Phase 2 `shell_binary` and `bazel run` workflow pattern for Phase 3. Add declared artifact-producing rules/macros, generated check/update macros, and `phase3_verify.py` coverage instead of introducing a new test-rule family during this phase. Test-style rules may be added only if implementation discovers an already-local pattern that can be verified without broad build-system refactor. [VERIFIED: .planning/phases/02-bazel-authority-and-developer-facade/02-01-SUMMARY.md]
 
 3. **How far should option-header generation go in Phase 3?** [VERIFIED: cmake/Options.cmake; VERIFIED: ProjectOptions.cmake]
    - What we know: CMake generates option headers from configure-time functions and many product feature conditionals. [VERIFIED: cmake/Options.cmake; VERIFIED: ProjectOptions.cmake]
-   - What's unclear: Whether full CMake-equivalent option header generation is required now or whether normalized option manifests are enough until Rust invariant modeling in Phase 4. [VERIFIED: .planning/ROADMAP.md]
-   - Recommendation: Implement Bazel-owned product/option manifests and representative generated headers where inputs are explicit; keep full CMake option-header output as guarded reference comparison until Phase 4 encodes product invariants. [VERIFIED: .planning/phases/03-artifact-and-generator-parity/03-CONTEXT.md; VERIFIED: .planning/ROADMAP.md]
+   - **RESOLVED:** Phase 3 must include Bazel-owned product profile and option-data generator surfaces with check/update or evidence-classified targets. The local representative path should produce normalized product/option manifests and representative option-data outputs where inputs are explicit. Full CMake-equivalent option-header generation remains a guarded reference comparison until Phase 4 encodes product invariants in Rust/Bazel domain types. [VERIFIED: .planning/phases/03-artifact-and-generator-parity/03-CONTEXT.md; VERIFIED: .planning/ROADMAP.md]
 
 ## Environment Availability
 
