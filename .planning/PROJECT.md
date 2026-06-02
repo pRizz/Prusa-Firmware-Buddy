@@ -49,7 +49,7 @@ Deliver a Rust+Bazel firmware replacement that preserves existing printer behavi
 
 The existing repository is a large embedded firmware codebase for Original Prusa printers. The current stack is C++23, C, ASM, CMake, Python tooling, STM32 HAL/CMSIS, FreeRTOS, Marlin, LwIP, mbedTLS, FatFs/littlefs, TinyUSB, Catch2, pytest, and a custom bootstrap flow. The codebase map in `.planning/codebase/` is the reference for current architecture, testing practices, integrations, and known concerns.
 
-Phase 1 established the reference baseline package for the rewrite: supported matrix, reference-capture catalog, intentional-delta concern ledger, safety envelope, phase-local verifier, and verification report under `.planning/phases/01-reference-baseline-and-safety-envelope/`. Phase 2 should use those artifacts when making Bazel and `just` authoritative.
+Phase 1 established the reference baseline package for the rewrite: supported matrix, reference-capture catalog, intentional-delta concern ledger, safety envelope, phase-local verifier, and verification report under `.planning/phases/01-reference-baseline-and-safety-envelope/`. Phase 2 established the root Bazel module, product platform labels, registered firmware toolchain labels, Bazel workflow targets, checked `justfile`, and Phase 2 verifier under `.planning/phases/02-bazel-authority-and-developer-facade/`. Phase 3 should attach deterministic generator and release-artifact actions to that Bazel surface.
 
 The current architecture is a CMake-composed firmware target with board/printer feature gates, a FreeRTOS imperative shell, Marlin as the printing core, and application layers for GUI, Connect, WUI, transfers, persistent stores, puppies/MMU, resources, and packaging. The Rust rewrite should deliberately separate pure firmware/domain decisions from hardware, RTOS, filesystem, networking, UI, and packaging adapters where practical.
 
@@ -76,8 +76,8 @@ Known concerns to prioritize during planning include global build target couplin
 | Port the firmware to Rust | Improve safety, testability, domain modeling, and long-term maintainability. | — Pending |
 | Use a Big Bang replacement posture | User explicitly chose a full replacement strategy instead of incremental production migration. | — Pending |
 | Preserve behavior parity | Existing supported printers and workflows are the acceptance baseline. | — Pending |
-| Make Bazel primary immediately | User explicitly chose Bazel as the authoritative build system from the start. | — Pending |
-| Add a `justfile` | Common workflows need stable, discoverable convenience commands on top of Bazel/Rust tooling. | — Pending |
+| Make Bazel primary immediately | User explicitly chose Bazel as the authoritative build system from the start. | Phase 2 added the root Bazel module, configs, platforms, toolchain labels, and workflow targets. |
+| Add a `justfile` | Common workflows need stable, discoverable convenience commands on top of Bazel/Rust tooling. | Phase 2 added the root checked `justfile` facade. |
 | Apply Bright Builds Rules | The migration should use explicit standards for architecture, verification, testing, code shape, and Rust style. | — Pending |
 
 ## Evolution
@@ -101,4 +101,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ______________________________________________________________________
 
-*Last updated: 2026-06-02 after Phase 1 completion*
+*Last updated: 2026-06-02 after Phase 2 completion*

@@ -14,10 +14,10 @@
 
 ### Bazel Build System
 
-- [ ] **BAZL-01**: Developer can use Bazel as the authoritative build graph through `MODULE.bazel`, `.bazelrc`, registered Rust/C/C++/ASM toolchains, and explicit product platforms.
-- [ ] **BAZL-02**: Developer can build Rust firmware, retained C/ASM/vendor code, generated assets, host tools, unit tests, simulator inputs, and release packages from Bazel without invoking CMake as the source of truth.
+- [x] **BAZL-01**: Developer can use Bazel as the authoritative build graph through `MODULE.bazel`, `.bazelrc`, registered Rust/C/C++/ASM toolchains, and explicit product platforms.
+- [x] **BAZL-02**: Developer can build Rust firmware, retained C/ASM/vendor code, generated assets, host tools, unit tests, simulator inputs, and release packages from Bazel without invoking CMake as the source of truth.
 - [ ] **BAZL-03**: Developer can produce firmware artifacts matching the reference release surface, including `.bin`, `.bbf`, `.dfu`, map/provenance outputs, resource images, boot/noboot variants, and auxiliary firmware packages.
-- [ ] **BAZL-04**: Developer can run a checked `justfile` facade for common commands including bootstrap, build, test, format, lint, generated-file drift checks, simulator/parity checks, and release packaging.
+- [x] **BAZL-04**: Developer can run a checked `justfile` facade for common commands including bootstrap, build, test, format, lint, generated-file drift checks, simulator/parity checks, and release packaging.
 - [ ] **BAZL-05**: Developer can run Bazel-owned generators for product profiles, option data, resources, translations, fonts, WUI assets, ESP blobs, puppy/MMU descriptors, and package metadata with deterministic drift checks.
 
 ### Rust Firmware Architecture
@@ -86,10 +86,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BASE-02 | Phase 1 | Completed |
 | BASE-03 | Phase 1 | Completed |
 | BASE-04 | Phase 1 | Completed |
-| BAZL-01 | Phase 2 | Pending |
-| BAZL-02 | Phase 2 | Pending |
+| BAZL-01 | Phase 2 | Completed |
+| BAZL-02 | Phase 2 | Completed |
 | BAZL-03 | Phase 3 | Pending |
-| BAZL-04 | Phase 2 | Pending |
+| BAZL-04 | Phase 2 | Completed |
 | BAZL-05 | Phase 3 | Pending |
 | RUST-01 | Phase 4 | Pending |
 | RUST-02 | Phase 4 | Pending |

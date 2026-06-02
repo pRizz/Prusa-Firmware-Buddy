@@ -1,0 +1,18 @@
+common --announce_rc
+common --repo_env=BUDDY_BAZEL_EXECUTE_REFERENCE=0
+
+build --enable_platform_specific_config
+build --action_env=BUDDY_BAZEL_EXECUTE_REFERENCE=0
+build --show_timestamps
+
+build:host --platforms=//platforms:host_tools
+build:mini --platforms=//platforms:mini_buddy_stm32f407vg
+build:mk4 --platforms=//platforms:mk4_xbuddy_stm32f427zi
+build:coreone --platforms=//platforms:coreone_xbuddy_stm32f427zi
+build:xl --platforms=//platforms:xl_xlbuddy_stm32f427zi
+build:xbuddy_extension --platforms=//platforms:xbuddy_extension_stm32h503cbu7
+
+test --test_output=errors
+test --test_summary=short
+
+run --show_timestamps

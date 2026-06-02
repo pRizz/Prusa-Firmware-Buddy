@@ -1,0 +1,106 @@
+package(default_visibility = ["//visibility:public"])
+
+constraint_setting(name = "runtime")
+constraint_value(name = "runtime_host", constraint_setting = ":runtime")
+constraint_value(name = "runtime_embedded", constraint_setting = ":runtime")
+
+constraint_setting(name = "printer")
+constraint_value(name = "printer_coreone", constraint_setting = ":printer")
+constraint_value(name = "printer_mini", constraint_setting = ":printer")
+constraint_value(name = "printer_mk4", constraint_setting = ":printer")
+constraint_value(name = "printer_mk3_5", constraint_setting = ":printer")
+constraint_value(name = "printer_xl", constraint_setting = ":printer")
+constraint_value(name = "printer_ix", constraint_setting = ":printer")
+constraint_value(name = "printer_xl_dev_kit", constraint_setting = ":printer")
+
+constraint_setting(name = "board")
+constraint_value(name = "board_buddy", constraint_setting = ":board")
+constraint_value(name = "board_xbuddy", constraint_setting = ":board")
+constraint_value(name = "board_xlbuddy", constraint_setting = ":board")
+constraint_value(name = "board_dwarf", constraint_setting = ":board")
+constraint_value(name = "board_modularbed", constraint_setting = ":board")
+constraint_value(name = "board_xl_dev_kit_xlb", constraint_setting = ":board")
+constraint_value(name = "board_xbuddy_extension", constraint_setting = ":board")
+
+constraint_setting(name = "mcu")
+constraint_value(name = "mcu_host", constraint_setting = ":mcu")
+constraint_value(name = "mcu_stm32f407vg", constraint_setting = ":mcu")
+constraint_value(name = "mcu_stm32f429vi", constraint_setting = ":mcu")
+constraint_value(name = "mcu_stm32f427zi", constraint_setting = ":mcu")
+constraint_value(name = "mcu_stm32g070rbt6", constraint_setting = ":mcu")
+constraint_value(name = "mcu_stm32h503cbu7", constraint_setting = ":mcu")
+
+platform(
+    name = "host_tools",
+    constraint_values = [
+        ":runtime_host",
+        ":mcu_host",
+    ],
+)
+
+platform(
+    name = "mini_buddy_stm32f407vg",
+    constraint_values = [
+        ":runtime_embedded",
+        ":printer_mini",
+        ":board_buddy",
+        ":mcu_stm32f407vg",
+    ],
+)
+
+platform(
+    name = "mk4_xbuddy_stm32f427zi",
+    constraint_values = [
+        ":runtime_embedded",
+        ":printer_mk4",
+        ":board_xbuddy",
+        ":mcu_stm32f427zi",
+    ],
+)
+
+platform(
+    name = "coreone_xbuddy_stm32f427zi",
+    constraint_values = [
+        ":runtime_embedded",
+        ":printer_coreone",
+        ":board_xbuddy",
+        ":mcu_stm32f427zi",
+    ],
+)
+
+platform(
+    name = "xl_xlbuddy_stm32f427zi",
+    constraint_values = [
+        ":runtime_embedded",
+        ":printer_xl",
+        ":board_xlbuddy",
+        ":mcu_stm32f427zi",
+    ],
+)
+
+platform(
+    name = "dwarf_stm32g070rbt6",
+    constraint_values = [
+        ":runtime_embedded",
+        ":board_dwarf",
+        ":mcu_stm32g070rbt6",
+    ],
+)
+
+platform(
+    name = "modularbed_stm32g070rbt6",
+    constraint_values = [
+        ":runtime_embedded",
+        ":board_modularbed",
+        ":mcu_stm32g070rbt6",
+    ],
+)
+
+platform(
+    name = "xbuddy_extension_stm32h503cbu7",
+    constraint_values = [
+        ":runtime_embedded",
+        ":board_xbuddy_extension",
+        ":mcu_stm32h503cbu7",
+    ],
+)

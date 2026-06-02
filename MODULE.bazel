@@ -1,0 +1,11 @@
+module(
+    name = "prusa_firmware_buddy_rust_port",
+    version = "0.1.0",
+)
+
+register_toolchains(
+    "//tools/bazel/toolchains:rust_firmware_toolchain",
+    "//tools/bazel/toolchains:cc_firmware_toolchain",
+    "//tools/bazel/toolchains:asm_firmware_toolchain",
+    "//tools/bazel/toolchains:asset_generator_toolchain",
+)

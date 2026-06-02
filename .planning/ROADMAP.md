@@ -14,7 +14,7 @@ This roadmap turns the C/C++/CMake firmware into a behavior-parity Rust+Bazel re
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Reference Baseline and Safety Envelope** - Freeze the behavior oracle, supported matrix, safety envelope, and known-defect ledger before Rust implementation work can drift. (completed 2026-06-02)
-- [ ] **Phase 2: Bazel Authority and Developer Facade** - Make Bazel and `just` the normal developer entrypoint for builds, tests, generators, and release workflows from the start.
+- [x] **Phase 2: Bazel Authority and Developer Facade** - Make Bazel and `just` the normal developer entrypoint for builds, tests, generators, and release workflows from the start. (completed 2026-06-02)
 - [ ] **Phase 3: Artifact and Generator Parity** - Move release artifacts and deterministic generators into Bazel with drift and reference comparison gates.
 - [ ] **Phase 4: Rust Architecture and Invariant Model** - Establish the Rust workspace, typed product/domain model, Bright Builds checks, and pure-logic test foundation.
 - [ ] **Phase 5: Foreign Code, Unsafe, and Runtime Boundary** - Inventory retained C/C++/ASM/vendor code and wrap startup, HAL, RTOS, and unsafe boundaries behind safe Rust adapters.
@@ -38,7 +38,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 1. Maintainer can run reference-capture targets for builds, generated assets, protocol traces, simulator flows, storage migrations, and release artifacts.
 1. Maintainer can review a concern ledger that classifies each known defect or fragile area as preserved temporarily, fixed during rewrite, or deferred.
 1. Maintainer can review a board-aware safety envelope for startup, watchdogs, thermal states, motion safe states, probes, power panic, crash dumps, and emergency flows.
-   **Plans**: TBD
+   **Plans**: `.planning/phases/01-reference-baseline-and-safety-envelope/01-01-PLAN.md`
 
 ### Phase 2: Bazel Authority and Developer Facade
 
@@ -51,7 +51,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 1. Developer can build Rust firmware, retained foreign code, generated assets, host tools, unit tests, simulator inputs, and release packages from Bazel without CMake being the source of truth.
 1. Developer can run checked `just` commands for bootstrap, build, test, format, lint, generated-file checks, simulator/parity checks, and release packaging.
 1. Developer can distinguish host tools/tests from embedded firmware targets through explicit Bazel platforms and target labels.
-   **Plans**: TBD
+   **Plans**: `.planning/phases/02-bazel-authority-and-developer-facade/02-01-PLAN.md`
 
 ### Phase 3: Artifact and Generator Parity
 
@@ -180,7 +180,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Reference Baseline and Safety Envelope | 1/1 | Complete    | 2026-06-02 |
-| 2. Bazel Authority and Developer Facade | 0/TBD | Not started | - |
+| 2. Bazel Authority and Developer Facade | 1/1 | Complete    | 2026-06-02 |
 | 3. Artifact and Generator Parity | 0/TBD | Not started | - |
 | 4. Rust Architecture and Invariant Model | 0/TBD | Not started | - |
 | 5. Foreign Code, Unsafe, and Runtime Boundary | 0/TBD | Not started | - |

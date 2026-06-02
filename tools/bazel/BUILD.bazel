@@ -1,0 +1,99 @@
+load(":shell_rules.bzl", "shell_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+shell_binary(
+    name = "phase2_verify",
+    src = "phase2_verify.sh",
+    data = ["phase2_verify.py"],
+)
+
+shell_binary(
+    name = "bootstrap",
+    src = "reference_contract.sh",
+    data = ["//:reference_matrix_sources"],
+)
+
+shell_binary(
+    name = "build_firmware",
+    src = "reference_contract.sh",
+    data = ["//:reference_matrix_sources"],
+)
+
+shell_binary(
+    name = "rust_firmware",
+    src = "reference_contract.sh",
+    data = ["//:reference_matrix_sources"],
+)
+
+shell_binary(
+    name = "retained_foreign_code",
+    src = "reference_contract.sh",
+    data = ["//:reference_matrix_sources"],
+)
+
+shell_binary(
+    name = "generated_assets",
+    src = "reference_contract.sh",
+    data = ["//:reference_matrix_sources"],
+)
+
+shell_binary(
+    name = "host_tools",
+    src = "reference_contract.sh",
+    data = ["//:reference_matrix_sources"],
+)
+
+shell_binary(
+    name = "test_host",
+    src = "reference_contract.sh",
+    data = ["//:reference_matrix_sources"],
+)
+
+shell_binary(
+    name = "unit_tests",
+    src = "reference_contract.sh",
+    data = ["//:reference_matrix_sources"],
+)
+
+shell_binary(
+    name = "simulator_inputs",
+    src = "reference_contract.sh",
+    data = ["//:phase1_reference_baseline"],
+)
+
+shell_binary(
+    name = "format",
+    src = "reference_contract.sh",
+    data = ["//:reference_matrix_sources"],
+)
+
+shell_binary(
+    name = "lint",
+    src = "reference_contract.sh",
+    data = ["//:reference_matrix_sources"],
+)
+
+shell_binary(
+    name = "generated_check",
+    src = "reference_contract.sh",
+    data = ["//:reference_matrix_sources"],
+)
+
+shell_binary(
+    name = "simulator_parity",
+    src = "reference_contract.sh",
+    data = ["//:phase1_reference_baseline"],
+)
+
+shell_binary(
+    name = "release_package",
+    src = "reference_contract.sh",
+    data = ["//:reference_matrix_sources"],
+)
+
+shell_binary(
+    name = "release_packages",
+    src = "reference_contract.sh",
+    data = ["//:reference_matrix_sources"],
+)

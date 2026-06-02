@@ -1,0 +1,81 @@
+load(":reference_toolchain.bzl", "reference_toolchain")
+
+package(default_visibility = ["//visibility:public"])
+
+toolchain_type(name = "rust_firmware_toolchain_type")
+toolchain_type(name = "cc_firmware_toolchain_type")
+toolchain_type(name = "asm_firmware_toolchain_type")
+toolchain_type(name = "asset_generator_toolchain_type")
+
+reference_toolchain(
+    name = "rust_firmware_info",
+    language = "rust",
+    reference_command = "cargo build through Bazel-owned Rust rules in Phase 4",
+    source_paths = [
+        "MODULE.bazel",
+        ".bazelrc",
+        "platforms/BUILD.bazel",
+    ],
+    toolchain_name = "rust_firmware_reference",
+)
+
+reference_toolchain(
+    name = "cc_firmware_info",
+    language = "c-cpp",
+    reference_command = "retained C/C++ firmware components are modeled through Bazel labels before CMake is demoted",
+    source_paths = [
+        "CMakeLists.txt",
+        "ProjectOptions.cmake",
+        "lib/",
+        "src/",
+    ],
+    toolchain_name = "cc_firmware_reference",
+)
+
+reference_toolchain(
+    name = "asm_firmware_info",
+    language = "asm",
+    reference_command = "startup and linker assembly surfaces are modeled through Bazel labels before Rust runtime cutover",
+    source_paths = [
+        "src/device/",
+        "lib/Drivers/",
+    ],
+    toolchain_name = "asm_firmware_reference",
+)
+
+reference_toolchain(
+    name = "asset_generator_info",
+    language = "generated-assets",
+    reference_command = "resource, translation, font, and package generators are entered through Bazel/just contracts",
+    source_paths = [
+        "cmake/Littlefs.cmake",
+        "utils/translations_and_fonts/",
+        "utils/build.py",
+        "utils/pack_fw.py",
+    ],
+    toolchain_name = "asset_generator_reference",
+)
+
+toolchain(
+    name = "rust_firmware_toolchain",
+    toolchain = ":rust_firmware_info",
+    toolchain_type = ":rust_firmware_toolchain_type",
+)
+
+toolchain(
+    name = "cc_firmware_toolchain",
+    toolchain = ":cc_firmware_info",
+    toolchain_type = ":cc_firmware_toolchain_type",
+)
+
+toolchain(
+    name = "asm_firmware_toolchain",
+    toolchain = ":asm_firmware_info",
+    toolchain_type = ":asm_firmware_toolchain_type",
+)
+
+toolchain(
+    name = "asset_generator_toolchain",
+    toolchain = ":asset_generator_info",
+    toolchain_type = ":asset_generator_toolchain_type",
+)
