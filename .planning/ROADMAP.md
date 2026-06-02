@@ -13,7 +13,7 @@ This roadmap turns the C/C++/CMake firmware into a behavior-parity Rust+Bazel re
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Reference Baseline and Safety Envelope** - Freeze the behavior oracle, supported matrix, safety envelope, and known-defect ledger before Rust implementation work can drift.
+- [x] **Phase 1: Reference Baseline and Safety Envelope** - Freeze the behavior oracle, supported matrix, safety envelope, and known-defect ledger before Rust implementation work can drift. (completed 2026-06-02)
 - [ ] **Phase 2: Bazel Authority and Developer Facade** - Make Bazel and `just` the normal developer entrypoint for builds, tests, generators, and release workflows from the start.
 - [ ] **Phase 3: Artifact and Generator Parity** - Move release artifacts and deterministic generators into Bazel with drift and reference comparison gates.
 - [ ] **Phase 4: Rust Architecture and Invariant Model** - Establish the Rust workspace, typed product/domain model, Bright Builds checks, and pure-logic test foundation.
@@ -179,7 +179,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Reference Baseline and Safety Envelope | 0/TBD | Not started | - |
+| 1. Reference Baseline and Safety Envelope | 1/1 | Complete    | 2026-06-02 |
 | 2. Bazel Authority and Developer Facade | 0/TBD | Not started | - |
 | 3. Artifact and Generator Parity | 0/TBD | Not started | - |
 | 4. Rust Architecture and Invariant Model | 0/TBD | Not started | - |

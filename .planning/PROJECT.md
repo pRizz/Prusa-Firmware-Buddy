@@ -49,6 +49,8 @@ Deliver a Rust+Bazel firmware replacement that preserves existing printer behavi
 
 The existing repository is a large embedded firmware codebase for Original Prusa printers. The current stack is C++23, C, ASM, CMake, Python tooling, STM32 HAL/CMSIS, FreeRTOS, Marlin, LwIP, mbedTLS, FatFs/littlefs, TinyUSB, Catch2, pytest, and a custom bootstrap flow. The codebase map in `.planning/codebase/` is the reference for current architecture, testing practices, integrations, and known concerns.
 
+Phase 1 established the reference baseline package for the rewrite: supported matrix, reference-capture catalog, intentional-delta concern ledger, safety envelope, phase-local verifier, and verification report under `.planning/phases/01-reference-baseline-and-safety-envelope/`. Phase 2 should use those artifacts when making Bazel and `just` authoritative.
+
 The current architecture is a CMake-composed firmware target with board/printer feature gates, a FreeRTOS imperative shell, Marlin as the printing core, and application layers for GUI, Connect, WUI, transfers, persistent stores, puppies/MMU, resources, and packaging. The Rust rewrite should deliberately separate pure firmware/domain decisions from hardware, RTOS, filesystem, networking, UI, and packaging adapters where practical.
 
 The project should use Rust to make illegal states unrepresentable, parse raw boundary data into domain types, and keep optional internal names explicit with `maybe_` naming. New Rust modules should prefer `foo.rs` plus `foo/` over `foo/mod.rs`, use `let...else` for guard-style extraction where clearer, and include unit tests for pure/business logic with Arrange, Act, Assert structure.
@@ -99,4 +101,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ______________________________________________________________________
 
-*Last updated: 2026-06-02 after initialization*
+*Last updated: 2026-06-02 after Phase 1 completion*

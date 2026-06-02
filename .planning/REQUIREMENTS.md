@@ -7,10 +7,10 @@
 
 ### Baseline and Parity
 
-- [ ] **BASE-01**: Maintainer can inspect a complete supported printer, board, MCU, bootloader, feature, and artifact matrix derived from the existing firmware reference.
-- [ ] **BASE-02**: Maintainer can run reference-capture targets that preserve existing C/C++ firmware behavior fixtures for builds, generated assets, protocol traces, simulator flows, persistent config migrations, and release artifacts.
-- [ ] **BASE-03**: Maintainer can review an intentional-delta ledger that classifies known defects from `.planning/codebase/CONCERNS.md` as preserved temporarily, fixed during rewrite, or explicitly deferred.
-- [ ] **BASE-04**: Maintainer can evaluate a safety envelope covering startup, watchdogs, thermal states, motion safe states, endstops, fans, loadcell/probe behavior, power panic, crash dumps, and emergency/error flows before Rust cutover.
+- [x] **BASE-01**: Maintainer can inspect a complete supported printer, board, MCU, bootloader, feature, and artifact matrix derived from the existing firmware reference.
+- [x] **BASE-02**: Maintainer can run reference-capture targets that preserve existing C/C++ firmware behavior fixtures for builds, generated assets, protocol traces, simulator flows, persistent config migrations, and release artifacts.
+- [x] **BASE-03**: Maintainer can review an intentional-delta ledger that classifies known defects from `.planning/codebase/CONCERNS.md` as preserved temporarily, fixed during rewrite, or explicitly deferred.
+- [x] **BASE-04**: Maintainer can evaluate a safety envelope covering startup, watchdogs, thermal states, motion safe states, endstops, fans, loadcell/probe behavior, power panic, crash dumps, and emergency/error flows before Rust cutover.
 
 ### Bazel Build System
 
@@ -82,10 +82,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BASE-01 | Phase 1 | Pending |
-| BASE-02 | Phase 1 | Pending |
-| BASE-03 | Phase 1 | Pending |
-| BASE-04 | Phase 1 | Pending |
+| BASE-01 | Phase 1 | Completed |
+| BASE-02 | Phase 1 | Completed |
+| BASE-03 | Phase 1 | Completed |
+| BASE-04 | Phase 1 | Completed |
 | BAZL-01 | Phase 2 | Pending |
 | BAZL-02 | Phase 2 | Pending |
 | BAZL-03 | Phase 3 | Pending |
@@ -122,4 +122,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 ______________________________________________________________________
 
 *Requirements defined: 2026-06-02*
-*Last updated: 2026-06-02 after roadmap creation*
+*Last updated: 2026-06-02 after Phase 1 completion*
