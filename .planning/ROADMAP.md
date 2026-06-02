@@ -64,7 +64,11 @@ Decimal phases appear between their surrounding integers in numeric order.
 1. Developer can run Bazel-owned generators for product profiles, option data, resources, translations, fonts, web assets, ESP blobs, puppy/MMU descriptors, and package metadata.
 1. Developer can run deterministic drift checks that fail when tracked generated outputs no longer match their declared sources.
 1. Maintainer can compare generated outputs and release artifact metadata against the C/C++ reference surface.
-   **Plans**: TBD
+   **Plans**: 2 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Create Phase 3 verifier, artifact manifest, and generated-drift helper layer.
+- [ ] 03-02-PLAN.md — Wire Phase 3 Bazel artifact/generator labels and `just` facade.
 
 ### Phase 4: Rust Architecture and Invariant Model
 
@@ -181,7 +185,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 |-------|----------------|--------|-----------|
 | 1. Reference Baseline and Safety Envelope | 1/1 | Complete    | 2026-06-02 |
 | 2. Bazel Authority and Developer Facade | 1/1 | Complete    | 2026-06-02 |
-| 3. Artifact and Generator Parity | 0/TBD | Not started | - |
+| 3. Artifact and Generator Parity | 0/2 | Not started | - |
 | 4. Rust Architecture and Invariant Model | 0/TBD | Not started | - |
 | 5. Foreign Code, Unsafe, and Runtime Boundary | 0/TBD | Not started | - |
 | 6. Printing Core, Safety, and Feature Gates | 0/TBD | Not started | - |
