@@ -127,7 +127,7 @@ REQUIRED_UNSAFE_KINDS = [
     "watchdog",
 ]
 
-REQUIRED_ADAPTER_SOURCE_PATHS = [
+REQUIRED_AUDIT_SOURCE_PATHS = [
     "rust/crates/board-adapter/src/mmio.rs",
     "rust/crates/board-adapter/src/dma.rs",
     "rust/crates/board-adapter/src/interrupt.rs",
@@ -142,6 +142,73 @@ REQUIRED_ADAPTER_SOURCE_PATHS = [
     "rust/crates/runtime-adapter/src/queue.rs",
     "rust/crates/runtime-adapter/src/timer.rs",
     "rust/crates/runtime-adapter/src/synchronization.rs",
+]
+
+REQUIRED_ADAPTER_MODULE_FILES = [
+    "rust/crates/board-adapter/src/mcu.rs",
+    "rust/crates/board-adapter/src/clock.rs",
+    "rust/crates/board-adapter/src/memory_region.rs",
+    "rust/crates/board-adapter/src/dma.rs",
+    "rust/crates/board-adapter/src/mmio.rs",
+    "rust/crates/board-adapter/src/interrupt.rs",
+    "rust/crates/board-adapter/src/ffi.rs",
+    "rust/crates/runtime-adapter/src/startup.rs",
+    "rust/crates/runtime-adapter/src/linker.rs",
+    "rust/crates/runtime-adapter/src/allocator.rs",
+    "rust/crates/runtime-adapter/src/panic_boundary.rs",
+    "rust/crates/runtime-adapter/src/static_memory.rs",
+    "rust/crates/runtime-adapter/src/task.rs",
+    "rust/crates/runtime-adapter/src/queue.rs",
+    "rust/crates/runtime-adapter/src/timer.rs",
+    "rust/crates/runtime-adapter/src/synchronization.rs",
+]
+
+PURE_UNSAFE_FREE_FILES = [
+    "rust/crates/domain/src/lib.rs",
+    "rust/crates/application/src/lib.rs",
+]
+
+REQUIRED_SYNC_SURFACE_IDS = [
+    "board-clock-tree-contracts",
+    "freertos-mutex-contracts",
+    "freertos-binary-semaphore-contracts",
+    "freertos-counting-semaphore-contracts",
+    "freertos-event-group-contracts",
+    "freertos-wait-condition-contracts",
+]
+
+REQUIRED_EXACT_AUDIT_SOURCE_ROWS = [
+    ("rust/crates/runtime-adapter/src/allocator.rs", "allocator-heap-contracts"),
+    ("rust/crates/runtime-adapter/src/static_memory.rs", "static-task-memory-contracts"),
+]
+
+UNSAFE_RUST_PATTERNS = [
+    ("unsafe block", "unsafe {"),
+    ("unsafe function", "unsafe fn"),
+    ("unsafe trait", "unsafe trait"),
+    ("unsafe impl", "unsafe impl"),
+    ("unsafe extern", "unsafe extern"),
+    ("unsafe attribute", "#[unsafe("),
+    ("adapter unsafe allowance", "#![allow(unsafe_code)]"),
+    ("adapter unsafe allowance", "#[allow(unsafe_code)]"),
+]
+
+HARDWARE_OVERCLAIM_STRINGS = [
+    "hardware-safe",
+    "hardware passed",
+    "hardware verified locally",
+    "locally passed hardware",
+]
+
+PHASE5_MARKDOWN_ARTIFACTS = [
+    ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-FOREIGN-CODE-INVENTORY.md",
+    ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-UNSAFE-BOUNDARY-AUDIT.md",
+    ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-VALIDATION.md",
+    ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-01-SUMMARY.md",
+    ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-02-SUMMARY.md",
+    ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-03-SUMMARY.md",
+    ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-04-SUMMARY.md",
+    ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-05-SUMMARY.md",
 ]
 
 ALLOWED_EVIDENCE_CLASSES = {
@@ -240,6 +307,68 @@ def require_text(row: dict[str, Any], row_name: str, needles: list[str]) -> None
         raise VerificationError(f"{row_name} missing required evidence text: {', '.join(missing)}")
 
 
+def read_text(path: str | Path) -> str:
+    relative_path = Path(path)
+    full_path = ROOT / relative_path
+    if not full_path.exists():
+        raise VerificationError(f"missing required file: {relative_path}")
+
+    return full_path.read_text(encoding="utf-8")
+
+
+def require_file_exists(path: str) -> None:
+    full_path = ROOT / path
+    if not full_path.is_file():
+        raise VerificationError(f"missing required adapter file: {path}")
+
+
+def unsafe_audit_rows() -> list[dict[str, Any]]:
+    data = read_json(UNSAFE_AUDIT_MANIFEST)
+    return require_top_level(data, UNSAFE_AUDIT_MANIFEST, "surfaces")
+
+
+def source_paths_by_surface_id(rows: list[dict[str, Any]]) -> dict[str, str]:
+    paths: dict[str, str] = {}
+    for row in rows:
+        surface_id = row.get("surface_id")
+        source_path = row.get("source_path")
+        if isinstance(surface_id, str) and isinstance(source_path, str):
+            paths[surface_id] = source_path
+    return paths
+
+
+def audit_source_paths(rows: list[dict[str, Any]]) -> set[str]:
+    return {
+        row["source_path"]
+        for row in rows
+        if isinstance(row.get("source_path"), str)
+    }
+
+
+def require_exact_audit_source_row(
+    rows: list[dict[str, Any]], source_path: str, surface_id: str
+) -> None:
+    for row in rows:
+        if row.get("source_path") == source_path and row.get("surface_id") == surface_id:
+            return
+
+    raise VerificationError(
+        f"missing exact unsafe-audit source_path row: {source_path} with {surface_id}"
+    )
+
+
+def unsafe_findings_for_file(relative_path: Path, text: str) -> list[str]:
+    findings: list[str] = []
+    for line_number, line in enumerate(text.splitlines(), start=1):
+        if "#![forbid(unsafe_code)]" in line:
+            continue
+
+        for label, pattern in UNSAFE_RUST_PATTERNS:
+            if pattern in line:
+                findings.append(f"{relative_path}:{line_number}: {label}")
+    return findings
+
+
 def check_inventory_manifest() -> None:
     data = read_json(INVENTORY_MANIFEST)
     rows = require_top_level(data, INVENTORY_MANIFEST, "components")
@@ -329,7 +458,7 @@ def check_unsafe_audit_manifest() -> None:
             raise VerificationError(f"{row_name} evidence_class must be one of: {allowed}")
 
     require_ids(kinds, REQUIRED_UNSAFE_KINDS, "unsafe kinds")
-    require_ids(source_paths, REQUIRED_ADAPTER_SOURCE_PATHS, "adapter source paths")
+    require_ids(source_paths, REQUIRED_AUDIT_SOURCE_PATHS, "adapter source paths")
     require_text(
         by_id["board-clock-tree-contracts"],
         "board-clock-tree-contracts",
@@ -372,6 +501,96 @@ def check_unsafe_audit_manifest() -> None:
                 "include/tasks.hpp",
                 "src/common/tasks.cpp",
             ],
+        )
+
+
+def check_adapter_surface() -> None:
+    for path in REQUIRED_ADAPTER_MODULE_FILES:
+        require_file_exists(path)
+
+    for path in PURE_UNSAFE_FREE_FILES:
+        text = read_text(path)
+        if "#![forbid(unsafe_code)]" not in text:
+            raise VerificationError(f"{path} must contain #![forbid(unsafe_code)]")
+
+    rows = unsafe_audit_rows()
+    source_paths = audit_source_paths(rows)
+    paths_by_surface_id = source_paths_by_surface_id(rows)
+
+    for surface_id in REQUIRED_SYNC_SURFACE_IDS:
+        if surface_id not in paths_by_surface_id:
+            raise VerificationError(f"missing required unsafe-audit surface: {surface_id}")
+
+    for source_path, surface_id in REQUIRED_EXACT_AUDIT_SOURCE_ROWS:
+        require_exact_audit_source_row(rows, source_path, surface_id)
+
+    findings: list[str] = []
+    for path in sorted((ROOT / "rust/crates").glob("**/*.rs")):
+        relative_path = path.relative_to(ROOT)
+        relative_path_text = relative_path.as_posix()
+        file_findings = unsafe_findings_for_file(
+            relative_path, path.read_text(encoding="utf-8")
+        )
+        if not file_findings:
+            continue
+
+        if relative_path_text not in source_paths:
+            findings.extend(file_findings)
+
+    if findings:
+        raise VerificationError(
+            "unaudited Rust unsafe surface found:\n" + "\n".join(findings)
+        )
+
+
+def check_bazel_surface() -> None:
+    root_build = read_text("BUILD.bazel")
+    tools_build = read_text("tools/bazel/BUILD.bazel")
+    workflow = read_text("tools/bazel/rust_workflow.sh")
+
+    for needle in ["phase5_verify", "retained_foreign_code", "unsafe_boundary_audit"]:
+        if needle not in root_build:
+            raise VerificationError(f"BUILD.bazel missing {needle}")
+        if needle not in tools_build:
+            raise VerificationError(f"tools/bazel/BUILD.bazel missing {needle}")
+
+    for needle in [
+        "phase5_verify)",
+        "python3 tools/bazel/phase5_verify.py --all",
+    ]:
+        if needle not in workflow:
+            raise VerificationError(f"tools/bazel/rust_workflow.sh missing {needle}")
+
+
+def check_just_surface() -> None:
+    justfile = read_text("justfile")
+    for needle in ["phase5-verify:", "bazel run //tools/bazel:phase5_verify"]:
+        if needle not in justfile:
+            raise VerificationError(f"justfile missing {needle}")
+
+
+def check_no_hardware_overclaim() -> None:
+    paths = [
+        INVENTORY_MANIFEST.as_posix(),
+        UNSAFE_AUDIT_MANIFEST.as_posix(),
+        *PHASE5_MARKDOWN_ARTIFACTS,
+    ]
+    findings: list[str] = []
+
+    for path in paths:
+        full_path = ROOT / path
+        if not full_path.exists():
+            continue
+
+        text = full_path.read_text(encoding="utf-8").lower()
+        for phrase in HARDWARE_OVERCLAIM_STRINGS:
+            if phrase in text:
+                findings.append(f"{path}: {phrase}")
+
+    if findings:
+        raise VerificationError(
+            "Phase 5 artifacts overclaim local hardware evidence:\n"
+            + "\n".join(findings)
         )
 
 
@@ -419,6 +638,10 @@ def main() -> int:
         else:
             check_inventory_manifest()
             check_unsafe_audit_manifest()
+            check_adapter_surface()
+            check_bazel_surface()
+            check_just_surface()
+            check_no_hardware_overclaim()
             if args.all:
                 check_rust_toolchain()
 
