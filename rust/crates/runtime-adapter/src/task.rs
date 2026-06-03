@@ -1,4 +1,5 @@
 use crate::EvidenceClass;
+use buddy_domain::{Feature, ProductProfile};
 
 const TASK_SOURCE_EVIDENCE: &[&str] = &[
     "include/tasks.hpp",
@@ -216,14 +217,33 @@ impl TaskStartupContract {
         self.runtime_task
     }
 
-    /// Returns typed dependency names used to build the event mask.
+    /// Returns feature-inclusive dependency names used as retained evidence.
+    ///
+    /// Use `dependencies_for_profile` when building the effective retained mask
+    /// for a concrete product profile.
     pub fn dependencies(&self) -> &'static [TaskDependency] {
         self.dependencies
     }
 
-    /// Returns the dependency mask for this contract.
-    pub fn dependency_mask(&self) -> Result<DependencyMask, DependencyMaskError> {
-        DependencyMask::from_dependencies(self.dependencies, self.dependency_requirement)
+    /// Returns typed dependency names after applying retained feature gates.
+    pub fn dependencies_for_profile(&self, profile: &ProductProfile) -> &'static [TaskDependency] {
+        let has_puppies = profile.features().contains(Feature::Puppies);
+        match self.name {
+            "default_start" if !has_puppies => EMPTY_STARTUP_DEPS,
+            "bootstrap_done" if !has_puppies => BOOTSTRAP_DONE_BASE_DEPS,
+            _ => self.dependencies,
+        }
+    }
+
+    /// Returns the dependency mask for this contract and product profile.
+    pub fn dependency_mask(
+        &self,
+        profile: &ProductProfile,
+    ) -> Result<DependencyMask, DependencyMaskError> {
+        DependencyMask::from_dependencies(
+            self.dependencies_for_profile(profile),
+            self.dependency_requirement,
+        )
     }
 
     /// Returns startup-order evidence from retained C/C++ entrypoints.
@@ -247,10 +267,12 @@ impl TaskStartupContract {
     }
 }
 
-const DEFAULT_START_DEPS: &[TaskDependency] = &[TaskDependency::PuppiesReady];
+const DEFAULT_START_DEPS_WITH_PUPPIES: &[TaskDependency] = &[TaskDependency::PuppiesReady];
 const USB_DEVICE_START_DEPS: &[TaskDependency] = &[TaskDependency::UsbDeviceReady];
 const DEFAULT_TASK_READY_DEPS: &[TaskDependency] = &[TaskDependency::DefaultTaskReady];
-const BOOTSTRAP_DONE_DEPS: &[TaskDependency] = &[
+const BOOTSTRAP_DONE_BASE_DEPS: &[TaskDependency] =
+    &[TaskDependency::ResourcesReady, TaskDependency::EspFlashed];
+const BOOTSTRAP_DONE_DEPS_WITH_PUPPIES: &[TaskDependency] = &[
     TaskDependency::ResourcesReady,
     TaskDependency::EspFlashed,
     TaskDependency::PuppiesReady,
@@ -274,7 +296,7 @@ const KNOWN_TASK_CONTRACTS: &[TaskStartupContract] = &[
     TaskStartupContract {
         name: "default_start",
         runtime_task: RuntimeTask::DefaultTask,
-        dependencies: DEFAULT_START_DEPS,
+        dependencies: DEFAULT_START_DEPS_WITH_PUPPIES,
         dependency_requirement: DependencyMaskRequirement::AllowEmpty,
         startup_order: "default task waits for puppies_ready only when HAS_PUPPIES gates the retained mask",
         source_evidence_paths: TASK_SOURCE_EVIDENCE,
@@ -304,7 +326,7 @@ const KNOWN_TASK_CONTRACTS: &[TaskStartupContract] = &[
     TaskStartupContract {
         name: "bootstrap_done",
         runtime_task: RuntimeTask::Bootstrap,
-        dependencies: BOOTSTRAP_DONE_DEPS,
+        dependencies: BOOTSTRAP_DONE_DEPS_WITH_PUPPIES,
         dependency_requirement: DependencyMaskRequirement::RequireNonEmpty,
         startup_order: "bootstrap waits for resources_ready and esp_flashed plus puppies_ready when retained feature gates enable puppies",
         source_evidence_paths: TASK_SOURCE_EVIDENCE,
@@ -396,6 +418,20 @@ const KNOWN_TASK_CONTRACTS: &[TaskStartupContract] = &[
 #[cfg(test)]
 mod tests {
     use super::*;
+    use buddy_domain::{
+        BoardKind, BootloaderMode, Feature, FeatureSet, McuKind, PrinterKind, ProductProfile,
+    };
+
+    fn profile(
+        printer: PrinterKind,
+        board: BoardKind,
+        mcu: McuKind,
+        bootloader_mode: BootloaderMode,
+        features: FeatureSet,
+    ) -> ProductProfile {
+        ProductProfile::new(printer, board, mcu, bootloader_mode, features)
+            .expect("test profile must match the supported product matrix")
+    }
 
     #[test]
     fn dependency_mask_rejects_zero_only_when_non_empty_required() {
@@ -432,5 +468,65 @@ mod tests {
                 "missing {expected_name}"
             );
         }
+    }
+
+    #[test]
+    fn non_puppy_profile_drops_puppies_from_feature_gated_masks() {
+        // Arrange
+        let profile = profile(
+            PrinterKind::Mini,
+            BoardKind::Buddy,
+            McuKind::Stm32F407Vg,
+            BootloaderMode::Boot,
+            FeatureSet::empty(),
+        );
+        let default_start =
+            TaskStartupContract::maybe_named("default_start").expect("default_start is known");
+        let bootstrap_done =
+            TaskStartupContract::maybe_named("bootstrap_done").expect("bootstrap_done is known");
+
+        // Act
+        let default_start_mask = default_start
+            .dependency_mask(&profile)
+            .expect("default_start may be empty when puppies are disabled");
+        let bootstrap_done_mask = bootstrap_done
+            .dependency_mask(&profile)
+            .expect("bootstrap_done keeps base resources and ESP dependencies");
+
+        // Assert
+        assert_eq!(default_start_mask.bits(), 0);
+        assert!(!bootstrap_done_mask.contains(TaskDependency::PuppiesReady));
+        assert!(bootstrap_done_mask.contains(TaskDependency::ResourcesReady));
+        assert!(bootstrap_done_mask.contains(TaskDependency::EspFlashed));
+    }
+
+    #[test]
+    fn puppy_profile_keeps_puppies_in_feature_gated_masks() {
+        // Arrange
+        let profile = profile(
+            PrinterKind::CoreOne,
+            BoardKind::XBuddy,
+            McuKind::Stm32F427Zi,
+            BootloaderMode::Boot,
+            FeatureSet::from_features([Feature::Puppies]),
+        );
+        let default_start =
+            TaskStartupContract::maybe_named("default_start").expect("default_start is known");
+        let bootstrap_done =
+            TaskStartupContract::maybe_named("bootstrap_done").expect("bootstrap_done is known");
+
+        // Act
+        let default_start_mask = default_start
+            .dependency_mask(&profile)
+            .expect("default_start waits for puppies on puppy-enabled profiles");
+        let bootstrap_done_mask = bootstrap_done
+            .dependency_mask(&profile)
+            .expect("bootstrap_done keeps puppies on puppy-enabled profiles");
+
+        // Assert
+        assert!(default_start_mask.contains(TaskDependency::PuppiesReady));
+        assert!(bootstrap_done_mask.contains(TaskDependency::PuppiesReady));
+        assert!(bootstrap_done_mask.contains(TaskDependency::ResourcesReady));
+        assert!(bootstrap_done_mask.contains(TaskDependency::EspFlashed));
     }
 }
