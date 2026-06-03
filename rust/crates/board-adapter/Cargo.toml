@@ -11,6 +11,6 @@ buddy-domain = { path = "../domain" }
 name = "buddy_board_adapter"
 path = "src/lib.rs"
 
-[lints]
-workspace = true
-
+[lints.rust]
+unsafe_code = "allow"
+unsafe_op_in_unsafe_fn = "deny"

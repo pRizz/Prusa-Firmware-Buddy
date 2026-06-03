@@ -1,4 +1,4 @@
-#![forbid(unsafe_code)]
+#![deny(unsafe_op_in_unsafe_fn)]
 
 //! Thin board adapter boundary for validated product profiles.
 //!
@@ -8,13 +8,19 @@
 
 pub mod clock;
 pub mod dma;
+pub mod ffi;
+pub mod interrupt;
 pub mod mcu;
 pub mod memory_region;
+pub mod mmio;
 
 pub use clock::{BoardClockTree, ClockSource, CoreClockHz};
 pub use dma::DmaBufferRegion;
+pub use ffi::{ForeignComponentId, ForeignSymbol};
+pub use interrupt::{InterruptLine, InterruptPriority};
 pub use mcu::{BoardRuntimeSurface, McuFamily};
-pub use memory_region::{MemoryRegion, MemoryRegionKind};
+pub use memory_region::{MemoryRegion, MemoryRegionError, MemoryRegionKind};
+pub use mmio::{Register32, RegisterAddress};
 
 use buddy_domain::{BoardKind, McuKind, ProductProfile};
 
