@@ -357,9 +357,105 @@ def require_exact_audit_source_row(
     )
 
 
+def blank_non_code(output: list[str], text: str) -> None:
+    for character in text:
+        output.append("\n" if character == "\n" else " ")
+
+
+def raw_string_end_index(text: str, start: int) -> int | None:
+    if text.startswith("br", start):
+        marker_index = start + 2
+    elif text.startswith("r", start):
+        marker_index = start + 1
+    else:
+        return None
+
+    while marker_index < len(text) and text[marker_index] == "#":
+        marker_index += 1
+
+    if marker_index >= len(text) or text[marker_index] != '"':
+        return None
+
+    hash_count = marker_index - start - (2 if text.startswith("br", start) else 1)
+    delimiter = '"' + ("#" * hash_count)
+    maybe_end = text.find(delimiter, marker_index + 1)
+    if maybe_end == -1:
+        return len(text)
+    return maybe_end + len(delimiter)
+
+
+def quoted_string_end_index(text: str, start: int) -> int:
+    index = start + 1
+    while index < len(text):
+        if text[index] == "\\":
+            index += 2
+            continue
+        if text[index] == '"':
+            return index + 1
+        index += 1
+    return len(text)
+
+
+def rust_code_without_comments_or_strings(text: str) -> str:
+    output: list[str] = []
+    index = 0
+    block_comment_depth = 0
+
+    while index < len(text):
+        if block_comment_depth > 0:
+            if text.startswith("/*", index):
+                blank_non_code(output, "/*")
+                index += 2
+                block_comment_depth += 1
+                continue
+            if text.startswith("*/", index):
+                blank_non_code(output, "*/")
+                index += 2
+                block_comment_depth -= 1
+                continue
+
+            blank_non_code(output, text[index])
+            index += 1
+            continue
+
+        maybe_raw_end = raw_string_end_index(text, index)
+        if maybe_raw_end is not None:
+            blank_non_code(output, text[index:maybe_raw_end])
+            index = maybe_raw_end
+            continue
+
+        if text.startswith("//", index):
+            line_end = text.find("\n", index)
+            if line_end == -1:
+                blank_non_code(output, text[index:])
+                break
+
+            blank_non_code(output, text[index:line_end])
+            index = line_end
+            continue
+
+        if text.startswith("/*", index):
+            blank_non_code(output, "/*")
+            index += 2
+            block_comment_depth = 1
+            continue
+
+        if text[index] == '"':
+            string_end = quoted_string_end_index(text, index)
+            blank_non_code(output, text[index:string_end])
+            index = string_end
+            continue
+
+        output.append(text[index])
+        index += 1
+
+    return "".join(output)
+
+
 def unsafe_findings_for_file(relative_path: Path, text: str) -> list[str]:
     findings: list[str] = []
-    for line_number, line in enumerate(text.splitlines(), start=1):
+    code = rust_code_without_comments_or_strings(text)
+    for line_number, line in enumerate(code.splitlines(), start=1):
         if "#![forbid(unsafe_code)]" in line:
             continue
 
@@ -367,6 +463,50 @@ def unsafe_findings_for_file(relative_path: Path, text: str) -> list[str]:
             if pattern in line:
                 findings.append(f"{relative_path}:{line_number}: {label}")
     return findings
+
+
+def check_unsafe_scanner_regressions() -> None:
+    harmless_text = "\n".join([
+        "#![forbid(unsafe_code)]",
+        "// unsafe { unsafe fn unsafe extern #[unsafe(no_mangle)]",
+        'const MESSAGE: &str = "unsafe { unsafe fn unsafe extern #[unsafe(no_mangle)]";',
+        'const RAW: &str = r#"unsafe { unsafe fn unsafe extern #[unsafe(no_mangle)]"#;',
+        "/* unsafe {",
+        "   /* unsafe fn */",
+        "   unsafe extern",
+        "*/",
+        "fn safe() {}",
+    ])
+    harmless_findings = unsafe_findings_for_file(Path("scanner_harmless.rs"), harmless_text)
+    if harmless_findings:
+        raise VerificationError(
+            "unsafe scanner flagged harmless comments or strings:\n"
+            + "\n".join(harmless_findings)
+        )
+
+    unsafe_text = "\n".join([
+        "fn audited() {",
+        "    unsafe { core::ptr::read_volatile(0 as *const u32); }",
+        "}",
+        "unsafe fn audited_fn() {}",
+        'unsafe extern "C" {',
+        "    fn retained_symbol();",
+        "}",
+        "#[unsafe(no_mangle)]",
+        'pub extern "C" fn exported() {}',
+    ])
+    findings = set(unsafe_findings_for_file(Path("scanner_unsafe.rs"), unsafe_text))
+    expected_findings = {
+        "scanner_unsafe.rs:2: unsafe block",
+        "scanner_unsafe.rs:4: unsafe function",
+        "scanner_unsafe.rs:5: unsafe extern",
+        "scanner_unsafe.rs:8: unsafe attribute",
+    }
+    missing = sorted(expected_findings - findings)
+    if missing:
+        raise VerificationError(
+            "unsafe scanner missed real unsafe syntax:\n" + "\n".join(missing)
+        )
 
 
 def check_inventory_manifest() -> None:
@@ -638,6 +778,7 @@ def main() -> int:
         else:
             check_inventory_manifest()
             check_unsafe_audit_manifest()
+            check_unsafe_scanner_regressions()
             check_adapter_surface()
             check_bazel_surface()
             check_just_surface()
