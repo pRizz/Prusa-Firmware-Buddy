@@ -7,10 +7,14 @@
 
 use buddy_domain::{BootloaderMode, ProductProfile};
 
+pub mod allocator;
 pub mod linker;
+pub mod panic_boundary;
 pub mod startup;
 
+pub use allocator::AllocatorBoundary;
 pub use linker::{BootModeLinkerScript, LinkerSection};
+pub use panic_boundary::{CrashDumpBoundary, PanicBoundary, WatchdogBoundary};
 pub use startup::{EvidenceClass, StartupSurface, StartupVectorTable};
 
 /// Runtime adapter boundary selected by validated firmware profile data.
