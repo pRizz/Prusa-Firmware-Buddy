@@ -63,6 +63,23 @@ shell_binary(
 )
 
 shell_binary(
+    name = "phase5_verify",
+    src = "rust_workflow.sh",
+    data = [
+        "phase5_verify.py",
+        "manifests/foreign_code_inventory.json",
+        "manifests/unsafe_boundary_audit.json",
+        "//:phase5_runtime_boundary_docs",
+        "//:rust_workspace_sources",
+    ],
+)
+
+filegroup(
+    name = "unsafe_boundary_audit",
+    srcs = ["manifests/unsafe_boundary_audit.json"],
+)
+
+shell_binary(
     name = "rust_format_check",
     src = "rust_workflow.sh",
     data = ["//:rust_workspace_sources"],
@@ -234,7 +251,11 @@ shell_binary(
 shell_binary(
     name = "retained_foreign_code",
     src = "reference_contract.sh",
-    data = ["//:reference_matrix_sources"],
+    data = [
+        "manifests/foreign_code_inventory.json",
+        "//:phase5_runtime_boundary_docs",
+        "//:reference_matrix_sources",
+    ],
 )
 
 shell_binary(

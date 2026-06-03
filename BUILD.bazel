@@ -24,6 +24,14 @@ filegroup(
     ] + glob(["rust/**"]),
 )
 
+filegroup(
+    name = "phase5_runtime_boundary_docs",
+    srcs = [
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-FOREIGN-CODE-INVENTORY.md",
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-UNSAFE-BOUNDARY-AUDIT.md",
+    ],
+)
+
 alias(
     name = "phase2_verify",
     actual = "//tools/bazel:phase2_verify",
@@ -82,4 +90,19 @@ alias(
 alias(
     name = "rust_build",
     actual = "//tools/bazel:rust_build",
+)
+
+alias(
+    name = "phase5_verify",
+    actual = "//tools/bazel:phase5_verify",
+)
+
+alias(
+    name = "retained_foreign_code",
+    actual = "//tools/bazel:retained_foreign_code",
+)
+
+alias(
+    name = "unsafe_boundary_audit",
+    actual = "//tools/bazel:unsafe_boundary_audit",
 )

@@ -9,6 +9,9 @@ phase3-verify:
 phase4-verify:
     bazel run //tools/bazel:phase4_verify
 
+phase5-verify:
+    bazel run //tools/bazel:phase5_verify
+
 bazel-query:
     bazel query "//tools/bazel/... + //platforms/..."
 
