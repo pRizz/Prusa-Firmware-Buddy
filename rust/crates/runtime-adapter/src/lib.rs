@@ -7,6 +7,12 @@
 
 use buddy_domain::{BootloaderMode, ProductProfile};
 
+pub mod linker;
+pub mod startup;
+
+pub use linker::{BootModeLinkerScript, LinkerSection};
+pub use startup::{EvidenceClass, StartupSurface, StartupVectorTable};
+
 /// Runtime adapter boundary selected by validated firmware profile data.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RuntimeAdapterBoundary {
