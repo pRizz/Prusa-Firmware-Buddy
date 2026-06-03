@@ -89,7 +89,7 @@ impl BootModeLinkerScript {
             (BoardKind::XBuddyExtension, McuKind::Stm32H503CbU7, bootloader_mode) => Self {
                 retained_component_id: "stm32h503-xbuddy-extension-startup-linker",
                 bootloader_mode,
-                active_script_path: "src/puppy/xbuddy_extension/stm32h503.ld",
+                active_script_path: h503_active_script_path(bootloader_mode),
                 available_script_paths: STM32H503_XBUDDY_EXTENSION_LINKER_SCRIPTS,
                 maybe_included_script_path: Some("src/puppy/xbuddy_extension/stm32h503.ld"),
                 sections: H503_LINKER_SECTIONS,
@@ -130,7 +130,7 @@ impl BootModeLinkerScript {
             (_, McuKind::Stm32H503CbU7, bootloader_mode) => Self {
                 retained_component_id: "stm32h503-xbuddy-extension-startup-linker",
                 bootloader_mode,
-                active_script_path: "src/puppy/xbuddy_extension/stm32h503.ld",
+                active_script_path: h503_active_script_path(bootloader_mode),
                 available_script_paths: STM32H503_XBUDDY_EXTENSION_LINKER_SCRIPTS,
                 maybe_included_script_path: Some("src/puppy/xbuddy_extension/stm32h503.ld"),
                 sections: H503_LINKER_SECTIONS,
@@ -205,6 +205,15 @@ fn g0_active_script_path(bootloader_mode: BootloaderMode) -> &'static str {
             "src/device/stm32g0/linker/stm32g070rb_boot.ld"
         }
         BootloaderMode::NoBoot => "src/device/stm32g0/linker/stm32g070rb.ld",
+    }
+}
+
+fn h503_active_script_path(bootloader_mode: BootloaderMode) -> &'static str {
+    match bootloader_mode {
+        BootloaderMode::Boot | BootloaderMode::Auxiliary => {
+            "src/puppy/xbuddy_extension/stm32h503_boot.ld"
+        }
+        BootloaderMode::NoBoot => "src/puppy/xbuddy_extension/stm32h503_noboot.ld",
     }
 }
 
@@ -319,7 +328,30 @@ mod tests {
             linker_script.maybe_included_script_path(),
             Some("src/puppy/xbuddy_extension/stm32h503.ld")
         );
+        assert_eq!(
+            linker_script.active_script_path(),
+            "src/puppy/xbuddy_extension/stm32h503_boot.ld"
+        );
         assert!(linker_script.selection_note().contains("deferred"));
+    }
+
+    #[test]
+    fn h503_active_linker_script_preserves_boot_and_noboot_wrappers() {
+        // Arrange, Act
+        let boot_script = h503_active_script_path(BootloaderMode::Boot);
+        let auxiliary_script = h503_active_script_path(BootloaderMode::Auxiliary);
+        let noboot_script = h503_active_script_path(BootloaderMode::NoBoot);
+
+        // Assert
+        assert_eq!(boot_script, "src/puppy/xbuddy_extension/stm32h503_boot.ld");
+        assert_eq!(
+            auxiliary_script,
+            "src/puppy/xbuddy_extension/stm32h503_boot.ld"
+        );
+        assert_eq!(
+            noboot_script,
+            "src/puppy/xbuddy_extension/stm32h503_noboot.ld"
+        );
     }
 
     #[test]
