@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Reference Baseline and Safety Envelope** - Freeze the behavior oracle, supported matrix, safety envelope, and known-defect ledger before Rust implementation work can drift. (completed 2026-06-02)
 - [x] **Phase 2: Bazel Authority and Developer Facade** - Make Bazel and `just` the normal developer entrypoint for builds, tests, generators, and release workflows from the start. (completed 2026-06-02)
-- [ ] **Phase 3: Artifact and Generator Parity** - Move release artifacts and deterministic generators into Bazel with drift and reference comparison gates.
+- [x] **Phase 3: Artifact and Generator Parity** - Move release artifacts and deterministic generators into Bazel with drift and reference comparison gates. (completed 2026-06-03)
 - [ ] **Phase 4: Rust Architecture and Invariant Model** - Establish the Rust workspace, typed product/domain model, Bright Builds checks, and pure-logic test foundation.
 - [ ] **Phase 5: Foreign Code, Unsafe, and Runtime Boundary** - Inventory retained C/C++/ASM/vendor code and wrap startup, HAL, RTOS, and unsafe boundaries behind safe Rust adapters.
 - [ ] **Phase 6: Printing Core, Safety, and Feature Gates** - Preserve print behavior, safety-critical flows, and printer-specific feature combinations through typed Rust models and parity fixtures.
@@ -67,9 +67,9 @@ Decimal phases appear between their surrounding integers in numeric order.
    **Plans**: 3 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Create Phase 3 verifier, artifact packager, artifact manifest, and generated-drift helper layer.
-- [ ] 03-02-PLAN.md — Wire Bazel-produced representative release artifact outputs.
-- [ ] 03-03-PLAN.md — Wire full generator coverage, update targets, facade recipes, and guarded reference comparison.
+- [x] 03-01-PLAN.md — Create Phase 3 verifier, artifact packager, artifact manifest, and generated-drift helper layer.
+- [x] 03-02-PLAN.md — Wire Bazel-produced representative release artifact outputs.
+- [x] 03-03-PLAN.md — Wire full generator coverage, update targets, facade recipes, and guarded reference comparison.
 
 ### Phase 4: Rust Architecture and Invariant Model
 
@@ -186,7 +186,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 |-------|----------------|--------|-----------|
 | 1. Reference Baseline and Safety Envelope | 1/1 | Complete    | 2026-06-02 |
 | 2. Bazel Authority and Developer Facade | 1/1 | Complete    | 2026-06-02 |
-| 3. Artifact and Generator Parity | 0/2 | Not started | - |
+| 3. Artifact and Generator Parity | 3/3 | Complete    | 2026-06-03 |
 | 4. Rust Architecture and Invariant Model | 0/TBD | Not started | - |
 | 5. Foreign Code, Unsafe, and Runtime Boundary | 0/TBD | Not started | - |
 | 6. Printing Core, Safety, and Feature Gates | 0/TBD | Not started | - |

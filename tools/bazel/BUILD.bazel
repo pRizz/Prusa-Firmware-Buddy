@@ -1,11 +1,177 @@
+load(":artifact_rules.bzl", "phase3_release_artifacts")
+load(":generator_rules.bzl", "phase3_generated_surface")
 load(":shell_rules.bzl", "shell_binary")
 
 package(default_visibility = ["//visibility:public"])
+
+PHASE3_GENERATED_LABELS = [
+    "generated_product_profiles_check",
+    "generated_product_profiles_update",
+    "generated_option_data_check",
+    "generated_option_data_update",
+    "generated_resources_check",
+    "generated_resources_update",
+    "generated_translations_check",
+    "generated_translations_update",
+    "generated_fonts_check",
+    "generated_fonts_update",
+    "generated_wui_assets_check",
+    "generated_wui_assets_update",
+    "generated_esp_blobs_check",
+    "generated_esp_blobs_update",
+    "generated_puppy_descriptors_check",
+    "generated_puppy_descriptors_update",
+    "generated_mmu_descriptors_check",
+    "generated_mmu_descriptors_update",
+    "generated_package_metadata_check",
+    "generated_package_metadata_update",
+    "tracked_generated_outputs_check",
+    "tracked_generated_outputs_update",
+]
 
 shell_binary(
     name = "phase2_verify",
     src = "phase2_verify.sh",
     data = ["phase2_verify.py"],
+)
+
+shell_binary(
+    name = "phase3_verify",
+    src = "phase3_verify.sh",
+    data = [
+        "artifact_manifest.py",
+        "artifact_metadata_compare.py",
+        "artifact_packager.py",
+        "artifact_rules.bzl",
+        "generated_drift.py",
+        "generator_rules.bzl",
+        "phase3_verify.py",
+        "phase3_artifacts.sh",
+        "phase3_workflow.sh",
+        "manifests/representative_products.json",
+        "//:phase1_reference_baseline",
+    ],
+)
+
+phase3_release_artifacts(
+    name = "mini_boot_artifacts",
+    board = "BUDDY",
+    bootloader_mode = "boot",
+    evidence_class = "local-smoke",
+    mcu = "STM32F407VG",
+    payload = "//tools/bazel:fixtures/firmware_payloads/mini_boot_payload.txt",
+    printer = "MINI",
+    product = "MINI",
+    resource_seed = "//tools/bazel:fixtures/resources/mini_resource_seed.txt",
+    signing_mode = "unsigned-local",
+)
+
+phase3_release_artifacts(
+    name = "mini_noboot_artifacts",
+    board = "BUDDY",
+    bootloader_mode = "noboot",
+    evidence_class = "local-smoke",
+    mcu = "STM32F407VG",
+    payload = "//tools/bazel:fixtures/firmware_payloads/mini_noboot_payload.txt",
+    printer = "MINI",
+    product = "MINI",
+    resource_seed = "//tools/bazel:fixtures/resources/mini_resource_seed.txt",
+    signing_mode = "unsigned-local",
+)
+
+phase3_release_artifacts(
+    name = "mk4_boot_artifacts",
+    board = "XBUDDY",
+    bootloader_mode = "boot",
+    evidence_class = "local-smoke",
+    mcu = "STM32F427ZI",
+    payload = "//tools/bazel:fixtures/firmware_payloads/mk4_boot_payload.txt",
+    printer = "MK4",
+    product = "MK4",
+    resource_seed = "//tools/bazel:fixtures/resources/mini_resource_seed.txt",
+    signing_mode = "unsigned-local",
+)
+
+phase3_release_artifacts(
+    name = "mini_resource_package_artifacts",
+    board = "BUDDY",
+    bootloader_mode = "boot",
+    evidence_class = "local-smoke",
+    mcu = "STM32F407VG",
+    payload = "//tools/bazel:fixtures/firmware_payloads/mini_boot_payload.txt",
+    printer = "MINI",
+    product = "MINI",
+    resource_seed = "//tools/bazel:fixtures/resources/mini_resource_seed.txt",
+    signing_mode = "unsigned-local",
+)
+
+filegroup(
+    name = "representative_release_artifacts",
+    srcs = [
+        ":mini_boot_artifacts",
+        ":mini_noboot_artifacts",
+        ":mk4_boot_artifacts",
+        ":mini_resource_package_artifacts",
+        ":xbuddy_extension_auxiliary_manifest_artifacts",
+    ],
+)
+
+filegroup(
+    name = "xbuddy_extension_auxiliary_manifest_artifacts",
+    srcs = ["fixtures/auxiliary/auxiliary_firmware_manifest.json"],
+)
+
+filegroup(
+    name = "representative_package_surface_smoke",
+    srcs = [
+        ":mini_boot_artifacts",
+        ":mini_noboot_artifacts",
+        ":mk4_boot_artifacts",
+        ":mini_resource_package_artifacts",
+    ],
+)
+
+filegroup(
+    name = "representative_reference_format_status",
+    srcs = [
+        ":mini_boot_artifacts",
+        ":mini_noboot_artifacts",
+        ":mk4_boot_artifacts",
+        ":mini_resource_package_artifacts",
+    ],
+)
+
+filegroup(
+    name = "representative_reference_format_artifacts",
+    srcs = [
+        ":mini_boot_artifacts",
+        ":mini_noboot_artifacts",
+        ":mk4_boot_artifacts",
+    ],
+)
+
+filegroup(
+    name = "release_package",
+    srcs = [":mini_boot_artifacts"],
+)
+
+filegroup(
+    name = "release_packages",
+    srcs = [":representative_release_artifacts"],
+)
+
+shell_binary(
+    name = "artifact_manifest_smoke",
+    src = "phase3_artifacts.sh",
+    data = [
+        "artifact_manifest.py",
+        "artifact_metadata_compare.py",
+        "artifact_packager.py",
+        "artifact_rules.bzl",
+        "phase3_verify.py",
+        "manifests/representative_products.json",
+        ":representative_release_artifacts",
+    ],
 )
 
 shell_binary(
@@ -34,8 +200,12 @@ shell_binary(
 
 shell_binary(
     name = "generated_assets",
-    src = "reference_contract.sh",
-    data = ["//:reference_matrix_sources"],
+    src = "phase3_workflow.sh",
+    data = [
+        "generated_drift.py",
+        "manifests/representative_products.json",
+        "//:phase1_reference_baseline",
+    ],
 )
 
 shell_binary(
@@ -74,26 +244,52 @@ shell_binary(
     data = ["//:reference_matrix_sources"],
 )
 
+phase3_generated_surface("product_profiles")
+phase3_generated_surface("option_data")
+phase3_generated_surface("resources")
+phase3_generated_surface("translations")
+phase3_generated_surface("fonts")
+phase3_generated_surface("wui_assets")
+phase3_generated_surface("esp_blobs")
+phase3_generated_surface("puppy_descriptors")
+phase3_generated_surface("mmu_descriptors")
+phase3_generated_surface("package_metadata")
+phase3_generated_surface("tracked_generated_outputs")
+
 shell_binary(
     name = "generated_check",
-    src = "reference_contract.sh",
-    data = ["//:reference_matrix_sources"],
+    src = "phase3_workflow.sh",
+    data = [
+        "generated_drift.py",
+        "manifests/representative_products.json",
+        "//:phase1_reference_baseline",
+    ],
+)
+
+shell_binary(
+    name = "generated_update",
+    src = "phase3_workflow.sh",
+    data = [
+        "generated_drift.py",
+        "manifests/representative_products.json",
+        "//:phase1_reference_baseline",
+    ],
+)
+
+shell_binary(
+    name = "reference_release_compare",
+    src = "phase3_workflow.sh",
+    data = [
+        "artifact_metadata_compare.py",
+        "generated_drift.py",
+        "manifests/representative_products.json",
+        ":representative_release_artifacts",
+        "//:phase1_reference_baseline",
+    ],
 )
 
 shell_binary(
     name = "simulator_parity",
     src = "reference_contract.sh",
     data = ["//:phase1_reference_baseline"],
-)
-
-shell_binary(
-    name = "release_package",
-    src = "reference_contract.sh",
-    data = ["//:reference_matrix_sources"],
-)
-
-shell_binary(
-    name = "release_packages",
-    src = "reference_contract.sh",
-    data = ["//:reference_matrix_sources"],
 )

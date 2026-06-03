@@ -1,0 +1,9 @@
+{
+  "evidence_class": "reference-only",
+  "esp_visibility": "manifest-only",
+  "mmu_visibility": "manifest-only",
+  "puppy_visibility": "manifest-only",
+  "scope": "auxiliary-manifest-only",
+  "schema_version": 1,
+  "signing_mode": "not-applicable"
+}

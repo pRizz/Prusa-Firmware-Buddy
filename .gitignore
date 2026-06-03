@@ -1,5 +1,6 @@
 .vs
 /build*
+!/BUILD.bazel
 /bazel-*
 .cproject
 .project

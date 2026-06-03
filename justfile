@@ -3,6 +3,9 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 phase2-verify:
     python3 tools/bazel/phase2_verify.py
 
+phase3-verify:
+    bazel run //tools/bazel:phase3_verify
+
 bazel-query:
     bazel query "//tools/bazel/... + //platforms/..."
 
@@ -24,8 +27,11 @@ lint:
 generated-check:
     bazel run //tools/bazel:generated_check
 
+generated-update:
+    bazel run //tools/bazel:generated_update
+
 simulator-parity:
     bazel run //tools/bazel:simulator_parity
 
 release-package:
-    bazel run //tools/bazel:release_package
+    bazel build //tools/bazel:representative_release_artifacts

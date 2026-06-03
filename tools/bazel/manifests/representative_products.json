@@ -1,0 +1,101 @@
+{
+  "entries": [
+    {
+      "artifact_outputs": [
+        ".bin",
+        ".map",
+        ".provenance.json",
+        ".bbf",
+        ".bbf.status.json",
+        ".dfu",
+        ".dfu.status.json",
+        ".manifest.json"
+      ],
+      "board": "BUDDY",
+      "bootloader_mode": "boot",
+      "evidence_class": "local-smoke",
+      "id": "mini_boot",
+      "mcu": "STM32F407VG",
+      "payload": "tools/bazel/fixtures/firmware_payloads/mini_boot_payload.txt",
+      "printer": "MINI",
+      "product": "MINI",
+      "signing_mode": "unsigned-local"
+    },
+    {
+      "artifact_outputs": [
+        ".bin",
+        ".map",
+        ".provenance.json",
+        ".bbf",
+        ".bbf.status.json",
+        ".dfu",
+        ".dfu.status.json",
+        ".manifest.json"
+      ],
+      "board": "BUDDY",
+      "bootloader_mode": "noboot",
+      "evidence_class": "local-smoke",
+      "id": "mini_noboot",
+      "mcu": "STM32F407VG",
+      "payload": "tools/bazel/fixtures/firmware_payloads/mini_noboot_payload.txt",
+      "printer": "MINI",
+      "product": "MINI",
+      "signing_mode": "unsigned-local"
+    },
+    {
+      "artifact_outputs": [
+        ".bin",
+        ".map",
+        ".provenance.json",
+        ".bbf",
+        ".bbf.status.json",
+        ".dfu",
+        ".dfu.status.json",
+        ".manifest.json"
+      ],
+      "board": "XBUDDY",
+      "bootloader_mode": "boot",
+      "evidence_class": "local-smoke",
+      "id": "mk4_boot",
+      "mcu": "STM32F427ZI",
+      "payload": "tools/bazel/fixtures/firmware_payloads/mk4_boot_payload.txt",
+      "printer": "MK4",
+      "product": "MK4",
+      "signing_mode": "unsigned-local"
+    },
+    {
+      "artifact_outputs": [
+        ".resource.img",
+        ".resource.pkg",
+        ".manifest.json"
+      ],
+      "board": "BUDDY",
+      "bootloader_mode": "boot",
+      "evidence_class": "local-smoke",
+      "id": "mini_resource_package",
+      "mcu": "STM32F407VG",
+      "payload": "tools/bazel/fixtures/firmware_payloads/mini_boot_payload.txt",
+      "printer": "MINI",
+      "product": "MINI",
+      "resource_seed": "tools/bazel/fixtures/resources/mini_resource_seed.txt",
+      "signing_mode": "unsigned-local",
+      "type": "resource-package"
+    },
+    {
+      "artifact_outputs": [
+        ".manifest.json"
+      ],
+      "board": "XBUDDY_EXTENSION",
+      "bootloader_mode": "auxiliary",
+      "evidence_class": "reference-only",
+      "id": "xbuddy_extension_auxiliary_manifest",
+      "manifest": "tools/bazel/fixtures/auxiliary/auxiliary_firmware_manifest.json",
+      "mcu": "STM32H503CBU7",
+      "printer": "XL",
+      "product": "XL",
+      "signing_mode": "not-applicable",
+      "scope": "auxiliary-manifest-only"
+    }
+  ],
+  "schema_version": 1
+}

@@ -1,0 +1,2 @@
+BUDDY_PHASE3_PACKAGE_SURFACE_FIXTURE
+resource=mini deterministic local smoke resource package seed

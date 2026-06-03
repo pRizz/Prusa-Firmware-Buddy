@@ -1,0 +1,47 @@
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "reference_matrix_sources",
+    srcs = [
+        "CMakeLists.txt",
+        "CMakePresets.json",
+        "ProjectOptions.cmake",
+        "utils/build.py",
+        "utils/presets/presets.json",
+    ],
+)
+
+filegroup(
+    name = "phase1_reference_baseline",
+    srcs = glob([".planning/phases/01-reference-baseline-and-safety-envelope/01-*.md"]),
+)
+
+alias(
+    name = "phase2_verify",
+    actual = "//tools/bazel:phase2_verify",
+)
+
+alias(
+    name = "phase3_verify",
+    actual = "//tools/bazel:phase3_verify",
+)
+
+alias(
+    name = "generated_check",
+    actual = "//tools/bazel:generated_check",
+)
+
+alias(
+    name = "generated_update",
+    actual = "//tools/bazel:generated_update",
+)
+
+alias(
+    name = "release_package",
+    actual = "//tools/bazel:release_package",
+)
+
+alias(
+    name = "representative_release_artifacts",
+    actual = "//tools/bazel:representative_release_artifacts",
+)

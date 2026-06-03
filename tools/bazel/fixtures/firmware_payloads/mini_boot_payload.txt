@@ -1,0 +1,4 @@
+BUDDY_PHASE3_PACKAGE_SURFACE_FIXTURE
+product=MINI
+bootloader_mode=boot
+payload=deterministic local smoke firmware bytes
