@@ -9,6 +9,13 @@ const TIMER_EVIDENCE: &[EvidenceClass] = &[
     EvidenceClass::ManualHardwareRequired,
 ];
 
+/// Error returned when timer task memory cannot represent a valid contract.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TimerTaskMemoryError {
+    /// FreeRTOS timer task stack depth must not be zero when timers are enabled.
+    ZeroStackWords,
+}
+
 /// Timer service static-memory contract.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TimerTaskMemory {
@@ -33,8 +40,15 @@ pub enum TimerTaskMemory {
 
 impl TimerTaskMemory {
     /// Creates an enabled timer-service memory contract.
-    pub fn enabled(stack_depth_symbol: &'static str, stack_words: usize) -> Self {
-        Self::Enabled {
+    pub fn enabled(
+        stack_depth_symbol: &'static str,
+        stack_words: usize,
+    ) -> Result<Self, TimerTaskMemoryError> {
+        if stack_words == 0 {
+            return Err(TimerTaskMemoryError::ZeroStackWords);
+        }
+
+        Ok(Self::Enabled {
             stack_depth_symbol,
             stack_words,
             control_block_section: ".ccmram",
@@ -43,7 +57,7 @@ impl TimerTaskMemory {
             audit_surface_id: "freertos-timer-contracts",
             source_evidence_paths: TIMER_SOURCE_EVIDENCE,
             evidence_classes: TIMER_EVIDENCE,
-        }
+        })
     }
 
     /// Creates a disabled timer-service contract.
@@ -132,7 +146,8 @@ mod tests {
     #[test]
     fn timer_task_memory_distinguishes_enabled_from_disabled() {
         // Arrange
-        let enabled = TimerTaskMemory::enabled("configTIMER_TASK_STACK_DEPTH", 1_024);
+        let enabled = TimerTaskMemory::enabled("configTIMER_TASK_STACK_DEPTH", 1_024)
+            .expect("nonzero timer task stack creates enabled memory");
         let disabled = TimerTaskMemory::disabled();
 
         // Act, Assert
@@ -140,5 +155,14 @@ mod tests {
         assert!(!disabled.is_enabled());
         assert_eq!(enabled.maybe_stack_words(), Some(1_024));
         assert_eq!(disabled.maybe_stack_words(), None);
+    }
+
+    #[test]
+    fn timer_task_memory_rejects_zero_stack_words_when_enabled() {
+        // Arrange, Act
+        let result = TimerTaskMemory::enabled("configTIMER_TASK_STACK_DEPTH", 0);
+
+        // Assert
+        assert_eq!(result, Err(TimerTaskMemoryError::ZeroStackWords));
     }
 }
