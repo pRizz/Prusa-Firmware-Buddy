@@ -104,7 +104,7 @@ Plans:
 - [x] 05-01-PLAN.md — Create exhaustive retained-code inventory, unsafe-boundary audit, and Phase 5 verifier schema gates.
 - [x] 05-02-PLAN.md — Add board adapter contracts for MCU, board-clock, memory, DMA, MMIO, interrupt, and FFI boundaries.
 - [x] 05-03-PLAN.md — Add runtime startup, linker, allocator, panic, watchdog, and crash-dump boundary contracts.
-- [ ] 05-04-PLAN.md — Add FreeRTOS task, queue, timer, mutex, semaphore, event-group, and wait-condition contracts.
+- [x] 05-04-PLAN.md — Add FreeRTOS task, queue, timer, mutex, semaphore, event-group, and wait-condition contracts.
 - [ ] 05-05-PLAN.md — Wire Phase 5 Bazel/just labels and harden aggregate verification.
 
 ### Phase 6: Printing Core, Safety, and Feature Gates
