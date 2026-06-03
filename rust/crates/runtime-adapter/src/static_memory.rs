@@ -1,4 +1,5 @@
 use crate::EvidenceClass;
+use buddy_domain::{McuKind, ProductProfile};
 
 const STATIC_TASK_MEMORY_SOURCES: &[&str] = &[
     "src/freertos/system_tasks.cpp",
@@ -15,6 +16,8 @@ const STATIC_TASK_MEMORY_EVIDENCE: &[EvidenceClass] = &[
     EvidenceClass::HardwareSmoke,
     EvidenceClass::ManualHardwareRequired,
 ];
+const F4_G0_CONFIG_MINIMAL_STACK_WORDS: usize = 128;
+const H503_CONFIG_MINIMAL_STACK_WORDS: usize = 32;
 
 /// Error returned when static FreeRTOS task memory cannot represent a valid contract.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -111,18 +114,16 @@ impl StaticTaskMemory {
         self.evidence_classes
     }
 
-    /// Contract for the retained idle task callback storage.
-    pub fn idle_task_callback() -> Self {
-        Self {
-            task_name: "idle_task",
-            stack_words: 1,
-            control_block_section: ".ccmram",
-            stack_section: "default RAM",
-            storage_owner: "src/freertos/system_tasks.cpp owns persistent idle task storage for the scheduler lifetime",
-            source_evidence_paths: STATIC_TASK_MEMORY_SOURCES,
-            audit_surface_id: "static-task-memory-contracts",
-            evidence_classes: STATIC_TASK_MEMORY_EVIDENCE,
-        }
+    /// Contract for retained idle task callback storage in `configMINIMAL_STACK_SIZE` words.
+    pub fn idle_task_callback(profile: &ProductProfile) -> Self {
+        Self::new(
+            "idle_task",
+            config_minimal_stack_words(profile),
+            ".ccmram",
+            "default RAM",
+            "src/freertos/system_tasks.cpp owns persistent idle task storage for the scheduler lifetime",
+        )
+        .expect("retained configMINIMAL_STACK_SIZE constants are nonzero")
     }
 
     /// Returns representative retained static task-memory contracts.
@@ -184,9 +185,33 @@ const KNOWN_STATIC_TASK_MEMORY: &[StaticTaskMemory] = &[
     },
 ];
 
+fn config_minimal_stack_words(profile: &ProductProfile) -> usize {
+    match profile.mcu() {
+        McuKind::Stm32H503CbU7 => H503_CONFIG_MINIMAL_STACK_WORDS,
+        McuKind::Stm32F407Vg
+        | McuKind::Stm32F427Zi
+        | McuKind::Stm32F429Vi
+        | McuKind::Stm32G070RbT6 => F4_G0_CONFIG_MINIMAL_STACK_WORDS,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use buddy_domain::{
+        BoardKind, BootloaderMode, Feature, FeatureSet, McuKind, PrinterKind, ProductProfile,
+    };
+
+    fn profile(
+        printer: PrinterKind,
+        board: BoardKind,
+        mcu: McuKind,
+        bootloader_mode: BootloaderMode,
+        features: FeatureSet,
+    ) -> ProductProfile {
+        ProductProfile::new(printer, board, mcu, bootloader_mode, features)
+            .expect("test profile must match the supported product matrix")
+    }
 
     #[test]
     fn static_task_memory_rejects_zero_stack_words() {
@@ -222,5 +247,50 @@ mod tests {
         assert_eq!(stack_words, 1_200);
         assert_eq!(memory.stack_unit(), "StackType_t words");
         assert!(memory.storage_owner().contains("retained FreeRTOS task"));
+    }
+
+    #[test]
+    fn idle_task_callback_uses_f4_and_g0_minimal_stack_size() {
+        // Arrange
+        let f4_profile = profile(
+            PrinterKind::Mini,
+            BoardKind::Buddy,
+            McuKind::Stm32F407Vg,
+            BootloaderMode::Boot,
+            FeatureSet::empty(),
+        );
+        let g0_profile = profile(
+            PrinterKind::Xl,
+            BoardKind::Dwarf,
+            McuKind::Stm32G070RbT6,
+            BootloaderMode::Auxiliary,
+            FeatureSet::from_features([Feature::Dwarf]),
+        );
+
+        // Act
+        let f4_memory = StaticTaskMemory::idle_task_callback(&f4_profile);
+        let g0_memory = StaticTaskMemory::idle_task_callback(&g0_profile);
+
+        // Assert
+        assert_eq!(f4_memory.stack_words(), F4_G0_CONFIG_MINIMAL_STACK_WORDS);
+        assert_eq!(g0_memory.stack_words(), F4_G0_CONFIG_MINIMAL_STACK_WORDS);
+    }
+
+    #[test]
+    fn idle_task_callback_uses_h503_minimal_stack_size() {
+        // Arrange
+        let profile = profile(
+            PrinterKind::CoreOne,
+            BoardKind::XBuddyExtension,
+            McuKind::Stm32H503CbU7,
+            BootloaderMode::Auxiliary,
+            FeatureSet::from_features([Feature::XBuddyExtension]),
+        );
+
+        // Act
+        let memory = StaticTaskMemory::idle_task_callback(&profile);
+
+        // Assert
+        assert_eq!(memory.stack_words(), H503_CONFIG_MINIMAL_STACK_WORDS);
     }
 }
