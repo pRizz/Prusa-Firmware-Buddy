@@ -24,14 +24,14 @@
 
 - [x] **RUST-01**: Developer can build a Rust workspace/crate layout that separates pure domain crates from board/runtime/application adapters according to Bright Builds functional-core/imperative-shell guidance.
 - [x] **RUST-02**: Developer can represent printer, board, MCU, bootloader, feature, storage schema, artifact, and protocol invariants with Rust newtypes, enums, constructors, and state machines so invalid combinations fail early.
-- [ ] **RUST-03**: Developer can inspect a foreign-code inventory for every retained C, C++, ASM, generated, and vendor component, including retention reason, version/source, ownership boundary, safe Rust facade, and replacement posture.
-- [ ] **RUST-04**: Developer can audit all `unsafe`, FFI, MMIO, DMA, interrupt, linker-symbol, static-memory, allocator, and panic-boundary code through narrow adapter crates with documented invariants and tests.
+- [x] **RUST-03**: Developer can inspect a foreign-code inventory for every retained C, C++, ASM, generated, and vendor component, including retention reason, version/source, ownership boundary, safe Rust facade, and replacement posture.
+- [x] **RUST-04**: Developer can audit all `unsafe`, FFI, MMIO, DMA, interrupt, linker-symbol, static-memory, allocator, and panic-boundary code through narrow adapter crates with documented invariants and tests.
 - [x] **RUST-05**: Developer can run Rust formatting, clippy/lint, unit-test, doc, and build checks through Bazel/just with Bright Builds Rust style expectations enforced where practical.
 
 ### Core Firmware Behavior
 
-- [ ] **CORE-01**: Rust firmware preserves STM32 startup, memory layout, vector/interrupt behavior, board clocks, HAL/CMSIS integration, watchdog behavior, and linker-controlled sections for supported MCU families.
-- [ ] **CORE-02**: Rust firmware preserves FreeRTOS task orchestration, task dependency readiness, static task memory assumptions, synchronization behavior, queues, timers, and startup ordering for master and auxiliary firmware.
+- [x] **CORE-01**: Rust firmware preserves STM32 startup, memory layout, vector/interrupt behavior, board clocks, HAL/CMSIS integration, watchdog behavior, and linker-controlled sections for supported MCU families.
+- [x] **CORE-02**: Rust firmware preserves FreeRTOS task orchestration, task dependency readiness, static task memory assumptions, synchronization behavior, queues, timers, and startup ordering for master and auxiliary firmware.
 - [ ] **CORE-03**: Rust firmware preserves printing core behavior for G-code parsing/routing, motion/planner-visible operations, thermal state transitions, pause/resume/cancel flows, serial printing, file printing, and Buddy-specific G/M-code handlers.
 - [ ] **CORE-04**: Rust firmware preserves safety-critical thermal, motion, selftest, calibration, crash detection, power panic, emergency stop, safe-output, redscreen/BSOD/assert, and recovery behavior.
 - [ ] **CORE-05**: Rust firmware preserves printer-specific feature gates including filament sensors, TMC paths, precise homing, input shaper, phase/burst stepping, loadcell/HX717, beds, chamber, door, MMU2, NFC, LEDs, toolchanger, and xBuddy Extension behavior.
@@ -93,11 +93,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BAZL-05 | Phase 3 | Pending |
 | RUST-01 | Phase 4 | Completed |
 | RUST-02 | Phase 4 | Completed |
-| RUST-03 | Phase 5 | Pending |
-| RUST-04 | Phase 5 | Pending |
+| RUST-03 | Phase 5 | Complete |
+| RUST-04 | Phase 5 | Complete |
 | RUST-05 | Phase 4 | Completed |
-| CORE-01 | Phase 5 | Pending |
-| CORE-02 | Phase 5 | Pending |
+| CORE-01 | Phase 5 | Complete |
+| CORE-02 | Phase 5 | Complete |
 | CORE-03 | Phase 6 | Pending |
 | CORE-04 | Phase 6 | Pending |
 | CORE-05 | Phase 6 | Pending |
