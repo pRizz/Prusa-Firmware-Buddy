@@ -22,6 +22,8 @@ Deliver a Rust+Bazel firmware replacement that preserves existing printer behavi
 - ✓ Provide GUI-driven printer workflows for supported display resolutions, dialogs, menus, setup flows, errors, and print controls — existing code in `src/gui` and `src/guiapi`
 - ✓ Provide local networking, Prusa Connect, PrusaLink/WUI, transfer, TLS, telemetry, registration, and command-channel behavior — existing code in `src/connect`, `src/transfers`, `src/common/http`, and `lib/WUI`
 - ✓ Preserve persistent configuration, feature flags, language/resource generation, bootloader packaging, firmware artifacts, and host/simulator testing workflows — existing code in `src/persistent_stores`, `src/lang`, `src/gui/res`, `utils/`, and `tests/`
+- ✓ Inspect retained foreign-code and unsafe/runtime boundaries through Phase 5 inventory, audit, adapter contracts, Bazel/just labels, and `tools/bazel/phase5_verify.py`
+- ✓ Model STM32 startup/linker/clock/HAL surfaces and FreeRTOS task/synchronization/runtime contracts as typed Rust boundary data, with hardware-only behavior classified as non-local evidence for later parity gates
 
 ### Active
 
@@ -49,7 +51,7 @@ Deliver a Rust+Bazel firmware replacement that preserves existing printer behavi
 
 The existing repository is a large embedded firmware codebase for Original Prusa printers. The current stack is C++23, C, ASM, CMake, Python tooling, STM32 HAL/CMSIS, FreeRTOS, Marlin, LwIP, mbedTLS, FatFs/littlefs, TinyUSB, Catch2, pytest, and a custom bootstrap flow. The codebase map in `.planning/codebase/` is the reference for current architecture, testing practices, integrations, and known concerns.
 
-Phase 1 established the reference baseline package for the rewrite: supported matrix, reference-capture catalog, intentional-delta concern ledger, safety envelope, phase-local verifier, and verification report under `.planning/phases/01-reference-baseline-and-safety-envelope/`. Phase 2 established the root Bazel module, product platform labels, registered firmware toolchain labels, Bazel workflow targets, checked `justfile`, and Phase 2 verifier under `.planning/phases/02-bazel-authority-and-developer-facade/`. Phase 3 should attach deterministic generator and release-artifact actions to that Bazel surface.
+Phase 1 established the reference baseline package for the rewrite: supported matrix, reference-capture catalog, intentional-delta concern ledger, safety envelope, phase-local verifier, and verification report under `.planning/phases/01-reference-baseline-and-safety-envelope/`. Phase 2 established the root Bazel module, product platform labels, registered firmware toolchain labels, Bazel workflow targets, checked `justfile`, and Phase 2 verifier under `.planning/phases/02-bazel-authority-and-developer-facade/`. Phase 3 established artifact and generator parity scaffolding. Phase 4 established the Rust workspace and invariant model. Phase 5 established explicit retained-code, unsafe, board-runtime, and FreeRTOS boundary contracts plus aggregate verification. Phase 6 is next and should focus on printing core, safety, recovery, and feature-gate parity.
 
 The current architecture is a CMake-composed firmware target with board/printer feature gates, a FreeRTOS imperative shell, Marlin as the printing core, and application layers for GUI, Connect, WUI, transfers, persistent stores, puppies/MMU, resources, and packaging. The Rust rewrite should deliberately separate pure firmware/domain decisions from hardware, RTOS, filesystem, networking, UI, and packaging adapters where practical.
 
@@ -79,6 +81,7 @@ Known concerns to prioritize during planning include global build target couplin
 | Make Bazel primary immediately | User explicitly chose Bazel as the authoritative build system from the start. | Phase 2 added the root Bazel module, configs, platforms, toolchain labels, and workflow targets. |
 | Add a `justfile` | Common workflows need stable, discoverable convenience commands on top of Bazel/Rust tooling. | Phase 2 added the root checked `justfile` facade. |
 | Apply Bright Builds Rules | The migration should use explicit standards for architecture, verification, testing, code shape, and Rust style. | — Pending |
+| Retain foreign code only behind explicit boundaries | Phase 5 verified that retained C/C++/ASM/vendor/runtime surfaces need named ownership, invariants, and non-local evidence classification before subsystem parity work depends on them. | Phase 5 added inventory/audit manifests, board/runtime adapter contracts, review-clean fixes, and aggregate verification. |
 
 ## Evolution
 
@@ -101,4 +104,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ______________________________________________________________________
 
-*Last updated: 2026-06-02 after Phase 2 completion*
+*Last updated: 2026-06-03 after Phase 5 completion*
