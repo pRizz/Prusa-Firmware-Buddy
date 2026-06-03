@@ -13,6 +13,7 @@ pub mod panic_boundary;
 pub mod queue;
 pub mod startup;
 pub mod static_memory;
+pub mod synchronization;
 pub mod task;
 pub mod timer;
 
@@ -22,6 +23,10 @@ pub use panic_boundary::{CrashDumpBoundary, PanicBoundary, WatchdogBoundary};
 pub use queue::StaticQueueStorage;
 pub use startup::{EvidenceClass, StartupSurface, StartupVectorTable};
 pub use static_memory::StaticTaskMemory;
+pub use synchronization::{
+    EventGroupContract, MutexContract, SemaphoreContract, SynchronizationEvidence,
+    SynchronizationPrimitive, WaitConditionContract,
+};
 pub use task::{DependencyMask, RuntimeTask, TaskDependency, TaskStartupContract};
 pub use timer::TimerTaskMemory;
 
