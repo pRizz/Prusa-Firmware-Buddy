@@ -6,6 +6,16 @@
 //! This crate exists now so the architecture has an inspectable adapter layer
 //! that cannot accept unchecked printer, board, or MCU primitives.
 
+pub mod clock;
+pub mod dma;
+pub mod mcu;
+pub mod memory_region;
+
+pub use clock::{BoardClockTree, ClockSource, CoreClockHz};
+pub use dma::DmaBufferRegion;
+pub use mcu::{BoardRuntimeSurface, McuFamily};
+pub use memory_region::{MemoryRegion, MemoryRegionKind};
+
 use buddy_domain::{BoardKind, McuKind, ProductProfile};
 
 /// Board adapter boundary derived from a validated product profile.
