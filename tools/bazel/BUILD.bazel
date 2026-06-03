@@ -53,6 +53,45 @@ shell_binary(
     ],
 )
 
+shell_binary(
+    name = "phase4_verify",
+    src = "rust_workflow.sh",
+    data = [
+        "phase4_verify.py",
+        "//:rust_workspace_sources",
+    ],
+)
+
+shell_binary(
+    name = "rust_format_check",
+    src = "rust_workflow.sh",
+    data = ["//:rust_workspace_sources"],
+)
+
+shell_binary(
+    name = "rust_lint",
+    src = "rust_workflow.sh",
+    data = ["//:rust_workspace_sources"],
+)
+
+shell_binary(
+    name = "rust_unit_tests",
+    src = "rust_workflow.sh",
+    data = ["//:rust_workspace_sources"],
+)
+
+shell_binary(
+    name = "rust_docs",
+    src = "rust_workflow.sh",
+    data = ["//:rust_workspace_sources"],
+)
+
+shell_binary(
+    name = "rust_build",
+    src = "rust_workflow.sh",
+    data = ["//:rust_workspace_sources"],
+)
+
 phase3_release_artifacts(
     name = "mini_boot_artifacts",
     board = "BUDDY",
@@ -188,8 +227,8 @@ shell_binary(
 
 shell_binary(
     name = "rust_firmware",
-    src = "reference_contract.sh",
-    data = ["//:reference_matrix_sources"],
+    src = "rust_workflow.sh",
+    data = ["//:rust_workspace_sources"],
 )
 
 shell_binary(

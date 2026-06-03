@@ -16,6 +16,14 @@ filegroup(
     srcs = glob([".planning/phases/01-reference-baseline-and-safety-envelope/01-*.md"]),
 )
 
+filegroup(
+    name = "rust_workspace_sources",
+    srcs = [
+        "Cargo.lock",
+        "Cargo.toml",
+    ] + glob(["rust/**"]),
+)
+
 alias(
     name = "phase2_verify",
     actual = "//tools/bazel:phase2_verify",
@@ -44,4 +52,34 @@ alias(
 alias(
     name = "representative_release_artifacts",
     actual = "//tools/bazel:representative_release_artifacts",
+)
+
+alias(
+    name = "phase4_verify",
+    actual = "//tools/bazel:phase4_verify",
+)
+
+alias(
+    name = "rust_format_check",
+    actual = "//tools/bazel:rust_format_check",
+)
+
+alias(
+    name = "rust_lint",
+    actual = "//tools/bazel:rust_lint",
+)
+
+alias(
+    name = "rust_unit_tests",
+    actual = "//tools/bazel:rust_unit_tests",
+)
+
+alias(
+    name = "rust_docs",
+    actual = "//tools/bazel:rust_docs",
+)
+
+alias(
+    name = "rust_build",
+    actual = "//tools/bazel:rust_build",
 )

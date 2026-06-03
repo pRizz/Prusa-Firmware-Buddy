@@ -1,0 +1,16 @@
+[workspace]
+resolver = "3"
+members = [
+    "rust/crates/application",
+    "rust/crates/board-adapter",
+    "rust/crates/domain",
+    "rust/crates/runtime-adapter",
+]
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.85"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+

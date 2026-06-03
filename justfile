@@ -6,6 +6,9 @@ phase2-verify:
 phase3-verify:
     bazel run //tools/bazel:phase3_verify
 
+phase4-verify:
+    bazel run //tools/bazel:phase4_verify
+
 bazel-query:
     bazel query "//tools/bazel/... + //platforms/..."
 
@@ -23,6 +26,21 @@ format:
 
 lint:
     bazel run //tools/bazel:lint
+
+rust-format:
+    bazel run //tools/bazel:rust_format_check
+
+rust-lint:
+    bazel run //tools/bazel:rust_lint
+
+rust-test:
+    bazel run //tools/bazel:rust_unit_tests
+
+rust-doc:
+    bazel run //tools/bazel:rust_docs
+
+rust-build:
+    bazel run //tools/bazel:rust_build
 
 generated-check:
     bazel run //tools/bazel:generated_check

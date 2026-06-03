@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Reference Baseline and Safety Envelope** - Freeze the behavior oracle, supported matrix, safety envelope, and known-defect ledger before Rust implementation work can drift. (completed 2026-06-02)
 - [x] **Phase 2: Bazel Authority and Developer Facade** - Make Bazel and `just` the normal developer entrypoint for builds, tests, generators, and release workflows from the start. (completed 2026-06-02)
 - [x] **Phase 3: Artifact and Generator Parity** - Move release artifacts and deterministic generators into Bazel with drift and reference comparison gates. (completed 2026-06-03)
-- [ ] **Phase 4: Rust Architecture and Invariant Model** - Establish the Rust workspace, typed product/domain model, Bright Builds checks, and pure-logic test foundation.
+- [x] **Phase 4: Rust Architecture and Invariant Model** - Establish the Rust workspace, typed product/domain model, Bright Builds checks, and pure-logic test foundation. (completed 2026-06-03)
 - [ ] **Phase 5: Foreign Code, Unsafe, and Runtime Boundary** - Inventory retained C/C++/ASM/vendor code and wrap startup, HAL, RTOS, and unsafe boundaries behind safe Rust adapters.
 - [ ] **Phase 6: Printing Core, Safety, and Feature Gates** - Preserve print behavior, safety-critical flows, and printer-specific feature combinations through typed Rust models and parity fixtures.
 - [ ] **Phase 7: Persistence, Storage, and Resource Compatibility** - Preserve config stores, migrations, filesystems, credentials, generated resources, translations, and bundled runtime assets.
@@ -82,7 +82,10 @@ Plans:
 1. Developer can construct printer, board, MCU, bootloader, feature, storage schema, artifact, and protocol values through Rust types that reject invalid combinations early.
 1. Developer can run Rust formatting, lint, unit-test, doc, and build checks through Bazel/just with Bright Builds Rust expectations enforced where practical.
 1. Developer can run focused Arrange/Act/Assert tests for pure state machines, parsers, policies, migrations, and protocol decisions.
-   **Plans**: TBD
+   **Plans**: `.planning/phases/04-rust-architecture-and-invariant-model/04-01-PLAN.md`
+
+Plans:
+- [x] 04-01-PLAN.md — Create Rust workspace, invariant domain model, boundary crates, and Bazel/just Rust verification.
 
 ### Phase 5: Foreign Code, Unsafe, and Runtime Boundary
 
@@ -187,7 +190,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 1. Reference Baseline and Safety Envelope | 1/1 | Complete    | 2026-06-02 |
 | 2. Bazel Authority and Developer Facade | 1/1 | Complete    | 2026-06-02 |
 | 3. Artifact and Generator Parity | 3/3 | Complete    | 2026-06-03 |
-| 4. Rust Architecture and Invariant Model | 0/TBD | Not started | - |
+| 4. Rust Architecture and Invariant Model | 1/1 | Complete    | 2026-06-03 |
 | 5. Foreign Code, Unsafe, and Runtime Boundary | 0/TBD | Not started | - |
 | 6. Printing Core, Safety, and Feature Gates | 0/TBD | Not started | - |
 | 7. Persistence, Storage, and Resource Compatibility | 0/TBD | Not started | - |

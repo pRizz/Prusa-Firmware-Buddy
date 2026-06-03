@@ -2,6 +2,7 @@
 /build*
 !/BUILD.bazel
 /bazel-*
+/target/
 .cproject
 .project
 .settings
