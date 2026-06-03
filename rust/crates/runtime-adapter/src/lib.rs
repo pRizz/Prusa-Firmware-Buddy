@@ -10,12 +10,20 @@ use buddy_domain::{BootloaderMode, ProductProfile};
 pub mod allocator;
 pub mod linker;
 pub mod panic_boundary;
+pub mod queue;
 pub mod startup;
+pub mod static_memory;
+pub mod task;
+pub mod timer;
 
 pub use allocator::AllocatorBoundary;
 pub use linker::{BootModeLinkerScript, LinkerSection};
 pub use panic_boundary::{CrashDumpBoundary, PanicBoundary, WatchdogBoundary};
+pub use queue::StaticQueueStorage;
 pub use startup::{EvidenceClass, StartupSurface, StartupVectorTable};
+pub use static_memory::StaticTaskMemory;
+pub use task::{DependencyMask, RuntimeTask, TaskDependency, TaskStartupContract};
+pub use timer::TimerTaskMemory;
 
 /// Runtime adapter boundary selected by validated firmware profile data.
 #[derive(Debug, Clone, PartialEq, Eq)]
