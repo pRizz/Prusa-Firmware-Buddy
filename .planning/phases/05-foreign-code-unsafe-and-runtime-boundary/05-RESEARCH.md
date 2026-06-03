@@ -542,20 +542,22 @@ This mirrors the existing `phase4_verify.py` approach: make required files/strin
 
 ## Open Questions
 
-1. **How should Bazel represent STM32H503/xBuddy Extension target triples, FPU flags, and linker scripts?**
-   - What we know: CMake uses Cortex-M33 hard-float `fpv5-sp-d16` flags for STM32H5, and xBuddy Extension chooses `stm32h503_boot.ld` or `stm32h503_noboot.ld` locally. [VERIFIED: CMakeLists.txt; src/puppy/xbuddy_extension/CMakeLists.txt]
-   - What's unclear: The exact Bazel platform/toolchain label shape for H503 remains a Phase 5 residual risk. [VERIFIED: .planning/STATE.md; 05-CONTEXT.md]
-   - Recommendation: Treat H503 as a first-class inventory and verifier target before adding any generic H5 abstraction. [VERIFIED: 05-CONTEXT.md; src/puppy/xbuddy_extension/*]
+All Phase 5 planning questions are RESOLVED for this plan set. The decisions below are narrow planning resolutions, not final cutover evidence.
 
-2. **Should unsafe be enabled at crate level or submodule level in adapter crates?**
-   - What we know: Current workspace and crates forbid unsafe; Phase 5 allows unsafe only in narrow adapters. [VERIFIED: Cargo.toml; rust/crates/*/src/lib.rs; 05-CONTEXT.md]
-   - What's unclear: The exact lint configuration that best preserves local enforcement while allowing required adapter unsafe is implementation-specific. [ASSUMED]
-   - Recommendation: Preserve crate-level forbid in pure crates; prefer adapter modules with explicit allowances and verifier checks for audit rows. [VERIFIED: 05-CONTEXT.md; ASSUMED]
+1. **RESOLVED - STM32H503/xBuddy Extension Bazel strategy**
+   - Resolution: Treat xBuddy Extension STM32H503 as a first-class retained runtime surface in inventory, audit, adapter contracts, and verifier checks before adding any generic STM32H5 abstraction. [VERIFIED: 05-CONTEXT.md; src/puppy/xbuddy_extension/CMakeLists.txt]
+   - Implementation consequence: Phase 5 plans must name `src/puppy/xbuddy_extension/stm32h503.s`, `src/puppy/xbuddy_extension/stm32h503.ld`, `src/puppy/xbuddy_extension/stm32h503_boot.ld`, `src/puppy/xbuddy_extension/stm32h503_noboot.ld`, `src/puppy/xbuddy_extension/cmsis.cpp`, `src/puppy/xbuddy_extension/hal_clock.cpp`, and Cortex-M33 hard-float `fpv5-sp-d16` evidence. [VERIFIED: CMakeLists.txt; src/puppy/xbuddy_extension/CMakeLists.txt; source audit]
+   - Deferred consequence: Exact production Bazel platform/toolchain labels for H503 remain later build-system refinement, but Phase 5 verifier labels must expose H503 inventory and runtime-boundary evidence so the later toolchain work cannot silently collapse H503 into a generic H5 bucket. [VERIFIED: 05-CONTEXT.md]
 
-3. **Which simulator or hardware gates are available during execution?**
-   - What we know: Phase 5 can run local manifest/static/Rust checks, while hardware-only invariants must be evidence-classed. [VERIFIED: 05-CONTEXT.md]
-   - What's unclear: The local environment does not currently expose `arm-none-eabi-gcc` or `pre-commit`, and hardware access was not verified. [VERIFIED: Environment Availability audit]
-   - Recommendation: Plan local checks as required and simulator/hardware gates as explicit non-local evidence items. [VERIFIED: 05-CONTEXT.md]
+2. **RESOLVED - unsafe lint strategy**
+   - Resolution: Preserve `#![forbid(unsafe_code)]` in pure crates (`buddy-domain` and `buddy-application`) and permit unsafe only in adapter crates with `#![deny(unsafe_op_in_unsafe_fn)]`, audited module allow-lists, local `// SAFETY:` comments, and manifest `source_path` rows. [VERIFIED: Cargo.toml; rust/crates/domain/src/lib.rs; rust/crates/application/src/lib.rs; 05-CONTEXT.md]
+   - Implementation consequence: Adapter crates may relax crate-level unsafe linting only as needed for audited modules; the Phase 5 verifier must fail if unsafe operations, unsafe extern declarations, unsafe attributes, or adapter unsafe allowances appear outside the audited board/runtime adapter files. [VERIFIED: Rust 2024 unsafe extern docs; Rust 2024 unsafe attributes docs; 05-CONTEXT.md]
+   - Deferred consequence: No broad generated binding surface or global unsafe allowance is accepted in Phase 5. [VERIFIED: 05-CONTEXT.md]
+
+3. **RESOLVED - simulator and hardware gate availability**
+   - Resolution: Required local Phase 5 gates are manifest/schema checks, static source audits, Rust host tests, Bazel queryability, and `just` facade discovery. Simulator and hardware checks are evidence classes, not local pass/fail claims, until the required simulator/hardware/toolchain access is available. [VERIFIED: 05-CONTEXT.md; Environment Availability audit]
+   - Implementation consequence: `arm-none-eabi-gcc` and hardware access are not required for local plan completion; full embedded firmware startup, board-clock, DMA, interrupt, watchdog, and scheduler timing checks must remain marked `simulator-flow`, `hardware-smoke`, or `manual-hardware-required` where local checks cannot prove them. [VERIFIED: Environment Availability audit; 05-CONTEXT.md]
+   - Deferred consequence: Later verification/cutover phases must replace `manual-hardware-required` evidence with simulator or hardware results before claiming firmware-level parity. [VERIFIED: .planning/REQUIREMENTS.md; .planning/ROADMAP.md]
 
 ## Environment Availability
 

@@ -98,7 +98,14 @@ Plans:
 1. Developer can audit every `unsafe`, FFI, MMIO, DMA, interrupt, linker-symbol, static-memory, allocator, and panic-boundary surface inside narrow adapter crates with documented invariants and tests.
 1. Rust firmware preserves STM32 startup, memory layout, vector/interrupt behavior, board clocks, HAL/CMSIS integration, watchdog behavior, and linker-controlled sections for supported MCU families.
 1. Rust firmware preserves FreeRTOS task orchestration, task dependency readiness, static task memory assumptions, synchronization behavior, queues, timers, and startup ordering for master and auxiliary firmware.
-   **Plans**: TBD
+   **Plans**: 5 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Create exhaustive retained-code inventory, unsafe-boundary audit, and Phase 5 verifier schema gates.
+- [ ] 05-02-PLAN.md — Add board adapter contracts for MCU, board-clock, memory, DMA, MMIO, interrupt, and FFI boundaries.
+- [ ] 05-03-PLAN.md — Add runtime startup, linker, allocator, panic, watchdog, and crash-dump boundary contracts.
+- [ ] 05-04-PLAN.md — Add FreeRTOS task, queue, timer, mutex, semaphore, event-group, and wait-condition contracts.
+- [ ] 05-05-PLAN.md — Wire Phase 5 Bazel/just labels and harden aggregate verification.
 
 ### Phase 6: Printing Core, Safety, and Feature Gates
 
@@ -191,7 +198,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 2. Bazel Authority and Developer Facade | 1/1 | Complete    | 2026-06-02 |
 | 3. Artifact and Generator Parity | 3/3 | Complete    | 2026-06-03 |
 | 4. Rust Architecture and Invariant Model | 1/1 | Complete    | 2026-06-03 |
-| 5. Foreign Code, Unsafe, and Runtime Boundary | 0/TBD | Not started | - |
+| 5. Foreign Code, Unsafe, and Runtime Boundary | 0/5 | Not started | - |
 | 6. Printing Core, Safety, and Feature Gates | 0/TBD | Not started | - |
 | 7. Persistence, Storage, and Resource Compatibility | 0/TBD | Not started | - |
 | 8. Local Interface and Workflow Parity | 0/TBD | Not started | - |
