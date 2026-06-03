@@ -43,7 +43,17 @@ pub struct RegisterAddress {
 
 impl RegisterAddress {
     /// Creates a typed register address after nonzero and alignment checks.
-    pub fn new(address: usize, width: RegisterWidth) -> Result<Self, RegisterAddressError> {
+    ///
+    /// # Safety
+    ///
+    /// The caller must prove that `address` names a valid peripheral register
+    /// for the selected MCU, that the requested width matches the retained
+    /// register contract, and that touching the register cannot trap or violate
+    /// retained HAL sequencing requirements.
+    pub unsafe fn new_unchecked(
+        address: usize,
+        width: RegisterWidth,
+    ) -> Result<Self, RegisterAddressError> {
         if address == 0 {
             return Err(RegisterAddressError::ZeroAddress);
         }
@@ -104,12 +114,16 @@ impl Register32 {
     ///
     /// Volatile access is not synchronization; callers must still preserve the
     /// retained HAL sequencing contract for the selected board.
-    pub fn read(&self) -> u32 {
+    /// # Safety
+    ///
+    /// The caller must preserve the selected board's retained HAL sequencing
+    /// contract and prove that this register may be read at this point.
+    pub unsafe fn read(&self) -> u32 {
         let pointer = self.address.as_const_ptr::<u32>();
 
-        // SAFETY: mmio-register-contracts - RegisterAddress::new rejects zero
-        // and unaligned addresses, and this facade centralizes volatile MMIO
-        // access for retained HAL/CMSIS-owned peripheral registers.
+        // SAFETY: mmio-register-contracts - callers of RegisterAddress::new_unchecked
+        // and Register32::read must prove the address is a valid retained peripheral
+        // register for this board and that the access is sequenced correctly.
         unsafe { core::ptr::read_volatile(pointer) }
     }
 
@@ -117,12 +131,16 @@ impl Register32 {
     ///
     /// Volatile access is not synchronization; callers must still preserve the
     /// retained HAL sequencing contract for the selected board.
-    pub fn write(&self, value: u32) {
+    /// # Safety
+    ///
+    /// The caller must preserve the selected board's retained HAL sequencing
+    /// contract and prove that this register may be written at this point.
+    pub unsafe fn write(&self, value: u32) {
         let pointer = self.address.as_mut_ptr::<u32>();
 
-        // SAFETY: mmio-register-contracts - RegisterAddress::new rejects zero
-        // and unaligned addresses, and this facade centralizes volatile MMIO
-        // access for retained HAL/CMSIS-owned peripheral registers.
+        // SAFETY: mmio-register-contracts - callers of RegisterAddress::new_unchecked
+        // and Register32::write must prove the address is a valid retained peripheral
+        // register for this board and that the access is sequenced correctly.
         unsafe { core::ptr::write_volatile(pointer, value) };
     }
 }
@@ -137,7 +155,8 @@ mod tests {
         let address = 0;
 
         // Act
-        let result = RegisterAddress::new(address, RegisterWidth::U32);
+        // SAFETY: This test validates constructor rejection before any MMIO access occurs.
+        let result = unsafe { RegisterAddress::new_unchecked(address, RegisterWidth::U32) };
 
         // Assert
         assert!(matches!(result, Err(RegisterAddressError::ZeroAddress)));
@@ -149,7 +168,8 @@ mod tests {
         let address = 0x4000_0001;
 
         // Act
-        let result = RegisterAddress::new(address, RegisterWidth::U32);
+        // SAFETY: This test validates constructor rejection before any MMIO access occurs.
+        let result = unsafe { RegisterAddress::new_unchecked(address, RegisterWidth::U32) };
 
         // Assert
         assert!(matches!(
