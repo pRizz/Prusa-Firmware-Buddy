@@ -9,6 +9,7 @@
       "source_paths": [
         "ProjectOptions.cmake",
         "utils/presets/presets.json",
+        "lib/AddMarlin.cmake",
         ".planning/phases/01-reference-baseline-and-safety-envelope/01-SAFETY-ENVELOPE.md"
       ],
       "gate": "filament-sensor-reference-gates",
@@ -20,13 +21,14 @@
       ],
       "expected_state": "Binary and ADC filament sensor profile facts derive from CMake and preset references before Rust gate constructors accept them.",
       "evidence_class": "manifest-check",
-      "rust_surface": "buddy-domain::feature::FilamentSensorGate"
+      "rust_surface": "rust/crates/domain/src/feature.rs::Phase6FeatureGate::HasFilamentSensorBinary"
     },
     {
       "id": "tmc-motion-driver-gates",
       "requirement": "CORE-05",
       "source_paths": [
         "ProjectOptions.cmake",
+        "utils/presets/presets.json",
         "lib/AddMarlin.cmake",
         "lib/TMCStepper/",
         "lib/AddTMCStepper.cmake",
@@ -37,15 +39,16 @@
         "HAS_TRINAMIC",
         "HAS_TMC_UART"
       ],
-      "expected_state": "Trinamic and UART motion-driver gates remain retained reference contracts and do not replace TMC driver behavior in Phase 6.",
+      "expected_state": "Trinamic and UART motion-driver gates remain retained reference contract handling and do not replace TMC driver behavior in Phase 6.",
       "evidence_class": "static-source-audit",
-      "rust_surface": "buddy-domain::feature::TmcMotionDriverGate"
+      "rust_surface": "rust/crates/domain/src/feature.rs::Phase6FeatureGate::HasTrinamic"
     },
     {
       "id": "precise-homing-gates",
       "requirement": "CORE-05",
       "source_paths": [
         "ProjectOptions.cmake",
+        "utils/presets/presets.json",
         "lib/AddMarlin.cmake"
       ],
       "gate": "precise-homing-reference-gates",
@@ -55,7 +58,7 @@
       ],
       "expected_state": "Cartesian and CoreXY precise-homing source selection must stay distinct in Rust gate facts.",
       "evidence_class": "manifest-check",
-      "rust_surface": "buddy-domain::feature::PreciseHomingGate"
+      "rust_surface": "rust/crates/domain/src/feature.rs::Phase6FeatureGate::HasPreciseHoming"
     },
     {
       "id": "input-shaper-gates",
@@ -71,7 +74,7 @@
       ],
       "expected_state": "Input-shaper calibration gate facts derive from printer/profile references without claiming calibration behavior replacement.",
       "evidence_class": "manifest-check",
-      "rust_surface": "buddy-domain::feature::InputShaperGate"
+      "rust_surface": "rust/crates/domain/src/feature.rs::Phase6FeatureGate::HasInputShaperCalibration"
     },
     {
       "id": "phase-burst-stepping-gates",
@@ -89,13 +92,15 @@
       ],
       "expected_state": "Phase stepping and burst stepping are master-board/profile facts that stay separate from motion-driver implementation.",
       "evidence_class": "manifest-check",
-      "rust_surface": "buddy-domain::feature::PhaseBurstSteppingGate"
+      "rust_surface": "rust/crates/domain/src/feature.rs::BurstSteppingMode"
     },
     {
       "id": "loadcell-hx717-gates",
       "requirement": "CORE-05",
       "source_paths": [
         "ProjectOptions.cmake",
+        "utils/presets/presets.json",
+        "lib/AddMarlin.cmake",
         "src/common/probe_analysis.cpp",
         "src/common/selftest/"
       ],
@@ -106,13 +111,15 @@
       ],
       "expected_state": "Loadcell and HX717 gates derive from board/profile conditions and stay tied to probe/selftest evidence rows.",
       "evidence_class": "source-audit",
-      "rust_surface": "buddy-domain::feature::LoadcellHx717Gate"
+      "rust_surface": "rust/crates/domain/src/feature.rs::Phase6FeatureGate::HasLoadcellHx717"
     },
     {
       "id": "bed-chamber-door-gates",
       "requirement": "CORE-05",
       "source_paths": [
         "ProjectOptions.cmake",
+        "utils/presets/presets.json",
+        "lib/AddMarlin.cmake",
         "src/common/safe_state.cpp",
         "src/common/feature/emergency_stop/"
       ],
@@ -126,26 +133,29 @@
       ],
       "expected_state": "Bed, chamber, and door facts preserve master-board and printer distinctions needed by printing and safety gates.",
       "evidence_class": "source-audit",
-      "rust_surface": "buddy-domain::feature::BedChamberDoorGate"
+      "rust_surface": "rust/crates/domain/src/feature.rs::Phase6FeatureGate::HasChamberApi"
     },
     {
       "id": "mmu2-gates",
       "requirement": "CORE-05",
       "source_paths": [
         "ProjectOptions.cmake",
+        "utils/presets/presets.json",
         "lib/AddMarlin.cmake",
         "lib/AddMMU2.cmake",
         "src/mmu2/mmu2_reporting.cpp",
-        "lib/Prusa-Firmware-MMU/"
+        "lib/Prusa-Firmware-MMU/",
+        "tools/bazel/manifests/phase6_concern_dispositions.json"
       ],
       "gate": "mmu2-reference-gates",
       "profile_keys": [
         "HAS_MMU2",
         "HAS_MMU2_OVER_UART"
       ],
-      "expected_state": "Phase 6 records MMU gate facts only; MMU runtime availability, reporting, and protocol behavior remain Phase 10 work.",
+      "expected_state": "Phase 6 records MMU gate facts only and links CL-002; MMU runtime availability, reporting, and protocol behavior remain Phase 10 work.",
       "evidence_class": "source-audit",
-      "rust_surface": "buddy-domain::feature::Mmu2Gate"
+      "concern_disposition": "CL-002",
+      "rust_surface": "rust/crates/domain/src/feature.rs::Phase6FeatureGate::HasMmu2"
     },
     {
       "id": "nfc-leds-gates",
@@ -153,6 +163,7 @@
       "source_paths": [
         "ProjectOptions.cmake",
         "utils/presets/presets.json",
+        "lib/AddMarlin.cmake",
         ".planning/phases/01-reference-baseline-and-safety-envelope/01-SAFETY-ENVELOPE.md"
       ],
       "gate": "nfc-led-reference-gates",
@@ -163,13 +174,14 @@
       ],
       "expected_state": "NFC and LED gate facts are profile metadata only for Phase 6 printing/safety decisions.",
       "evidence_class": "manifest-check",
-      "rust_surface": "buddy-domain::feature::NfcLedGate"
+      "rust_surface": "rust/crates/domain/src/feature.rs::Phase6FeatureGate::HasNfc"
     },
     {
       "id": "toolchanger-xbuddy-extension-gates",
       "requirement": "CORE-05",
       "source_paths": [
         "ProjectOptions.cmake",
+        "utils/presets/presets.json",
         "lib/AddMarlin.cmake",
         "src/puppies/",
         "include/puppies/",
@@ -182,7 +194,7 @@
       ],
       "expected_state": "Toolchanger and xBuddy Extension facts are retained reference gates; auxiliary controller behavior remains Phase 10.",
       "evidence_class": "static-source-audit",
-      "rust_surface": "buddy-domain::feature::ToolchangerXBuddyExtensionGate"
+      "rust_surface": "rust/crates/domain/src/feature.rs::Phase6FeatureGate::HasXBuddyExtension"
     }
   ]
 }
