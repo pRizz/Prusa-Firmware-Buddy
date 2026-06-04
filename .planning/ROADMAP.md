@@ -121,7 +121,7 @@ Plans:
    **Plans**: 5 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — Create Phase 6 verifier, manifests, concern dispositions, and Bazel/just validation entrypoints.
+- [x] 06-01-PLAN.md — Create Phase 6 verifier, manifests, concern dispositions, and Bazel/just validation entrypoints.
 - [ ] 06-02-PLAN.md — Add typed Rust printing-core state and command-routing contracts.
 - [ ] 06-03-PLAN.md — Add typed Rust safety, recovery, and fatal-boundary policy contracts.
 - [ ] 06-04-PLAN.md — Add ProductProfile-keyed Phase 6 feature-gate contracts.
