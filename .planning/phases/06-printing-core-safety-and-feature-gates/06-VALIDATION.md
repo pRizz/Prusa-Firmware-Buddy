@@ -36,12 +36,19 @@ created: 2026-06-04
 
 ## Per-Task Verification Map
 
-| Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
-|---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 06-01-01 | 01 | 1 | CORE-03 | T-06-01 | Manifest rows cannot accept missing or stale reference paths for print behavior. | static verifier | `python3 tools/bazel/phase6_verify.py --quick` | no, W0 | pending |
-| 06-01-02 | 01 | 1 | CORE-04 | T-06-02 | Safety rows must carry explicit local or non-local evidence classes and cannot overclaim hardware proof. | static verifier | `python3 tools/bazel/phase6_verify.py --quick` | no, W0 | pending |
-| 06-01-03 | 01 | 1 | CORE-05 | T-06-03 | Feature gates are keyed by validated product profiles and reject unsupported combinations. | Rust unit | `cargo test --all-features` | no, W0 | pending |
-| 06-01-04 | 01 | 1 | CORE-03, CORE-04, CORE-05 | T-06-04 | Aggregate Phase 6 verification is reachable through Bazel and just. | integration/static | `just phase6-verify` | no, W0 | pending |
+| Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | Precondition | Status |
+|---------|------|------|-------------|------------|-----------------|-----------|-------------------|--------------|--------|
+| 06-01-01 | 01 | 0 | CORE-03, CORE-04, CORE-05 | T-06-01-01 to T-06-01-04 | Verifier schema gates reject missing lifecycle, requirement, source-path, evidence-class, concern, and overclaim data. | static verifier bootstrap | `python3 -m py_compile tools/bazel/phase6_verify.py && python3 tools/bazel/phase6_verify.py --help` | none | pending |
+| 06-01-02 | 01 | 0 | CORE-03, CORE-04, CORE-05 | T-06-01-01 to T-06-01-05 | Printing, safety, feature, and concern manifests carry required rows before Rust policies depend on them. | manifest verifier | `python3 tools/bazel/phase6_verify.py --manifests-only` | 06-01-01 creates verifier | pending |
+| 06-01-03 | 01 | 0 | CORE-03, CORE-04, CORE-05 | T-06-01-06 | Aggregate Phase 6 verification is reachable through direct Python, Bazel, and `just`. | integration/static | `python3 tools/bazel/phase6_verify.py --quick && bazel query "//tools/bazel:phase6_verify + //:phase6_verify" && just --list` | 06-01-01 and 06-01-02 complete | pending |
+| 06-02-01 | 02 | 1 | CORE-03 | T-06-02-01 to T-06-02-05 | Print state, fixture identity, routing, and file/serial separation reject impossible transitions without rewriting Marlin. | Rust unit | `cargo test --all-features -p buddy-domain print` | 06-01 complete for shared verifier and manifest context | pending |
+| 06-02-02 | 02 | 1 | CORE-03 | T-06-02-04 | CORE-03 manifest rows bind Rust print surfaces to retained Marlin/Buddy oracle paths. | manifest verifier + Rust unit | `python3 tools/bazel/phase6_verify.py --printing-only && cargo test --all-features -p buddy-domain print` | Wave 0 verifier and manifests exist | pending |
+| 06-04-01 | 04 | 1 | CORE-05 | T-06-04-01 to T-06-04-05 | ProductProfile-keyed feature facts reject unsupported combinations and keep auxiliary runtime parity out of scope. | Rust unit | `cargo test --all-features -p buddy-domain feature` | 06-01 complete for shared verifier and manifest context | pending |
+| 06-04-02 | 04 | 1 | CORE-05 | T-06-04-02 to T-06-04-04 | CORE-05 manifest rows bind Rust gate surfaces to CMake, preset, Marlin, TMC, and MMU concern references. | manifest verifier + Rust unit | `python3 tools/bazel/phase6_verify.py --features-only && cargo test --all-features -p buddy-domain feature` | Wave 0 verifier and manifests exist | pending |
+| 06-03-01 | 03 | 2 | CORE-04 | T-06-03-01 to T-06-03-05 | Safety flows classify local policy decisions separately from simulator, hardware-smoke, and manual evidence. | Rust unit | `cargo test --all-features -p buddy-domain safety` | 06-01 and 06-02 complete for shared domain exports | pending |
+| 06-03-02 | 03 | 2 | CORE-04 | T-06-03-01 to T-06-03-04 | CORE-04 manifest rows bind Rust safety surfaces to retained fatal, watchdog, crash-dump, emergency, and probe paths. | manifest verifier + Rust unit | `python3 tools/bazel/phase6_verify.py --safety-only && cargo test --all-features -p buddy-domain safety` | Wave 0 verifier and manifests exist; 06-03-01 creates safety API | pending |
+| 06-05-01 | 05 | 3 | CORE-03, CORE-04, CORE-05 | T-06-05-01 to T-06-05-04 | Hardened quick verification enforces Rust API shape, unsafe posture, facade wiring, validation contract, and overclaim guard. | static verifier + aggregate quick gate | `python3 -m py_compile tools/bazel/phase6_verify.py && python3 tools/bazel/phase6_verify.py --quick` | 06-02, 06-03, and 06-04 complete | pending |
+| 06-05-02 | 05 | 3 | CORE-03, CORE-04, CORE-05 | T-06-05-05 | Nyquist sign-off records actual command outcomes and only sets compliance after this all-11-task map is complete. | validation sign-off + aggregate gate | `python3 tools/bazel/phase6_verify.py --quick && just phase6-verify` | 06-05-01 complete; map contains task IDs 06-01-01 through 06-05-02 | pending |
 
 *Status: pending, green, red, flaky*
 
@@ -54,9 +61,6 @@ created: 2026-06-04
 - [ ] `tools/bazel/manifests/phase6_safety_gates.json` - covers CORE-04 safety policy/evidence rows.
 - [ ] `tools/bazel/manifests/phase6_feature_gates.json` - covers CORE-05 feature-gate rows derived from reference sources.
 - [ ] `tools/bazel/manifests/phase6_concern_dispositions.json` - covers known concern dispositions and intentional deltas.
-- [ ] `rust/crates/domain/src/print.rs` - pure print transition and command route policies with tests.
-- [ ] `rust/crates/domain/src/safety.rs` - pure safety policy classification and evidence types with tests.
-- [ ] `rust/crates/domain/src/feature.rs` - Phase 6 feature gates keyed by validated product profiles.
 - [ ] `tools/bazel/BUILD.bazel`, `tools/bazel/rust_workflow.sh`, root `BUILD.bazel`, and `justfile` expose Phase 6 verification labels and recipes.
 
 ---

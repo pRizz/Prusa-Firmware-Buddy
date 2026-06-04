@@ -355,17 +355,19 @@ All claims in this research were verified against local project files, current t
 |---|-------|---------|---------------|
 | - | None | - | - |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **How granular should print fixtures be?** [VERIFIED: D-01 leaves layout to agent discretion]
    - What we know: CORE-03 needs G-code routing, serial/file printing, pause/resume/cancel, planner-visible state, and Buddy G/M handlers covered. [VERIFIED: .planning/REQUIREMENTS.md]
    - What's unclear: The exact row granularity is not locked. [VERIFIED: 06-CONTEXT.md]
    - Recommendation: Start with one manifest row per behavior family, then split rows only when source paths, evidence class, or Rust API surface differs. [RECOMMENDED: phase5 verifier pattern]
+   - RESOLVED: Use one manifest row per behavior family unless source path, evidence class, or Rust API surface differs.
 
 2. **Which simulator/hardware checks will Phase 6 run locally?** [VERIFIED: environment probe]
    - What we know: `pytest` is missing in the current shell, and D-05 allows simulator/hardware/manual evidence to remain non-local. [VERIFIED: environment probe + 06-CONTEXT.md]
    - What's unclear: Whether the planner should include an optional bootstrap step for simulator safety tests. [VERIFIED: .planning/codebase/TESTING.md]
    - Recommendation: Make local Phase 6 verification Rust/Bazel/Python-only and list simulator/hardware evidence as required non-local rows unless a later plan explicitly provisions dependencies. [RECOMMENDED: D-05/D-13]
+   - RESOLVED: Local Phase 6 verification stays Rust/Bazel/Python-only; simulator/hardware evidence remains non-local unless a future plan provisions it.
 
 ## Environment Availability
 
