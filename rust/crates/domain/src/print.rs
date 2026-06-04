@@ -1,3 +1,269 @@
+use core::fmt;
+
+/// Source family for an active print.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum PrintSource {
+    /// File-backed print that uses preview, media prefetch, and recovery data.
+    File,
+    /// Serial-host print that uses host action hooks and no file preview.
+    Serial,
+}
+
+/// Valid Phase 6 fixture identity for a retained print behavior contract.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct FixtureId(String);
+
+impl FixtureId {
+    /// Parses a fixture identity before policy code consumes it.
+    pub fn new(raw: impl AsRef<str>) -> Result<Self, PrintTransitionError> {
+        let value = raw.as_ref().trim();
+        if value.is_empty() || value.contains('/') || value.contains('\\') {
+            return Err(PrintTransitionError::InvalidFixtureId);
+        }
+
+        Ok(Self(value.to_owned()))
+    }
+
+    /// Returns the validated fixture identity.
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+/// Typed Rust print state surface for retained Marlin/Buddy behavior contracts.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PrintJobState {
+    /// No active print.
+    Idle,
+    /// File print is waiting for preview confirmation.
+    Previewing(PrintSource),
+    /// Planner-visible print is active.
+    Printing(PrintSource),
+    /// Pause was requested and the retained planner is draining or parking.
+    Pausing(PrintSource),
+    /// Print is paused and can resume or cancel.
+    Paused(PrintSource),
+    /// Resume was requested and the retained planner is buffering or reheating.
+    Resuming(PrintSource),
+    /// Cancel was requested and retained cleanup is in progress.
+    Cancelling(PrintSource),
+    /// Retained print finished successfully.
+    Finished,
+    /// Power panic recovery is waiting for an explicit resume.
+    PowerPanicAwaitingResume(PrintSource),
+    /// File print hit a recoverable media error and needs retry/recovery.
+    MediaErrorAwaitingRecovery,
+}
+
+/// Commands that drive pure print-state policy transitions.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PrintCommand {
+    /// Start a file-backed print from a retained fixture.
+    StartFile(FixtureId),
+    /// Confirm preview and enter actual printing.
+    ConfirmPreview,
+    /// Start a serial-host print.
+    StartSerial,
+    /// Request pause.
+    Pause,
+    /// Retained pause sequence reached parked/paused state.
+    PauseComplete,
+    /// Request resume.
+    Resume,
+    /// Retained planner is ready after resume buffering/reheating.
+    PlannerReady,
+    /// Request cancellation.
+    Cancel,
+    /// Retained cancellation cleanup completed.
+    CancelComplete,
+    /// Retained print reached end-of-file or equivalent completion.
+    Finish,
+    /// Enter power panic recovery.
+    EnterPowerPanic,
+    /// Resume from power panic.
+    RecoverPowerPanic,
+    /// Enter recoverable media-error recovery.
+    EnterMediaError,
+    /// Retry media recovery.
+    RecoverMediaError,
+}
+
+/// Planner-visible print flow class for retained source contracts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum PlannerFlowState {
+    /// No retained planner print flow is active.
+    NoActivePrint,
+    /// File print is waiting for preview/GUI confirmation.
+    WaitingForPreview,
+    /// Planner-visible print work is active.
+    PlannerActive,
+    /// Planner-visible print is paused.
+    PlannerPaused,
+    /// Planner-visible cancellation cleanup is active.
+    PlannerCancelling,
+    /// Power-panic or media recovery is required before planner flow continues.
+    RecoveryRequired,
+}
+
+impl From<&PrintJobState> for PlannerFlowState {
+    fn from(state: &PrintJobState) -> Self {
+        match state {
+            PrintJobState::Idle | PrintJobState::Finished => Self::NoActivePrint,
+            PrintJobState::Previewing(_) => Self::WaitingForPreview,
+            PrintJobState::Printing(_) | PrintJobState::Pausing(_) | PrintJobState::Resuming(_) => {
+                Self::PlannerActive
+            }
+            PrintJobState::Paused(_) => Self::PlannerPaused,
+            PrintJobState::Cancelling(_) => Self::PlannerCancelling,
+            PrintJobState::PowerPanicAwaitingResume(_)
+            | PrintJobState::MediaErrorAwaitingRecovery => Self::RecoveryRequired,
+        }
+    }
+}
+
+/// Command-route class for a parsed G-code mnemonic.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum CommandRoute {
+    /// Buddy-specific handler selected by retained Prusa G-code dispatch.
+    BuddyGcodeHandler,
+    /// Retained Marlin queue handles the command.
+    MarlinQueue,
+    /// Command is outside the current Phase 6 local routing contract.
+    Unknown,
+}
+
+/// Uppercase G-code mnemonic parsed at the Rust policy boundary.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct GcodeMnemonic(String);
+
+impl GcodeMnemonic {
+    /// Parses a raw command mnemonic and normalizes it to uppercase ASCII.
+    pub fn new(raw: impl AsRef<str>) -> Result<Self, PrintTransitionError> {
+        let value = raw.as_ref().trim();
+        if value.is_empty() {
+            return Err(PrintTransitionError::InvalidGcodeMnemonic);
+        }
+
+        Ok(Self(value.to_ascii_uppercase()))
+    }
+
+    /// Returns the normalized mnemonic.
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+/// Error returned when a print policy input or transition is unsupported.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PrintTransitionError {
+    /// Fixture identity was empty, whitespace-only, or path-like.
+    InvalidFixtureId,
+    /// G-code mnemonic was empty after trimming.
+    InvalidGcodeMnemonic,
+    /// The command is impossible from the current typed state.
+    UnsupportedTransition {
+        /// State before the rejected transition.
+        state: PrintJobState,
+        /// Command that was rejected.
+        command: PrintCommand,
+    },
+}
+
+impl fmt::Display for PrintTransitionError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidFixtureId => {
+                formatter.write_str("fixture id must be non-empty and not path-like")
+            }
+            Self::InvalidGcodeMnemonic => formatter.write_str("g-code mnemonic must not be empty"),
+            Self::UnsupportedTransition { state, command } => {
+                write!(
+                    formatter,
+                    "unsupported print transition: {state:?} + {command:?}"
+                )
+            }
+        }
+    }
+}
+
+impl std::error::Error for PrintTransitionError {}
+
+/// Applies a pure print-state transition without calling retained C/C++ code.
+pub fn transition_print_state(
+    state: PrintJobState,
+    command: PrintCommand,
+) -> Result<PrintJobState, PrintTransitionError> {
+    match (state, command) {
+        (PrintJobState::Idle, PrintCommand::StartFile(_)) => {
+            Ok(PrintJobState::Previewing(PrintSource::File))
+        }
+        (PrintJobState::Idle, PrintCommand::StartSerial) => {
+            Ok(PrintJobState::Printing(PrintSource::Serial))
+        }
+        (PrintJobState::Previewing(PrintSource::File), PrintCommand::ConfirmPreview) => {
+            Ok(PrintJobState::Printing(PrintSource::File))
+        }
+        (PrintJobState::Printing(source), PrintCommand::Pause) => {
+            Ok(PrintJobState::Pausing(source))
+        }
+        (PrintJobState::Pausing(source), PrintCommand::PauseComplete) => {
+            Ok(PrintJobState::Paused(source))
+        }
+        (PrintJobState::Paused(source), PrintCommand::Resume) => {
+            Ok(PrintJobState::Resuming(source))
+        }
+        (PrintJobState::Resuming(source), PrintCommand::PlannerReady) => {
+            Ok(PrintJobState::Printing(source))
+        }
+        (PrintJobState::Printing(_), PrintCommand::Finish) => Ok(PrintJobState::Finished),
+        (PrintJobState::Printing(source), PrintCommand::EnterPowerPanic) => {
+            Ok(PrintJobState::PowerPanicAwaitingResume(source))
+        }
+        (PrintJobState::PowerPanicAwaitingResume(source), PrintCommand::RecoverPowerPanic) => {
+            Ok(PrintJobState::Resuming(source))
+        }
+        (PrintJobState::Printing(PrintSource::File), PrintCommand::EnterMediaError) => {
+            Ok(PrintJobState::MediaErrorAwaitingRecovery)
+        }
+        (PrintJobState::MediaErrorAwaitingRecovery, PrintCommand::RecoverMediaError) => {
+            Ok(PrintJobState::Resuming(PrintSource::File))
+        }
+        (state, PrintCommand::Cancel) => match cancel_source(&state) {
+            Some(source) => Ok(PrintJobState::Cancelling(source)),
+            None => Err(PrintTransitionError::UnsupportedTransition {
+                state,
+                command: PrintCommand::Cancel,
+            }),
+        },
+        (PrintJobState::Cancelling(_), PrintCommand::CancelComplete) => Ok(PrintJobState::Idle),
+        (state, command) => Err(PrintTransitionError::UnsupportedTransition { state, command }),
+    }
+}
+
+fn cancel_source(state: &PrintJobState) -> Option<PrintSource> {
+    match state {
+        PrintJobState::Previewing(source)
+        | PrintJobState::Printing(source)
+        | PrintJobState::Pausing(source)
+        | PrintJobState::Paused(source)
+        | PrintJobState::Resuming(source)
+        | PrintJobState::PowerPanicAwaitingResume(source) => Some(*source),
+        PrintJobState::MediaErrorAwaitingRecovery => Some(PrintSource::File),
+        PrintJobState::Idle | PrintJobState::Cancelling(_) | PrintJobState::Finished => None,
+    }
+}
+
+/// Classifies a parsed G-code mnemonic against retained routing contracts.
+pub fn route_gcode_mnemonic(mnemonic: &GcodeMnemonic) -> CommandRoute {
+    match mnemonic.as_str() {
+        "M862.1" | "M862.2" | "M862.3" | "M862.4" | "M862.5" | "M862.6" | "M600" | "M0" => {
+            CommandRoute::BuddyGcodeHandler
+        }
+        "G0" | "G1" | "M104" | "M109" | "M140" | "M190" => CommandRoute::MarlinQueue,
+        _ => CommandRoute::Unknown,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
