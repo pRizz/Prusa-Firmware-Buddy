@@ -118,7 +118,14 @@ Plans:
 1. User can observe the same thermal, motion, selftest, calibration, crash detection, power panic, emergency stop, safe-output, redscreen/BSOD/assert, and recovery behavior.
 1. Maintainer can inspect typed feature gates for filament sensors, TMC paths, precise homing, input shaper, phase/burst stepping, loadcell, beds, chamber, door, MMU2, NFC, LEDs, toolchanger, and xBuddy Extension behavior.
 1. Maintainer can see known concern dispositions reflected in fixtures or intentional deltas for the affected printing, probe, safety, and feature-gate paths.
-   **Plans**: TBD
+   **Plans**: 5 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — Create Phase 6 verifier, manifests, concern dispositions, and Bazel/just validation entrypoints.
+- [ ] 06-02-PLAN.md — Add typed Rust printing-core state and command-routing contracts.
+- [ ] 06-03-PLAN.md — Add typed Rust safety, recovery, and fatal-boundary policy contracts.
+- [ ] 06-04-PLAN.md — Add ProductProfile-keyed Phase 6 feature-gate contracts.
+- [ ] 06-05-PLAN.md — Harden aggregate Phase 6 verification and complete Nyquist validation sign-off.
 
 ### Phase 7: Persistence, Storage, and Resource Compatibility
 
@@ -199,7 +206,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 3. Artifact and Generator Parity | 3/3 | Complete    | 2026-06-03 |
 | 4. Rust Architecture and Invariant Model | 1/1 | Complete    | 2026-06-03 |
 | 5. Foreign Code, Unsafe, and Runtime Boundary | 0/5 | Not started | - |
-| 6. Printing Core, Safety, and Feature Gates | 0/TBD | Not started | - |
+| 6. Printing Core, Safety, and Feature Gates | 0/5 | Not started | - |
 | 7. Persistence, Storage, and Resource Compatibility | 0/TBD | Not started | - |
 | 8. Local Interface and Workflow Parity | 0/TBD | Not started | - |
 | 9. Network, Web Services, and Transfers | 0/TBD | Not started | - |
