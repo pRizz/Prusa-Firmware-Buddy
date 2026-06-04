@@ -14,8 +14,8 @@
       "reference_behavior": "Parsed G/M-code routes through the retained Marlin queue and Buddy custom dispatch before any Rust policy may classify a command route.",
       "print_surface": "gcode-routing-and-custom-dispatch",
       "evidence_class": "source-audit",
-      "rust_surface": "buddy-domain::printing::CommandRouteContract",
-      "intentional_delta": "none - preserve current routing contracts until fixture-backed Rust routing policies are added"
+      "rust_surface": "rust/crates/domain/src/print.rs::route_gcode_mnemonic",
+      "intentional_delta": null
     },
     {
       "id": "print-serial-start-pause-resume-cancel",
@@ -30,8 +30,8 @@
       "reference_behavior": "Serial printing enters through serial_command_hook, emits host-action pause/resume/cancel G-code, and finalizes through the Marlin server timeout path.",
       "print_surface": "serial-print-start-pause-resume-cancel",
       "evidence_class": "source-audit",
-      "rust_surface": "buddy-domain::printing::SerialPrintContract",
-      "intentional_delta": "none - serial printing remains a distinct reference contract from file printing"
+      "rust_surface": "rust/crates/domain/src/print.rs::PrintSource::Serial",
+      "intentional_delta": null
     },
     {
       "id": "print-file-start-preview-stream-recovery",
@@ -44,8 +44,8 @@
       "reference_behavior": "File printing preserves preview skipping, media path state, stream restore information, media prefetch, and retry-backed media error recovery.",
       "print_surface": "file-print-preview-stream-recovery",
       "evidence_class": "source-audit",
-      "rust_surface": "buddy-domain::printing::FilePrintContract",
-      "intentional_delta": "none - media recovery behavior remains tied to retained source fixtures"
+      "rust_surface": "rust/crates/domain/src/print.rs::PrintSource::File",
+      "intentional_delta": null
     },
     {
       "id": "print-planner-visible-flow",
@@ -59,8 +59,8 @@
       "reference_behavior": "Planner-visible print flow preserves quick-stop, resume queuing, printed-Z, flow percentage, and position restore boundaries exposed through Marlin server state.",
       "print_surface": "planner-visible-print-flow",
       "evidence_class": "static-source-audit",
-      "rust_surface": "buddy-domain::printing::PlannerVisibleFlowContract",
-      "intentional_delta": "none - retained Marlin planner remains the oracle for motion and planner behavior"
+      "rust_surface": "rust/crates/domain/src/print.rs::PlannerFlowState",
+      "intentional_delta": null
     },
     {
       "id": "print-buddy-gmcode-handlers",
@@ -74,8 +74,8 @@
       "reference_behavior": "Buddy-specific G/M-code handlers remain selected through Marlin source wiring and feature-gated custom command dispatch.",
       "print_surface": "buddy-gmcode-handler-contracts",
       "evidence_class": "source-audit",
-      "rust_surface": "buddy-domain::printing::BuddyGmCodeHandlerContract",
-      "intentional_delta": "none - command handler parity must be fixture-backed before replacement"
+      "rust_surface": "rust/crates/domain/src/print.rs::CommandRoute::BuddyGcodeHandler",
+      "intentional_delta": null
     }
   ]
 }

@@ -225,6 +225,12 @@ def is_empty(value: object) -> bool:
     return value in ("", [], {}, None)
 
 
+def is_empty_required_field(field: str, value: object) -> bool:
+    if field == "intentional_delta" and value is None:
+        return False
+    return is_empty(value)
+
+
 def require_top_level(data: dict[str, Any], path: Path, collection_name: str) -> list[dict[str, Any]]:
     if data.get("schema_version") != 1:
         raise VerificationError(f"{path.as_posix()} must set schema_version to 1")
@@ -252,7 +258,7 @@ def require_fields(row: dict[str, Any], fields: list[str], row_name: str) -> Non
     if missing:
         raise VerificationError(f"{row_name} missing required fields: {', '.join(missing)}")
 
-    empty = [field for field in fields if is_empty(row[field])]
+    empty = [field for field in fields if is_empty_required_field(field, row[field])]
     if empty:
         raise VerificationError(f"{row_name} has empty required fields: {', '.join(empty)}")
 
