@@ -181,12 +181,65 @@ PHASE6_ARTIFACTS = [
     CONCERN_MANIFEST.as_posix(),
 ]
 
+VALIDATION_CONTRACT = Path(
+    ".planning/phases/06-printing-core-safety-and-feature-gates/06-VALIDATION.md"
+)
+
+RUST_DOMAIN_LIB = Path("rust/crates/domain/src/lib.rs")
+PHASE6_DOMAIN_RUST_FILES = [
+    Path("rust/crates/domain/src/print.rs"),
+    Path("rust/crates/domain/src/safety.rs"),
+    Path("rust/crates/domain/src/feature.rs"),
+]
+
+REQUIRED_RUST_API_STRINGS = {
+    Path("rust/crates/domain/src/print.rs"): [
+        "FixtureId",
+        "PrintJobState",
+        "PrintSource",
+        "PrintCommand",
+        "PlannerFlowState",
+        "CommandRoute",
+        "route_gcode_mnemonic",
+        "transition_print_state",
+    ],
+    Path("rust/crates/domain/src/safety.rs"): [
+        "SafetyFlow",
+        "SafetyAction",
+        "EvidenceClass",
+        "FatalPathPolicy",
+        "SafetyPolicySurface",
+        "classify_safety_flow",
+    ],
+    Path("rust/crates/domain/src/feature.rs"): [
+        "Phase6FeatureGate",
+        "Phase6FeatureGates",
+        "BurstSteppingMode",
+        "GateState",
+        "HasLoadcellHx717",
+        "OutOfScopePhase10",
+    ],
+}
+
+UNSAFE_RUST_PATTERNS = [
+    ("unsafe block", "unsafe {"),
+    ("unsafe function", "unsafe fn"),
+    ("unsafe trait", "unsafe trait"),
+    ("unsafe impl", "unsafe impl"),
+    ("unsafe extern", "unsafe extern"),
+    ("unsafe attribute", "#[unsafe("),
+    ("unsafe allowance", "#![allow(unsafe_code)]"),
+    ("unsafe allowance", "#[allow(unsafe_code)]"),
+]
+
 OVERCLAIM_STRINGS = [
     "hardware-safe",
     "hardware passed",
     "hardware verified locally",
     "locally passed hardware",
     "network parity implemented",
+    "auth implemented",
+    "crypto implemented",
     "gui parity implemented",
     "storage parity implemented",
     "auxiliary runtime parity implemented",
@@ -343,6 +396,111 @@ def require_text_coverage(rows: list[dict[str, Any]], required_text: list[str], 
         raise VerificationError(f"missing required {label}: {', '.join(missing)}")
 
 
+def blank_non_code(output: list[str], text: str) -> None:
+    for character in text:
+        output.append("\n" if character == "\n" else " ")
+
+
+def raw_string_end_index(text: str, start: int) -> int | None:
+    if text.startswith("br", start):
+        marker_index = start + 2
+    elif text.startswith("r", start):
+        marker_index = start + 1
+    else:
+        return None
+
+    while marker_index < len(text) and text[marker_index] == "#":
+        marker_index += 1
+
+    if marker_index >= len(text) or text[marker_index] != '"':
+        return None
+
+    hash_count = marker_index - start - (2 if text.startswith("br", start) else 1)
+    delimiter = '"' + ("#" * hash_count)
+    maybe_end = text.find(delimiter, marker_index + 1)
+    if maybe_end == -1:
+        return len(text)
+    return maybe_end + len(delimiter)
+
+
+def quoted_string_end_index(text: str, start: int) -> int:
+    index = start + 1
+    while index < len(text):
+        if text[index] == "\\":
+            index += 2
+            continue
+        if text[index] == '"':
+            return index + 1
+        index += 1
+    return len(text)
+
+
+def rust_code_without_comments_or_strings(text: str) -> str:
+    output: list[str] = []
+    index = 0
+    block_comment_depth = 0
+
+    while index < len(text):
+        if block_comment_depth > 0:
+            if text.startswith("/*", index):
+                blank_non_code(output, "/*")
+                index += 2
+                block_comment_depth += 1
+                continue
+            if text.startswith("*/", index):
+                blank_non_code(output, "*/")
+                index += 2
+                block_comment_depth -= 1
+                continue
+
+            blank_non_code(output, text[index])
+            index += 1
+            continue
+
+        maybe_raw_end = raw_string_end_index(text, index)
+        if maybe_raw_end is not None:
+            blank_non_code(output, text[index:maybe_raw_end])
+            index = maybe_raw_end
+            continue
+
+        if text.startswith("//", index):
+            line_end = text.find("\n", index)
+            if line_end == -1:
+                blank_non_code(output, text[index:])
+                break
+
+            blank_non_code(output, text[index:line_end])
+            index = line_end
+            continue
+
+        if text.startswith("/*", index):
+            blank_non_code(output, "/*")
+            index += 2
+            block_comment_depth = 1
+            continue
+
+        if text[index] == '"':
+            string_end = quoted_string_end_index(text, index)
+            blank_non_code(output, text[index:string_end])
+            index = string_end
+            continue
+
+        output.append(text[index])
+        index += 1
+
+    return "".join(output)
+
+
+def unsafe_findings_for_file(relative_path: Path, text: str) -> list[str]:
+    findings: list[str] = []
+    code = rust_code_without_comments_or_strings(text)
+    for line_number, line in enumerate(code.splitlines(), start=1):
+        for label, pattern in UNSAFE_RUST_PATTERNS:
+            if pattern in line:
+                findings.append(f"{relative_path.as_posix()}:{line_number}: {label}")
+    return findings
+
+
 def validate_manifest(
     path: Path,
     collection_name: str,
@@ -436,6 +594,28 @@ def check_manifests() -> None:
     check_concern_manifest()
 
 
+def check_rust_api_surface() -> None:
+    lib_text = read_text(RUST_DOMAIN_LIB)
+    if "#![forbid(unsafe_code)]" not in lib_text:
+        raise VerificationError(
+            f"{RUST_DOMAIN_LIB.as_posix()} must contain #![forbid(unsafe_code)]"
+        )
+
+    findings: list[str] = []
+    for path in PHASE6_DOMAIN_RUST_FILES:
+        text = read_text(path)
+        required_strings = REQUIRED_RUST_API_STRINGS[path]
+        missing = [needle for needle in required_strings if needle not in text]
+        if missing:
+            findings.append(
+                f"{path.as_posix()} missing required Rust API strings: {', '.join(missing)}"
+            )
+        findings.extend(unsafe_findings_for_file(path, text))
+
+    if findings:
+        raise VerificationError("Phase 6 Rust API surface check failed:\n" + "\n".join(findings))
+
+
 def check_bazel_surface() -> None:
     root_build = read_text("BUILD.bazel")
     tools_build = read_text("tools/bazel/BUILD.bazel")
@@ -469,12 +649,29 @@ def check_just_surface() -> None:
             raise VerificationError(f"justfile missing {needle}")
 
 
-def check_no_overclaim() -> None:
+def check_validation_contract() -> None:
+    validation = read_text(VALIDATION_CONTRACT)
+    required_strings = [
+        "Quick run command",
+        "python3 tools/bazel/phase6_verify.py --quick",
+        "Full suite command",
+        "just phase6-verify",
+    ]
+    missing = [needle for needle in required_strings if needle not in validation]
+    if missing:
+        raise VerificationError(
+            f"{VALIDATION_CONTRACT.as_posix()} missing validation contract text: "
+            + ", ".join(missing)
+        )
+
+
+def check_no_phase6_overclaim() -> None:
+    phase_dir = ROOT / ".planning/phases/06-printing-core-safety-and-feature-gates"
     paths = [
         *PHASE6_ARTIFACTS,
         *[
             path.relative_to(ROOT).as_posix()
-            for path in (ROOT / ".planning/phases/06-printing-core-safety-and-feature-gates").glob("*-SUMMARY.md")
+            for path in phase_dir.glob("06-*-SUMMARY.md")
         ],
     ]
     findings: list[str] = []
@@ -490,7 +687,13 @@ def check_no_overclaim() -> None:
                 findings.append(f"{path}: {phrase}")
 
     if findings:
-        raise VerificationError("Phase 6 artifacts overclaim local evidence:\n" + "\n".join(findings))
+        raise VerificationError(
+            "Phase 6 artifacts overclaim local evidence:\n" + "\n".join(findings)
+        )
+
+
+def check_no_overclaim() -> None:
+    check_no_phase6_overclaim()
 
 
 def run(command: list[str]) -> None:
@@ -518,9 +721,11 @@ def check_rust_toolchain() -> None:
 
 def check_quick() -> None:
     check_manifests()
+    check_rust_api_surface()
     check_bazel_surface()
     check_just_surface()
-    check_no_overclaim()
+    check_validation_contract()
+    check_no_phase6_overclaim()
 
 
 def parse_args() -> argparse.Namespace:
@@ -542,19 +747,19 @@ def main() -> int:
     try:
         if args.printing_only:
             check_printing_manifest()
-            check_no_overclaim()
+            check_no_phase6_overclaim()
         elif args.safety_only:
             check_safety_manifest()
-            check_no_overclaim()
+            check_no_phase6_overclaim()
         elif args.features_only:
             check_feature_manifest()
-            check_no_overclaim()
+            check_no_phase6_overclaim()
         elif args.concerns_only:
             check_concern_manifest()
-            check_no_overclaim()
+            check_no_phase6_overclaim()
         elif args.manifests_only:
             check_manifests()
-            check_no_overclaim()
+            check_no_phase6_overclaim()
         else:
             check_quick()
             if args.all:
