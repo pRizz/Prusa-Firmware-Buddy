@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "phase": "06-printing-core-safety-and-feature-gates",
+  "phase_lifecycle_id": "6-2026-06-04T09-48-48",
+  "concerns": [
+    {
+      "id": "concern-cl-007-probe-analysis",
+      "concern_id": "CL-007",
+      "requirement": "CORE-04",
+      "source_paths": [
+        "src/common/probe_analysis.cpp",
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-CONCERN-LEDGER.md"
+      ],
+      "disposition": "preserve-temporarily",
+      "phase6_handling": "Preserve the current probe variance/classifier coupling as a named safety fixture until an intentional threshold delta is approved.",
+      "evidence_class": "source-audit",
+      "intentional_delta": "none - the classifier defect remains preserved for initial parity"
+    },
+    {
+      "id": "concern-cl-008-home-screen-flash-start",
+      "concern_id": "CL-008",
+      "requirement": "CORE-03",
+      "source_paths": [
+        "src/gui/screen_home.cpp",
+        "src/common/marlin_server.cpp",
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-CONCERN-LEDGER.md"
+      ],
+      "disposition": "fix-during-rewrite",
+      "phase6_handling": "Record the print-start side effect as a known concern only; screen workflow behavior remains Phase 8.",
+      "evidence_class": "source-audit",
+      "intentional_delta": "none in Phase 6 - Phase 8 owns the user-facing error-flow fix"
+    },
+    {
+      "id": "concern-cl-011-crash-dump-handling",
+      "concern_id": "CL-011",
+      "requirement": "CORE-04",
+      "source_paths": [
+        "src/common/crash_dump/dump.cpp",
+        "src/common/crash_dump/crash_dump_distribute.cpp",
+        "rust/crates/runtime-adapter/src/panic_boundary.rs",
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-UNSAFE-BOUNDARY-AUDIT.md"
+      ],
+      "disposition": "fix-during-rewrite",
+      "phase6_handling": "Crash dump handling preserves the Phase 5 panic boundary; dump memory contents, consent, redaction, and transport changes remain separate evidence work.",
+      "evidence_class": "source-audit",
+      "intentional_delta": "none in Phase 6 - do not change crash memory export behavior without a later safety/security gate"
+    },
+    {
+      "id": "concern-cl-014-rng-fallback",
+      "concern_id": "CL-014",
+      "requirement": "CORE-04",
+      "source_paths": [
+        "src/common/random_hw.cpp",
+        "src/connect/tls/hardware_rng.cpp",
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-CONCERN-LEDGER.md"
+      ],
+      "disposition": "fix-during-rewrite",
+      "phase6_handling": "Record the generic RNG fallback and secure entropy split for safety classification; do not implement Phase 9 network or crypto behavior.",
+      "evidence_class": "source-audit",
+      "intentional_delta": "none in Phase 6 - cryptographic callers remain Phase 9 scope"
+    },
+    {
+      "id": "concern-cl-024-stm32g0-irq",
+      "concern_id": "CL-024",
+      "requirement": "CORE-04",
+      "source_paths": [
+        "src/common/Pin.cpp",
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-CONCERN-LEDGER.md",
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-UNSAFE-BOUNDARY-AUDIT.md"
+      ],
+      "disposition": "fix-during-rewrite",
+      "phase6_handling": "Keep the STM32G0 already-enabled IRQ path visible as a safety boundary concern; typed Rust IRQ facts must not silently hide it.",
+      "evidence_class": "source-audit",
+      "intentional_delta": "none in Phase 6 - repeated IRQ configuration needs explicit later evidence"
+    },
+    {
+      "id": "concern-cl-002-mmu-reporting",
+      "concern_id": "CL-002",
+      "requirement": "CORE-05",
+      "source_paths": [
+        "src/mmu2/mmu2_reporting.cpp",
+        "ProjectOptions.cmake",
+        "lib/AddMMU2.cmake",
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-CONCERN-LEDGER.md"
+      ],
+      "disposition": "fix-during-rewrite",
+      "phase6_handling": "Record only MMU gate facts needed by CORE-05; MMU runtime parity remains Phase 10.",
+      "evidence_class": "source-audit",
+      "intentional_delta": "none in Phase 6 - hard-coded availability/reporting remains a later auxiliary concern"
+    },
+    {
+      "id": "concern-tmc-motion-driver-retention",
+      "concern_id": "phase6-tmc-motion-driver-retention",
+      "requirement": "CORE-05",
+      "source_paths": [
+        "lib/TMCStepper/",
+        "lib/AddTMCStepper.cmake",
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-FOREIGN-CODE-INVENTORY.md"
+      ],
+      "disposition": "preserve-temporarily",
+      "phase6_handling": "Retain TMC motion-driver behavior as the reference contract while Phase 6 records typed gate facts.",
+      "evidence_class": "static-source-audit",
+      "intentional_delta": "none - retained driver behavior stays the motion-driver oracle"
+    }
+  ]
+}

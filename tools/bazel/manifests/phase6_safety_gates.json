@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "phase": "06-printing-core-safety-and-feature-gates",
+  "phase_lifecycle_id": "6-2026-06-04T09-48-48",
+  "safety_gates": [
+    {
+      "id": "thermal-safety-transitions",
+      "requirement": "CORE-04",
+      "source_paths": [
+        "lib/Marlin/",
+        "src/common/marlin_server.cpp",
+        "src/common/feature/safety_timer/",
+        "src/common/safe_state.cpp"
+      ],
+      "safety_flow": "thermal-safety-and-cooldown-transitions",
+      "preserved_behavior": "Thermal state transitions stay attached to retained Marlin temperature paths, safety timer policy, and safe-state heater disable references.",
+      "evidence_class": "source-audit",
+      "rust_surface": "buddy-domain::safety::ThermalSafetyContract",
+      "non_local_evidence": "simulator-flow or manual-hardware-required evidence remains required before cutover qualification"
+    },
+    {
+      "id": "motion-safe-output-and-emergency-stop",
+      "requirement": "CORE-04",
+      "source_paths": [
+        "lib/Marlin/",
+        "src/common/marlin_server.cpp",
+        "src/common/safe_state.cpp",
+        "src/common/feature/emergency_stop/",
+        "src/common/Pin.cpp"
+      ],
+      "safety_flow": "motion-safe-output-and-emergency-stop",
+      "preserved_behavior": "Motion stop, motor disable, fan/heater safe outputs, and emergency-stop references stay source-audited against retained firmware paths.",
+      "evidence_class": "source-audit",
+      "rust_surface": "buddy-domain::safety::MotionSafeOutputContract",
+      "non_local_evidence": "hardware-smoke or manual-hardware-required evidence remains non-local for physical outputs and emergency-stop timing"
+    },
+    {
+      "id": "selftest-calibration-crash-recovery",
+      "requirement": "CORE-04",
+      "source_paths": [
+        "src/common/selftest/",
+        "src/common/probe_analysis.cpp",
+        "src/common/power_panic.cpp"
+      ],
+      "safety_flow": "selftest-calibration-and-crash-recovery",
+      "preserved_behavior": "Selftest, calibration, crash recovery, and probe/loadcell references remain named before Rust policy accepts safety state transitions.",
+      "evidence_class": "source-audit",
+      "rust_surface": "buddy-domain::safety::SelftestRecoveryContract",
+      "non_local_evidence": "host-test can cover pure classification later; simulator-flow or manual-hardware-required evidence remains required for firmware effects"
+    },
+    {
+      "id": "power-panic-recovery",
+      "requirement": "CORE-04",
+      "source_paths": [
+        "src/common/power_panic.cpp",
+        "src/common/marlin_server.cpp",
+        "src/common/crash_dump/",
+        "rust/crates/runtime-adapter/src/panic_boundary.rs"
+      ],
+      "safety_flow": "power-panic-stop-save-resume",
+      "preserved_behavior": "Power panic keeps retained quick-stop, task suspension, media position, and resume contracts visible through Phase 5 runtime boundaries.",
+      "evidence_class": "manual-hardware-required",
+      "rust_surface": "buddy-domain::safety::PowerPanicRecoveryContract",
+      "non_local_evidence": "failure-injection and representative printer evidence are required before final replacement acceptance"
+    },
+    {
+      "id": "fatal-redscreen-bsod-assert",
+      "requirement": "CORE-04",
+      "source_paths": [
+        "src/common/safe_state.cpp",
+        "src/common/crash_dump/",
+        "src/common/Pin.cpp",
+        "rust/crates/runtime-adapter/src/panic_boundary.rs"
+      ],
+      "safety_flow": "fatal-redscreen-bsod-assert-boundary",
+      "preserved_behavior": "Fatal, assert, BSOD, and safe-state paths preserve the Phase 5 panic boundary and retained fatal behavior classification.",
+      "evidence_class": "static-source-audit",
+      "rust_surface": "buddy-runtime-adapter::panic_boundary::FatalBoundaryContract",
+      "non_local_evidence": "simulator-flow and manual-hardware-required evidence remain outside this manifest-only proof"
+    },
+    {
+      "id": "watchdog-and-crash-dump-boundary",
+      "requirement": "CORE-04",
+      "source_paths": [
+        "src/common/crash_dump/",
+        "src/common/crash_dump/dump.cpp",
+        "src/common/crash_dump/crash_dump_distribute.cpp",
+        "rust/crates/runtime-adapter/src/panic_boundary.rs"
+      ],
+      "safety_flow": "watchdog-and-crash-dump-boundary",
+      "preserved_behavior": "Watchdog and crash-dump evidence stays classified as retained runtime behavior with raw memory export handled only through the named crash-dump boundary.",
+      "evidence_class": "manual-hardware-required",
+      "rust_surface": "buddy-runtime-adapter::panic_boundary::CrashDumpBoundaryContract",
+      "non_local_evidence": "manual-hardware-required crash and watchdog evidence remains required; local checks only validate manifest traceability"
+    },
+    {
+      "id": "probe-loadcell-classification",
+      "requirement": "CORE-04",
+      "source_paths": [
+        "src/common/probe_analysis.cpp",
+        "src/common/selftest/",
+        "src/common/random_hw.cpp",
+        "ProjectOptions.cmake"
+      ],
+      "safety_flow": "probe-loadcell-classification",
+      "preserved_behavior": "Probe variance classification, loadcell/HX717 gate facts, and known classifier coupling remain preserved unless a later intentional delta updates thresholds with evidence.",
+      "evidence_class": "source-audit",
+      "rust_surface": "buddy-domain::safety::ProbeLoadcellClassificationContract",
+      "non_local_evidence": "host-test can cover pure classifier fixtures later; manual-hardware-required evidence remains required for loadcell/probe effects"
+    }
+  ]
+}
