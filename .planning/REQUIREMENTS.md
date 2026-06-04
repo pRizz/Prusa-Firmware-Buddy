@@ -32,9 +32,9 @@
 
 - [x] **CORE-01**: Rust firmware preserves STM32 startup, memory layout, vector/interrupt behavior, board clocks, HAL/CMSIS integration, watchdog behavior, and linker-controlled sections for supported MCU families.
 - [x] **CORE-02**: Rust firmware preserves FreeRTOS task orchestration, task dependency readiness, static task memory assumptions, synchronization behavior, queues, timers, and startup ordering for master and auxiliary firmware.
-- [ ] **CORE-03**: Rust firmware preserves printing core behavior for G-code parsing/routing, motion/planner-visible operations, thermal state transitions, pause/resume/cancel flows, serial printing, file printing, and Buddy-specific G/M-code handlers.
-- [ ] **CORE-04**: Rust firmware preserves safety-critical thermal, motion, selftest, calibration, crash detection, power panic, emergency stop, safe-output, redscreen/BSOD/assert, and recovery behavior.
-- [ ] **CORE-05**: Rust firmware preserves printer-specific feature gates including filament sensors, TMC paths, precise homing, input shaper, phase/burst stepping, loadcell/HX717, beds, chamber, door, MMU2, NFC, LEDs, toolchanger, and xBuddy Extension behavior.
+- [x] **CORE-03**: Rust firmware preserves printing core behavior for G-code parsing/routing, motion/planner-visible operations, thermal state transitions, pause/resume/cancel flows, serial printing, file printing, and Buddy-specific G/M-code handlers.
+- [x] **CORE-04**: Rust firmware preserves safety-critical thermal, motion, selftest, calibration, crash detection, power panic, emergency stop, safe-output, redscreen/BSOD/assert, and recovery behavior.
+- [x] **CORE-05**: Rust firmware preserves printer-specific feature gates including filament sensors, TMC paths, precise homing, input shaper, phase/burst stepping, loadcell/HX717, beds, chamber, door, MMU2, NFC, LEDs, toolchanger, and xBuddy Extension behavior.
 
 ### Interfaces and Resources
 
@@ -98,9 +98,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RUST-05 | Phase 4 | Completed |
 | CORE-01 | Phase 5 | Complete |
 | CORE-02 | Phase 5 | Complete |
-| CORE-03 | Phase 6 | Pending |
-| CORE-04 | Phase 6 | Pending |
-| CORE-05 | Phase 6 | Pending |
+| CORE-03 | Phase 6 | Complete |
+| CORE-04 | Phase 6 | Complete |
+| CORE-05 | Phase 6 | Complete |
 | IFCE-01 | Phase 8 | Pending |
 | IFCE-02 | Phase 9 | Pending |
 | IFCE-03 | Phase 9 | Pending |

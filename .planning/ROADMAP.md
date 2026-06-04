@@ -17,8 +17,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Bazel Authority and Developer Facade** - Make Bazel and `just` the normal developer entrypoint for builds, tests, generators, and release workflows from the start. (completed 2026-06-02)
 - [x] **Phase 3: Artifact and Generator Parity** - Move release artifacts and deterministic generators into Bazel with drift and reference comparison gates. (completed 2026-06-03)
 - [x] **Phase 4: Rust Architecture and Invariant Model** - Establish the Rust workspace, typed product/domain model, Bright Builds checks, and pure-logic test foundation. (completed 2026-06-03)
-- [ ] **Phase 5: Foreign Code, Unsafe, and Runtime Boundary** - Inventory retained C/C++/ASM/vendor code and wrap startup, HAL, RTOS, and unsafe boundaries behind safe Rust adapters.
-- [ ] **Phase 6: Printing Core, Safety, and Feature Gates** - Preserve print behavior, safety-critical flows, and printer-specific feature combinations through typed Rust models and parity fixtures.
+- [x] **Phase 5: Foreign Code, Unsafe, and Runtime Boundary** - Inventory retained C/C++/ASM/vendor code and wrap startup, HAL, RTOS, and unsafe boundaries behind safe Rust adapters. (completed 2026-06-03)
+- [x] **Phase 6: Printing Core, Safety, and Feature Gates** - Preserve print behavior, safety-critical flows, and printer-specific feature combinations through typed Rust models and parity fixtures. (completed 2026-06-04)
 - [ ] **Phase 7: Persistence, Storage, and Resource Compatibility** - Preserve config stores, migrations, filesystems, credentials, generated resources, translations, and bundled runtime assets.
 - [ ] **Phase 8: Local Interface and Workflow Parity** - Preserve local GUI workflows, display-class behavior, dialogs, warnings, setup flows, and print controls.
 - [ ] **Phase 9: Network, Web Services, and Transfers** - Preserve Connect, PrusaLink/WUI, TLS, telemetry, transfer, and local service behavior.
@@ -205,8 +205,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 2. Bazel Authority and Developer Facade | 1/1 | Complete    | 2026-06-02 |
 | 3. Artifact and Generator Parity | 3/3 | Complete    | 2026-06-03 |
 | 4. Rust Architecture and Invariant Model | 1/1 | Complete    | 2026-06-03 |
-| 5. Foreign Code, Unsafe, and Runtime Boundary | 0/5 | Not started | - |
-| 6. Printing Core, Safety, and Feature Gates | 0/5 | Not started | - |
+| 5. Foreign Code, Unsafe, and Runtime Boundary | 5/5 | Complete    | 2026-06-03 |
+| 6. Printing Core, Safety, and Feature Gates | 5/5 | Complete    | 2026-06-04 |
 | 7. Persistence, Storage, and Resource Compatibility | 0/TBD | Not started | - |
 | 8. Local Interface and Workflow Parity | 0/TBD | Not started | - |
 | 9. Network, Web Services, and Transfers | 0/TBD | Not started | - |
