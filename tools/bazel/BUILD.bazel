@@ -74,6 +74,20 @@ shell_binary(
     ],
 )
 
+shell_binary(
+    name = "phase6_verify",
+    src = "rust_workflow.sh",
+    data = [
+        "phase6_verify.py",
+        "manifests/phase6_printing_core.json",
+        "manifests/phase6_safety_gates.json",
+        "manifests/phase6_feature_gates.json",
+        "manifests/phase6_concern_dispositions.json",
+        "//:phase6_printing_safety_docs",
+        "//:rust_workspace_sources",
+    ],
+)
+
 filegroup(
     name = "unsafe_boundary_audit",
     srcs = ["manifests/unsafe_boundary_audit.json"],

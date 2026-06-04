@@ -32,6 +32,15 @@ filegroup(
     ],
 )
 
+filegroup(
+    name = "phase6_printing_safety_docs",
+    srcs = [
+        ".planning/phases/06-printing-core-safety-and-feature-gates/06-CONTEXT.md",
+        ".planning/phases/06-printing-core-safety-and-feature-gates/06-RESEARCH.md",
+        ".planning/phases/06-printing-core-safety-and-feature-gates/06-VALIDATION.md",
+    ],
+)
+
 alias(
     name = "phase2_verify",
     actual = "//tools/bazel:phase2_verify",
@@ -95,6 +104,11 @@ alias(
 alias(
     name = "phase5_verify",
     actual = "//tools/bazel:phase5_verify",
+)
+
+alias(
+    name = "phase6_verify",
+    actual = "//tools/bazel:phase6_verify",
 )
 
 alias(
