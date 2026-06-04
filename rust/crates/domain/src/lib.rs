@@ -11,6 +11,7 @@ pub mod feature;
 pub mod print;
 pub mod product;
 pub mod protocol;
+pub mod safety;
 pub mod storage;
 
 pub use artifact::{ArtifactFileName, ArtifactKind, ArtifactRequest};
@@ -21,6 +22,10 @@ pub use print::{
 };
 pub use product::{BoardKind, BootloaderMode, McuKind, PrinterKind, ProductProfile};
 pub use protocol::{ConnectEndpoint, Connected, Disconnected, Registered, RegistrationCode};
+pub use safety::{
+    EvidenceClass, FatalPathPolicy, SafetyAction, SafetyFlow, SafetyPolicySurface,
+    classify_safety_flow,
+};
 pub use storage::{MigrationWindow, StorageKey, StorageSchemaVersion};
 
 use core::fmt;
