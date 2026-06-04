@@ -19,9 +19,9 @@
         "HAS_SIDE_FSENSOR",
         "HAS_ADC_SIDE_FSENSOR"
       ],
-      "expected_state": "Binary and ADC filament sensor profile facts derive from CMake and preset references before Rust gate constructors accept them.",
+      "expected_state": "Binary, ADC, side, and ADC side filament sensor profile facts derive from CMake and preset references before Rust gate constructors accept them.",
       "evidence_class": "manifest-check",
-      "rust_surface": "rust/crates/domain/src/feature.rs::Phase6FeatureGate::HasFilamentSensorBinary"
+      "rust_surface": "rust/crates/domain/src/feature.rs::Phase6FeatureGate::HasAdcSideFilamentSensor"
     },
     {
       "id": "tmc-motion-driver-gates",
@@ -129,6 +129,7 @@
         "HAS_MODULAR_BED",
         "HAS_REMOTE_BED",
         "HAS_CHAMBER_API",
+        "HAS_CHAMBER_FILTRATION_API",
         "HAS_DOOR_SENSOR"
       ],
       "expected_state": "Bed, chamber, and door facts preserve master-board and printer distinctions needed by printing and safety gates.",
@@ -152,10 +153,10 @@
         "HAS_MMU2",
         "HAS_MMU2_OVER_UART"
       ],
-      "expected_state": "Phase 6 records MMU gate facts only and links CL-002; MMU runtime availability, reporting, and protocol behavior remain Phase 10 work.",
+      "expected_state": "Phase 6 records MMU and MMU-over-UART gate facts only and links CL-002; MMU runtime availability, reporting, and protocol behavior remain Phase 10 work.",
       "evidence_class": "source-audit",
       "concern_disposition": "CL-002",
-      "rust_surface": "rust/crates/domain/src/feature.rs::Phase6FeatureGate::HasMmu2"
+      "rust_surface": "rust/crates/domain/src/feature.rs::Phase6FeatureGate::HasMmu2OverUart"
     },
     {
       "id": "nfc-leds-gates",

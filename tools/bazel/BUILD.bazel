@@ -88,6 +88,15 @@ shell_binary(
     ],
 )
 
+shell_binary(
+    name = "phase6_verify_tests",
+    src = "rust_workflow.sh",
+    data = [
+        "phase6_verify.py",
+        "phase6_verify_test.py",
+    ],
+)
+
 filegroup(
     name = "unsafe_boundary_audit",
     srcs = ["manifests/unsafe_boundary_audit.json"],

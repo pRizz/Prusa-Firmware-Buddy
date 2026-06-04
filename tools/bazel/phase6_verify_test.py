@@ -55,6 +55,7 @@ REQUIRED_SAFETY_SOURCE_PATHS = [
     "src/common/probe_analysis.cpp",
     "src/common/Pin.cpp",
     "src/common/random_hw.cpp",
+    "src/common/wdt.cpp",
     "rust/crates/runtime-adapter/src/panic_boundary.rs",
 ]
 
@@ -72,12 +73,17 @@ REQUIRED_FEATURE_ROW_IDS = [
 ]
 
 REQUIRED_FEATURE_GATE_STRINGS = [
+    "PRINTERS_WITH_FILAMENT_SENSOR_BINARY",
+    "PRINTERS_WITH_FILAMENT_SENSOR_ADC",
+    "HAS_SIDE_FSENSOR",
     "HAS_TRINAMIC",
+    "HAS_ADC_SIDE_FSENSOR",
     "HAS_TMC_UART",
     "HAS_PRECISE_HOMING",
     "HAS_PRECISE_HOMING_COREXY",
     "HAS_INPUT_SHAPER_CALIBRATION",
     "HAS_PHASE_STEPPING",
+    "HAS_PHASE_STEPPING_CALIBRATION",
     "HAS_BURST_STEPPING",
     "HAS_LOADCELL",
     "HAS_LOADCELL_HX717",
@@ -85,8 +91,10 @@ REQUIRED_FEATURE_GATE_STRINGS = [
     "HAS_MODULAR_BED",
     "HAS_REMOTE_BED",
     "HAS_CHAMBER_API",
+    "HAS_CHAMBER_FILTRATION_API",
     "HAS_DOOR_SENSOR",
     "HAS_MMU2",
+    "HAS_MMU2_OVER_UART",
     "HAS_NFC",
     "HAS_LEDS",
     "HAS_SIDE_LEDS",
@@ -276,24 +284,24 @@ class Phase6VerifierTest(unittest.TestCase):
         ]
         self.write_source_paths(root, source_paths)
 
-        rows = [
-            {
-                "id": row_id,
-                "concern_id": concern_id,
-                "requirement": "CORE-04"
-                if concern_id not in {"CL-002", "phase6-tmc-motion-driver-retention"} else "CORE-05",
-                "source_paths": source_paths,
-                "disposition": "preserve-temporarily",
-                "phase6_handling": "preserve-temporarily source handling",
-                "evidence_class": "source-audit",
-                "intentional_delta": "none",
-            }
-            for row_id, concern_id in zip(
-                REQUIRED_CONCERN_ROW_IDS,
-                REQUIRED_CONCERN_IDS,
-                strict=True,
+        if len(REQUIRED_CONCERN_ROW_IDS) != len(REQUIRED_CONCERN_IDS):
+            raise AssertionError("concern row IDs and concern IDs must stay aligned")
+
+        rows = []
+        for row_id, concern_id in zip(REQUIRED_CONCERN_ROW_IDS, REQUIRED_CONCERN_IDS):
+            rows.append(
+                {
+                    "id": row_id,
+                    "concern_id": concern_id,
+                    "requirement": "CORE-04"
+                    if concern_id not in {"CL-002", "phase6-tmc-motion-driver-retention"} else "CORE-05",
+                    "source_paths": source_paths,
+                    "disposition": "preserve-temporarily",
+                    "phase6_handling": "preserve-temporarily source handling",
+                    "evidence_class": "source-audit",
+                    "intentional_delta": "none",
+                }
             )
-        ]
         manifest = {
             "schema_version": 1,
             "phase": "06-printing-core-safety-and-feature-gates",
@@ -307,14 +315,20 @@ class Phase6VerifierTest(unittest.TestCase):
         )
 
     def write_facade_files(self, root: Path) -> None:
-        self.write_file(root, "BUILD.bazel", "phase6_verify\nphase6_printing_safety_docs\n")
+        self.write_file(
+            root,
+            "BUILD.bazel",
+            "phase6_verify\nphase6_verify_tests\nphase6_printing_safety_docs\n",
+        )
         self.write_file(
             root,
             "tools/bazel/BUILD.bazel",
             "\n".join(
                 [
                     "phase6_verify",
+                    "phase6_verify_tests",
                     "phase6_verify.py",
+                    "phase6_verify_test.py",
                     "phase6_printing_core.json",
                     "phase6_safety_gates.json",
                     "phase6_feature_gates.json",
@@ -326,12 +340,24 @@ class Phase6VerifierTest(unittest.TestCase):
         self.write_file(
             root,
             "tools/bazel/rust_workflow.sh",
-            "case \"$command_name\" in\n  phase6_verify)\n    python3 tools/bazel/phase6_verify.py --all\n    ;;\nesac\n",
+            "\n".join(
+                [
+                    'case "$command_name" in',
+                    "  phase6_verify)",
+                    "    python3 tools/bazel/phase6_verify.py --all",
+                    "    ;;",
+                    "  phase6_verify_tests)",
+                    "    python3 tools/bazel/phase6_verify_test.py",
+                    "    ;;",
+                    "esac",
+                    "",
+                ]
+            ),
         )
         self.write_file(
             root,
             "justfile",
-            "phase6-verify:\n    bazel run //tools/bazel:phase6_verify\n",
+            "phase6-verify:\n    bazel run //tools/bazel:phase6_verify_tests\n    bazel run //tools/bazel:phase6_verify\n",
         )
 
     def write_validation_contract(self, root: Path, include_full_suite: bool = True) -> None:
@@ -395,7 +421,10 @@ class Phase6VerifierTest(unittest.TestCase):
                     "pub struct Phase6FeatureGates;",
                     "pub enum BurstSteppingMode {}",
                     "pub enum GateState { OutOfScopePhase10 }",
+                    "pub fn HasAdcSideFilamentSensor() {}",
+                    "pub fn HasChamberFiltrationApi() {}",
                     "pub fn HasLoadcellHx717() {}",
+                    "pub fn HasMmu2OverUart() {}",
                 ]
             ),
         )

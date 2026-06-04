@@ -15,7 +15,9 @@ pub mod safety;
 pub mod storage;
 
 pub use artifact::{ArtifactFileName, ArtifactKind, ArtifactRequest};
-pub use feature::{Feature, FeatureSet};
+pub use feature::{
+    BurstSteppingMode, Feature, FeatureSet, GateState, Phase6FeatureGate, Phase6FeatureGates,
+};
 pub use print::{
     CommandRoute, FixtureId, GcodeMnemonic, PlannerFlowState, PrintCommand, PrintJobState,
     PrintSource, PrintTransitionError, route_gcode_mnemonic, transition_print_state,

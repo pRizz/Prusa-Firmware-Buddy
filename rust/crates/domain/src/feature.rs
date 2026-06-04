@@ -70,6 +70,8 @@ pub enum Phase6FeatureGate {
     HasFilamentSensorAdc,
     /// Side filament sensor path.
     HasSideFilamentSensor,
+    /// ADC side filament sensor path.
+    HasAdcSideFilamentSensor,
     /// Trinamic motion driver support.
     HasTrinamic,
     /// TMC UART path.
@@ -104,6 +106,8 @@ pub enum Phase6FeatureGate {
     HasDoorSensor,
     /// MMU2 gate fact.
     HasMmu2,
+    /// MMU2 transport over the xBuddy UART rather than puppy Modbus.
+    HasMmu2OverUart,
     /// NFC gate fact.
     HasNfc,
     /// LED gate fact.
@@ -202,6 +206,7 @@ impl Phase6FeatureGates {
                     PrinterKind::Ix | PrinterKind::Xl | PrinterKind::CoreOne
                 )
             }
+            Phase6FeatureGate::HasAdcSideFilamentSensor => matches!(self.printer, PrinterKind::Xl),
             Phase6FeatureGate::HasTrinamic => matches!(
                 self.printer,
                 PrinterKind::Mini
@@ -274,6 +279,10 @@ impl Phase6FeatureGates {
                 self.printer,
                 PrinterKind::Mk4 | PrinterKind::Mk35 | PrinterKind::CoreOne
             ),
+            Phase6FeatureGate::HasMmu2OverUart => {
+                matches!(self.board, BoardKind::XBuddy)
+                    && matches!(self.printer, PrinterKind::Mk4 | PrinterKind::Mk35)
+            }
             Phase6FeatureGate::HasNfc => matches!(
                 self.printer,
                 PrinterKind::Mk35 | PrinterKind::Mk4 | PrinterKind::CoreOne
@@ -357,6 +366,10 @@ mod phase6_tests {
         ] {
             assert_eq!(gates.gate_state(gate), GateState::Enabled);
         }
+        assert_eq!(
+            gates.gate_state(Phase6FeatureGate::HasMmu2OverUart),
+            GateState::Disabled
+        );
     }
 
     #[test]
@@ -386,6 +399,10 @@ mod phase6_tests {
             gates.gate_state(Phase6FeatureGate::HasMmu2),
             GateState::Disabled
         );
+        assert_eq!(
+            gates.gate_state(Phase6FeatureGate::HasMmu2OverUart),
+            GateState::Disabled
+        );
     }
 
     #[test]
@@ -410,11 +427,66 @@ mod phase6_tests {
             Phase6FeatureGate::HasPhaseStepping,
             Phase6FeatureGate::HasLoadcell,
             Phase6FeatureGate::HasChamberApi,
+            Phase6FeatureGate::HasSideFilamentSensor,
+            Phase6FeatureGate::HasAdcSideFilamentSensor,
         ] {
             assert_eq!(gates.gate_state(gate), GateState::Enabled);
         }
         assert_eq!(
             gates.gate_state(Phase6FeatureGate::HasNfc),
+            GateState::Disabled
+        );
+    }
+
+    #[test]
+    fn adc_side_filament_sensor_gate_is_xl_specific() {
+        // Arrange
+        let xl = profile(
+            PrinterKind::Xl,
+            BoardKind::XlBuddy,
+            McuKind::Stm32F427Zi,
+            BootloaderMode::Boot,
+            FeatureSet::from_features([Feature::Puppies, Feature::Dwarf, Feature::ModularBed]),
+        );
+        let coreone = profile(
+            PrinterKind::CoreOne,
+            BoardKind::XBuddy,
+            McuKind::Stm32F427Zi,
+            BootloaderMode::Boot,
+            FeatureSet::from_features([Feature::Puppies, Feature::XBuddyExtension]),
+        );
+        let ix = profile(
+            PrinterKind::Ix,
+            BoardKind::XBuddy,
+            McuKind::Stm32F427Zi,
+            BootloaderMode::Boot,
+            FeatureSet::from_features([Feature::Puppies, Feature::ModularBed]),
+        );
+
+        // Act
+        let xl_gates = Phase6FeatureGates::from_profile(&xl, BurstSteppingMode::Disabled);
+        let coreone_gates = Phase6FeatureGates::from_profile(&coreone, BurstSteppingMode::Disabled);
+        let ix_gates = Phase6FeatureGates::from_profile(&ix, BurstSteppingMode::Disabled);
+
+        // Assert
+        assert_eq!(
+            xl_gates.gate_state(Phase6FeatureGate::HasAdcSideFilamentSensor),
+            GateState::Enabled
+        );
+        assert_eq!(
+            coreone_gates.gate_state(Phase6FeatureGate::HasSideFilamentSensor),
+            GateState::Enabled
+        );
+        assert_eq!(
+            coreone_gates.gate_state(Phase6FeatureGate::HasAdcSideFilamentSensor),
+            GateState::Disabled
+        );
+        assert_eq!(
+            ix_gates.gate_state(Phase6FeatureGate::HasSideFilamentSensor),
+            GateState::Enabled
+        );
+        assert_eq!(
+            ix_gates.gate_state(Phase6FeatureGate::HasAdcSideFilamentSensor),
             GateState::Disabled
         );
     }
@@ -444,6 +516,10 @@ mod phase6_tests {
         );
         assert_eq!(
             gates.gate_state(Phase6FeatureGate::HasMmu2),
+            GateState::OutOfScopePhase10
+        );
+        assert_eq!(
+            gates.gate_state(Phase6FeatureGate::HasMmu2OverUart),
             GateState::OutOfScopePhase10
         );
     }
@@ -543,6 +619,57 @@ mod phase6_tests {
         );
         assert_eq!(
             mk35_gates.gate_state(Phase6FeatureGate::HasLoadcellHx717),
+            GateState::Disabled
+        );
+    }
+
+    #[test]
+    fn mmu2_over_uart_follows_xbuddy_profiles_without_puppy_uart_occupancy() {
+        // Arrange
+        let mk4_xbuddy = profile(
+            PrinterKind::Mk4,
+            BoardKind::XBuddy,
+            McuKind::Stm32F427Zi,
+            BootloaderMode::Boot,
+            FeatureSet::from_features([Feature::Mmu2]),
+        );
+        let mk35_xbuddy = profile(
+            PrinterKind::Mk35,
+            BoardKind::XBuddy,
+            McuKind::Stm32F427Zi,
+            BootloaderMode::Boot,
+            FeatureSet::from_features([Feature::Mmu2]),
+        );
+        let coreone_xbuddy = profile(
+            PrinterKind::CoreOne,
+            BoardKind::XBuddy,
+            McuKind::Stm32F427Zi,
+            BootloaderMode::Boot,
+            FeatureSet::from_features([Feature::Mmu2, Feature::Puppies, Feature::XBuddyExtension]),
+        );
+
+        // Act
+        let mk4_gates = Phase6FeatureGates::from_profile(&mk4_xbuddy, BurstSteppingMode::Disabled);
+        let mk35_gates =
+            Phase6FeatureGates::from_profile(&mk35_xbuddy, BurstSteppingMode::Disabled);
+        let coreone_gates =
+            Phase6FeatureGates::from_profile(&coreone_xbuddy, BurstSteppingMode::Disabled);
+
+        // Assert
+        assert_eq!(
+            mk4_gates.gate_state(Phase6FeatureGate::HasMmu2OverUart),
+            GateState::Enabled
+        );
+        assert_eq!(
+            mk35_gates.gate_state(Phase6FeatureGate::HasMmu2OverUart),
+            GateState::Enabled
+        );
+        assert_eq!(
+            coreone_gates.gate_state(Phase6FeatureGate::HasMmu2),
+            GateState::Enabled
+        );
+        assert_eq!(
+            coreone_gates.gate_state(Phase6FeatureGate::HasMmu2OverUart),
             GateState::Disabled
         );
     }

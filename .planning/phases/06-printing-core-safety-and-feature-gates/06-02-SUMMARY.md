@@ -107,7 +107,7 @@ _Note: Task 1 followed TDD, so it has separate failing-test and implementation c
 - **Verification:** `python3 -m py_compile tools/bazel/phase6_verify.py tools/bazel/phase6_verify_test.py`, `python3 tools/bazel/phase6_verify_test.py`, `python3 tools/bazel/phase6_verify.py --printing-only`, and `python3 tools/bazel/phase6_verify.py --quick`
 - **Committed in:** `df04e4f77`
 
----
+***
 
 **Total deviations:** 1 auto-fixed (1 blocking)
 **Impact on plan:** The fix was required to satisfy the plan's manifest schema and keeps validation strict for all other required fields.
@@ -156,6 +156,6 @@ CORE-03 now has tested Rust print policy surfaces and manifest bindings that fut
 - Verified task commits exist: `9969d8587`, `d4ab7a54c`, and `df04e4f77`.
 - Verified only `.planning/config.json` remains outside the plan summary commit scope, and it was intentionally not staged.
 
----
+***
 *Phase: 06-printing-core-safety-and-feature-gates*
 *Completed: 2026-06-04*

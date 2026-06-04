@@ -148,16 +148,22 @@ REQUIRED_SAFETY_SOURCE_PATHS = [
     "src/common/probe_analysis.cpp",
     "src/common/Pin.cpp",
     "src/common/random_hw.cpp",
+    "src/common/wdt.cpp",
     "rust/crates/runtime-adapter/src/panic_boundary.rs",
 ]
 
 REQUIRED_FEATURE_GATE_STRINGS = [
+    "PRINTERS_WITH_FILAMENT_SENSOR_BINARY",
+    "PRINTERS_WITH_FILAMENT_SENSOR_ADC",
+    "HAS_SIDE_FSENSOR",
     "HAS_TRINAMIC",
+    "HAS_ADC_SIDE_FSENSOR",
     "HAS_TMC_UART",
     "HAS_PRECISE_HOMING",
     "HAS_PRECISE_HOMING_COREXY",
     "HAS_INPUT_SHAPER_CALIBRATION",
     "HAS_PHASE_STEPPING",
+    "HAS_PHASE_STEPPING_CALIBRATION",
     "HAS_BURST_STEPPING",
     "HAS_LOADCELL",
     "HAS_LOADCELL_HX717",
@@ -165,8 +171,10 @@ REQUIRED_FEATURE_GATE_STRINGS = [
     "HAS_MODULAR_BED",
     "HAS_REMOTE_BED",
     "HAS_CHAMBER_API",
+    "HAS_CHAMBER_FILTRATION_API",
     "HAS_DOOR_SENSOR",
     "HAS_MMU2",
+    "HAS_MMU2_OVER_UART",
     "HAS_NFC",
     "HAS_LEDS",
     "HAS_SIDE_LEDS",
@@ -216,7 +224,10 @@ REQUIRED_RUST_API_STRINGS = {
         "Phase6FeatureGates",
         "BurstSteppingMode",
         "GateState",
+        "HasAdcSideFilamentSensor",
+        "HasChamberFiltrationApi",
         "HasLoadcellHx717",
+        "HasMmu2OverUart",
         "OutOfScopePhase10",
     ],
 }
@@ -621,13 +632,15 @@ def check_bazel_surface() -> None:
     tools_build = read_text("tools/bazel/BUILD.bazel")
     workflow = read_text("tools/bazel/rust_workflow.sh")
 
-    for needle in ["phase6_verify", "phase6_printing_safety_docs"]:
+    for needle in ["phase6_verify", "phase6_verify_tests", "phase6_printing_safety_docs"]:
         if needle not in root_build:
             raise VerificationError(f"BUILD.bazel missing {needle}")
 
     for needle in [
         "phase6_verify",
+        "phase6_verify_tests",
         "phase6_verify.py",
+        "phase6_verify_test.py",
         "phase6_printing_core.json",
         "phase6_safety_gates.json",
         "phase6_feature_gates.json",
@@ -637,14 +650,23 @@ def check_bazel_surface() -> None:
         if needle not in tools_build:
             raise VerificationError(f"tools/bazel/BUILD.bazel missing {needle}")
 
-    for needle in ["phase6_verify)", "python3 tools/bazel/phase6_verify.py --all"]:
+    for needle in [
+        "phase6_verify)",
+        "python3 tools/bazel/phase6_verify.py --all",
+        "phase6_verify_tests)",
+        "python3 tools/bazel/phase6_verify_test.py",
+    ]:
         if needle not in workflow:
             raise VerificationError(f"tools/bazel/rust_workflow.sh missing {needle}")
 
 
 def check_just_surface() -> None:
     justfile = read_text("justfile")
-    for needle in ["phase6-verify:", "bazel run //tools/bazel:phase6_verify"]:
+    for needle in [
+        "phase6-verify:",
+        "bazel run //tools/bazel:phase6_verify_tests",
+        "bazel run //tools/bazel:phase6_verify",
+    ]:
         if needle not in justfile:
             raise VerificationError(f"justfile missing {needle}")
 

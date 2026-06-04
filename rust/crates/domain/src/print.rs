@@ -255,13 +255,98 @@ fn cancel_source(state: &PrintJobState) -> Option<PrintSource> {
 
 /// Classifies a parsed G-code mnemonic against retained routing contracts.
 pub fn route_gcode_mnemonic(mnemonic: &GcodeMnemonic) -> CommandRoute {
-    match mnemonic.as_str() {
-        "M862.1" | "M862.2" | "M862.3" | "M862.4" | "M862.5" | "M862.6" | "M600" | "M0" => {
-            CommandRoute::BuddyGcodeHandler
-        }
-        "G0" | "G1" | "M104" | "M109" | "M140" | "M190" => CommandRoute::MarlinQueue,
-        _ => CommandRoute::Unknown,
+    let mnemonic = mnemonic.as_str();
+    if is_retained_buddy_gcode_handler(mnemonic) {
+        return CommandRoute::BuddyGcodeHandler;
     }
+
+    if is_common_marlin_queue_mnemonic(mnemonic) {
+        return CommandRoute::MarlinQueue;
+    }
+
+    CommandRoute::Unknown
+}
+
+fn is_retained_buddy_gcode_handler(mnemonic: &str) -> bool {
+    matches!(
+        mnemonic,
+        "G12"
+            | "G26"
+            | "G64"
+            | "G123"
+            | "G162"
+            | "G163"
+            | "M0"
+            | "M104.1"
+            | "M123"
+            | "M141"
+            | "M147"
+            | "M148"
+            | "M150"
+            | "M151"
+            | "M191"
+            | "M262"
+            | "M263"
+            | "M264"
+            | "M265"
+            | "M267"
+            | "M268"
+            | "M300"
+            | "M331"
+            | "M332"
+            | "M333"
+            | "M334"
+            | "M340"
+            | "M591"
+            | "M600"
+            | "M704"
+            | "M705"
+            | "M706"
+            | "M707"
+            | "M708"
+            | "M709"
+            | "M862.1"
+            | "M862.2"
+            | "M862.3"
+            | "M862.4"
+            | "M862.5"
+            | "M862.6"
+            | "M863"
+            | "M864"
+            | "M865"
+            | "M870"
+            | "M919"
+            | "M920"
+            | "M960"
+            | "M961"
+            | "M997"
+            | "M999"
+            | "M1200"
+            | "M1600"
+            | "M1601"
+            | "M1700"
+            | "M1701"
+            | "M1702"
+            | "M1703"
+            | "M1704"
+            | "M1959"
+            | "M1977"
+            | "M1978"
+            | "M1979"
+            | "M1980"
+            | "M9140"
+            | "M9141"
+            | "M9150"
+            | "M9200"
+            | "M9201"
+            | "M9202"
+            | "M9933"
+            | "P0"
+    )
+}
+
+fn is_common_marlin_queue_mnemonic(mnemonic: &str) -> bool {
+    matches!(mnemonic, "G0" | "G1" | "M104" | "M109" | "M140" | "M190")
 }
 
 #[cfg(test)]
@@ -355,9 +440,17 @@ mod tests {
     fn gcode_mnemonics_route_to_buddy_handlers_or_marlin_queue() {
         // Arrange
         let buddy_mnemonics = [
-            "M862.1", "M862.2", "M862.3", "M862.4", "M862.5", "M862.6", "M600", "M0",
+            "G12", "G26", "G64", "G123", "G162", "G163", "M0", "M104.1", "M123", "M141", "M147",
+            "M148", "M150", "M151", "M191", "M262", "M263", "M264", "M265", "M267", "M268", "M300",
+            "M331", "M332", "M333", "M334", "M340", "M591", "M600", "M704", "M705", "M706", "M707",
+            "M708", "M709", "M862.1", "M862.2", "M862.3", "M862.4", "M862.5", "M862.6", "M863",
+            "M864", "M865", "M870", "M919", "M920", "M960", "M961", "M997", "M999", "M1200",
+            "M1600", "M1601", "M1700", "M1701", "M1702", "M1703", "M1704", "M1959", "M1977",
+            "M1978", "M1979", "M1980", "M9140", "M9141", "M9150", "M9200", "M9201", "M9202",
+            "M9933", "P0",
         ];
         let marlin_mnemonics = ["G0", "G1", "M104", "M109", "M140", "M190"];
+        let unknown_mnemonic = GcodeMnemonic::new("M42").expect("valid unknown mnemonic");
 
         // Act
         let buddy_routes = buddy_mnemonics.map(|raw| {
@@ -368,6 +461,7 @@ mod tests {
             let mnemonic = GcodeMnemonic::new(raw).expect("valid Marlin mnemonic");
             route_gcode_mnemonic(&mnemonic)
         });
+        let unknown_route = route_gcode_mnemonic(&unknown_mnemonic);
 
         // Assert
         assert!(
@@ -380,5 +474,6 @@ mod tests {
                 .iter()
                 .all(|route| *route == CommandRoute::MarlinQueue)
         );
+        assert_eq!(unknown_route, CommandRoute::Unknown);
     }
 }

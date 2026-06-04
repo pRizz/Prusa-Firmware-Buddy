@@ -85,12 +85,13 @@
         "src/common/crash_dump/",
         "src/common/crash_dump/dump.cpp",
         "src/common/crash_dump/crash_dump_distribute.cpp",
+        "src/common/wdt.cpp",
         "rust/crates/runtime-adapter/src/panic_boundary.rs"
       ],
       "safety_flow": "watchdog-and-crash-dump-boundary",
       "preserved_behavior": "Watchdog and crash-dump evidence stays classified as retained runtime behavior with CL-011 raw memory export handled only through the named crash-dump boundary.",
       "evidence_class": "manual-hardware-required",
-      "rust_surface": "rust/crates/domain/src/safety.rs::SafetyFlow::CrashDump",
+      "rust_surface": "rust/crates/domain/src/safety.rs::SafetyFlow::CrashDump + rust/crates/domain/src/safety.rs::SafetyFlow::Watchdog",
       "non_local_evidence": "manual-hardware-required crash and watchdog evidence remains required; local checks only validate manifest traceability"
     },
     {

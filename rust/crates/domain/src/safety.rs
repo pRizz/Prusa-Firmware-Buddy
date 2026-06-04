@@ -14,6 +14,7 @@ const MOTION_SAFE_OUTPUT_SOURCE_PATHS: &[&str] = &[
     "lib/Marlin/",
     "src/common/marlin_server.cpp",
     "src/common/safe_state.cpp",
+    "src/common/feature/emergency_stop/",
     "src/common/Pin.cpp",
 ];
 const SELFTEST_SOURCE_PATHS: &[&str] = &["src/common/selftest/"];
@@ -183,7 +184,7 @@ pub const fn classify_safety_flow(flow: SafetyFlow) -> SafetyPolicySurface {
         SafetyFlow::MotionSafeOutput => SafetyPolicySurface {
             flow,
             action: SafetyAction::EnterSafeOutput,
-            evidence_class: EvidenceClass::SourceAudit,
+            evidence_class: EvidenceClass::HardwareSmoke,
             source_paths: MOTION_SAFE_OUTPUT_SOURCE_PATHS,
             maybe_concern_id: None,
             maybe_fatal_path_policy: None,

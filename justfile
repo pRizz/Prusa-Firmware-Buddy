@@ -13,6 +13,7 @@ phase5-verify:
     bazel run //tools/bazel:phase5_verify
 
 phase6-verify:
+    bazel run //tools/bazel:phase6_verify_tests
     bazel run //tools/bazel:phase6_verify
 
 bazel-query:

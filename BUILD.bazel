@@ -112,6 +112,11 @@ alias(
 )
 
 alias(
+    name = "phase6_verify_tests",
+    actual = "//tools/bazel:phase6_verify_tests",
+)
+
+alias(
     name = "retained_foreign_code",
     actual = "//tools/bazel:retained_foreign_code",
 )
