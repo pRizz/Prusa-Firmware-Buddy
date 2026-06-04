@@ -8,12 +8,17 @@
 
 pub mod artifact;
 pub mod feature;
+pub mod print;
 pub mod product;
 pub mod protocol;
 pub mod storage;
 
 pub use artifact::{ArtifactFileName, ArtifactKind, ArtifactRequest};
 pub use feature::{Feature, FeatureSet};
+pub use print::{
+    CommandRoute, FixtureId, GcodeMnemonic, PlannerFlowState, PrintCommand, PrintJobState,
+    PrintSource, PrintTransitionError, route_gcode_mnemonic, transition_print_state,
+};
 pub use product::{BoardKind, BootloaderMode, McuKind, PrinterKind, ProductProfile};
 pub use protocol::{ConnectEndpoint, Connected, Disconnected, Registered, RegistrationCode};
 pub use storage::{MigrationWindow, StorageKey, StorageSchemaVersion};
