@@ -125,7 +125,7 @@ Plans:
 - [x] 06-02-PLAN.md — Add typed Rust printing-core state and command-routing contracts.
 - [x] 06-03-PLAN.md — Add typed Rust safety, recovery, and fatal-boundary policy contracts.
 - [x] 06-04-PLAN.md — Add ProductProfile-keyed Phase 6 feature-gate contracts.
-- [ ] 06-05-PLAN.md — Harden aggregate Phase 6 verification and complete Nyquist validation sign-off.
+- [x] 06-05-PLAN.md — Harden aggregate Phase 6 verification and complete Nyquist validation sign-off.
 
 ### Phase 7: Persistence, Storage, and Resource Compatibility
 
