@@ -97,6 +97,33 @@ shell_binary(
     ],
 )
 
+shell_binary(
+    name = "phase7_verify",
+    src = "rust_workflow.sh",
+    data = [
+        "phase7_verify.py",
+        "manifests/phase7_config_store.json",
+        "manifests/phase7_storage_media.json",
+        "manifests/phase7_resources.json",
+        "manifests/phase7_generated_outputs.json",
+        "manifests/phase7_concern_dispositions.json",
+        "fixtures/phase7_storage/redacted_migration_catalog.json",
+        "//:phase7_persistence_storage_resource_docs",
+        "//:phase7_storage_migration_fixtures",
+        "//:rust_workspace_sources",
+    ],
+)
+
+shell_binary(
+    name = "phase7_verify_tests",
+    src = "rust_workflow.sh",
+    data = [
+        "phase7_verify.py",
+        "phase7_verify_test.py",
+        "fixtures/phase7_storage/redacted_migration_catalog.json",
+    ],
+)
+
 filegroup(
     name = "unsafe_boundary_audit",
     srcs = ["manifests/unsafe_boundary_audit.json"],

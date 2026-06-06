@@ -41,6 +41,20 @@ filegroup(
     ],
 )
 
+filegroup(
+    name = "phase7_persistence_storage_resource_docs",
+    srcs = [
+        ".planning/phases/07-persistence-storage-and-resource-compatibility/07-CONTEXT.md",
+        ".planning/phases/07-persistence-storage-and-resource-compatibility/07-RESEARCH.md",
+        ".planning/phases/07-persistence-storage-and-resource-compatibility/07-VALIDATION.md",
+    ],
+)
+
+filegroup(
+    name = "phase7_storage_migration_fixtures",
+    srcs = ["//tools/bazel:fixtures/phase7_storage/redacted_migration_catalog.json"],
+)
+
 alias(
     name = "phase2_verify",
     actual = "//tools/bazel:phase2_verify",
@@ -114,6 +128,16 @@ alias(
 alias(
     name = "phase6_verify_tests",
     actual = "//tools/bazel:phase6_verify_tests",
+)
+
+alias(
+    name = "phase7_verify",
+    actual = "//tools/bazel:phase7_verify",
+)
+
+alias(
+    name = "phase7_verify_tests",
+    actual = "//tools/bazel:phase7_verify_tests",
 )
 
 alias(
