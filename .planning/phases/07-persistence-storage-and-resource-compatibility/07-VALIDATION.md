@@ -44,6 +44,7 @@ phase_lifecycle_id: 7-2026-06-06T04-24-25
 | 07-W0-02 | TBD | 0 | IFCE-04 | T-07-02 | Storage and filesystem surfaces classify hardware/media proof as non-local evidence | static verifier + Rust unit tests | `python3 tools/bazel/phase7_verify.py --quick` | no W0 | pending |
 | 07-W0-03 | TBD | 0 | IFCE-05 | T-07-03 | Resource/generated-output manifests preserve tracked-vs-build-generated ownership and Phase 3 label coverage | static verifier | `python3 tools/bazel/phase7_verify.py --quick` | no W0 | pending |
 | 07-W0-04 | TBD | 0 | IFCE-04, IFCE-05 | T-07-04 | Verifier rejects overclaims, missing lifecycle metadata, and unredacted evidence | Python verifier tests | `python3 tools/bazel/phase7_verify_test.py` | no W0 | pending |
+| 07-W0-05 | TBD | 0 | IFCE-04 | T-07-05 | Redacted storage migration catalog covers old EEPROM versions, current schema, settings import/export, credential redaction, selftest/calibration state, and journal hash facts | static verifier | `python3 tools/bazel/phase7_verify.py --quick` | no W0 | pending |
 | 07-FINAL | TBD | final | IFCE-04, IFCE-05 | T-07-01..T-07-04 | Phase 7 verifier, Rust checks, Bazel/just labels, lifecycle, and schema drift all pass | aggregate | `just phase7-verify` | no W0 | pending |
 
 *Status: pending, green, red, flaky*
@@ -55,6 +56,7 @@ phase_lifecycle_id: 7-2026-06-06T04-24-25
 - [ ] `tools/bazel/phase7_verify.py` — static verifier for manifests, source paths, Rust API surface, redaction, no-unsafe scan, generated label wiring, concern dispositions, lifecycle metadata, and overclaim guards.
 - [ ] `tools/bazel/phase7_verify_test.py` — regression tests for missing rows, invalid lifecycle, unredacted credentials, missing source paths, missing Rust API strings, missing generated labels, and overclaims.
 - [ ] `tools/bazel/manifests/phase7_config_store.json` — current items, defaults, deprecated IDs, old EEPROM versions, migration windows, credential-bearing keys, and hash evidence.
+- [ ] `tools/bazel/fixtures/phase7_storage/redacted_migration_catalog.json` — synthetic/redacted fixture identities for old EEPROM versions, current schema, settings import/export, credential redaction, `selftest-calibration-state`, `Selftest Result`, `selftest_result`, `calibration`, `selftest`, and journal hash facts.
 - [ ] `tools/bazel/manifests/phase7_storage_media.json` — EEPROM driver, `/usb`, `/internal`, `/bbf`, `/semihosting`, root listing, libsysbase behavior, and non-local evidence classes.
 - [ ] `tools/bazel/manifests/phase7_resources.json` — resource image, bootloader image, ESP blobs, WUI assets, translations, QOI, MMU, puppy resources, hashes/revisions, and runtime paths.
 - [ ] `tools/bazel/manifests/phase7_generated_outputs.json` — tracked versus generated-at-build outputs and Phase 3 generated label coverage.
