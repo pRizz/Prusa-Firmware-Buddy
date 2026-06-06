@@ -1,0 +1,291 @@
+{
+  "schema_version": 1,
+  "phase": "07-persistence-storage-and-resource-compatibility",
+  "phase_lifecycle_id": "7-2026-06-06T04-24-25",
+  "catalog_id": "phase7-redacted-storage-migration-catalog",
+  "fixtures": [
+    {
+      "id": "old-eeprom-v4-migration",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v4.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/last_migration.cpp"
+      ],
+      "fixture_identity": "synthetic old EEPROM v4 migration fixture identity",
+      "reference_surface": "v4 is the release 4.0.5-RC1 body shape with filament, selftest run flags, PID, LAN, Connect token field name, and hostname fields before later conversion steps.",
+      "rust_surface": "Rust migration tests must preserve a redacted v4 identity that starts the supported old EEPROM conversion chain without storing legacy payload material.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "redaction_policy": "synthetic-redacted",
+      "credential_policy": "name-only-redacted",
+      "byte_material_policy": "none",
+      "intentional_delta": "none",
+      "notes": "The fixture row names v4 fields and source paths only; it does not include EEPROM payloads or credential values."
+    },
+    {
+      "id": "old-eeprom-v6-migration",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v6.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v4.hpp"
+      ],
+      "fixture_identity": "synthetic old EEPROM v6 migration fixture identity",
+      "reference_surface": "v6 converts from v4, removes the prior Connect address/token payload fields, preserves network hostname identity, and adds timezone plus sound mode defaults.",
+      "rust_surface": "Rust migration tests must model the v4-to-v6 structural step and default injection with redacted fixture identity only.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "redaction_policy": "synthetic-redacted",
+      "credential_policy": "not-applicable",
+      "byte_material_policy": "none",
+      "intentional_delta": "none",
+      "notes": "The row documents version v6 conversion behavior and default provenance without copying storage bytes."
+    },
+    {
+      "id": "old-eeprom-v7-migration",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v7.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v6.hpp"
+      ],
+      "fixture_identity": "synthetic old EEPROM v7 migration fixture identity",
+      "reference_surface": "v7 extends v6 with SOUND_VOLUME and LANGUAGE and copies the full v6 body before applying defaults.",
+      "rust_surface": "Rust migration tests must preserve the v7 added-field identity and copy-forward behavior as a redacted fixture fact.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "redaction_policy": "synthetic-redacted",
+      "credential_policy": "not-applicable",
+      "byte_material_policy": "none",
+      "intentional_delta": "none",
+      "notes": "The row distinguishes v7 from v6 by its sound volume and language additions."
+    },
+    {
+      "id": "old-eeprom-v9-migration",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v9.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v7.hpp"
+      ],
+      "fixture_identity": "synthetic old EEPROM v9 migration fixture identity",
+      "reference_surface": "v9 converts from v7 and adds file sorting, menu timeout, active sheet, eight sheet profiles, SELFTEST_RESULT_V1, and DEVHASH_IN_QR.",
+      "rust_surface": "Rust migration tests must keep v9 sheet-profile and legacy selftest result identities in the old EEPROM chain.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "redaction_policy": "synthetic-redacted",
+      "credential_policy": "not-applicable",
+      "byte_material_policy": "none",
+      "intentional_delta": "none",
+      "notes": "The fixture identity captures v9 structural coverage without raw legacy data."
+    },
+    {
+      "id": "old-eeprom-v10-migration",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v10.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v9.hpp"
+      ],
+      "fixture_identity": "synthetic old EEPROM v10 migration fixture identity",
+      "reference_surface": "v10 converts from v9 and adds footer setting encoding, footer draw type, fan check, filament autoload, odometer, axis steps, microsteps, RMS current, Z max, and odometer time.",
+      "rust_surface": "Rust migration tests must preserve v10 footer and motion-setting identity while keeping the fixture synthetic.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "redaction_policy": "synthetic-redacted",
+      "credential_policy": "not-applicable",
+      "byte_material_policy": "none",
+      "intentional_delta": "none",
+      "notes": "The row documents the v10 MINI-specific footer default branch as source-audit evidence only."
+    },
+    {
+      "id": "old-eeprom-v11-migration",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v11.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v10.hpp"
+      ],
+      "fixture_identity": "synthetic old EEPROM v11 migration fixture identity",
+      "reference_surface": "v11 converts from v10, adds active network device, PrusaLink run flag, PrusaLink password field name, Wi-Fi network fields, Wi-Fi AP SSID/password field names, USB MSC state, and footer re-encoding.",
+      "rust_surface": "Rust migration tests must preserve v11 network and footer migration identity with name-only redaction for credential fields.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "redaction_policy": "synthetic-redacted",
+      "credential_policy": "name-only-redacted",
+      "byte_material_policy": "none",
+      "intentional_delta": "none",
+      "notes": "Credential-bearing v11 names are tracked only as names; no password or SSID values are represented."
+    },
+    {
+      "id": "old-eeprom-v12-migration",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v12.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v11.hpp"
+      ],
+      "fixture_identity": "synthetic old EEPROM v12 migration fixture identity",
+      "reference_surface": "v12 converts from v11 and adds Connect host/token/port/TLS/enabled field identities, job id, crash settings, crash counters, power counter, and continued footer conversion.",
+      "rust_surface": "Rust migration tests must preserve v12 Connect and crash-setting identity while redacting credential-bearing Connect names.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "redaction_policy": "synthetic-redacted",
+      "credential_policy": "name-only-redacted",
+      "byte_material_policy": "none",
+      "intentional_delta": "none",
+      "notes": "Connect Token is included as a field name only and must not carry a token value."
+    },
+    {
+      "id": "old-eeprom-v22-migration",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v22.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v32789.hpp"
+      ],
+      "fixture_identity": "synthetic old EEPROM v22 migration fixture identity",
+      "reference_surface": "v22 converts from v32789 and adds additional extruder odometers, tool odometer times, hardware-check compatibility, and MINI/XL footer item conversion.",
+      "rust_surface": "Rust migration tests must preserve v22 odometer, hardware-check, and footer conversion identity as a synthetic fixture.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "redaction_policy": "synthetic-redacted",
+      "credential_policy": "not-applicable",
+      "byte_material_policy": "none",
+      "intentional_delta": "none",
+      "notes": "The v22 row documents the historical order used by the existing source: v32789 advances to v22 before current."
+    },
+    {
+      "id": "old-eeprom-v32787-migration",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v32787.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v12.hpp",
+        "src/common/selftest_result.hpp"
+      ],
+      "fixture_identity": "synthetic old EEPROM v32787 migration fixture identity",
+      "reference_surface": "v32787 converts from v12 for the first XL release and adds loadcell, filament-sensor calibration values, MMU, LED animation, bed, touch, dock/tool offsets, nozzle, hardware-check, and SELFTEST_RESULT_PRE_23 state.",
+      "rust_surface": "Rust migration tests must preserve v32787 XL-era calibration and selftest conversion identity without storing legacy payload material.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "redaction_policy": "synthetic-redacted",
+      "credential_policy": "not-applicable",
+      "byte_material_policy": "none",
+      "intentional_delta": "none",
+      "notes": "This row carries selftest/calibration lineage that later current-schema rows map into SelftestResultV23."
+    },
+    {
+      "id": "old-eeprom-v32789-migration",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v32789.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v32787.hpp"
+      ],
+      "fixture_identity": "synthetic old EEPROM v32789 migration fixture identity",
+      "reference_surface": "v32789 converts from v32787 for the first MK4 release and adds homing bump divisors plus side LED enablement.",
+      "rust_surface": "Rust migration tests must preserve v32789 identity before the v22 conversion step.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "redaction_policy": "synthetic-redacted",
+      "credential_policy": "not-applicable",
+      "byte_material_policy": "none",
+      "intentional_delta": "none",
+      "notes": "The row pins the first MK4 old EEPROM version by source path and added field identities."
+    },
+    {
+      "id": "current-schema-v5",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/store_instances/config_store/store_definition.hpp",
+        "src/persistent_stores/store_instances/config_store/store_definition.cpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v_current.hpp"
+      ],
+      "fixture_identity": "synthetic current config-store schema v5 fixture identity",
+      "reference_surface": "CurrentStore::newest_config_version = 5 gates the current config-store schema after old EEPROM current conversion into SelftestResultV23, nozzle sock, and nozzle type fields.",
+      "rust_surface": "Rust schema tests must pin schema version 5 and current old EEPROM terminal identity before claiming storage compatibility.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "redaction_policy": "synthetic-redacted",
+      "credential_policy": "not-applicable",
+      "byte_material_policy": "none",
+      "intentional_delta": "none",
+      "notes": "The fixture identity is a schema contract, not a serialized config-store snapshot."
+    },
+    {
+      "id": "settings-import-export",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "doc/prusa_printer_settings.ini",
+        "src/common/settings_ini.hpp",
+        "src/common/ini_handler.cpp",
+        "src/common/fsm_network_setup.cpp",
+        "src/connect/marlin_printer.cpp"
+      ],
+      "fixture_identity": "synthetic settings import/export fixture identity",
+      "reference_surface": "settings import/export behavior maps /usb/prusa_printer_settings.ini sections and key names into config-store network, Wi-Fi, PrusaLink, and Connect settings.",
+      "rust_surface": "Rust settings compatibility tests must preserve import/export key identity and redacted credential handling.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "redaction_policy": "synthetic-redacted",
+      "credential_policy": "name-only-redacted",
+      "byte_material_policy": "none",
+      "intentional_delta": "none",
+      "notes": "The repository sample INI is cited for key identity only; sample data is intentionally excluded."
+    },
+    {
+      "id": "credential-redaction",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/store_instances/config_store/store_definition.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v11.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v12.hpp",
+        "src/connect/marlin_printer.cpp"
+      ],
+      "fixture_identity": "synthetic credential redaction fixture identity",
+      "reference_surface": "Credential key names include WIFI AP Password, PrusaLink Password, and Connect Token, with related Wi-Fi, PrusaLink, and Connect source fields preserved as names only.",
+      "rust_surface": "Rust storage fixtures must assert name-only compatibility for credential-bearing fields while excluding all secret material.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "redaction_policy": "synthetic-redacted",
+      "credential_policy": "name-only-redacted",
+      "byte_material_policy": "none",
+      "intentional_delta": "none",
+      "notes": "The catalog intentionally stores no password, token, certificate, SSID, host, or proxy values."
+    },
+    {
+      "id": "selftest-calibration-state",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/store_instances/config_store/store_definition.hpp",
+        "src/persistent_stores/store_instances/config_store/defaults.hpp",
+        "src/persistent_stores/store_instances/config_store/migrations.cpp",
+        "src/common/selftest_result.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v32787.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v_current.hpp"
+      ],
+      "fixture_identity": "synthetic selftest and calibration fixture identity",
+      "reference_surface": "Selftest Result, selftest_result, calibration, and selftest identities span ItemFlag::calibrations, SelftestResult_pre_23, SelftestResultV23, and config-store migration rows.",
+      "rust_surface": "Rust storage tests must preserve selftest/calibration field identity and old-result conversion into current selftest_result state.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "redaction_policy": "synthetic-redacted",
+      "credential_policy": "not-applicable",
+      "byte_material_policy": "none",
+      "intentional_delta": "none",
+      "notes": "This fixture identity preserves state names and migration lineage only, including exact strings required by the phase contract."
+    },
+    {
+      "id": "journal-hash-facts",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "utils/persistent_stores/journal_hashes_generator.py",
+        "src/persistent_stores/journal/store.hpp",
+        "src/persistent_stores/store_instances/config_store/store_definition.cpp",
+        "tools/bazel/manifests/phase7_config_store.json"
+      ],
+      "fixture_identity": "synthetic journal hash fixture identity",
+      "reference_surface": "journal::hash uses generated IDs derived from SHA-256 high bytes masked with 0x3FFF and guarded by duplicate detection in the generator and store checks.",
+      "rust_surface": "Rust journal compatibility tests must preserve the hash mask, generated ID lookup, and duplicate detection contract.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "redaction_policy": "synthetic-redacted",
+      "credential_policy": "not-applicable",
+      "byte_material_policy": "none",
+      "intentional_delta": "none",
+      "notes": "The row records algorithm facts and source paths only; it is not a generated hash table replacement."
+    }
+  ]
+}
