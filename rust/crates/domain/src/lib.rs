@@ -11,6 +11,7 @@ pub mod feature;
 pub mod print;
 pub mod product;
 pub mod protocol;
+pub mod resource;
 pub mod safety;
 pub mod storage;
 
@@ -24,6 +25,9 @@ pub use print::{
 };
 pub use product::{BoardKind, BootloaderMode, McuKind, PrinterKind, ProductProfile};
 pub use protocol::{ConnectEndpoint, Connected, Disconnected, Registered, RegistrationCode};
+pub use resource::{
+    BazelLabel, GeneratedOutputOwnership, GeneratedSurface, ResourceRuntimePath, ResourceSurface,
+};
 pub use safety::{
     FatalPathPolicy, SafetyAction, SafetyFlow, SafetyPolicySurface, classify_safety_flow,
 };
@@ -92,6 +96,20 @@ pub enum InvariantError {
     FixtureIdentityContainsPath,
     /// A fixture identity failed length or printable-character validation.
     InvalidFixtureIdentity,
+    /// A resource runtime path was empty.
+    EmptyResourcePath,
+    /// A resource runtime path contained unsupported syntax or characters.
+    InvalidResourcePath,
+    /// A resource runtime path contained parent-directory traversal.
+    ResourcePathContainsTraversal,
+    /// A generated-output ownership value was not recognized.
+    InvalidGeneratedOutputOwnership,
+    /// A Bazel label was not in `//package:target` form.
+    InvalidBazelLabel,
+    /// A generated-output check label did not use the `_check` suffix.
+    GeneratedCheckLabelMismatch,
+    /// A generated-output update label did not use the `_update` suffix.
+    GeneratedUpdateLabelMismatch,
     /// A Connect registration code was not in the expected user-visible shape.
     InvalidRegistrationCode,
     /// A Connect endpoint did not use an accepted URL scheme.
@@ -157,6 +175,25 @@ impl fmt::Display for InvariantError {
             }
             Self::InvalidFixtureIdentity => {
                 formatter.write_str("fixture identity must be printable ASCII and at most 96 bytes")
+            }
+            Self::EmptyResourcePath => formatter.write_str("resource path must not be empty"),
+            Self::InvalidResourcePath => formatter.write_str(
+                "resource path must not contain backslashes, control characters, or exceed 160 bytes",
+            ),
+            Self::ResourcePathContainsTraversal => {
+                formatter.write_str("resource path must not contain parent-directory traversal")
+            }
+            Self::InvalidGeneratedOutputOwnership => formatter.write_str(
+                "generated output ownership must be tracked-reviewed-source or generated-at-build",
+            ),
+            Self::InvalidBazelLabel => {
+                formatter.write_str("Bazel label must use //package:target form")
+            }
+            Self::GeneratedCheckLabelMismatch => {
+                formatter.write_str("generated check label must end with _check")
+            }
+            Self::GeneratedUpdateLabelMismatch => {
+                formatter.write_str("generated update label must end with _update")
             }
             Self::InvalidRegistrationCode => formatter
                 .write_str("registration code must contain eight ASCII alphanumeric characters"),
