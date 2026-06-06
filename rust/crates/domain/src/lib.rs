@@ -25,10 +25,13 @@ pub use print::{
 pub use product::{BoardKind, BootloaderMode, McuKind, PrinterKind, ProductProfile};
 pub use protocol::{ConnectEndpoint, Connected, Disconnected, Registered, RegistrationCode};
 pub use safety::{
-    EvidenceClass, FatalPathPolicy, SafetyAction, SafetyFlow, SafetyPolicySurface,
-    classify_safety_flow,
+    FatalPathPolicy, SafetyAction, SafetyFlow, SafetyPolicySurface, classify_safety_flow,
 };
-pub use storage::{MigrationWindow, StorageKey, StorageSchemaVersion};
+pub use storage::{
+    CredentialRedactionPolicy, EvidenceClass, FilesystemSurface, FixtureIdentity, JournalHashFact,
+    MigrationWindow, ReferenceHashName, StorageCompatibilityIdentity, StorageCompatibilitySurface,
+    StorageKey, StorageSchemaVersion,
+};
 
 use core::fmt;
 
@@ -75,6 +78,20 @@ pub enum InvariantError {
     InvalidStorageSchemaVersion,
     /// A migration did not move to a strictly newer schema.
     InvalidMigrationWindow,
+    /// A retained reference hash name was empty.
+    EmptyReferenceHashName,
+    /// A retained reference hash name contained unsupported characters.
+    InvalidReferenceHashName,
+    /// The journal hash fact did not match the retained 14-bit mask.
+    InvalidJournalHashFact,
+    /// A storage or resource evidence class was not recognized.
+    InvalidEvidenceClass,
+    /// A fixture identity was empty.
+    EmptyFixtureIdentity,
+    /// A fixture identity contained path syntax.
+    FixtureIdentityContainsPath,
+    /// A fixture identity failed length or printable-character validation.
+    InvalidFixtureIdentity,
     /// A Connect registration code was not in the expected user-visible shape.
     InvalidRegistrationCode,
     /// A Connect endpoint did not use an accepted URL scheme.
@@ -121,6 +138,25 @@ impl fmt::Display for InvariantError {
             }
             Self::InvalidMigrationWindow => {
                 formatter.write_str("migration target schema must be newer than source schema")
+            }
+            Self::EmptyReferenceHashName => {
+                formatter.write_str("reference hash name must not be empty")
+            }
+            Self::InvalidReferenceHashName => {
+                formatter.write_str("reference hash name must be printable ASCII")
+            }
+            Self::InvalidJournalHashFact => {
+                formatter.write_str("journal hash fact must use 14 mask bits and mask 0x3FFF")
+            }
+            Self::InvalidEvidenceClass => {
+                formatter.write_str("evidence class must be one of the Phase 7 accepted values")
+            }
+            Self::EmptyFixtureIdentity => formatter.write_str("fixture identity must not be empty"),
+            Self::FixtureIdentityContainsPath => {
+                formatter.write_str("fixture identity must not contain path syntax")
+            }
+            Self::InvalidFixtureIdentity => {
+                formatter.write_str("fixture identity must be printable ASCII and at most 96 bytes")
             }
             Self::InvalidRegistrationCode => formatter
                 .write_str("registration code must contain eight ASCII alphanumeric characters"),
