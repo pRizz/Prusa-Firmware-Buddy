@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 07-03-PLAN.md
-last_updated: "2026-06-06T14:05:58.774Z"
+stopped_at: Completed 07-04-PLAN.md
+last_updated: "2026-06-06T14:18:31.946Z"
 last_activity: 2026-06-06
 progress:
   total_phases: 11
   completed_phases: 6
   total_plans: 21
-  completed_plans: 19
-  percent: 90
+  completed_plans: 20
+  percent: 95
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-06-02)
 ## Current Position
 
 Phase: 07 (persistence-storage-and-resource-compatibility) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-06-06
 
@@ -60,6 +60,7 @@ Progress: [████████░░] 81%
 | Phase 07 P01 | 11min | 3 tasks | 4 files |
 | Phase 07 P02 | 6 min | 3 tasks | 4 files |
 | Phase 07 P03 | 10 min | 2 tasks | 4 files |
+| Phase 07 P04 | 8 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,9 @@ Recent decisions affecting current work:
 - [Phase 07]: Preserve known Phase 7 risks as explicit disposition rows unless a later plan introduces intentional deltas with tests.
 - [Phase 07]: Represent Phase 7 storage, filesystem, fixture, credential-redaction, and journal hash compatibility as fallible Rust domain types.
 - [Phase 07]: Represent Phase 7 resource paths and generated-output labels as fallible Rust domain types tied to source-backed runtime path constants.
+- [Phase 07]: Keep Phase 7 quick verification static and deterministic while reserving Cargo checks for --all.
+- [Phase 07]: Keep Bazel and just facade checks scope-compatible with Plan 07-04 until later wiring work owns facade edits.
+- [Phase 07]: Validate current Phase 7 manifest evidence classes without rewriting prior plan artifacts.
 
 ### Pending Todos
 
@@ -93,6 +97,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-06T14:05:58.771Z
-Stopped at: Completed 07-03-PLAN.md
+Last session: 2026-06-06T14:18:23.418Z
+Stopped at: Completed 07-04-PLAN.md
 Resume file: None
