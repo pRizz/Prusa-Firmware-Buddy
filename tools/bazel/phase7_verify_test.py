@@ -68,6 +68,20 @@ REQUIRED_GENERATED_LABELS = [
     "tracked_generated_outputs",
 ]
 
+GENERATED_ROW_IDS_BY_LABEL = {
+    "generated_product_profiles": "product-profiles",
+    "generated_option_data": "option-data",
+    "generated_resources": "resource-assets",
+    "generated_translations": "translation-pot",
+    "generated_fonts": "font-assets",
+    "generated_wui_assets": "wui-assets",
+    "generated_esp_blobs": "esp-blobs",
+    "generated_puppy_descriptors": "puppy-descriptors",
+    "generated_mmu_descriptors": "mmu-descriptors",
+    "generated_package_metadata": "package-metadata",
+    "tracked_generated_outputs": "tracked-generated-outputs",
+}
+
 REQUIRED_CONCERN_ROW_IDS = [
     "concern-generated-file-drift",
     "concern-translation-font-shell-safety",
@@ -336,7 +350,7 @@ class Phase7VerifierTest(unittest.TestCase):
         self.write_source_paths(root, source_paths)
         rows = [
             {
-                "id": label.replace("generated_", "").replace("_", "-"),
+                "id": GENERATED_ROW_IDS_BY_LABEL[label],
                 "requirement": "IFCE-05",
                 "ownership": "tracked-reviewed-source",
                 "tracked_outputs": ["tracked-output"],
@@ -363,7 +377,7 @@ class Phase7VerifierTest(unittest.TestCase):
         )
 
     def write_concern_manifest(self, root: Path) -> None:
-        source_paths = [".planning/codebase/CONCERNS.md", "tools/bazel/manifests/phase7_generated_outputs.json"]
+        source_paths = [".planning/codebase/CONCERNS.md"]
         self.write_source_paths(root, source_paths)
         rows = []
         for row_id, concern_id in zip(REQUIRED_CONCERN_ROW_IDS, REQUIRED_CONCERN_IDS):
