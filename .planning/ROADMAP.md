@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Rust Architecture and Invariant Model** - Establish the Rust workspace, typed product/domain model, Bright Builds checks, and pure-logic test foundation. (completed 2026-06-03)
 - [x] **Phase 5: Foreign Code, Unsafe, and Runtime Boundary** - Inventory retained C/C++/ASM/vendor code and wrap startup, HAL, RTOS, and unsafe boundaries behind safe Rust adapters. (completed 2026-06-03)
 - [x] **Phase 6: Printing Core, Safety, and Feature Gates** - Preserve print behavior, safety-critical flows, and printer-specific feature combinations through typed Rust models and parity fixtures. (completed 2026-06-04)
-- [ ] **Phase 7: Persistence, Storage, and Resource Compatibility** - Preserve config stores, migrations, filesystems, credentials, generated resources, translations, and bundled runtime assets.
+- [x] **Phase 7: Persistence, Storage, and Resource Compatibility** - Preserve config stores, migrations, filesystems, credentials, generated resources, translations, and bundled runtime assets. (completed 2026-06-06)
 - [ ] **Phase 8: Local Interface and Workflow Parity** - Preserve local GUI workflows, display-class behavior, dialogs, warnings, setup flows, and print controls.
 - [ ] **Phase 9: Network, Web Services, and Transfers** - Preserve Connect, PrusaLink/WUI, TLS, telemetry, transfer, and local service behavior.
 - [ ] **Phase 10: Auxiliary Controllers and Expansion Ecosystem** - Preserve puppy, Dwarf, ModularBed, xBuddy Extension, MMU2, toolchanger, and auxiliary update flows.
@@ -207,7 +207,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 4. Rust Architecture and Invariant Model | 1/1 | Complete    | 2026-06-03 |
 | 5. Foreign Code, Unsafe, and Runtime Boundary | 5/5 | Complete    | 2026-06-03 |
 | 6. Printing Core, Safety, and Feature Gates | 5/5 | Complete    | 2026-06-04 |
-| 7. Persistence, Storage, and Resource Compatibility | 4/5 | In Progress | - |
+| 7. Persistence, Storage, and Resource Compatibility | 5/5 | Complete   | 2026-06-06 |
 | 8. Local Interface and Workflow Parity | 0/TBD | Not started | - |
 | 9. Network, Web Services, and Transfers | 0/TBD | Not started | - |
 | 10. Auxiliary Controllers and Expansion Ecosystem | 0/TBD | Not started | - |
