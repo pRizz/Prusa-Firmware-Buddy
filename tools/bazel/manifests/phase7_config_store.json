@@ -1,0 +1,211 @@
+{
+  "schema_version": 1,
+  "phase": "07-persistence-storage-and-resource-compatibility",
+  "phase_lifecycle_id": "7-2026-06-06T04-24-25",
+  "config_contracts": [
+    {
+      "id": "current-config-store-schema-v5",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/store_instances/config_store/store_definition.hpp",
+        "src/persistent_stores/store_instances/config_store/store_definition.cpp"
+      ],
+      "reference_surface": "CurrentStore::newest_config_version = 5 with config_version persisted as journal::hash(\"Config Version\").",
+      "rust_surface": "Rust storage schema contract must preserve schema version 5 before claiming config-store compatibility.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "credential_policy": "not-applicable",
+      "intentional_delta": "none",
+      "notes": "The schema row pins the current C++ config-store version and the runtime migration entrypoint in perform_config_check."
+    },
+    {
+      "id": "current-config-items-and-defaults",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/store_instances/config_store/store_definition.hpp",
+        "src/persistent_stores/store_instances/config_store/defaults.hpp"
+      ],
+      "reference_surface": "CurrentStore item declarations and defaults:: constants define current config items, default values, flags, arrays, and ram-only items.",
+      "rust_surface": "Rust config item catalog must track item identity, default provenance, item flags, arrays, and ram-only status.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "credential_policy": "name-only-redacted",
+      "intentional_delta": "none",
+      "notes": "Defaults are source-backed by defaults.hpp; credential-bearing defaults are not reproduced in this manifest."
+    },
+    {
+      "id": "deprecated-store-hashed-ids",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/store_instances/config_store/store_definition.hpp",
+        "src/persistent_stores/store_instances/config_store/migrations.cpp",
+        "src/persistent_stores/journal/store.hpp"
+      ],
+      "reference_surface": "DeprecatedStore preserves old StoreItem identities and requires successors to keep distinct journal::hash values.",
+      "rust_surface": "Rust deprecated-item contract must preserve DeprecatedStore identity, hashed IDs, and migration triggers.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "credential_policy": "not-applicable",
+      "intentional_delta": "none",
+      "notes": "DeprecatedStore comments state hashes cannot be changed and old items must keep hashed IDs for backend scanning."
+    },
+    {
+      "id": "old-eeprom-version-chain",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/store_instances/config_store/old_eeprom/last_migration.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/last_migration.cpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v4.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v6.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v7.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v9.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v10.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v11.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v12.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v22.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v32787.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v32789.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/eeprom_v_current.hpp"
+      ],
+      "reference_surface": "Old EEPROM conversion chain covers v4, v6, v7, v9, v10, v11, v12, v32787, v32789, v22, and current.",
+      "rust_surface": "Rust migration fixtures must preserve the same old EEPROM version chain before current schema loading.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "credential_policy": "name-only-redacted",
+      "intentional_delta": "none",
+      "notes": "The conversion path advances old records to EEPROM_VERSION 23 before config-store migration into journal entries."
+    },
+    {
+      "id": "old-eeprom-last-migration",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/store_instances/config_store/store_instance.cpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/last_migration.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/last_migration.cpp"
+      ],
+      "reference_surface": "init_config_store reads old EEPROM, checks CRC, converts older versions, erases journal storage, and migrates old values into one backend transaction.",
+      "rust_surface": "Rust storage migration path must model old EEPROM detection, CRC gating, conversion, backend erase, and one-transaction migration identity.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "credential_policy": "name-only-redacted",
+      "intentional_delta": "none",
+      "notes": "Migration records key identities and source paths only; no raw EEPROM bytes are represented."
+    },
+    {
+      "id": "config-store-runtime-migrations",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/store_instances/config_store/store_definition.cpp",
+        "src/persistent_stores/store_instances/config_store/migrations.cpp",
+        "src/persistent_stores/journal/backend.cpp"
+      ],
+      "reference_surface": "perform_config_migrations runs versioned config migrations and Backend migration functions read deprecated IDs from current and intermediary banks.",
+      "rust_surface": "Rust runtime migration contract must preserve ordered version gates and deprecated-item migration semantics.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "credential_policy": "not-applicable",
+      "intentional_delta": "none",
+      "notes": "Current migrations cover versions 1 through 5 and backend-generated intermediary transactions."
+    },
+    {
+      "id": "credential-bearing-config-keys",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/store_instances/config_store/store_definition.hpp",
+        "src/persistent_stores/store_instances/config_store/old_eeprom/last_migration.cpp",
+        "src/connect/marlin_printer.cpp"
+      ],
+      "reference_surface": "Credential-bearing key names: WIFI AP SSID, WIFI AP Password, PrusaLink Password, Connect Token, Connect Host, Connect Proxy Host, Connect custom TLS certificate.",
+      "rust_surface": "Rust credential storage contract must expose these key identities with redacted value handling.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "credential_policy": "name-only-redacted",
+      "intentional_delta": "none",
+      "notes": "This row intentionally names keys only and excludes password, token, certificate, and host values."
+    },
+    {
+      "id": "settings-import-export-keys",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "doc/prusa_printer_settings.ini",
+        "src/common/settings_ini.hpp",
+        "src/common/ini_handler.cpp",
+        "src/common/fsm_network_setup.cpp",
+        "src/connect/marlin_printer.cpp"
+      ],
+      "reference_surface": "Settings import/export behavior uses /usb/prusa_printer_settings.ini for network, Wi-Fi, and Connect config keys.",
+      "rust_surface": "Rust settings import/export contract must preserve source-backed INI sections and mapping to config-store key names.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "credential_policy": "name-only-redacted",
+      "intentional_delta": "none",
+      "notes": "doc/prusa_printer_settings.ini exists and is cited for key names only; sample values are intentionally not reproduced."
+    },
+    {
+      "id": "selftest-calibration-state",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/store_instances/config_store/store_definition.hpp",
+        "src/persistent_stores/store_instances/config_store/defaults.hpp",
+        "src/persistent_stores/store_instances/config_store/migrations.cpp",
+        "src/common/selftest_result.hpp"
+      ],
+      "reference_surface": "Selftest Result, selftest_result, calibration, and selftest state are stored through ItemFlag::calibrations, SelftestResult structures, and selftest_result migration rows.",
+      "rust_surface": "Rust selftest/calibration storage contract must preserve SelftestResult identity, selftest_result field behavior, and calibration flags.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "credential_policy": "not-applicable",
+      "intentional_delta": "none",
+      "notes": "Rows include Run Selftest, Selftest Result lineage, Test Result Phase Stepping, Input Shaper Calibration, and other calibration-backed config items."
+    },
+    {
+      "id": "journal-hash-generation",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "utils/persistent_stores/journal_hashes_generator.py",
+        "src/persistent_stores/journal/store.hpp",
+        "src/persistent_stores/store_instances/config_store/store_definition.cpp"
+      ],
+      "reference_surface": "journal::hash resolves generated hashes calculated as SHA-256 high bytes masked with 0x3FFF and protected by duplicate detection.",
+      "rust_surface": "Rust journal/hash contract must preserve the 0x3FFF mask, generated lookup surface, and duplicate detection evidence.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "credential_policy": "not-applicable",
+      "intentional_delta": "none",
+      "notes": "The generator raises on duplicate IDs and store_definition.cpp asserts unique items against backend reserved IDs."
+    },
+    {
+      "id": "journal-backend-crc-bank-selection",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/journal/backend.cpp",
+        "src/persistent_stores/journal/store.hpp",
+        "src/persistent_stores/store_instances/config_store/store_instance.cpp"
+      ],
+      "reference_surface": "Journal backend validates transaction CRCs, chooses the newest valid bank, migrates corrupted or compacted banks, and preserves cold-start/migrated states.",
+      "rust_surface": "Rust journal backend contract must preserve CRC validation, bank selection, bank migration, and cold-start versus migrated state classification.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "credential_policy": "not-applicable",
+      "intentional_delta": "none",
+      "notes": "Bank-selection behavior is source-audit only; no local flash-wear or power-loss proof is claimed."
+    },
+    {
+      "id": "generated-struct-reflection",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "include/common/visit_all_struct_fields.hpp",
+        "utils/persistent_stores/visit_all_struct_fields_generator.py",
+        "src/persistent_stores/store_instances/config_store/store_definition.cpp",
+        "src/persistent_stores/journal/store.hpp"
+      ],
+      "reference_surface": "Generated visit_all_struct_fields reflection walks aggregate fields for uniqueness checks, dumps, loads, and config-store item iteration.",
+      "rust_surface": "Rust reflection or catalog contract must preserve field coverage for current and deprecated config items.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "credential_policy": "not-applicable",
+      "intentional_delta": "none",
+      "notes": "The generated header is tracked source output and is linked to its generator for drift review."
+    }
+  ]
+}
