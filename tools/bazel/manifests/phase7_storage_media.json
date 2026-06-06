@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "phase": "07-persistence-storage-and-resource-compatibility",
+  "phase_lifecycle_id": "7-2026-06-06T04-24-25",
+  "storage_surfaces": [
+    {
+      "id": "storage-driver-eeprom",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/persistent_stores/storage_drivers/eeprom_storage.cpp"
+      ],
+      "mount_name": "eeprom",
+      "runtime_path": "EEPROM/internal flash",
+      "reference_surface": "EEPROMStorage delegates reads and writes to st25dv64k_user_read, st25dv64k_user_read_bytes, st25dv64k_user_write, and st25dv64k_user_write_bytes, with erase_area writing 0xff chunks.",
+      "rust_surface": "Rust storage-driver compatibility must preserve EEPROM/internal flash read, write, multi-byte transfer, write-count, and erase-area identity before claiming persistent config compatibility.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "non_local_evidence": "manual-hardware-required",
+      "notes": "Static source coverage names the EEPROM driver boundary only; hardware flash behavior and wear characteristics require separate hardware evidence."
+    },
+    {
+      "id": "filesystem-usb-fatfs",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/buddy/filesystem.cpp",
+        "src/buddy/filesystem_fatfs.cpp",
+        "include/buddy/filesystem.h"
+      ],
+      "mount_name": "usb",
+      "runtime_path": "/usb",
+      "reference_surface": "filesystem_init calls filesystem_fatfs_init, whose devoptab_fatfs registers name \"usb\" and dispatches FatFS open, close, read, write, seek, stat, directory, sync, chmod, truncate, and statvfs operations.",
+      "rust_surface": "Rust filesystem compatibility must preserve the /usb mount name, path stripping through process_path, and FatFS-backed POSIX-like operation coverage.",
+      "evidence_class": "manual-hardware-required",
+      "proof_scope": "source-audit-plus-manual-media",
+      "non_local_evidence": "manual-hardware-required",
+      "notes": "The manifest does not claim USB media proof; removable media behavior must be proven with a hardware or equivalent media workflow."
+    },
+    {
+      "id": "filesystem-internal-littlefs",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/buddy/filesystem.cpp",
+        "src/buddy/filesystem_littlefs.cpp",
+        "src/buddy/filesystem_littlefs_internal.cpp",
+        "include/buddy/filesystem_littlefs.h",
+        "include/buddy/filesystem_littlefs_internal.h"
+      ],
+      "mount_name": "internal",
+      "runtime_path": "/internal",
+      "reference_surface": "filesystem_littlefs_internal_init registers internal_devoptab with name \"internal\" after littlefs_internal_init, using shared LittleFS open, close, read, write, seek, stat, directory, sync, truncate, and statvfs dispatch.",
+      "rust_surface": "Rust filesystem compatibility must preserve the /internal mount name, LittleFS-backed operation mapping, and internal filesystem initialization semantics.",
+      "evidence_class": "hardware-smoke",
+      "proof_scope": "source-audit-plus-hardware-smoke",
+      "non_local_evidence": "hardware-smoke",
+      "notes": "Static source coverage identifies the mount and dispatch surface; retained internal flash proof remains a hardware-smoke item outside this local manifest."
+    },
+    {
+      "id": "filesystem-bbf-littlefs",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/buddy/filesystem_littlefs.cpp",
+        "src/buddy/filesystem_littlefs_bbf.cpp",
+        "include/buddy/filesystem_littlefs.h",
+        "include/buddy/filesystem_littlefs_bbf.h"
+      ],
+      "mount_name": "bbf",
+      "runtime_path": "/bbf",
+      "reference_surface": "filesystem_littlefs_bbf_init registers bbf_devoptab with name \"bbf\" after littlefs_bbf_init and exposes the shared LittleFS operation table for BBF resource content.",
+      "rust_surface": "Rust resource compatibility must preserve the /bbf mount name, BBF LittleFS initialization/deinitialization identity, and simulator-suitable resource access behavior.",
+      "evidence_class": "simulator-flow",
+      "proof_scope": "source-audit-plus-simulator-flow",
+      "non_local_evidence": "simulator-flow",
+      "notes": "The BBF row is classified for simulator-flow evidence and does not imply physical media or flash timing proof."
+    },
+    {
+      "id": "filesystem-semihosting",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/buddy/filesystem.cpp",
+        "src/buddy/filesystem_semihosting.cpp",
+        "include/buddy/filesystem_semihosting.h"
+      ],
+      "mount_name": "semihosting",
+      "runtime_path": "/semihosting",
+      "reference_surface": "filesystem_init conditionally calls filesystem_semihosting_init when a debugger is attached; devoptab_semihosting registers name \"semihosting\" and exposes read-only open/read/seek/close through semihosting syscalls.",
+      "rust_surface": "Rust debug-resource compatibility must preserve the /semihosting mount identity, debugger-gated initialization, and read-only semihosting operation surface.",
+      "evidence_class": "manual-hardware-required",
+      "proof_scope": "source-audit-plus-debugger-manual",
+      "non_local_evidence": "manual-hardware-required",
+      "notes": "Debugger-attached semihosting requires manual debugger or hardware-aware proof and is not validated by static source inspection alone."
+    },
+    {
+      "id": "filesystem-root-listing",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "src/buddy/filesystem.cpp",
+        "src/buddy/filesystem_root.cpp",
+        "include/buddy/filesystem_root.h",
+        "lib/libsysbase/iosupport.c",
+        "lib/libsysbase/sys/iosupport.h"
+      ],
+      "mount_name": "root",
+      "runtime_path": "/",
+      "reference_surface": "filesystem_root_init registers a root devoptab with an empty name, and its directory iterator accepts only root paths while listing mounted filesystem device names from devoptab_list.",
+      "rust_surface": "Rust filesystem compatibility must preserve root directory listing behavior that exposes mounted filesystem names without implementing ordinary file operations on root.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "non_local_evidence": "not-applicable",
+      "notes": "Root listing is a devoptab directory surface, not a storage medium with local media proof."
+    },
+    {
+      "id": "libsysbase-devoptab-dispatch",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "lib/libsysbase/iosupport.c",
+        "lib/libsysbase/open.c",
+        "lib/libsysbase/read.c",
+        "lib/libsysbase/write.c",
+        "lib/libsysbase/dirent.c",
+        "lib/libsysbase/sys/iosupport.h"
+      ],
+      "mount_name": "devoptab",
+      "runtime_path": "POSIX-like devoptab",
+      "reference_surface": "libsysbase FindDevice, AddDevice, RemoveDevice, _open, _read, _write, opendir, readdir, rewinddir, and closedir route POSIX-like calls through devoptab_t function pointers.",
+      "rust_surface": "Rust runtime compatibility must preserve POSIX-like devoptab dispatch identity or provide an explicit compatibility layer for mounted filesystem operations.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "non_local_evidence": "not-applicable",
+      "notes": "The row records dispatch behavior only; it does not claim timing, durability, or hardware-device proof."
+    },
+    {
+      "id": "block-device-test-randomness",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        "tests/blockdevice/test_block_device.py"
+      ],
+      "mount_name": "blockdevice-test",
+      "runtime_path": "tests/blockdevice",
+      "reference_surface": "tests/blockdevice/test_block_device.py uses random block selection, os.urandom payloads, seek/read/write consistency checks, and benchmarked read/write flows against a pytest-provided device path.",
+      "rust_surface": "Rust storage test compatibility must preserve a randomized block-device test surface or document equivalent deterministic and randomized storage-media coverage.",
+      "evidence_class": "source-audit",
+      "proof_scope": "source-audit",
+      "non_local_evidence": "not-applicable",
+      "notes": "This row records the current test design and source path only; it does not assert that a block device test was run for this plan."
+    }
+  ]
+}
