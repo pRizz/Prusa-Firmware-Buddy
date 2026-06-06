@@ -1,0 +1,233 @@
+{
+  "schema_version": 1,
+  "phase": "07-persistence-storage-and-resource-compatibility",
+  "phase_lifecycle_id": "7-2026-06-06T04-24-25",
+  "generated_surfaces": [
+    {
+      "id": "product-profiles",
+      "requirement": "IFCE-05",
+      "ownership": "tracked-reviewed-source",
+      "tracked_outputs": [
+        "tools/bazel/manifests/representative_products.json"
+      ],
+      "declared_sources": [
+        "ProjectOptions.cmake",
+        "tools/bazel/generated_drift.py",
+        "tools/bazel/BUILD.bazel"
+      ],
+      "check_label": "//tools/bazel:generated_product_profiles_check",
+      "update_label": "//tools/bazel:generated_product_profiles_update",
+      "evidence_class": "local-smoke",
+      "writes_source_tree": true,
+      "proof_scope": "phase3-label-wiring-check",
+      "notes": "Representative product profile drift is tracked as reviewed JSON source and normalized through the Phase 3 registry."
+    },
+    {
+      "id": "option-data",
+      "requirement": "IFCE-05",
+      "ownership": "tracked-reviewed-source",
+      "tracked_outputs": [
+        "CMakePresets.json"
+      ],
+      "declared_sources": [
+        "utils/presets/presets.json",
+        "utils/build.py",
+        "tools/bazel/generated_drift.py"
+      ],
+      "check_label": "//tools/bazel:generated_option_data_check",
+      "update_label": "//tools/bazel:generated_option_data_update",
+      "evidence_class": "local-smoke",
+      "writes_source_tree": true,
+      "proof_scope": "phase3-label-wiring-check",
+      "notes": "Generated CMake preset data remains a tracked reviewed artifact while Bazel exposes explicit check and update labels for drift handling."
+    },
+    {
+      "id": "resource-assets",
+      "requirement": "IFCE-05",
+      "ownership": "generated-at-build",
+      "tracked_outputs": [
+        "src/gui/res/cc",
+        "build tree qoi.data",
+        "build tree resources/revision_standard.hpp"
+      ],
+      "declared_sources": [
+        "src/resources/CMakeLists.txt",
+        "src/resources/QoiGenerator.cmake",
+        "utils/build.py",
+        "utils/qoi_packer.py"
+      ],
+      "check_label": "//tools/bazel:generated_resources_check",
+      "update_label": "//tools/bazel:generated_resources_update",
+      "evidence_class": "ci-only",
+      "writes_source_tree": true,
+      "proof_scope": "phase3-label-wiring-check",
+      "notes": "Resource generation includes build-tree image/header outputs and source-reviewed resource headers; default local evidence records label wiring and source ownership."
+    },
+    {
+      "id": "translation-pot",
+      "requirement": "IFCE-05",
+      "ownership": "tracked-reviewed-source",
+      "tracked_outputs": [
+        "src/lang/po/Prusa-Firmware-Buddy.pot"
+      ],
+      "declared_sources": [
+        "src/lang/CMakeLists.txt",
+        "src/lang/po",
+        "utils/translations_and_fonts/generate_pot.sh",
+        "utils/translations_and_fonts/lang.py"
+      ],
+      "check_label": "//tools/bazel:generated_translations_check",
+      "update_label": "//tools/bazel:generated_translations_update",
+      "evidence_class": "ci-only",
+      "writes_source_tree": true,
+      "proof_scope": "phase3-label-wiring-check",
+      "notes": "The POT template is a tracked reviewed translation artifact; the update label names the existing gettext shell workflow."
+    },
+    {
+      "id": "font-assets",
+      "requirement": "IFCE-05",
+      "ownership": "tracked-reviewed-source",
+      "tracked_outputs": [
+        "src/gui/res/fnt_png",
+        "src/gui/res/cc"
+      ],
+      "declared_sources": [
+        "utils/translations_and_fonts/generate_all_fonts.sh",
+        "utils/translations_and_fonts/generate_single_font.sh",
+        "utils/translations_and_fonts/README_FONTS.md",
+        "src/gui/res/fnt_src"
+      ],
+      "check_label": "//tools/bazel:generated_fonts_check",
+      "update_label": "//tools/bazel:generated_fonts_update",
+      "evidence_class": "ci-only",
+      "writes_source_tree": true,
+      "proof_scope": "phase3-label-wiring-check",
+      "notes": "Font bitmap and header churn is tracked as reviewed source and remains guarded by named generated-font labels."
+    },
+    {
+      "id": "wui-assets",
+      "requirement": "IFCE-05",
+      "ownership": "tracked-reviewed-source",
+      "tracked_outputs": [
+        "lib/WUI",
+        "src/resources/web"
+      ],
+      "declared_sources": [
+        "lib/WUI",
+        "src/resources/web",
+        "utils/build.py"
+      ],
+      "check_label": "//tools/bazel:generated_wui_assets_check",
+      "update_label": "//tools/bazel:generated_wui_assets_update",
+      "evidence_class": "ci-only",
+      "writes_source_tree": true,
+      "proof_scope": "phase3-label-wiring-check",
+      "notes": "WUI generated/static assets are reviewed in the source tree and have distinct drift-check and update labels."
+    },
+    {
+      "id": "esp-blobs",
+      "requirement": "IFCE-05",
+      "ownership": "tracked-reviewed-source",
+      "tracked_outputs": [
+        "lib/esp32-nic",
+        "lib/esp8266-nic",
+        "src/resources/esp32",
+        "src/resources/esp8266"
+      ],
+      "declared_sources": [
+        "utils/gen_esp_parts.py",
+        "src/resources/CMakeLists.txt",
+        "src/resources/esp32",
+        "src/resources/esp8266"
+      ],
+      "check_label": "//tools/bazel:generated_esp_blobs_check",
+      "update_label": "//tools/bazel:generated_esp_blobs_update",
+      "evidence_class": "reference-only",
+      "writes_source_tree": true,
+      "proof_scope": "phase3-label-wiring-check",
+      "notes": "ESP firmware blobs and part metadata remain reference-owned source artifacts; this row makes their generated label coverage explicit."
+    },
+    {
+      "id": "puppy-descriptors",
+      "requirement": "IFCE-05",
+      "ownership": "tracked-reviewed-source",
+      "tracked_outputs": [
+        "src/puppies"
+      ],
+      "declared_sources": [
+        "utils/gen_puppies_descriptor.py",
+        "src/puppies",
+        "tools/bazel/generated_drift.py"
+      ],
+      "check_label": "//tools/bazel:generated_puppy_descriptors_check",
+      "update_label": "//tools/bazel:generated_puppy_descriptors_update",
+      "evidence_class": "reference-only",
+      "writes_source_tree": true,
+      "proof_scope": "phase3-label-wiring-check",
+      "notes": "Puppy descriptor generation is registered for resource compatibility even though auxiliary runtime behavior is later Phase 10 evidence."
+    },
+    {
+      "id": "mmu-descriptors",
+      "requirement": "IFCE-05",
+      "ownership": "tracked-reviewed-source",
+      "tracked_outputs": [
+        "lib/Prusa-Firmware-MMU"
+      ],
+      "declared_sources": [
+        "lib/AddMMU2.cmake",
+        "lib/Prusa-Firmware-MMU",
+        "utils/gen_puppies_descriptor.py"
+      ],
+      "check_label": "//tools/bazel:generated_mmu_descriptors_check",
+      "update_label": "//tools/bazel:generated_mmu_descriptors_update",
+      "evidence_class": "reference-only",
+      "writes_source_tree": true,
+      "proof_scope": "phase3-label-wiring-check",
+      "notes": "MMU descriptor coverage is kept separate from MMU firmware runtime behavior and is guarded through Phase 3 labels."
+    },
+    {
+      "id": "package-metadata",
+      "requirement": "IFCE-05",
+      "ownership": "generated-at-build",
+      "tracked_outputs": [
+        "tools/bazel/manifests/representative_products.json",
+        "build product metadata",
+        "resource package metadata"
+      ],
+      "declared_sources": [
+        "tools/bazel/artifact_manifest.py",
+        "tools/bazel/generated_drift.py",
+        "utils/pack_fw.py",
+        "src/resources/CMakeLists.txt"
+      ],
+      "check_label": "//tools/bazel:generated_package_metadata_check",
+      "update_label": "//tools/bazel:generated_package_metadata_update",
+      "evidence_class": "local-smoke",
+      "writes_source_tree": true,
+      "proof_scope": "phase3-label-wiring-check",
+      "notes": "Package metadata coverage records the labels and source inputs that produce representative metadata without treating it as release approval."
+    },
+    {
+      "id": "tracked-generated-outputs",
+      "requirement": "IFCE-04,IFCE-05",
+      "ownership": "tracked-reviewed-source",
+      "tracked_outputs": [
+        "CMakePresets.json",
+        "doc/logging_components.md",
+        "include/common/visit_all_struct_fields.hpp"
+      ],
+      "declared_sources": [
+        "utils/build.py",
+        "utils/logging/generate_overview.py",
+        "utils/persistent_stores/visit_all_struct_fields_generator.py",
+        ".pre-commit-config.yaml"
+      ],
+      "check_label": "//tools/bazel:tracked_generated_outputs_check",
+      "update_label": "//tools/bazel:tracked_generated_outputs_update",
+      "evidence_class": "local-smoke",
+      "writes_source_tree": true,
+      "proof_scope": "phase3-label-wiring-check",
+      "notes": "This aggregate covers tracked reviewed generated files, including the persistent-store reflection header needed for IFCE-04 compatibility evidence."
+    }
+  ]
+}
