@@ -1,0 +1,319 @@
+{
+  "schema_version": 1,
+  "phase": "07-persistence-storage-and-resource-compatibility",
+  "phase_lifecycle_id": "7-2026-06-06T04-24-25",
+  "resource_surfaces": [
+    {
+      "id": "resource-standard-image",
+      "requirement": "IFCE-05",
+      "source_paths": [
+        "src/resources/CMakeLists.txt",
+        "cmake/Littlefs.cmake",
+        "utils/mklittlefs.py",
+        "utils/resources/generate_hash_file.py"
+      ],
+      "declared_inputs": [
+        "resources-image littlefs image",
+        "resource package files registered through add_resource and add_gzip_resource",
+        "resources-header-standard generated hash header"
+      ],
+      "runtime_paths": [
+        "/esp/uart_wifi.bin",
+        "/esp/bootloader.bin",
+        "/esp/partition-table.bin",
+        "/web/index.html",
+        "/web/favicon.ico",
+        "qoi.data",
+        "/lang/*.mo",
+        "resources/revision_standard.hpp"
+      ],
+      "reference_surface": "src/resources/CMakeLists.txt creates the resources-image LittleFS image, adds ESP, WUI, language, QOI, and other runtime files, and generates resources/revision_standard.hpp from the content hash.",
+      "rust_surface": "Rust resource packaging must preserve the standard image member names, declared generator inputs, and revision-header identity before the runtime can consume bundled resources.",
+      "evidence_class": "source-backed-manifest",
+      "proof_scope": "semantic-resource-contract",
+      "generated_label": "//tools/bazel:generated_resources_check",
+      "notes": "This row records semantic package identity and source-path traceability only; physical media, firmware packaging, and cutover proof remain later evidence."
+    },
+    {
+      "id": "resource-bootloader-image",
+      "requirement": "IFCE-05",
+      "source_paths": [
+        "src/resources/CMakeLists.txt",
+        "cmake/Littlefs.cmake",
+        "utils/mklittlefs.py",
+        "utils/pack_fw.py"
+      ],
+      "declared_inputs": [
+        "resources-bootloader-image littlefs image",
+        "bootloader-${BOOTLOADER_VARIANT} dependency directory",
+        "resources-header-bootloader generated hash header",
+        "required_bootloader_version.hpp.in"
+      ],
+      "runtime_paths": [
+        "/bootloader.bin",
+        "resources/revision_bootloader.hpp",
+        "bootloader/required_version.hpp"
+      ],
+      "reference_surface": "BOOTLOADER_UPDATE builds a resources-bootloader-image LittleFS image containing /bootloader.bin and generates a bootloader revision header plus required bootloader version header.",
+      "rust_surface": "Rust bootloader-resource handling must preserve bootloader image membership, version parsing, and revision identity as a named resource compatibility surface.",
+      "evidence_class": "source-backed-manifest",
+      "proof_scope": "semantic-resource-contract",
+      "generated_label": "//tools/bazel:generated_package_metadata_check",
+      "notes": "The row covers package metadata and resource identity; signing, product matrix artifact comparison, and hardware update behavior are not proven here."
+    },
+    {
+      "id": "resource-esp32-blobs",
+      "requirement": "IFCE-05",
+      "source_paths": [
+        "src/resources/CMakeLists.txt",
+        "src/resources/esp32/uart_wifi.bin",
+        "src/resources/esp32/bootloader.bin",
+        "src/resources/esp32/partition-table.bin"
+      ],
+      "declared_inputs": [
+        "HAS_EMBEDDED_ESP32 resource branch",
+        "utils/gen_esp_parts.py flash map",
+        "esp32 firmware blob inputs"
+      ],
+      "runtime_paths": [
+        "/esp/uart_wifi.bin",
+        "/esp/bootloader.bin",
+        "/esp/partition-table.bin"
+      ],
+      "reference_surface": "When HAS_EMBEDDED_ESP32 is true, the resource image includes ESP32 uart_wifi, bootloader, and partition-table blobs and emits esp_parts.gen with flash offsets.",
+      "rust_surface": "Rust ESP flashing/resource compatibility must preserve the ESP32 blob file names, runtime package paths, and declared flash-offset metadata source.",
+      "evidence_class": "source-backed-manifest",
+      "proof_scope": "semantic-resource-contract",
+      "generated_label": "//tools/bazel:generated_esp_blobs_check",
+      "notes": "The source blobs are tracked binary inputs; this row records their package paths and generator coverage, not ESP flashing runtime proof."
+    },
+    {
+      "id": "resource-esp8266-blobs",
+      "requirement": "IFCE-05",
+      "source_paths": [
+        "src/resources/CMakeLists.txt",
+        "src/resources/esp8266/uart_wifi.bin",
+        "src/resources/esp8266/bootloader.bin",
+        "src/resources/esp8266/partition-table.bin",
+        "src/resources/esp8266/stub_text.bin",
+        "src/resources/esp8266/stub_data.bin"
+      ],
+      "declared_inputs": [
+        "HAS_ESP_FLASH_TASK non-ESP32 resource branch",
+        "utils/gen_esp_parts.py flash and memory map",
+        "esp8266 firmware and stub blob inputs"
+      ],
+      "runtime_paths": [
+        "/esp/uart_wifi.bin",
+        "/esp/bootloader.bin",
+        "/esp/partition-table.bin",
+        "/esp/stub_text.bin",
+        "/esp/stub_data.bin"
+      ],
+      "reference_surface": "When the ESP flash task uses the ESP8266 path, the resource image includes uart_wifi, bootloader, partition-table, stub_text, and stub_data blobs and emits esp_parts.gen with flash and memory offsets.",
+      "rust_surface": "Rust ESP8266 compatibility must keep the same runtime paths and declared offset metadata source for the retained ESP flashing flow.",
+      "evidence_class": "source-backed-manifest",
+      "proof_scope": "semantic-resource-contract",
+      "generated_label": "//tools/bazel:generated_esp_blobs_check",
+      "notes": "This is package identity evidence only; board module flashing behavior stays a later runtime proof item."
+    },
+    {
+      "id": "resource-wui-static-assets",
+      "requirement": "IFCE-05",
+      "source_paths": [
+        "src/resources/CMakeLists.txt",
+        "src/resources/web/index.html",
+        "src/resources/web/favicon.ico",
+        "src/resources/web/main.b41402ed4d6d019ca007.js",
+        "src/resources/web/main.71c989a4a290e5c10892.css"
+      ],
+      "declared_inputs": [
+        "gzip-compressed WUI static asset resources",
+        "tracked src/resources/web static asset files"
+      ],
+      "runtime_paths": [
+        "/web/index.html",
+        "/web/favicon.ico",
+        "/web/main.b41402ed4d6d019ca007.js",
+        "/web/main.71c989a4a290e5c10892.css"
+      ],
+      "reference_surface": "src/resources/CMakeLists.txt gzips and packages the tracked web favicon, index, JavaScript, and CSS assets into the standard resource image under /web.",
+      "rust_surface": "Rust resource packaging must retain the WUI static asset paths and compression/package contract before WUI serving parity can be evaluated.",
+      "evidence_class": "source-backed-manifest",
+      "proof_scope": "semantic-resource-contract",
+      "generated_label": "//tools/bazel:generated_wui_assets_check",
+      "notes": "This row does not claim HTTP API or browser behavior; it covers static asset source and package identity only."
+    },
+    {
+      "id": "resource-qoi-data",
+      "requirement": "IFCE-05",
+      "source_paths": [
+        "src/resources/CMakeLists.txt",
+        "src/resources/QoiGenerator.cmake",
+        "utils/qoi_packer.py",
+        "src/gui/res/png",
+        "src/gui/res/mini_used_imgs.txt"
+      ],
+      "declared_inputs": [
+        "src/gui/res/png image directory",
+        "MINI-specific qoi input filter",
+        "qoi_resources.gen generated header",
+        "qoi.data generated resource payload"
+      ],
+      "runtime_paths": [
+        "qoi.data",
+        "src/gui/res/qoi_resources.gen"
+      ],
+      "reference_surface": "QoiGenerator.cmake runs utils/qoi_packer.py over GUI PNG inputs to produce qoi.data and qoi_resources.gen, then packages qoi.data into the standard resource image.",
+      "rust_surface": "Rust GUI/resource compatibility must preserve QOI generated-data identity, declared PNG inputs, and package path before image rendering parity is claimed.",
+      "evidence_class": "source-backed-manifest",
+      "proof_scope": "semantic-resource-contract",
+      "generated_label": "//tools/bazel:generated_resources_check",
+      "notes": "The row covers generated QOI resource identity; visual GUI behavior belongs to a later interface phase."
+    },
+    {
+      "id": "resource-language-packs",
+      "requirement": "IFCE-05",
+      "source_paths": [
+        "src/lang/CMakeLists.txt",
+        "src/lang/translation_provider_FILE.cpp",
+        "src/lang/translation_provider_CPUFLASH.cpp",
+        "src/lang/gettext_string_hash.cpp",
+        "src/lang/po/Prusa-Firmware-Buddy.pot",
+        "utils/translations_and_fonts/lang.py"
+      ],
+      "declared_inputs": [
+        "src/lang/po/*/*.po translation files",
+        "hash_table_buckets.ipp generated hash table",
+        "full-chars.txt and related generated character sets",
+        "external-flash .mo files when TRANSLATIONS_IN_EXTFLASH is true",
+        "CPU-flash generated string tables when TRANSLATIONS_IN_EXTFLASH is false"
+      ],
+      "runtime_paths": [
+        "/lang/cs.mo",
+        "/lang/de.mo",
+        "/lang/es.mo",
+        "/lang/fr.mo",
+        "/lang/it.mo",
+        "/lang/pl.mo",
+        "/lang/ja.mo",
+        "/lang/uk.mo",
+        "/internal/res/lang/*.mo"
+      ],
+      "reference_surface": "Language resources are generated from .po files through lang.py and msgfmt, with FILE providers loading /internal/res/lang/*.mo and CPUFLASH providers including generated string-table headers.",
+      "rust_surface": "Rust localization compatibility must preserve language identifiers, gettext hash behavior, generated string tables, and external language-pack paths.",
+      "evidence_class": "source-backed-manifest",
+      "proof_scope": "semantic-resource-contract",
+      "generated_label": "//tools/bazel:generated_translations_check",
+      "notes": "This is translation asset and lookup-surface coverage only; GUI text layout and workflow parity are out of this plan's scope."
+    },
+    {
+      "id": "resource-font-assets",
+      "requirement": "IFCE-05",
+      "source_paths": [
+        "utils/translations_and_fonts/README_FONTS.md",
+        "utils/translations_and_fonts/generate_all_fonts.sh",
+        "utils/translations_and_fonts/generate_single_font.sh",
+        "src/gui/res/cc"
+      ],
+      "declared_inputs": [
+        "translation-required character sets",
+        "font generation scripts",
+        "tracked generated font headers under src/gui/res/cc"
+      ],
+      "runtime_paths": [
+        "src/gui/res/cc/font_regular_11x18_full.hpp",
+        "src/gui/res/cc/*.hpp"
+      ],
+      "reference_surface": "Font assets are generated through the translation/font tooling and retained as tracked generated headers consumed by GUI resource code.",
+      "rust_surface": "Rust GUI/resource compatibility must distinguish reviewed tracked font headers from build-generated outputs and keep font asset identity source-backed.",
+      "evidence_class": "source-backed-manifest",
+      "proof_scope": "source-audit",
+      "generated_label": "//tools/bazel:generated_fonts_check",
+      "notes": "This row records font/header ownership and source linkage; it intentionally leaves rendered UI proof to later GUI validation."
+    },
+    {
+      "id": "resource-mmu-firmware",
+      "requirement": "IFCE-05",
+      "source_paths": [
+        "src/resources/CMakeLists.txt",
+        "utils/mmu_ihex_cleanup.py",
+        "lib/Prusa-Firmware-MMU"
+      ],
+      "declared_inputs": [
+        "firmware-mmu dependency directory",
+        "MMU hex firmware cleanup command",
+        "arm-none-eabi-objcopy binary conversion",
+        "mmu_fw_attached_version.hpp.in"
+      ],
+      "runtime_paths": [
+        "/mmu/fw.bin",
+        "mmu2/mmu_fw_attached_version.hpp"
+      ],
+      "reference_surface": "When HAS_MMU2 is enabled, the resource build cleans the MMU hex firmware, converts it to binary, configures the attached version header, and packages /mmu/fw.bin.",
+      "rust_surface": "Rust MMU resource compatibility must preserve MMU firmware package path, source dependency identity, and attached-version metadata before auxiliary runtime parity is evaluated.",
+      "evidence_class": "source-backed-manifest",
+      "proof_scope": "semantic-resource-contract",
+      "generated_label": "//tools/bazel:generated_mmu_descriptors_check",
+      "notes": "The row covers packaged MMU firmware identity only; MMU protocol, flashing, and auxiliary-controller behavior remain later proof."
+    },
+    {
+      "id": "resource-hash-and-revision",
+      "requirement": "IFCE-05",
+      "source_paths": [
+        "src/resources/CMakeLists.txt",
+        "src/resources/hash.cpp",
+        "src/resources/revision.cpp",
+        "cmake/Littlefs.cmake",
+        "utils/mklittlefs.py",
+        "utils/resources/generate_hash_file.py",
+        "utils/pack_fw.py"
+      ],
+      "declared_inputs": [
+        "lfs_image_generate_hash_bin_file content hash",
+        "resources/revision_standard.hpp generated header",
+        "resources/revision_bootloader.hpp generated header",
+        "BBF TLV resource hash entries"
+      ],
+      "runtime_paths": [
+        "resources/revision_standard.hpp",
+        "resources/revision_bootloader.hpp",
+        "RESOURCES_IMAGE_HASH TLV",
+        "RESOURCES_BOOTLOADER_IMAGE_HASH TLV"
+      ],
+      "reference_surface": "Resource content hashes are generated from LittleFS images, converted into revision headers, stored by InstalledRevision, and represented in BBF TLV metadata.",
+      "rust_surface": "Rust resource compatibility must preserve revision header names, content-hash meaning, and BBF resource-hash metadata as explicit package contracts.",
+      "evidence_class": "source-backed-manifest",
+      "proof_scope": "semantic-resource-contract",
+      "generated_label": "//tools/bazel:generated_package_metadata_check",
+      "notes": "This row names hash and revision identity without treating those hashes as new security controls or release approval evidence."
+    },
+    {
+      "id": "resource-runtime-bootstrap",
+      "requirement": "IFCE-05",
+      "source_paths": [
+        "src/resources/bootstrap.cpp",
+        "src/resources/hash.cpp",
+        "src/resources/revision.cpp",
+        "src/resources/CMakeLists.txt"
+      ],
+      "declared_inputs": [
+        "BBF resources revision TLV entries",
+        "installed resource revision files",
+        "internal resource directory scan/copy flow",
+        "resource bootstrap progress stages"
+      ],
+      "runtime_paths": [
+        "/internal/res",
+        "/bbf",
+        "resources/revision_standard.hpp"
+      ],
+      "reference_surface": "Runtime bootstrap compares BBF resource revisions, scans resource directories, copies files into the internal resource location, and records installed revisions.",
+      "rust_surface": "Rust startup/resource compatibility must preserve bootstrap stage identity, revision comparison, copy semantics, and installed-revision state before resource upgrade behavior is considered compatible.",
+      "evidence_class": "source-backed-manifest",
+      "proof_scope": "source-audit",
+      "generated_label": "//tools/bazel:generated_package_metadata_check",
+      "notes": "The row is source-audit evidence for bootstrap identity; it does not prove media timing, GUI progress display, or physical update behavior."
+    }
+  ]
+}
