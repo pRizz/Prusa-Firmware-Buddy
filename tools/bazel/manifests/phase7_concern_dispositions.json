@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "phase": "07-persistence-storage-and-resource-compatibility",
+  "phase_lifecycle_id": "7-2026-06-06T04-24-25",
+  "concerns": [
+    {
+      "id": "concern-generated-file-drift",
+      "concern_id": "phase7-generated-file-drift",
+      "requirement": "IFCE-05",
+      "source_paths": [
+        ".planning/codebase/CONCERNS.md",
+        "tools/bazel/generated_drift.py",
+        "tools/bazel/manifests/phase7_generated_outputs.json",
+        "CMakePresets.json",
+        "doc/logging_components.md",
+        "include/common/visit_all_struct_fields.hpp",
+        "src/lang/po/Prusa-Firmware-Buddy.pot"
+      ],
+      "disposition": "preserve-with-explicit-risk",
+      "phase7_handling": "Phase 7 records tracked reviewed outputs, build-generated outputs, source-tree write behavior, and Phase 3 check/update labels so generated drift stays reviewable.",
+      "evidence_class": "manifest-and-label-coverage",
+      "intentional_delta": "none",
+      "regression_guard": "tools/bazel/manifests/phase7_generated_outputs.json plus Phase 3 generated check/update labels must continue naming tracked generated surfaces."
+    },
+    {
+      "id": "concern-translation-font-shell-safety",
+      "concern_id": "phase7-unsafe-translation-font-shell-scripts",
+      "requirement": "IFCE-05",
+      "source_paths": [
+        ".planning/codebase/CONCERNS.md",
+        "utils/translations_and_fonts/generate_all_fonts.sh",
+        "utils/translations_and_fonts/generate_single_font.sh",
+        "utils/translations_and_fonts/generate_pot.sh",
+        "tools/bazel/manifests/phase7_generated_outputs.json"
+      ],
+      "disposition": "preserve-with-explicit-risk",
+      "phase7_handling": "Phase 7 names the existing shell entrypoints and generated-font labels while leaving script behavior unchanged for a later shell-safety pass.",
+      "evidence_class": "source-audit",
+      "intentional_delta": "none",
+      "regression_guard": "Concern row, generated-output font/translation rows, and existing generated labels must remain visible until a tested script-safety change is approved."
+    },
+    {
+      "id": "concern-unencrypted-credential-storage",
+      "concern_id": "phase7-unencrypted-credential-storage",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        ".planning/codebase/CONCERNS.md",
+        "src/persistent_stores/store_instances/config_store/store_definition.hpp",
+        "src/persistent_stores/storage_drivers/eeprom_storage.cpp",
+        "tools/bazel/manifests/phase7_config_store.json"
+      ],
+      "disposition": "preserve-with-explicit-risk",
+      "phase7_handling": "Phase 7 records credential-bearing key names with name-only redaction and excludes credential values, EEPROM bytes, certificates, tokens, and private material from artifacts.",
+      "evidence_class": "source-audit",
+      "intentional_delta": "none",
+      "regression_guard": "credential-bearing-config-keys in phase7_config_store.json must keep name-only-redacted policy and must not include secret values."
+    },
+    {
+      "id": "concern-config-schema-hash-fragility",
+      "concern_id": "phase7-config-schema-hash-fragility",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        ".planning/codebase/CONCERNS.md",
+        "src/persistent_stores/store_instances/config_store/store_definition.hpp",
+        "src/persistent_stores/store_instances/config_store/migrations.cpp",
+        "utils/persistent_stores/journal_hashes_generator.py",
+        "tools/bazel/manifests/phase7_config_store.json"
+      ],
+      "disposition": "preserve-with-explicit-risk",
+      "phase7_handling": "Phase 7 preserves schema version, deprecated item identity, migration source paths, and journal hash generation as explicit compatibility contracts.",
+      "evidence_class": "source-audit",
+      "intentional_delta": "none",
+      "regression_guard": "current-config-store-schema-v5, deprecated-store-hashed-ids, config-store-runtime-migrations, and journal-hash-generation rows must remain source-backed."
+    },
+    {
+      "id": "concern-journal-hash-space-limit",
+      "concern_id": "phase7-journal-hash-space-limit",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        ".planning/codebase/CONCERNS.md",
+        "utils/persistent_stores/journal_hashes_generator.py",
+        "src/persistent_stores/journal/store.hpp",
+        "tools/bazel/manifests/phase7_config_store.json"
+      ],
+      "disposition": "preserve-with-explicit-risk",
+      "phase7_handling": "Phase 7 records the 0x3FFF journal hash mask, generated lookup surface, duplicate detection, and reserved-ID uniqueness evidence without changing hash width.",
+      "evidence_class": "source-audit",
+      "intentional_delta": "none",
+      "regression_guard": "journal-hash-generation row must continue referencing the generator mask, duplicate detection, and store uniqueness evidence."
+    },
+    {
+      "id": "concern-block-device-randomness",
+      "concern_id": "phase7-block-device-randomness",
+      "requirement": "IFCE-04",
+      "source_paths": [
+        ".planning/codebase/CONCERNS.md",
+        "tests/blockdevice/test_block_device.py",
+        "tools/bazel/manifests/phase7_storage_media.json"
+      ],
+      "disposition": "preserve-with-explicit-risk",
+      "phase7_handling": "Phase 7 records the randomized block-device test surface and inclusive block selection concern as source-audit evidence while leaving the test unchanged in this plan.",
+      "evidence_class": "source-audit",
+      "intentional_delta": "none",
+      "regression_guard": "block-device-test-randomness in phase7_storage_media.json and this concern row must stay visible until storage-media test behavior changes intentionally."
+    },
+    {
+      "id": "concern-littlefs-python-dependency-drift",
+      "concern_id": "phase7-littlefs-python-dependency-drift",
+      "requirement": "IFCE-05",
+      "source_paths": [
+        ".planning/codebase/CONCERNS.md",
+        "requirements.txt",
+        "cmake/Littlefs.cmake",
+        "utils/mklittlefs.py",
+        "tools/bazel/manifests/phase7_resources.json"
+      ],
+      "disposition": "preserve-with-explicit-risk",
+      "phase7_handling": "Phase 7 records littlefs-python as the existing image-generation dependency and ties resource image rows to CMake/Python source paths without changing dependency policy.",
+      "evidence_class": "source-audit",
+      "intentional_delta": "none",
+      "regression_guard": "resource-standard-image, resource-bootloader-image, and resource-hash-and-revision rows must continue referencing LittleFS generation inputs."
+    },
+    {
+      "id": "concern-tracked-font-header-churn",
+      "concern_id": "phase7-tracked-font-header-churn",
+      "requirement": "IFCE-05",
+      "source_paths": [
+        ".planning/codebase/CONCERNS.md",
+        "utils/translations_and_fonts/generate_all_fonts.sh",
+        "utils/translations_and_fonts/generate_single_font.sh",
+        "src/gui/res/cc/font_regular_11x18_full.hpp",
+        "tools/bazel/manifests/phase7_generated_outputs.json"
+      ],
+      "disposition": "preserve-with-explicit-risk",
+      "phase7_handling": "Phase 7 records tracked font/header churn as reviewed source ownership with generated font check/update labels and no font output change in this task.",
+      "evidence_class": "source-audit",
+      "intentional_delta": "none",
+      "regression_guard": "font-assets row in phase7_generated_outputs.json and resource-font-assets row in phase7_resources.json must continue naming tracked font/header ownership."
+    }
+  ]
+}
