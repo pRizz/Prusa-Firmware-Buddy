@@ -124,6 +124,28 @@ shell_binary(
     ],
 )
 
+shell_binary(
+    name = "phase8_verify",
+    src = "rust_workflow.sh",
+    data = [
+        "phase8_verify.py",
+        "manifests/phase8_gui_workflows.json",
+        "manifests/phase8_display_layouts.json",
+        "manifests/phase8_concern_dispositions.json",
+        "//:phase8_local_interface_docs",
+        "//:rust_workspace_sources",
+    ],
+)
+
+shell_binary(
+    name = "phase8_verify_tests",
+    src = "rust_workflow.sh",
+    data = [
+        "phase8_verify.py",
+        "phase8_verify_test.py",
+    ],
+)
+
 filegroup(
     name = "unsafe_boundary_audit",
     srcs = ["manifests/unsafe_boundary_audit.json"],

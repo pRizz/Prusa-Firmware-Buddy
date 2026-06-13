@@ -1,9 +1,9 @@
 ---
 phase: 08
 slug: local-interface-and-workflow-parity
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-06-13
 lifecycle_mode: yolo
 phase_lifecycle_id: 8-2026-06-13T16-58-45
@@ -40,11 +40,11 @@ phase_lifecycle_id: 8-2026-06-13T16-58-45
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 08-W0-01 | Plan TBD | Wave 0 | IFCE-01 | T-08-01 | Screen stack bootstrap/home behavior is manifest-covered with source paths and Rust surface | static verifier + Rust unit | `python3 tools/bazel/phase8_verify.py --quick` and `cargo test --all-features` | no; Wave 0 files required | pending |
-| 08-W0-02 | Plan TBD | Wave 0 | IFCE-01 | T-08-02 | Dialog, menu, wizard, print-control, setup/selftest/calibration, warning, redscreen, and Connect registration entry rows exist | static verifier | `python3 tools/bazel/phase8_verify.py --quick` | no; Wave 0 files required | pending |
-| 08-W0-03 | Plan TBD | Wave 0 | IFCE-01 | T-08-03 | 240x320 and 480x320 layout, localization, print preview, and progress contracts are explicit | static verifier + Rust unit | `python3 tools/bazel/phase8_verify.py --quick` and `cargo test --all-features` | no; Wave 0 files required | pending |
-| 08-W0-04 | Plan TBD | Wave 0 | IFCE-01 | T-08-04 | CL-008 and crash dump warning surfaces are explicitly dispositioned without secret or memory bytes | verifier regression tests | `python3 tools/bazel/phase8_verify_test.py` | no; Wave 0 files required | pending |
-| 08-W0-05 | Plan TBD | Wave 0 | IFCE-01 | T-08-05 | Bazel labels, root aliases, `rust_workflow.sh`, `just phase8-verify`, lifecycle metadata, validation artifact, and overclaim guards are present | Bazel/facade/static verifier | `bazel query "//tools/bazel:phase8_verify + //tools/bazel:phase8_verify_tests + //:phase8_verify + //:phase8_verify_tests"` and `just phase8-verify` | no; Wave 0 files required | pending |
+| 08-W0-01 | Plan 01 | Wave 0 | IFCE-01 | T-08-01 | Screen stack bootstrap/home behavior is manifest-covered with source paths and Rust surface | static verifier + Rust unit | `python3 tools/bazel/phase8_verify.py --quick` and `cargo test --all-features` | yes | green |
+| 08-W0-02 | Plan 01 | Wave 0 | IFCE-01 | T-08-02 | Dialog, menu, wizard, print-control, setup/selftest/calibration, warning, redscreen, and Connect registration entry rows exist | static verifier | `python3 tools/bazel/phase8_verify.py --quick` | yes | green |
+| 08-W0-03 | Plan 02 | Wave 0 | IFCE-01 | T-08-03 | 240x320 and 480x320 layout, localization, print preview, and progress contracts are explicit | static verifier + Rust unit | `python3 tools/bazel/phase8_verify.py --quick` and `cargo test --all-features` | yes | green |
+| 08-W0-04 | Plan 03 | Wave 0 | IFCE-01 | T-08-04 | CL-008 and crash dump warning surfaces are explicitly dispositioned without secret or memory bytes | verifier regression tests | `python3 tools/bazel/phase8_verify_test.py` | yes | green |
+| 08-W0-05 | Plan 03 | Wave 0 | IFCE-01 | T-08-05 | Bazel labels, root aliases, `rust_workflow.sh`, `just phase8-verify`, lifecycle metadata, validation artifact, and overclaim guards are present | Bazel/facade/static verifier | `bazel query "//tools/bazel:phase8_verify + //tools/bazel:phase8_verify_tests + //:phase8_verify + //:phase8_verify_tests"` and `just phase8-verify` | yes | green |
 
 *Status: pending, green, red, flaky*
 
@@ -52,14 +52,14 @@ phase_lifecycle_id: 8-2026-06-13T16-58-45
 
 ## Wave 0 Requirements
 
-- [ ] `tools/bazel/phase8_verify.py` - validates manifests, source paths, Rust API surface, no unsafe pure domain code, concern dispositions, lifecycle, validation artifact, Bazel/just wiring, and overclaim guards.
-- [ ] `tools/bazel/phase8_verify_test.py` - regression tests for missing rows, missing source paths, invalid lifecycle, invalid evidence class, missing display class, missing CL-008, missing crash dump warning, secret markers, missing Rust API strings, missing labels, and overclaims.
-- [ ] `tools/bazel/manifests/phase8_gui_workflows.json` - screen stacks, dialogs, menus, wizards, print controls, setup/selftest/calibration flows, Connect registration entry surfaces, warnings, redscreens, and errors.
-- [ ] `tools/bazel/manifests/phase8_display_layouts.json` - 240x320 and 480x320 layout, localized text, font/resource visibility, truncation, print preview, progress, and error/warning text rows.
-- [ ] `tools/bazel/manifests/phase8_concern_dispositions.json` - CL-008, crash dump warning, generated GUI resource drift inherited from Phase 7, and any IFCE-01-specific concern discovered during planning.
-- [ ] `rust/crates/domain/src/gui.rs` and `rust/crates/domain/src/lib.rs` exports - pure GUI/display/evidence domain types and errors.
-- [ ] `tools/bazel/BUILD.bazel`, root `BUILD.bazel`, `tools/bazel/rust_workflow.sh`, and `justfile` Phase 8 labels/recipes.
-- [ ] `.planning/phases/08-local-interface-and-workflow-parity/08-VALIDATION.md` - Nyquist contract with local/non-local evidence boundaries and phase lifecycle ID.
+- [x] `tools/bazel/phase8_verify.py` - validates manifests, source paths, Rust API surface, no unsafe pure domain code, concern dispositions, lifecycle, validation artifact, Bazel/just wiring, and overclaim guards.
+- [x] `tools/bazel/phase8_verify_test.py` - regression tests for missing rows, missing source paths, invalid lifecycle, invalid evidence class, missing display class, missing CL-008, missing crash dump warning, secret markers, missing Rust API strings, missing labels, and overclaims.
+- [x] `tools/bazel/manifests/phase8_gui_workflows.json` - screen stacks, dialogs, menus, wizards, print controls, setup/selftest/calibration flows, Connect registration entry surfaces, warnings, redscreens, and errors.
+- [x] `tools/bazel/manifests/phase8_display_layouts.json` - 240x320 and 480x320 layout, localized text, font/resource visibility, truncation, print preview, progress, and error/warning text rows.
+- [x] `tools/bazel/manifests/phase8_concern_dispositions.json` - CL-008, crash dump warning, generated GUI resource drift inherited from Phase 7, and any IFCE-01-specific concern discovered during planning.
+- [x] `rust/crates/domain/src/gui.rs` and `rust/crates/domain/src/lib.rs` exports - pure GUI/display/evidence domain types and errors.
+- [x] `tools/bazel/BUILD.bazel`, root `BUILD.bazel`, `tools/bazel/rust_workflow.sh`, and `justfile` Phase 8 labels/recipes.
+- [x] `.planning/phases/08-local-interface-and-workflow-parity/08-VALIDATION.md` - Nyquist contract with local/non-local evidence boundaries and phase lifecycle ID.
 
 ---
 
@@ -78,11 +78,11 @@ These remain non-local evidence classes: `manual-hardware-required`, `hardware-s
 
 ## Validation Sign-Off
 
-- [ ] All tasks have automated verify commands or Wave 0 dependencies.
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verification.
-- [ ] Wave 0 covers missing verifier, manifest, Rust, Bazel, and just surfaces.
-- [ ] No watch-mode flags.
-- [ ] Feedback latency under 10 seconds for static Phase 8 verifier.
-- [ ] `nyquist_compliant: true` set in frontmatter after execution proves coverage.
+- [x] All tasks have automated verify commands or Wave 0 dependencies.
+- [x] Sampling continuity: no 3 consecutive tasks without automated verification.
+- [x] Wave 0 covers missing verifier, manifest, Rust, Bazel, and just surfaces.
+- [x] No watch-mode flags.
+- [x] Feedback latency under 10 seconds for static Phase 8 verifier.
+- [x] `nyquist_compliant: true` set in frontmatter after execution proves coverage.
 
-**Approval:** pending Phase 8 implementation and verification.
+**Approval:** complete after Phase 8 Wave 0 implementation and local verification; `manual-hardware-required`, `hardware-smoke`, and `simulator-flow` evidence remain explicit non-local proof classes.

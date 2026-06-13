@@ -41,6 +41,12 @@ case "$command_name" in
   phase7_verify_tests)
     python3 tools/bazel/phase7_verify_test.py
     ;;
+  phase8_verify)
+    python3 tools/bazel/phase8_verify.py --all
+    ;;
+  phase8_verify_tests)
+    python3 tools/bazel/phase8_verify_test.py
+    ;;
   *)
     printf 'Unknown Rust workflow target: %s\n' "$command_name" >&2
     exit 2

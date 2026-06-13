@@ -51,6 +51,16 @@ filegroup(
 )
 
 filegroup(
+    name = "phase8_local_interface_docs",
+    srcs = [
+        ".planning/phases/08-local-interface-and-workflow-parity/08-CONTEXT.md",
+        ".planning/phases/08-local-interface-and-workflow-parity/08-RESEARCH.md",
+        ".planning/phases/08-local-interface-and-workflow-parity/08-VALIDATION.md",
+        ".planning/phases/08-local-interface-and-workflow-parity/08-UI-SPEC.md",
+    ],
+)
+
+filegroup(
     name = "phase7_storage_migration_fixtures",
     srcs = ["//tools/bazel:fixtures/phase7_storage/redacted_migration_catalog.json"],
 )
@@ -138,6 +148,16 @@ alias(
 alias(
     name = "phase7_verify_tests",
     actual = "//tools/bazel:phase7_verify_tests",
+)
+
+alias(
+    name = "phase8_verify",
+    actual = "//tools/bazel:phase8_verify",
+)
+
+alias(
+    name = "phase8_verify_tests",
+    actual = "//tools/bazel:phase8_verify_tests",
 )
 
 alias(
