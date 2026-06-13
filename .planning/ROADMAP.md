@@ -20,7 +20,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: Foreign Code, Unsafe, and Runtime Boundary** - Inventory retained C/C++/ASM/vendor code and wrap startup, HAL, RTOS, and unsafe boundaries behind safe Rust adapters. (completed 2026-06-03)
 - [x] **Phase 6: Printing Core, Safety, and Feature Gates** - Preserve print behavior, safety-critical flows, and printer-specific feature combinations through typed Rust models and parity fixtures. (completed 2026-06-04)
 - [x] **Phase 7: Persistence, Storage, and Resource Compatibility** - Preserve config stores, migrations, filesystems, credentials, generated resources, translations, and bundled runtime assets. (completed 2026-06-06)
-- [ ] **Phase 8: Local Interface and Workflow Parity** - Preserve local GUI workflows, display-class behavior, dialogs, warnings, setup flows, and print controls.
+- [x] **Phase 8: Local Interface and Workflow Parity** - Preserve local GUI workflows, display-class behavior, dialogs, warnings, setup flows, and print controls. (completed 2026-06-13)
 - [ ] **Phase 9: Network, Web Services, and Transfers** - Preserve Connect, PrusaLink/WUI, TLS, telemetry, transfer, and local service behavior.
 - [ ] **Phase 10: Auxiliary Controllers and Expansion Ecosystem** - Preserve puppy, Dwarf, ModularBed, xBuddy Extension, MMU2, toolchanger, and auxiliary update flows.
 - [ ] **Phase 11: Parity Pyramid and Cutover Evidence** - Prove the Rust+Bazel firmware satisfies all parity gates before demoting the CMake/C++ reference path.
@@ -155,7 +155,7 @@ Plans:
 Plans:
 - [x] 08-01-PLAN.md — Create source-backed GUI workflow, display-layout, and concern manifests.
 - [x] 08-02-PLAN.md — Add pure Rust GUI/display/evidence contracts in buddy-domain.
-- [ ] 08-03-PLAN.md — Add Phase 8 verifier, Bazel/just wiring, and validation sign-off.
+- [x] 08-03-PLAN.md — Add Phase 8 verifier, Bazel/just wiring, and validation sign-off.
    **UI hint**: yes
 
 ### Phase 9: Network, Web Services, and Transfers
@@ -212,7 +212,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 5. Foreign Code, Unsafe, and Runtime Boundary | 5/5 | Complete    | 2026-06-03 |
 | 6. Printing Core, Safety, and Feature Gates | 5/5 | Complete    | 2026-06-04 |
 | 7. Persistence, Storage, and Resource Compatibility | 5/5 | Complete   | 2026-06-06 |
-| 8. Local Interface and Workflow Parity | 0/3 | Not started | - |
+| 8. Local Interface and Workflow Parity | 3/3 | Complete | 2026-06-13 |
 | 9. Network, Web Services, and Transfers | 0/TBD | Not started | - |
 | 10. Auxiliary Controllers and Expansion Ecosystem | 0/TBD | Not started | - |
 | 11. Parity Pyramid and Cutover Evidence | 0/TBD | Not started | - |
