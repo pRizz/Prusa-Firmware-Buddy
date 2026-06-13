@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "phase": "08-local-interface-and-workflow-parity",
+  "phase_lifecycle_id": "8-2026-06-13T16-58-45",
+  "concerns": [
+    {
+      "id": "concern-cl-008-home-screen-flash-start",
+      "concern_id": "CL-008",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-CONCERN-LEDGER.md",
+        ".planning/codebase/CONCERNS.md",
+        "src/gui/screen_home.cpp"
+      ],
+      "disposition": "fix-during-rewrite",
+      "phase8_handling": "Phase 8 records the current home-screen freeze risk as a first-class GUI workflow concern. The Rust GUI parity model must either preserve the existing behavior with explicit evidence or later introduce an approved intentional delta for the no-op flash action and event re-enable behavior.",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "intentional_delta": "none",
+      "regression_guard": {
+        "guard_type": "manifest-and-verifier-contract",
+        "required_strings": [
+          "no-op flash action",
+          "event re-enable behavior",
+          "src/gui/screen_home.cpp"
+        ],
+        "expected_future_evidence": "A later GUI/error-flow verifier or Rust domain test must fail if home-screen media/flash actions can leave events disabled without an explicit no-op flash action result and event re-enable behavior."
+      }
+    },
+    {
+      "id": "concern-cl-011-crash-dump-warning-surface",
+      "concern_id": "CL-011",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-CONCERN-LEDGER.md",
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-SAFETY-ENVELOPE.md",
+        ".planning/codebase/CONCERNS.md",
+        "src/gui/screen_home.cpp",
+        "src/common/crash_dump/dump.cpp",
+        "src/common/crash_dump/crash_dump_distribute.cpp"
+      ],
+      "disposition": "fix-during-rewrite",
+      "phase8_handling": "Phase 8 preserves only the local GUI warning boundary for crash dumps: the user-facing prompt names Crash detected. Save it to USB? and warns about sensitive information. Crash dump transport, consent, redaction, and upload hardening remain Phase 6/Phase 9 safety and network evidence.",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "intentional_delta": "none",
+      "regression_guard": {
+        "guard_type": "sensitive-diagnostics-boundary",
+        "required_strings": [
+          "Crash detected. Save it to USB?",
+          "sensitive information",
+          "no raw crash dump memory contents"
+        ],
+        "expected_future_evidence": "Manifest and verifier checks must keep the warning prompt traceable while rejecting credential material, certificate material, private keys, EEPROM captures, and no raw crash dump memory contents in planning or fixture artifacts."
+      }
+    },
+    {
+      "id": "concern-cl-003-generated-gui-resource-drift",
+      "concern_id": "CL-003",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-CONCERN-LEDGER.md",
+        ".planning/codebase/CONCERNS.md",
+        "tools/bazel/manifests/phase7_resources.json",
+        "tools/bazel/manifests/phase7_generated_outputs.json",
+        "src/gui/res/cc"
+      ],
+      "disposition": "fix-during-rewrite",
+      "phase8_handling": "Phase 8 consumes the Phase 7 resource and generated-output manifests for GUI font, image, translation, and QOI traceability instead of duplicating generator ownership. GUI layout and workflow rows must point to source-backed resources and generated-output drift labels before claiming display parity.",
+      "evidence_class": "manifest-check",
+      "proof_scope": "local",
+      "intentional_delta": "none",
+      "regression_guard": {
+        "guard_type": "phase7-resource-traceability",
+        "required_strings": [
+          "phase7_resources.json",
+          "phase7_generated_outputs.json",
+          "src/gui/res/cc"
+        ],
+        "expected_future_evidence": "The Phase 8 verifier should fail when GUI layout or workflow rows reference resource/font behavior without Phase 7 resource and generated-output traceability."
+      }
+    },
+    {
+      "id": "concern-cl-019-tracked-font-header-churn",
+      "concern_id": "CL-019",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-CONCERN-LEDGER.md",
+        ".planning/codebase/CONCERNS.md",
+        "tools/bazel/manifests/phase7_resources.json",
+        "tools/bazel/manifests/phase7_generated_outputs.json",
+        "src/gui/res/cc"
+      ],
+      "disposition": "defer",
+      "phase8_handling": "Phase 8 accepts the current tracked font headers as the reference asset surface for GUI layout parity and does not change the asset strategy. Any future switch to binary or build-generated font assets must be an approved intentional delta with resource and layout regression evidence.",
+      "evidence_class": "manifest-check",
+      "proof_scope": "local",
+      "intentional_delta": "none",
+      "regression_guard": {
+        "guard_type": "tracked-font-asset-boundary",
+        "required_strings": [
+          "phase7_resources.json",
+          "phase7_generated_outputs.json",
+          "src/gui/res/cc"
+        ],
+        "expected_future_evidence": "The Phase 8 verifier should keep font rows source-backed to tracked generated headers and block silent resource-strategy changes that alter GUI font/layout behavior."
+      }
+    }
+  ]
+}
