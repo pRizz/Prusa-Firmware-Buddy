@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 8 UI-SPEC approved
-last_updated: "2026-06-13T18:00:33.402Z"
-last_activity: 2026-06-13 -- Phase 08 planning complete
+last_updated: "2026-06-13T18:01:06.207Z"
+last_activity: 2026-06-13 -- Phase 08 execution started
 progress:
   total_phases: 11
   completed_phases: 7
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-02)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Phase 07 — persistence-storage-and-resource-compatibility
+**Current focus:** Phase 08 — local-interface-and-workflow-parity
 
 ## Current Position
 
-Phase: 8
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-06-13 -- Phase 08 planning complete
+Phase: 08 (local-interface-and-workflow-parity) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 08
+Last activity: 2026-06-13 -- Phase 08 execution started
 
 Progress: [████████░░] 81%
 
