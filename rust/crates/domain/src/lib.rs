@@ -20,6 +20,11 @@ pub use artifact::{ArtifactFileName, ArtifactKind, ArtifactRequest};
 pub use feature::{
     BurstSteppingMode, Feature, FeatureSet, GateState, Phase6FeatureGate, Phase6FeatureGates,
 };
+pub use gui::{
+    DisplayClass, GuiEvidenceClass, GuiParityContract, GuiParityContractInput, GuiParityRowId,
+    GuiProofScope, GuiSemanticAction, GuiSurface, GuiWorkflow, IntentionalDeltaStatus,
+    LocalizationSurface,
+};
 pub use print::{
     CommandRoute, FixtureId, GcodeMnemonic, PlannerFlowState, PrintCommand, PrintJobState,
     PrintSource, PrintTransitionError, route_gcode_mnemonic, transition_print_state,
@@ -115,6 +120,24 @@ pub enum InvariantError {
     InvalidRegistrationCode,
     /// A Connect endpoint did not use an accepted URL scheme.
     InvalidConnectEndpoint,
+    /// A GUI parity row ID was empty.
+    EmptyGuiParityRowId,
+    /// A GUI parity row ID contained unsupported syntax or characters.
+    InvalidGuiParityRowId,
+    /// A GUI display class was not recognized.
+    InvalidDisplayClass,
+    /// A GUI evidence class was not recognized.
+    InvalidGuiEvidenceClass,
+    /// A GUI proof scope was invalid for its evidence class.
+    InvalidGuiProofScope,
+    /// A GUI workflow was not recognized.
+    InvalidGuiWorkflow,
+    /// An intentional-delta status was not recognized.
+    InvalidIntentionalDeltaStatus,
+    /// A GUI semantic action was not recognized.
+    InvalidGuiSemanticAction,
+    /// A GUI semantic action was bound to the wrong workflow.
+    InvalidGuiSemanticActionBinding,
 }
 
 impl fmt::Display for InvariantError {
@@ -201,6 +224,31 @@ impl fmt::Display for InvariantError {
             Self::InvalidConnectEndpoint => {
                 formatter.write_str("connect endpoint must start with http:// or https://")
             }
+            Self::EmptyGuiParityRowId => formatter.write_str("GUI parity row ID must not be empty"),
+            Self::InvalidGuiParityRowId => formatter.write_str(
+                "GUI parity row ID must be a path-free kebab-case ASCII identifier at most 96 bytes",
+            ),
+            Self::InvalidDisplayClass => {
+                formatter.write_str("display class must be 240x320, 480x320, or mock")
+            }
+            Self::InvalidGuiEvidenceClass => {
+                formatter.write_str("GUI evidence class must be one of the Phase 8 accepted values")
+            }
+            Self::InvalidGuiProofScope => formatter.write_str(
+                "GUI local proof scope cannot be paired with simulator, hardware, or manual evidence",
+            ),
+            Self::InvalidGuiWorkflow => {
+                formatter.write_str("GUI workflow must be one of the Phase 8 accepted values")
+            }
+            Self::InvalidIntentionalDeltaStatus => {
+                formatter.write_str("intentional delta status must be none, approved, or blocked")
+            }
+            Self::InvalidGuiSemanticAction => formatter.write_str(
+                "GUI semantic action must be pause, resume, cancel, stop, reprint, or preview",
+            ),
+            Self::InvalidGuiSemanticActionBinding => formatter.write_str(
+                "GUI semantic action must be bound to its required print workflow",
+            ),
         }
     }
 }
