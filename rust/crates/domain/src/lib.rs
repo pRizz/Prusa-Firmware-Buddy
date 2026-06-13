@@ -8,6 +8,7 @@
 
 pub mod artifact;
 pub mod feature;
+pub mod gui;
 pub mod print;
 pub mod product;
 pub mod protocol;
