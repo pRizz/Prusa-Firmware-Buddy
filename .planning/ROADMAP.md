@@ -151,7 +151,11 @@ Plans:
 1. User can control prints, setup flows, selftest, calibration, Connect registration, and localization workflows through the local GUI.
 1. User can see localized text, layout behavior, warnings, print previews, progress, and error surfaces that match reference fixtures within approved intentional deltas.
 1. Maintainer can run GUI workflow and layout parity checks that include known freeze/error paths from the concerns ledger.
-   **Plans**: TBD
+   **Plans**: 3 plans
+Plans:
+- [ ] 08-01-PLAN.md — Create source-backed GUI workflow, display-layout, and concern manifests.
+- [ ] 08-02-PLAN.md — Add pure Rust GUI/display/evidence contracts in buddy-domain.
+- [ ] 08-03-PLAN.md — Add Phase 8 verifier, Bazel/just wiring, and validation sign-off.
    **UI hint**: yes
 
 ### Phase 9: Network, Web Services, and Transfers
@@ -208,7 +212,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 5. Foreign Code, Unsafe, and Runtime Boundary | 5/5 | Complete    | 2026-06-03 |
 | 6. Printing Core, Safety, and Feature Gates | 5/5 | Complete    | 2026-06-04 |
 | 7. Persistence, Storage, and Resource Compatibility | 5/5 | Complete   | 2026-06-06 |
-| 8. Local Interface and Workflow Parity | 0/TBD | Not started | - |
+| 8. Local Interface and Workflow Parity | 0/3 | Not started | - |
 | 9. Network, Web Services, and Transfers | 0/TBD | Not started | - |
 | 10. Auxiliary Controllers and Expansion Ecosystem | 0/TBD | Not started | - |
 | 11. Parity Pyramid and Cutover Evidence | 0/TBD | Not started | - |
