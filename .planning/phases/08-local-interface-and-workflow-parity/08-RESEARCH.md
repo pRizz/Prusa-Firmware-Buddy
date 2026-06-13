@@ -396,22 +396,25 @@ Use this exact validation style for all Phase 8 manifest rows because D-03 rejec
 
 **If this table is empty:** All claims in this research were verified or cited; no user confirmation is needed before planning. [VERIFIED: research provenance audit]
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should Phase 8 include any actual simulator display flow, or only simulator-flow wiring?**
    - What we know: Local checks may prove simulator-test wiring, while actual simulator display flows are non-local unless run. [VERIFIED: .planning/phases/08-local-interface-and-workflow-parity/08-CONTEXT.md]
    - What's unclear: The phase context permits recording simulator flows as explicit non-local evidence, but does not require a specific simulator run in Phase 8. [VERIFIED: .planning/phases/08-local-interface-and-workflow-parity/08-CONTEXT.md]
    - Recommendation: Plan static verifier and simulator fixture wiring first; add a simulator-flow task only if a built firmware fixture and stable OCR target are already available in the implementation wave. [VERIFIED: tests/integration/actions/screen.py; VERIFIED: .planning/phases/08-local-interface-and-workflow-parity/08-CONTEXT.md]
+   - **RESOLVED:** Phase 8 execution uses static verifier coverage, source-backed simulator wiring references, and explicit non-local simulator evidence fields. It does not require an actual simulator display run unless a later task adds a built firmware fixture and records that run as `simulator-flow`.
 
 2. **How granular should `phase8_gui_workflows.json` rows be?**
    - What we know: The agent has discretion over manifest names, row IDs, schema order, and fixture granularity. [VERIFIED: .planning/phases/08-local-interface-and-workflow-parity/08-CONTEXT.md]
    - What's unclear: The context does not prescribe every row ID. [VERIFIED: .planning/phases/08-local-interface-and-workflow-parity/08-CONTEXT.md]
    - Recommendation: Use one row per compatibility concern: screen-stack bootstrap/home, print preview, print start readiness, printing controls, each major dialog/FSM group, menu/settings group, selftest/calibration group, Connect registration entry, redscreen/error group, and CL-008. [VERIFIED: src/gui/guimain.cpp; VERIFIED: src/gui/dialogs/DialogHandler.cpp; VERIFIED: src/gui/screen_home.cpp]
+   - **RESOLVED:** Use exact source-backed row IDs in Plan 08-01 for each compatibility concern, including semantic print-control actions for pause/resume/cancel/stop/reprint/preview icons. Avoid one catch-all GUI row.
 
 3. **Should GUI C++ unit tests be added in Phase 8?**
    - What we know: Existing GUI unit tests cover layout/window/text-input surfaces, and CMake/Catch2 is the local C++ unit-test path. [VERIFIED: tests/unit/gui/CMakeLists.txt; VERIFIED: tests/unit/gui/text_input_layout_tests.cpp; VERIFIED: .planning/codebase/TESTING.md]
    - What's unclear: The locked Phase 8 decisions require local verification but do not require new C++ host tests. [VERIFIED: .planning/phases/08-local-interface-and-workflow-parity/08-CONTEXT.md]
    - Recommendation: Prefer Rust domain and Python verifier regression tests for Phase 8; add C++ tests only for a narrow CL-008 or layout behavior that cannot be captured as a source-backed contract. [VERIFIED: .planning/phases/08-local-interface-and-workflow-parity/08-CONTEXT.md; VERIFIED: tests/unit/gui/CMakeLists.txt]
+   - **RESOLVED:** Phase 8 local proof uses Rust domain tests and Python verifier regression tests. Do not add new C++ GUI unit tests unless implementation discovers a narrow CL-008 or layout behavior that cannot be represented as a source-backed manifest contract.
 
 ## Environment Availability
 
