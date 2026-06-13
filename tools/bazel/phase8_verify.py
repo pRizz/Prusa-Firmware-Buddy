@@ -333,8 +333,19 @@ def require_list_of_strings(row: dict[str, Any], field: str, row_name: str) -> l
 def require_existing_reference_sources(row: dict[str, Any], row_name: str) -> set[str]:
     reference_sources = require_list_of_strings(row, "reference_sources", row_name)
     existing_paths: set[str] = set()
+    root = ROOT.resolve()
     for reference_source in reference_sources:
-        if not (ROOT / reference_source).exists():
+        relative_path = Path(reference_source)
+        if relative_path.is_absolute() or ".." in relative_path.parts:
+            raise VerificationError(f"{row_name} reference source must be repo-relative: {reference_source}")
+
+        full_path = (root / relative_path).resolve()
+        try:
+            full_path.relative_to(root)
+        except ValueError as error:
+            raise VerificationError(f"{row_name} reference source escapes repo: {reference_source}") from error
+
+        if not full_path.exists():
             raise VerificationError(f"{row_name} references missing source path: {reference_source}")
         existing_paths.add(reference_source)
     return existing_paths

@@ -454,6 +454,42 @@ class Phase8VerifierTest(unittest.TestCase):
         self.assertIn("requirement_id", result.stdout)
         self.assertIn("reference_sources", result.stdout)
 
+    def test_rejects_absolute_reference_source_paths(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase8_quick_surface(root)
+            rows = [self.workflow_row(root, row_id) for row_id in REQUIRED_WORKFLOW_ROW_IDS]
+            absolute_source = (root / "src/gui/guimain.cpp").as_posix()
+            rows[0]["reference_sources"] = [absolute_source]
+            self.write_gui_workflows_manifest(root, maybe_rows=rows)
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("reference source must be repo-relative", result.stdout)
+        self.assertIn(absolute_source, result.stdout)
+
+    def test_rejects_parent_traversal_reference_source_paths(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase8_quick_surface(root)
+            rows = [self.workflow_row(root, row_id) for row_id in REQUIRED_WORKFLOW_ROW_IDS]
+            traversal_source = "src/gui/../gui/guimain.cpp"
+            rows[0]["reference_sources"] = [traversal_source]
+            self.write_gui_workflows_manifest(root, maybe_rows=rows)
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("reference source must be repo-relative", result.stdout)
+        self.assertIn(traversal_source, result.stdout)
+
     def test_rejects_display_layout_without_both_display_classes(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
