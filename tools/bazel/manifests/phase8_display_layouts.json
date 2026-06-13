@@ -470,22 +470,22 @@
         "240x320": {
           "QRSize": 100,
           "WarningDlgPadding": 6,
-          "WarningDlgDescriptionRect": {
+          "WarningDlgTextRect": {
             "x": 6,
             "y": 112,
             "width": 228,
-            "height": 268
+            "height": 168
           },
           "RadioButtonCornerRadius": 6
         },
         "480x320": {
           "QRSize": 130,
           "WarningDlgPadding": 26,
-          "WarningDlgDescriptionRect": {
+          "WarningDlgTextRect": {
             "x": 26,
             "y": 182,
             "width": 428,
-            "height": 256
+            "height": 100
           },
           "RadioButtonCornerRadius": 8
         },

@@ -458,6 +458,10 @@ def check_display_layout_manifest() -> None:
     rows = validate_rows(DISPLAY_LAYOUTS_MANIFEST, "layout_contracts", LAYOUT_FIELDS, LAYOUT_ROW_IDS)
     errors: list[str] = []
     all_display_classes: set[str] = set()
+    expected_warning_text_rects = {
+        "240x320": {"x": 6, "y": 112, "width": 228, "height": 168},
+        "480x320": {"x": 26, "y": 182, "width": 428, "height": 100},
+    }
     for row in rows:
         row_id = row["id"]
         row_name = f"{DISPLAY_LAYOUTS_MANIFEST.as_posix()} row {row_id}"
@@ -465,6 +469,20 @@ def check_display_layout_manifest() -> None:
         all_display_classes.update(display_classes)
         if row_id in BOTH_DISPLAY_CLASS_LAYOUT_ROWS and not {"240x320", "480x320"}.issubset(display_classes):
             errors.append(f"{row_name} must include both 240x320 and 480x320 display_classes")
+        if row_id == "warning-dialog-layout":
+            layout_values = row.get("layout_values")
+            if not isinstance(layout_values, dict):
+                errors.append(f"{row_name} layout_values must be an object")
+                continue
+            for display_class, expected_rect in expected_warning_text_rects.items():
+                display_layout = layout_values.get(display_class)
+                if not isinstance(display_layout, dict):
+                    errors.append(f"{row_name} layout_values must include {display_class}")
+                    continue
+                if "WarningDlgDescriptionRect" in display_layout:
+                    errors.append(f"{row_name} {display_class} must use active WarningDlgTextRect, not stale WarningDlgDescriptionRect")
+                if display_layout.get("WarningDlgTextRect") != expected_rect:
+                    errors.append(f"{row_name} {display_class} WarningDlgTextRect must match GuiDefaults active text geometry")
 
     for display_class in ["240x320", "480x320"]:
         if display_class not in all_display_classes:

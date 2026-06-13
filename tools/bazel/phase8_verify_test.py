@@ -194,6 +194,31 @@ class Phase8VerifierTest(unittest.TestCase):
             display_classes = ["480x320"]
         if row_id == "display-class-selectors":
             display_classes = ["240x320", "480x320", "mock"]
+        layout_values: dict[str, object] = {
+            "240x320": {"ScreenSize": "240x320"},
+            "480x320": {"ScreenSize": "480x320"},
+        }
+        if row_id == "warning-dialog-layout":
+            layout_values = {
+                "240x320": {
+                    "ScreenSize": "240x320",
+                    "WarningDlgTextRect": {
+                        "x": 6,
+                        "y": 112,
+                        "width": 228,
+                        "height": 168,
+                    },
+                },
+                "480x320": {
+                    "ScreenSize": "480x320",
+                    "WarningDlgTextRect": {
+                        "x": 26,
+                        "y": 182,
+                        "width": 428,
+                        "height": 100,
+                    },
+                },
+            }
         return {
             "id": row_id,
             "requirement_id": "IFCE-01",
@@ -201,10 +226,7 @@ class Phase8VerifierTest(unittest.TestCase):
             "reference_behavior": f"{row_id} display layout behavior",
             "rust_surface": f"buddy-domain::gui::{row_id}",
             "display_classes": display_classes,
-            "layout_values": {
-                "240x320": {"ScreenSize": "240x320"},
-                "480x320": {"ScreenSize": "480x320"},
-            },
+            "layout_values": layout_values,
             "evidence_class": "source-audit",
             "proof_scope": "local",
             "non_local_evidence": [
@@ -508,6 +530,42 @@ class Phase8VerifierTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("menu-layout-display-differences", result.stdout)
         self.assertIn("480x320", result.stdout)
+
+    def test_rejects_stale_warning_dialog_description_rect(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase8_quick_surface(root)
+            rows = [self.layout_row(root, row_id) for row_id in REQUIRED_LAYOUT_ROW_IDS]
+            for row in rows:
+                if row["id"] == "warning-dialog-layout":
+                    row["layout_values"] = {
+                        "240x320": {
+                            "WarningDlgDescriptionRect": {
+                                "x": 6,
+                                "y": 112,
+                                "width": 228,
+                                "height": 268,
+                            },
+                        },
+                        "480x320": {
+                            "WarningDlgDescriptionRect": {
+                                "x": 26,
+                                "y": 182,
+                                "width": 428,
+                                "height": 256,
+                            },
+                        },
+                    }
+            self.write_display_layouts_manifest(root, maybe_rows=rows)
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("warning-dialog-layout", result.stdout)
+        self.assertIn("WarningDlgTextRect", result.stdout)
 
     def test_requires_cl008_and_crash_dump_concerns(self) -> None:
         # Arrange
