@@ -1,0 +1,412 @@
+{
+  "schema_version": 1,
+  "phase": "08-local-interface-and-workflow-parity",
+  "phase_lifecycle_id": "8-2026-06-13T16-58-45",
+  "workflow_contracts": [
+    {
+      "id": "screen-stack-home-bootstrap",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "src/gui/guimain.cpp",
+        "src/gui/ScreenHandler.hpp",
+        "src/gui/ScreenFactory.hpp",
+        "src/gui/screen_home.cpp"
+      ],
+      "reference_behavior": "GUI startup initializes the splash screen, pushes the home screen before the current screen, runs bootstrap, initializes the Marlin client and DialogHandler, closes bootstrap, then loops DialogHandler before Screens so WaitGui print start decisions observe the active GUI state.",
+      "rust_surface": "buddy-domain::gui::WorkflowContract::ScreenStackHomeBootstrap",
+      "display_classes": [
+        "240x320",
+        "480x320"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "physical LCD refresh proof",
+        "touch and encoder timing proof",
+        "long-run simulator display flow",
+        "final firmware cutover proof"
+      ],
+      "intentional_delta": "none"
+    },
+    {
+      "id": "screen-stack-bounded-fixed-storage",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "src/gui/ScreenHandler.hpp",
+        "src/gui/ScreenFactory.hpp"
+      ],
+      "reference_behavior": "Screens use MAX_SCREENS = 16, track pending opens and close flags, and create concrete screens through ScreenFactory fixed storage: 3344 bytes on MINI and 4096 bytes on other supported display builds.",
+      "rust_surface": "buddy-domain::gui::ScreenStackContract",
+      "display_classes": [
+        "240x320",
+        "480x320"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "heap allocation absence in final Rust GUI adapter",
+        "runtime stack exhaustion behavior on hardware",
+        "cutover memory layout proof"
+      ],
+      "intentional_delta": "none"
+    },
+    {
+      "id": "dialog-fsm-display-config",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "src/gui/dialogs/DialogHandler.cpp",
+        "src/gui/ScreenHandler.hpp",
+        "src/gui/screen_print_preview.cpp",
+        "src/gui/screen_printing.cpp"
+      ],
+      "reference_behavior": "DialogHandler maps ClientFSM states to dialogs or screens for wait, safety timer, load/unload, preheat, selftest, network setup, printing, crash recovery, warning, print preview, cold pull, phase stepping, input shaper, belt tuning, gearbox, door sensor, manual belt tuning, and loadcell failure when feature gates enable them.",
+      "rust_surface": "buddy-domain::gui::DialogFsmDisplayConfig",
+      "display_classes": [
+        "240x320",
+        "480x320"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "feature-gated runtime dialog sequencing",
+        "Marlin FSM integration timing",
+        "simulator dialog traversal"
+      ],
+      "intentional_delta": "none"
+    },
+    {
+      "id": "menu-settings-and-home-entry",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "src/gui/screen_home.cpp",
+        "src/gui/ScreenHandler.hpp"
+      ],
+      "reference_behavior": "The home screen exposes localized Print, Preheat, Filament, Control, Settings, Info, and No USB labels; buttons open file browser and menu screens or send the calibration G-code entry action while preserving USB and MMU-dependent enablement.",
+      "rust_surface": "buddy-domain::gui::HomeMenuEntryContract",
+      "display_classes": [
+        "240x320",
+        "480x320"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "encoder focus traversal on hardware",
+        "physical USB insertion/removal timing",
+        "MMU runtime availability"
+      ],
+      "intentional_delta": "none",
+      "icon_resource_ids": [
+        "print_64x64",
+        "print_80x80",
+        "preheat_64x64",
+        "preheat_80x80",
+        "settings_64x64",
+        "settings_80x80",
+        "info_64x64",
+        "info_80x80"
+      ]
+    },
+    {
+      "id": "print-preview-entry",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "src/gui/screen_print_preview.cpp",
+        "src/gui/dialogs/resolution_240x320/radio_button_preview.cpp",
+        "src/gui/dialogs/resolution_480x320/radio_button_preview.cpp"
+      ],
+      "reference_behavior": "ScreenPrintPreview owns the loaded G-code description, thumbnail, main dialog, media-removal abort behavior, and display-specific radio preview controls; large display swaps Print to Continue and print_80x80 to mapping_80x80 when tool mapping will show.",
+      "rust_surface": "buddy-domain::gui::PrintPreviewContract",
+      "display_classes": [
+        "240x320",
+        "480x320"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "thumbnail byte-for-byte rendering",
+        "touch swipe behavior on physical display",
+        "tool mapping runtime flow",
+        "simulator preview traversal"
+      ],
+      "intentional_delta": "none",
+      "semantic_action_id": "preview",
+      "icon_resource_ids": [
+        "print_80x80",
+        "print_80x80_focused",
+        "back_80x80",
+        "back_80x80_focused",
+        "mapping_80x80",
+        "mapping_80x80_focused"
+      ]
+    },
+    {
+      "id": "print-control-pause",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "src/gui/screen_printing.cpp",
+        "src/gui/resolution_240x320/screen_printing_layout.hpp",
+        "src/gui/resolution_480x320/screen_printing_layout.hpp"
+      ],
+      "reference_behavior": "During PRINTING the middle print-control button is enabled, uses Pause icon and label resources, calls marlin_client::print_pause(), and refreshes the print state.",
+      "rust_surface": "buddy-domain::gui::PrintControlContract::Pause",
+      "display_classes": [
+        "240x320",
+        "480x320"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "Marlin pause execution",
+        "physical button latency",
+        "long-running print recovery behavior"
+      ],
+      "intentional_delta": "none",
+      "semantic_action_id": "pause",
+      "icon_resource_ids": [
+        "pause_64x64",
+        "pause_64x64_focused",
+        "pause_64x64_disabled",
+        "pause_80x80",
+        "pause_80x80_focused",
+        "pause_80x80_disabled"
+      ]
+    },
+    {
+      "id": "print-control-resume",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "src/gui/screen_printing.cpp",
+        "src/gui/resolution_240x320/screen_printing_layout.hpp",
+        "src/gui/resolution_480x320/screen_printing_layout.hpp"
+      ],
+      "reference_behavior": "During PAUSED the middle print-control button is enabled when media remains inserted, uses Resume icon and label resources, calls marlin_client::print_resume(), and reports transient pausing/resuming/reheating labels when disabled.",
+      "rust_surface": "buddy-domain::gui::PrintControlContract::Resume",
+      "display_classes": [
+        "240x320",
+        "480x320"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "Marlin resume execution",
+        "media-removal runtime guard",
+        "thermal recovery timing"
+      ],
+      "intentional_delta": "none",
+      "semantic_action_id": "resume",
+      "icon_resource_ids": [
+        "resume_64x64",
+        "resume_64x64_focused",
+        "resume_64x64_disabled",
+        "resume_80x80",
+        "resume_80x80_focused",
+        "resume_80x80_disabled"
+      ]
+    },
+    {
+      "id": "print-control-cancel-abort-request",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "src/gui/screen_printing.cpp",
+        "src/gui/screen_print_preview.cpp",
+        "src/gui/resolution_240x320/screen_printing_layout.hpp",
+        "src/gui/resolution_480x320/screen_printing_layout.hpp"
+      ],
+      "reference_behavior": "Abort requests are issued through marlin_client::print_abort() when confirmed from the printing stop flow, when MBL waits for a later abort retry, or when print preview observes media removal or error.",
+      "rust_surface": "buddy-domain::gui::PrintControlContract::Cancel",
+      "display_classes": [
+        "240x320",
+        "480x320"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "Marlin abort completion",
+        "mesh-bed-leveling delayed abort timing",
+        "USB media removal hardware behavior"
+      ],
+      "intentional_delta": "none",
+      "semantic_action_id": "cancel",
+      "icon_resource_ids": [
+        "disconnect_64x64",
+        "disconnect_64x64_focused",
+        "disconnect_64x64_disabled",
+        "disconnect_80x80",
+        "disconnect_80x80_focused",
+        "disconnect_80x80_disabled",
+        "stop_64x64",
+        "stop_80x80"
+      ]
+    },
+    {
+      "id": "print-control-stop-confirmation",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "src/gui/screen_printing.cpp",
+        "src/gui/resolution_240x320/screen_printing_layout.hpp",
+        "src/gui/resolution_480x320/screen_printing_layout.hpp"
+      ],
+      "reference_behavior": "The right print-control button asks the localized destructive confirmation 'Are you sure to stop this printing?' before setting stop_pressed, waiting_for_abort, and calling marlin_client::print_abort(); stopped and printed states use the Home label instead.",
+      "rust_surface": "buddy-domain::gui::PrintControlContract::Stop",
+      "display_classes": [
+        "240x320",
+        "480x320"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "physical destructive-confirmation interaction",
+        "Marlin abort completion",
+        "final safe-output behavior"
+      ],
+      "intentional_delta": "none",
+      "semantic_action_id": "stop",
+      "icon_resource_ids": [
+        "stop_64x64",
+        "stop_64x64_focused",
+        "stop_64x64_disabled",
+        "stop_80x80",
+        "stop_80x80_focused",
+        "stop_80x80_disabled",
+        "home_64x64",
+        "home_80x80"
+      ]
+    },
+    {
+      "id": "print-control-reprint",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "src/gui/screen_printing.cpp",
+        "src/gui/resolution_240x320/screen_printing_layout.hpp",
+        "src/gui/resolution_480x320/screen_printing_layout.hpp"
+      ],
+      "reference_behavior": "In STOPPED or PRINTED states the middle print-control button is enabled, uses Reprint icon and label resources, calls screen_printing_reprint(), and restarts from the current G-code filepath with preview skip-if-able behavior.",
+      "rust_surface": "buddy-domain::gui::PrintControlContract::Reprint",
+      "display_classes": [
+        "240x320",
+        "480x320"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "media file availability at runtime",
+        "Marlin print_begin execution",
+        "physical post-print workflow"
+      ],
+      "intentional_delta": "none",
+      "semantic_action_id": "reprint",
+      "icon_resource_ids": [
+        "reprint_64x64",
+        "reprint_64x64_focused",
+        "reprint_64x64_disabled",
+        "reprint_80x80",
+        "reprint_80x80_focused",
+        "reprint_80x80_disabled"
+      ]
+    },
+    {
+      "id": "setup-selftest-calibration-wizards",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "src/gui/dialogs/DialogHandler.cpp",
+        "src/gui/screen_home.cpp",
+        "src/gui/ScreenHandler.hpp"
+      ],
+      "reference_behavior": "Setup and calibration entry surfaces are preserved through DialogHandler FSM mappings for selftest, fan selftest, network setup, cold pull, phase stepping, input shaper, belt tuning, gearbox alignment, door sensor calibration, manual belt tuning, and nozzle cleaning failure screens, plus the home-screen calibration entry action.",
+      "rust_surface": "buddy-domain::gui::SetupWizardContract",
+      "display_classes": [
+        "240x320",
+        "480x320"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "hardware calibration actuation",
+        "sensor and loadcell behavior",
+        "feature-specific wizard completion on printer"
+      ],
+      "intentional_delta": "none"
+    },
+    {
+      "id": "connect-registration-local-entry",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "src/gui/dialogs/DialogConnectReg.cpp",
+        "src/gui/ScreenHandler.hpp"
+      ],
+      "reference_behavior": "The Connect registration dialog requests registration, shows QR/code/error/status text through display-specific rectangles, and asks a localized abort confirmation before leaving an unfinished registration flow.",
+      "rust_surface": "buddy-domain::gui::ConnectRegistrationLocalEntry",
+      "display_classes": [
+        "240x320",
+        "480x320"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "Connect service registration semantics",
+        "TLS and certificate handling",
+        "token lifetime and telemetry behavior",
+        "network retry timing"
+      ],
+      "intentional_delta": "none",
+      "icon_resource_ids": [
+        "hand_qr_59x72"
+      ]
+    },
+    {
+      "id": "prusalink-credential-local-display",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "src/gui/screen_prusa_link.cpp",
+        "src/gui/ScreenHandler.hpp"
+      ],
+      "reference_behavior": "The PrusaLink menu clears timeout so the generated password can be read locally, regenerates and stores a new password on request, refreshes the password row after child click, and opens a QR screen whose string includes the local username, generated password, and active IPv4 address.",
+      "rust_surface": "buddy-domain::gui::PrusaLinkCredentialDisplay",
+      "display_classes": [
+        "240x320",
+        "480x320"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "actual credential value proof is intentionally excluded",
+        "WUI service authentication behavior",
+        "network address availability",
+        "same-network QR usability"
+      ],
+      "intentional_delta": "none",
+      "icon_resource_ids": [
+        "hand_qr_59x72"
+      ]
+    },
+    {
+      "id": "warning-redscreen-error-surfaces",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "src/gui/guimain.cpp",
+        "src/gui/dialogs/DialogHandler.cpp",
+        "src/gui/screen_home.cpp"
+      ],
+      "reference_behavior": "The GUI error path chooses QR redscreen, fatal warning, hardfault, watchdog, BSOD, stack overflow, or generic blue error screens from crash_dump state; DialogHandler maps Warning FSM to DialogWarning; the home screen preserves the crash dump USB-save warning surface.",
+      "rust_surface": "buddy-domain::gui::WarningErrorSurfaceContract",
+      "display_classes": [
+        "240x320",
+        "480x320"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "raw crash dump contents are not local manifest evidence",
+        "fatal error hardware capture",
+        "watchdog and hardfault trigger behavior",
+        "cutover safety acceptance"
+      ],
+      "intentional_delta": "none",
+      "icon_resource_ids": [
+        "warning_16x16",
+        "error_16x16",
+        "info_58x58"
+      ]
+    }
+  ]
+}
