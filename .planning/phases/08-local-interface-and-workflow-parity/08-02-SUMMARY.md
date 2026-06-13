@@ -95,8 +95,6 @@ Each task was committed atomically:
 - **Verification:** `cargo clippy --all-targets --all-features -- -D warnings`, `cargo build --all-targets --all-features`, and `cargo test --all-features` passed.
 - **Committed in:** `d059a0448`
 
----
-
 **Total deviations:** 1 auto-fixed (1 blocking)
 **Impact on plan:** The fix keeps the same domain behavior and improves call-site clarity without expanding scope.
 
