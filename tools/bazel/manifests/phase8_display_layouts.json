@@ -1,0 +1,613 @@
+{
+  "schema_version": 1,
+  "phase": "08-local-interface-and-workflow-parity",
+  "phase_lifecycle_id": "8-2026-06-13T16-58-45",
+  "layout_contracts": [
+    {
+      "id": "display-class-selectors",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "include/guiconfig/guiconfig.h",
+        "include/guiconfig/GuiDefaults.hpp"
+      ],
+      "reference_behavior": "DISPLAY_TYPE_LARGE selects the 480x320 large display path for xBuddy/xlBuddy boards, DISPLAY_TYPE_MINI selects the 240x320 MINI path for Buddy boards, and DISPLAY_TYPE_MOCK remains a test-only layout class.",
+      "rust_surface": "buddy-domain::gui::DisplayClass",
+      "display_classes": [
+        "240x320",
+        "480x320",
+        "mock"
+      ],
+      "layout_values": {
+        "DISPLAY_TYPE_LARGE": 0,
+        "DISPLAY_TYPE_MINI": 1,
+        "DISPLAY_TYPE_MOCK": 2,
+        "HAS_LARGE_DISPLAY": "480x320",
+        "HAS_MINI_DISPLAY": "240x320",
+        "HAS_MOCK_DISPLAY": "test-only"
+      },
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "physical display-controller probe behavior",
+        "board-specific hardware smoke",
+        "final product matrix cutover"
+      ],
+      "intentional_delta": "none"
+    },
+    {
+      "id": "mini-240x320-gui-defaults",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "include/guiconfig/GuiDefaults.hpp",
+        "src/gui/fonts.hpp",
+        "src/gui/resolution_240x320/screen_printing_layout.hpp"
+      ],
+      "reference_behavior": "MINI and mock display builds use a fixed 240x320 canvas, two-line footer, 24px header, 48px footer, 64px print-control icons, 8px print-control padding, 16px print-control spacing, and MINI bitmap font sizes.",
+      "rust_surface": "buddy-domain::gui::DisplayLayoutContract::Mini240x320",
+      "display_classes": [
+        "240x320"
+      ],
+      "layout_values": {
+        "ScreenSize": "240x320",
+        "ScreenWidth": 240,
+        "ScreenHeight": 320,
+        "HeaderHeight": 24,
+        "HeaderPadding": {
+          "left": 4,
+          "top": 4,
+          "right": 4,
+          "bottom": 4
+        },
+        "FooterHeight": 48,
+        "FooterLines": 2,
+        "ButtonHeight": 30,
+        "ButtonSpacing": 6,
+        "ButtonIconSize": 64,
+        "ButtonIconVerticalSpacing": 24,
+        "ButtonPadding": 8,
+        "PrintButtonSpacing": 16,
+        "Font::normal": "11x18",
+        "Font::big": "11x18",
+        "Font::special": "9x16"
+      },
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "actual ST7789 LCD rendering",
+        "physical knob/touch behavior",
+        "bitmap clipping under all translations"
+      ],
+      "intentional_delta": "none"
+    },
+    {
+      "id": "large-480x320-gui-defaults",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "include/guiconfig/GuiDefaults.hpp",
+        "src/gui/fonts.hpp",
+        "src/gui/resolution_480x320/screen_printing_layout.hpp"
+      ],
+      "reference_behavior": "Large display builds use a fixed 480x320 canvas, one-line footer, 32px header, 23px footer, 80px print-control icons, 90px print-control padding, 30px print-control spacing, and large-display bitmap font sizes.",
+      "rust_surface": "buddy-domain::gui::DisplayLayoutContract::Large480x320",
+      "display_classes": [
+        "480x320"
+      ],
+      "layout_values": {
+        "ScreenSize": "480x320",
+        "ScreenWidth": 480,
+        "ScreenHeight": 320,
+        "HeaderHeight": 32,
+        "HeaderPadding": {
+          "left": 14,
+          "top": 12,
+          "right": 14,
+          "bottom": 4
+        },
+        "FooterHeight": 23,
+        "FooterLines": 1,
+        "ButtonHeight": 32,
+        "ButtonSpacing": 6,
+        "ButtonIconSize": 80,
+        "ButtonIconVerticalSpacing": 37,
+        "ButtonPadding": 90,
+        "PrintButtonSpacing": 30,
+        "Font::normal": "11x19",
+        "Font::big": "13x22",
+        "Font::special": "9x16",
+        "Font::large": "30x53"
+      },
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "actual ILI9488 LCD rendering",
+        "touch hit-target behavior",
+        "bitmap clipping under all translations"
+      ],
+      "intentional_delta": "none"
+    },
+    {
+      "id": "menu-layout-display-differences",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "include/guiconfig/GuiDefaults.hpp",
+        "src/gui/screen_home.cpp"
+      ],
+      "reference_behavior": "Menu layout differs by display class: MINI keeps the footer on, disables scrollbars and item divider lines, and uses compact item padding; large display disables the menu footer, enables an 8px scrollbar and item divider lines, and uses wider delimiter padding.",
+      "rust_surface": "buddy-domain::gui::MenuLayoutContract",
+      "display_classes": [
+        "240x320",
+        "480x320"
+      ],
+      "layout_values": {
+        "240x320": {
+          "MenuFooter": "On",
+          "MenuScrollbarWidth": 0,
+          "MenuLinesBetweenItems": false,
+          "MenuPaddingItems": {
+            "left": 6,
+            "top": 6,
+            "right": 6,
+            "bottom": 6
+          },
+          "MenuItemDelimiterPadding": {
+            "left": 6,
+            "top": 0,
+            "right": 6,
+            "bottom": 0
+          },
+          "FileBrowserPadding": {
+            "left": 0,
+            "top": 0,
+            "right": 0,
+            "bottom": 0
+          }
+        },
+        "480x320": {
+          "MenuFooter": "Off",
+          "MenuScrollbarWidth": 8,
+          "MenuLinesBetweenItems": true,
+          "MenuPaddingItems": {
+            "left": 6,
+            "top": 10,
+            "right": 6,
+            "bottom": 10
+          },
+          "MenuItemDelimiterPadding": {
+            "left": 41,
+            "top": 0,
+            "right": 37,
+            "bottom": 0
+          },
+          "FileBrowserPadding": {
+            "left": 16,
+            "top": 5,
+            "right": 24,
+            "bottom": 0
+          }
+        }
+      },
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "full menu traversal on physical input",
+        "translated label overflow across every menu",
+        "touch scrolling on large display"
+      ],
+      "intentional_delta": "none"
+    },
+    {
+      "id": "print-preview-layout-240x320",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "include/guiconfig/GuiDefaults.hpp",
+        "src/gui/resolution_240x320/screen_print_preview_base.cpp",
+        "src/gui/dialogs/resolution_240x320/radio_button_preview.cpp",
+        "src/gui/screen_print_preview.cpp"
+      ],
+      "reference_behavior": "MINI print preview uses the 240x320 layout with title text at the compact base padding, the thumbnail at GuiDefaults::PreviewThumbnailRect, and two FSM radio buttons from GuiDefaults::GetButtonRect.",
+      "rust_surface": "buddy-domain::gui::PrintPreviewLayout::Mini240x320",
+      "display_classes": [
+        "240x320"
+      ],
+      "layout_values": {
+        "ScreenSize": "240x320",
+        "PreviewThumbnailRect": {
+          "x": 10,
+          "y": 36,
+          "width": 220,
+          "height": 124
+        },
+        "TitleRect": {
+          "x": "PADDING",
+          "y": "PADDING",
+          "width": "GuiDefaults::ScreenWidth - 2 * PADDING",
+          "height": "TITLE_HEIGHT"
+        },
+        "RadioButtonLayout": "GuiDefaults::GetButtonRect(GetRect())",
+        "ButtonIconSize": 64
+      },
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "thumbnail rendering fidelity",
+        "actual radio-button input traversal",
+        "simulator preview screenshot comparison"
+      ],
+      "intentional_delta": "none"
+    },
+    {
+      "id": "print-preview-layout-480x320",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "include/guiconfig/GuiDefaults.hpp",
+        "src/gui/resolution_480x320/screen_print_preview_base.cpp",
+        "src/gui/dialogs/resolution_480x320/radio_button_preview.cpp",
+        "src/gui/screen_print_preview.cpp"
+      ],
+      "reference_behavior": "Large print preview uses the 480x320 layout with a PRINT header, print_16x16 header icon, 313x173 thumbnail, vertical two-button radio rail, and large-display preview action icons.",
+      "rust_surface": "buddy-domain::gui::PrintPreviewLayout::Large480x320",
+      "display_classes": [
+        "480x320"
+      ],
+      "layout_values": {
+        "ScreenSize": "480x320",
+        "PreviewThumbnailRect": {
+          "x": 30,
+          "y": 82,
+          "width": 313,
+          "height": 173
+        },
+        "TitleRect": {
+          "x": 30,
+          "y": 40,
+          "width": 420,
+          "height": "TITLE_HEIGHT"
+        },
+        "VerticalRadioButtonsRect": {
+          "x": "PreviewThumbnailRect.Right() + centered spare width",
+          "y": 82,
+          "width": "RadioButtonPreview::vertical_buttons_width",
+          "height": 238
+        },
+        "ButtonIconSize": 80,
+        "ActionIconResources": [
+          "print_80x80",
+          "back_80x80",
+          "mapping_80x80"
+        ]
+      },
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "thumbnail rendering fidelity",
+        "tool-mapping runtime flow",
+        "touch hit-target proof"
+      ],
+      "intentional_delta": "none"
+    },
+    {
+      "id": "print-progress-layout-240x320",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "src/gui/screen_printing.cpp",
+        "src/gui/screen_printing.hpp",
+        "src/gui/resolution_240x320/screen_printing_layout.hpp",
+        "include/guiconfig/GuiDefaults.hpp"
+      ],
+      "reference_behavior": "MINI print progress shows filename, progress bar, progress text, print time, and end/remaining time fields in compact fixed rectangles and uses 64px print-control resources.",
+      "rust_surface": "buddy-domain::gui::PrintProgressLayout::Mini240x320",
+      "display_classes": [
+        "240x320"
+      ],
+      "layout_values": {
+        "ScreenSize": "240x320",
+        "FilenameRect": {
+          "x": 10,
+          "y": 33,
+          "width": 220,
+          "height": 29
+        },
+        "ProgressRect": {
+          "x": 10,
+          "y": 70,
+          "width": 220,
+          "height": 16
+        },
+        "ProgressTextRect": {
+          "x": 10,
+          "y": 86,
+          "width": 220,
+          "height": 30
+        },
+        "PrintTimeLabelRect": {
+          "x": 10,
+          "y": 128,
+          "width": 101,
+          "height": 20
+        },
+        "EndTimeValueRect": {
+          "x": 120,
+          "y": 148,
+          "width": 111,
+          "height": 37
+        },
+        "ButtonIconSize": 64,
+        "ButtonPadding": 8,
+        "ButtonSpacing": 16,
+        "Font::normal": "11x18"
+      },
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "live progress timing",
+        "Marlin status-message rotation",
+        "physical print-state rendering"
+      ],
+      "intentional_delta": "none"
+    },
+    {
+      "id": "print-progress-layout-480x320",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "src/gui/screen_printing.cpp",
+        "src/gui/screen_printing.hpp",
+        "src/gui/resolution_480x320/screen_printing_layout.hpp",
+        "include/guiconfig/GuiDefaults.hpp"
+      ],
+      "reference_behavior": "Large print progress shows filename, progress bar, large progress text/end-result body, rotating time fields, arrow-left end-result control, and 80px print-control resources.",
+      "rust_surface": "buddy-domain::gui::PrintProgressLayout::Large480x320",
+      "display_classes": [
+        "480x320"
+      ],
+      "layout_values": {
+        "ScreenSize": "480x320",
+        "FilenameRect": {
+          "x": 30,
+          "y": 38,
+          "width": 420,
+          "height": 24
+        },
+        "ProgressRect": {
+          "x": 30,
+          "y": 65,
+          "width": 420,
+          "height": 16
+        },
+        "EndTimeLabelRect": {
+          "x": 30,
+          "y": 104,
+          "width": 150,
+          "height": 20
+        },
+        "EndTimeValueRect": {
+          "x": 30,
+          "y": 124,
+          "width": 200,
+          "height": 23
+        },
+        "ArrowLeftResource": "arrow_left_10x16",
+        "ButtonIconSize": 80,
+        "ButtonPadding": 90,
+        "ButtonSpacing": 30,
+        "Font::normal": "11x19",
+        "Font::large": "30x53"
+      },
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "live progress timing",
+        "touch swipe/end-result interaction",
+        "thumbnail/progress rendering on hardware"
+      ],
+      "intentional_delta": "none"
+    },
+    {
+      "id": "localized-text-font-contracts",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "src/gui/fonts.hpp",
+        "src/lang/CMakeLists.txt",
+        "src/gui/res",
+        "tools/bazel/manifests/phase7_resources.json",
+        "tools/bazel/manifests/phase7_generated_outputs.json"
+      ],
+      "reference_behavior": "GUI-visible text remains localization-backed through src/lang generation and bitmap fonts from src/gui/res; Phase 8 layout rows consume Phase 7 resource and generated-output contracts rather than embedding English-only replacement copy.",
+      "rust_surface": "buddy-domain::gui::LocalizedTextFontContract",
+      "display_classes": [
+        "240x320",
+        "480x320"
+      ],
+      "layout_values": {
+        "240x320": {
+          "Font::small": "7x13",
+          "Font::normal": "11x18",
+          "Font::big": "11x18",
+          "Font::special": "9x16",
+          "Font::large": "unavailable"
+        },
+        "480x320": {
+          "Font::small": "9x16",
+          "Font::normal": "11x19",
+          "Font::big": "13x22",
+          "Font::special": "9x16",
+          "Font::large": "30x53"
+        },
+        "LocalizationSources": [
+          "src/lang/po/*/*.po",
+          "src/lang/CMakeLists.txt",
+          "utils/translations_and_fonts/lang.py"
+        ],
+        "ResourceTraceability": [
+          "src/gui/res",
+          "phase7_resources.json",
+          "phase7_generated_outputs.json"
+        ]
+      },
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "rendered text comparison for every language",
+        "font generator rerun evidence",
+        "full translation overflow and rolling-text proof"
+      ],
+      "intentional_delta": "none"
+    },
+    {
+      "id": "warning-dialog-layout",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "include/guiconfig/GuiDefaults.hpp",
+        "src/gui/dialogs/window_dlg_warning.cpp",
+        "src/gui/res"
+      ],
+      "reference_behavior": "Warning dialogs use display-specific QR size and padding, a 48px warning/fan/USB/error icon row, hand_qr_59x72 phone icon, QR error code, translated error text, and a button rectangle derived from GuiDefaults.",
+      "rust_surface": "buddy-domain::gui::WarningDialogLayout",
+      "display_classes": [
+        "240x320",
+        "480x320"
+      ],
+      "layout_values": {
+        "240x320": {
+          "QRSize": 100,
+          "WarningDlgPadding": 6,
+          "WarningDlgDescriptionRect": {
+            "x": 6,
+            "y": 112,
+            "width": 228,
+            "height": 268
+          },
+          "RadioButtonCornerRadius": 6
+        },
+        "480x320": {
+          "QRSize": 130,
+          "WarningDlgPadding": 26,
+          "WarningDlgDescriptionRect": {
+            "x": 26,
+            "y": 182,
+            "width": 428,
+            "height": 256
+          },
+          "RadioButtonCornerRadius": 8
+        },
+        "IconSize": 48,
+        "PhoneIconResource": "hand_qr_59x72"
+      },
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "camera-readable QR proof on physical LCD",
+        "warning-specific runtime triggers",
+        "touch/encoder response confirmation"
+      ],
+      "intentional_delta": "none"
+    },
+    {
+      "id": "redscreen-bsod-error-layout",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "include/guiconfig/GuiDefaults.hpp",
+        "src/gui/screen_bsod.cpp",
+        "src/gui/guimain.cpp"
+      ],
+      "reference_behavior": "Redscreen and BSOD/error layouts use display-specific title and description rectangles; BSOD screens intentionally bypass translation and populate title/description from crash_dump message metadata without storing raw crash memory in this manifest.",
+      "rust_surface": "buddy-domain::gui::RedscreenBsodErrorLayout",
+      "display_classes": [
+        "240x320",
+        "480x320"
+      ],
+      "layout_values": {
+        "240x320": {
+          "RedscreenTitleRect": {
+            "x": 10,
+            "y": 24,
+            "width": 214,
+            "height": 20
+          },
+          "RedscreenDescriptionRect": {
+            "x": 10,
+            "y": 50,
+            "width": 220,
+            "height": 220
+          }
+        },
+        "480x320": {
+          "RedscreenTitleRect": {
+            "x": 30,
+            "y": 44,
+            "width": 420,
+            "height": 20
+          },
+          "RedscreenDescriptionRect": {
+            "x": 30,
+            "y": 85,
+            "width": 230,
+            "height": 170
+          }
+        },
+        "BsodHeader": "BSOD",
+        "CrashDumpBytesStored": false
+      },
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "hardfault/watchdog/BSOD trigger proof",
+        "raw crash dump memory contents",
+        "hardware fatal-state rendering"
+      ],
+      "intentional_delta": "none"
+    },
+    {
+      "id": "connect-registration-layout",
+      "requirement_id": "IFCE-01",
+      "reference_sources": [
+        "src/gui/dialogs/DialogConnectReg.cpp",
+        "include/guiconfig/GuiDefaults.hpp"
+      ],
+      "reference_behavior": "Connect registration uses WizardDefaults frame geometry, display-specific QR and phone icon rectangles, large-display title/underline rows, MINI compact state/detail rows, localized status text, and a single Leave button.",
+      "rust_surface": "buddy-domain::gui::ConnectRegistrationLayout",
+      "display_classes": [
+        "240x320",
+        "480x320"
+      ],
+      "layout_values": {
+        "240x320": {
+          "QRCodeRect": {
+            "x": "160 - QRCodeWidth / 2",
+            "y": "200 - QRCodeHeight / 2",
+            "width": "QRCodeWidth",
+            "height": "QRCodeHeight"
+          },
+          "PhoneIconRect": {
+            "x": 20,
+            "y": 165,
+            "width": "phoneWidth",
+            "height": "phoneHeight"
+          },
+          "StateTextRect": "WizardDefaults::col_0, WizardDefaults::row_0, textWidth, WizardDefaults::txt_h * 4"
+        },
+        "480x320": {
+          "QRCodeRect": {
+            "x": "GuiDefaults::ScreenWidth - WizardDefaults::MarginRight - QRCodeWidth",
+            "y": "WizardDefaults::row_1 + 5",
+            "width": "QRCodeWidth",
+            "height": "QRCodeHeight"
+          },
+          "PhoneIconRect": "qrcodeRect().Left() - phoneWidth, vertically centered to QR",
+          "TitleRect": "WizardDefaults::col_0, WizardDefaults::row_0",
+          "UnderlineColor": "COLOR_ORANGE"
+        },
+        "PhoneIconResource": "hand_qr_59x72",
+        "QRSizeSource": "DialogConnectRegister::Positioner"
+      },
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "non_local_evidence": [
+        "Connect service registration semantics",
+        "credential/token values",
+        "network retry timing",
+        "QR readability on physical LCD"
+      ],
+      "intentional_delta": "none"
+    }
+  ]
+}
