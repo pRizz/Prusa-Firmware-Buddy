@@ -153,8 +153,8 @@ Plans:
 1. Maintainer can run GUI workflow and layout parity checks that include known freeze/error paths from the concerns ledger.
    **Plans**: 3 plans
 Plans:
-- [ ] 08-01-PLAN.md — Create source-backed GUI workflow, display-layout, and concern manifests.
-- [ ] 08-02-PLAN.md — Add pure Rust GUI/display/evidence contracts in buddy-domain.
+- [x] 08-01-PLAN.md — Create source-backed GUI workflow, display-layout, and concern manifests.
+- [x] 08-02-PLAN.md — Add pure Rust GUI/display/evidence contracts in buddy-domain.
 - [ ] 08-03-PLAN.md — Add Phase 8 verifier, Bazel/just wiring, and validation sign-off.
    **UI hint**: yes
 
