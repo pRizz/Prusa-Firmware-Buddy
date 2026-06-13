@@ -572,6 +572,24 @@ class Phase8VerifierTest(unittest.TestCase):
         self.assertIn("phase8_verify_tests", result.stdout)
         self.assertIn("rust_workflow.sh", result.stdout)
 
+    def test_rejects_justfile_without_standalone_phase8_verify_command(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase8_quick_surface(root)
+            self.write_file(
+                root,
+                "justfile",
+                "phase8-verify:\n    bazel run //tools/bazel:phase8_verify_tests\n",
+            )
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("justfile must run phase8_verify_tests before phase8_verify", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

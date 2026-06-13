@@ -643,6 +643,13 @@ def require_text_contains(path_label: str, text: str, needles: list[str]) -> lis
     return [f"{path_label} missing {needle}" for needle in needles if needle not in text]
 
 
+def find_exact_line(text: str, expected: str) -> int | None:
+    for index, line in enumerate(text.splitlines()):
+        if line.strip() == expected:
+            return index
+    return None
+
+
 def check_bazel_surface() -> None:
     root_build = read_text("BUILD.bazel")
     tools_build = read_text("tools/bazel/BUILD.bazel")
@@ -705,9 +712,9 @@ def check_just_surface() -> None:
             "bazel run //tools/bazel:phase8_verify",
         ],
     )
-    tests_index = justfile.find("bazel run //tools/bazel:phase8_verify_tests")
-    verify_index = justfile.find("bazel run //tools/bazel:phase8_verify")
-    if tests_index == -1 or verify_index == -1 or tests_index > verify_index:
+    tests_index = find_exact_line(justfile, "bazel run //tools/bazel:phase8_verify_tests")
+    verify_index = find_exact_line(justfile, "bazel run //tools/bazel:phase8_verify")
+    if tests_index is None or verify_index is None or tests_index > verify_index:
         errors.append("justfile must run phase8_verify_tests before phase8_verify")
     if errors:
         raise VerificationError("\n".join(errors))
