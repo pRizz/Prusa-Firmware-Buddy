@@ -26,6 +26,14 @@ pub use gui::{
     GuiProofScope, GuiSemanticAction, GuiSurface, GuiWorkflow, IntentionalDeltaStatus,
     LocalizationSurface,
 };
+pub use network::{
+    ConnectCommandId, ConnectCommandState, ConnectIdentity, EncryptedPayloadMetadata,
+    NetworkEvidenceClass, NetworkParityContract, NetworkParityContractInput, NetworkParityRowId,
+    NetworkProofScope, NetworkServiceContract, NetworkServiceContractInput, NetworkServiceSurface,
+    ProxyMode, SecretHandling, TelemetryEventSurface, TransferEncryptionMode, TransferErrorClass,
+    TransferRange, TransferRecoveryState, TransferSlotState, TransferSource, WebSocketCommandState,
+    WuiAuthMode, WuiEndpointFamily,
+};
 pub use print::{
     CommandRoute, FixtureId, GcodeMnemonic, PlannerFlowState, PrintCommand, PrintJobState,
     PrintSource, PrintTransitionError, route_gcode_mnemonic, transition_print_state,
@@ -139,6 +147,48 @@ pub enum InvariantError {
     InvalidGuiSemanticAction,
     /// A GUI semantic action was bound to the wrong workflow.
     InvalidGuiSemanticActionBinding,
+    /// A network parity row ID was empty.
+    EmptyNetworkParityRowId,
+    /// A network parity row ID contained unsupported syntax or characters.
+    InvalidNetworkParityRowId,
+    /// A Phase 9 network evidence class was not recognized.
+    InvalidNetworkEvidenceClass,
+    /// A Phase 9 network proof scope was invalid for its evidence class.
+    InvalidNetworkProofScope,
+    /// A secret-handling value was not recognized.
+    InvalidSecretHandling,
+    /// A Connect command ID contained unsupported syntax or characters.
+    InvalidConnectCommandId,
+    /// A Connect command state was not recognized.
+    InvalidConnectCommandState,
+    /// A telemetry or event surface was not recognized.
+    InvalidTelemetryEventSurface,
+    /// A WebSocket command state was not recognized.
+    InvalidWebSocketCommandState,
+    /// A proxy mode was not recognized.
+    InvalidProxyMode,
+    /// A WUI endpoint family was not recognized.
+    InvalidWuiEndpointFamily,
+    /// A WUI auth mode was not recognized.
+    InvalidWuiAuthMode,
+    /// A transfer source was not recognized.
+    InvalidTransferSource,
+    /// A transfer slot state was not recognized.
+    InvalidTransferSlotState,
+    /// A transfer range end was before its start.
+    InvalidTransferRange,
+    /// Encrypted payload metadata attempted to carry invalid identity data.
+    InvalidEncryptedPayloadMetadata,
+    /// A transfer encryption mode was not recognized.
+    InvalidTransferEncryptionMode,
+    /// A transfer recovery state was not recognized.
+    InvalidTransferRecoveryState,
+    /// A transfer error class was not recognized.
+    InvalidTransferErrorClass,
+    /// A network service surface was not recognized.
+    InvalidNetworkServiceSurface,
+    /// A network service was requested without its required feature gate.
+    UnsupportedNetworkService,
 }
 
 impl fmt::Display for InvariantError {
@@ -249,6 +299,63 @@ impl fmt::Display for InvariantError {
             ),
             Self::InvalidGuiSemanticActionBinding => formatter.write_str(
                 "GUI semantic action must be bound to its required print workflow",
+            ),
+            Self::EmptyNetworkParityRowId => {
+                formatter.write_str("network parity row ID must not be empty")
+            }
+            Self::InvalidNetworkParityRowId => formatter.write_str(
+                "network parity row ID must be path-free printable ASCII at most 96 bytes",
+            ),
+            Self::InvalidNetworkEvidenceClass => formatter.write_str(
+                "network evidence class must be one of the Phase 9 accepted values",
+            ),
+            Self::InvalidNetworkProofScope => formatter.write_str(
+                "network local proof scope cannot be paired with simulator, hardware, or manual evidence",
+            ),
+            Self::InvalidSecretHandling => {
+                formatter.write_str("secret handling must be none or named-only-redacted")
+            }
+            Self::InvalidConnectCommandId => formatter.write_str(
+                "Connect command ID must be path-free printable ASCII at most 96 bytes",
+            ),
+            Self::InvalidConnectCommandState => formatter.write_str(
+                "Connect command state must be one of the Phase 9 accepted values",
+            ),
+            Self::InvalidTelemetryEventSurface => formatter.write_str(
+                "telemetry event surface must be one of the Phase 9 accepted values",
+            ),
+            Self::InvalidWebSocketCommandState => formatter.write_str(
+                "WebSocket command state must be one of the Phase 9 accepted values",
+            ),
+            Self::InvalidProxyMode => {
+                formatter.write_str("proxy mode must be disabled or http-connect-tls-only")
+            }
+            Self::InvalidWuiEndpointFamily => formatter
+                .write_str("WUI endpoint family must be one of the Phase 9 accepted values"),
+            Self::InvalidWuiAuthMode => {
+                formatter.write_str("WUI auth mode must be one of the Phase 9 accepted values")
+            }
+            Self::InvalidTransferSource => {
+                formatter.write_str("transfer source must be one of the Phase 9 accepted values")
+            }
+            Self::InvalidTransferSlotState => formatter
+                .write_str("transfer slot state must be one of the Phase 9 accepted values"),
+            Self::InvalidTransferRange => {
+                formatter.write_str("transfer inclusive end must not be before start")
+            }
+            Self::InvalidEncryptedPayloadMetadata => formatter.write_str(
+                "encrypted payload metadata must use a non-empty named identity without value bytes",
+            ),
+            Self::InvalidTransferEncryptionMode => formatter
+                .write_str("transfer encryption mode must be none or aes-ctr"),
+            Self::InvalidTransferRecoveryState => formatter
+                .write_str("transfer recovery state must be one of the Phase 9 accepted values"),
+            Self::InvalidTransferErrorClass => formatter
+                .write_str("transfer error class must be one of the Phase 9 accepted values"),
+            Self::InvalidNetworkServiceSurface => formatter
+                .write_str("network service surface must be one of the Phase 9 accepted values"),
+            Self::UnsupportedNetworkService => formatter.write_str(
+                "network service requires Feature::Connect or Feature::WebUi to be enabled",
             ),
         }
     }
