@@ -1,0 +1,336 @@
+{
+  "schema_version": 1,
+  "phase": "10-auxiliary-controllers-and-expansion-ecosystem",
+  "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+  "auxiliary_controller_contracts": [
+    {
+      "id": "aux-controller-family-dwarf",
+      "requirement_id": "IFCE-06",
+      "surface": "dwarf-auxiliary-controller-family",
+      "reference_sources": [
+        "ProjectOptions.cmake",
+        "CMakeLists.txt",
+        "src/CMakeLists.txt",
+        "src/puppies/puppy_task.cpp",
+        "src/puppies/Dwarf.cpp",
+        "include/puppies/Dwarf.hpp",
+        "src/puppy/dwarf/main.cpp"
+      ],
+      "reference_behavior": "Dwarf auxiliary controllers are selected for XL-family master firmware, built as BOARD=DWARF firmware, bootstrapped from master resources, and refreshed through the puppy task.",
+      "rust_surface": "buddy-domain::auxiliary::AuxiliaryControllerKind::Dwarf",
+      "evidence_class": "static-source-audit",
+      "proof_scope": "local",
+      "update_build_surface": "cmake-reference",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Dwarf physical boot and RS485 behavior require hardware-smoke proof",
+        "Dwarf live toolhead behavior requires simulator-flow or manual-hardware-required proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "controller_kind": "dwarf",
+      "runtime_states": [
+        "bootloader",
+        "unavailable",
+        "active",
+        "stopped",
+        "updating",
+        "update-failed",
+        "communication-fault",
+        "unknown-reference-deferred"
+      ],
+      "supported_products": [
+        "XL",
+        "XL_DEV_KIT"
+      ],
+      "source_contract_ids": [
+        "PRINTERS_WITH_DWARF",
+        "HAS_DWARF",
+        "HAS_PUPPIES",
+        "BOARD=DWARF",
+        "auxiliary-runtime-shells",
+        "puppy-auxiliary-runtime"
+      ],
+      "retained_runtime_boundary": "Dwarf firmware entrypoint, master-side Dwarf abstraction, Modbus refresh, FIFO, fan, loadcell, accelerometer, and toolhead state remain retained source-backed contracts until Rust auxiliary runtime parity is proven."
+    },
+    {
+      "id": "aux-controller-family-modular-bed",
+      "requirement_id": "IFCE-06",
+      "surface": "modular-bed-auxiliary-controller-family",
+      "reference_sources": [
+        "ProjectOptions.cmake",
+        "CMakeLists.txt",
+        "src/CMakeLists.txt",
+        "src/puppies/puppy_task.cpp",
+        "src/puppies/modular_bed.cpp",
+        "include/puppies/modular_bed.hpp",
+        "src/puppy/modularbed/main.cpp"
+      ],
+      "reference_behavior": "ModularBed auxiliary firmware is selected for XL/iX-family master boards, built as BOARD=MODULARBED firmware, and refreshed through ModularBed register blocks for bedlet temperatures, ready state, current, and fault state.",
+      "rust_surface": "buddy-domain::auxiliary::AuxiliaryControllerKind::ModularBed",
+      "evidence_class": "static-source-audit",
+      "proof_scope": "local",
+      "update_build_surface": "cmake-reference",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Remote bedlet heating and overcurrent behavior require hardware-smoke proof",
+        "Physical thermal and power-panic interaction requires manual-hardware-required proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "controller_kind": "modular-bed",
+      "runtime_states": [
+        "bootloader",
+        "unavailable",
+        "active",
+        "stopped",
+        "updating",
+        "update-failed",
+        "communication-fault",
+        "unknown-reference-deferred"
+      ],
+      "supported_products": [
+        "XL",
+        "XL_DEV_KIT",
+        "iX"
+      ],
+      "source_contract_ids": [
+        "HAS_PUPPY_MODULARBED",
+        "HAS_PUPPIES",
+        "BOARD=MODULARBED",
+        "auxiliary-runtime-shells",
+        "puppy-auxiliary-runtime"
+      ],
+      "retained_runtime_boundary": "ModularBed firmware entrypoint, master-side ModularBed class, bedlet register refresh, current/fault handling, and safe-state hooks remain retained source-backed contracts."
+    },
+    {
+      "id": "aux-controller-family-xbuddy-extension",
+      "requirement_id": "IFCE-06",
+      "surface": "xbuddy-extension-auxiliary-controller-family",
+      "reference_sources": [
+        "ProjectOptions.cmake",
+        "CMakeLists.txt",
+        "src/CMakeLists.txt",
+        "src/puppies/xbuddy_extension.cpp",
+        "include/puppies/xbuddy_extension.hpp",
+        "src/puppy/xbuddy_extension/main.cpp",
+        "src/puppy/xbuddy_extension_shared/xbuddy_extension_shared/mmu_bridge.hpp"
+      ],
+      "reference_behavior": "xBuddy Extension auxiliary firmware is selected for COREONE master firmware and exposes retained MMU bridge request/response behavior through the puppy Modbus bus.",
+      "rust_surface": "buddy-domain::auxiliary::AuxiliaryControllerKind::XBuddyExtension",
+      "evidence_class": "static-source-audit",
+      "proof_scope": "local",
+      "update_build_surface": "cmake-reference",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "xBuddy Extension physical startup and MMU bridge behavior require hardware-smoke proof",
+        "COREONE live bridge timing requires simulator-flow or manual-hardware-required proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "controller_kind": "xbuddy-extension",
+      "runtime_states": [
+        "bootloader",
+        "unavailable",
+        "active",
+        "stopped",
+        "updating",
+        "update-failed",
+        "communication-fault",
+        "unknown-reference-deferred"
+      ],
+      "supported_products": [
+        "COREONE"
+      ],
+      "source_contract_ids": [
+        "HAS_XBUDDY_EXTENSION",
+        "XBUDDY_EXTENSION_VARIANT_STANDARD",
+        "HAS_PUPPIES",
+        "BOARD=XBUDDY_EXTENSION",
+        "auxiliary-runtime-shells",
+        "puppy-auxiliary-runtime"
+      ],
+      "retained_runtime_boundary": "xBuddy Extension firmware entrypoint, shared MMU bridge protocol, master-side XBuddyExtension class, and Modbus bridge states remain retained source-backed contracts."
+    },
+    {
+      "id": "dwarf-runtime-fifo-loadcell-toolhead",
+      "requirement_id": "IFCE-06",
+      "surface": "dwarf-runtime-fifo-loadcell-toolhead",
+      "reference_sources": [
+        "src/puppies/puppy_task.cpp",
+        "src/puppies/Dwarf.cpp",
+        "include/puppies/Dwarf.hpp"
+      ],
+      "reference_behavior": "Dwarf runtime refresh pulls FIFO records, tracks selected toolhead state, exposes loadcell and accelerometer controls, and maps fan, heater, filament sensor, and fault data to master-side consumers.",
+      "rust_surface": "buddy-domain::auxiliary::DwarfRuntimeContract",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "update_build_surface": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "FIFO timing, loadcell activity, accelerometer sampling, and physical toolhead state require hardware-smoke proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "controller_kind": "dwarf",
+      "runtime_states": [
+        "bootloader",
+        "unavailable",
+        "active",
+        "stopped",
+        "updating",
+        "update-failed",
+        "communication-fault",
+        "unknown-reference-deferred"
+      ],
+      "supported_products": [
+        "XL",
+        "XL_DEV_KIT"
+      ],
+      "source_contract_ids": [
+        "Dwarf::pull_fifo",
+        "Dwarf::set_loadcell",
+        "Dwarf::set_accelerometer",
+        "Dwarf::set_selected",
+        "prusa_toolchanger.update"
+      ],
+      "retained_runtime_boundary": "The master puppy task owns live Dwarf refresh and FIFO dispatch; Rust contracts may model states locally but cannot claim physical Dwarf timing proof."
+    },
+    {
+      "id": "modular-bed-runtime-bedlet-faults",
+      "requirement_id": "IFCE-06",
+      "surface": "modular-bed-runtime-bedlet-faults",
+      "reference_sources": [
+        "src/puppies/modular_bed.cpp",
+        "include/puppies/modular_bed.hpp",
+        "src/puppy/modularbed/main.cpp"
+      ],
+      "reference_behavior": "ModularBed runtime refresh reads general status, ready bits, currents, bedlet data, fault state, MCU temperature, and writes print-fan, test-heating, reset-overcurrent, and bedlet target commands.",
+      "rust_surface": "buddy-domain::auxiliary::ModularBedRuntimeContract",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "update_build_surface": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Bedlet heating, current fault recovery, and physical safe-state behavior require manual-hardware-required proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "controller_kind": "modular-bed",
+      "runtime_states": [
+        "bootloader",
+        "unavailable",
+        "active",
+        "stopped",
+        "updating",
+        "update-failed",
+        "communication-fault",
+        "unknown-reference-deferred"
+      ],
+      "supported_products": [
+        "XL",
+        "XL_DEV_KIT",
+        "iX"
+      ],
+      "source_contract_ids": [
+        "ModularBed::refresh",
+        "ModularBed::read_general_fault",
+        "ModularBed::update_bedlet_temps",
+        "ModularBed::safe_state"
+      ],
+      "retained_runtime_boundary": "ModularBed register semantics and physical bedlet fault behavior remain retained until hardware-aware parity proof exists."
+    },
+    {
+      "id": "xbuddy-extension-runtime-h503-special",
+      "requirement_id": "IFCE-06",
+      "surface": "xbuddy-extension-stm32h503-runtime",
+      "reference_sources": [
+        "src/puppy/xbuddy_extension/main.cpp",
+        "src/puppy/xbuddy_extension/stm32h503.s",
+        "src/puppy/xbuddy_extension/stm32h503.ld",
+        "src/puppy/xbuddy_extension/stm32h503_boot.ld",
+        "src/puppy/xbuddy_extension/stm32h503_noboot.ld",
+        "src/puppy/xbuddy_extension/hal_clock.cpp",
+        "src/puppy/xbuddy_extension/config/FreeRTOSConfig.h",
+        "src/puppies/xbuddy_extension.cpp"
+      ],
+      "reference_behavior": "xBuddy Extension is a special STM32H503 retained runtime surface with fpv5-sp-d16 hard-float evidence, dedicated startup assembly, linker scripts, HAL clock setup, and FreeRTOS configuration; it is not collapsed into a generic STM32H5 row.",
+      "rust_surface": "buddy-domain::auxiliary::XBuddyExtensionH503RuntimeContract",
+      "evidence_class": "static-source-audit",
+      "proof_scope": "non-local",
+      "update_build_surface": "cmake-reference",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "STM32H503 startup, linker, clock, FPU, and FreeRTOS timing require simulator-flow or hardware-smoke proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "controller_kind": "xbuddy-extension",
+      "runtime_states": [
+        "bootloader",
+        "unavailable",
+        "active",
+        "stopped",
+        "updating",
+        "update-failed",
+        "communication-fault",
+        "unknown-reference-deferred"
+      ],
+      "supported_products": [
+        "COREONE"
+      ],
+      "source_contract_ids": [
+        "STM32H503",
+        "fpv5-sp-d16",
+        "src/puppy/xbuddy_extension/stm32h503.s",
+        "src/puppy/xbuddy_extension/stm32h503.ld",
+        "src/puppy/xbuddy_extension/stm32h503_boot.ld",
+        "src/puppy/xbuddy_extension/stm32h503_noboot.ld",
+        "src/puppy/xbuddy_extension/hal_clock.cpp",
+        "src/puppy/xbuddy_extension/config/FreeRTOSConfig.h"
+      ],
+      "retained_runtime_boundary": "The H503-specific startup/linker/clock/FreeRTOS surface stays explicit and separate from generic STM32H5 abstractions."
+    },
+    {
+      "id": "aux-runtime-state-contract",
+      "requirement_id": "IFCE-06",
+      "surface": "auxiliary-runtime-state-contract",
+      "reference_sources": [
+        "src/puppies/puppy_task.cpp",
+        "src/puppies/PuppyBootstrap.cpp",
+        "src/mmu2/mmu2_reporting.cpp",
+        "rust/crates/domain/src/product.rs",
+        "rust/crates/domain/src/feature.rs",
+        "rust/crates/runtime-adapter/src/lib.rs"
+      ],
+      "reference_behavior": "Auxiliary runtime parity must model bootloader, unavailable, active, stopped, updating, update-failed, communication-fault, and unknown-reference-deferred states instead of relying on unconditional availability stubs.",
+      "rust_surface": "buddy-domain::auxiliary::AuxiliaryRuntimeState",
+      "evidence_class": "manifest-check",
+      "proof_scope": "local",
+      "update_build_surface": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Live transition timing and communication-fault recovery require simulator-flow or hardware-smoke proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "controller_kind": "all-auxiliary-controllers",
+      "runtime_states": [
+        "bootloader",
+        "unavailable",
+        "active",
+        "stopped",
+        "updating",
+        "update-failed",
+        "communication-fault",
+        "unknown-reference-deferred"
+      ],
+      "supported_products": [
+        "XL",
+        "XL_DEV_KIT",
+        "iX",
+        "COREONE"
+      ],
+      "source_contract_ids": [
+        "PuppyBootstrap::run",
+        "PuppyBootstrap::BootstrapResult",
+        "RuntimeBoundary::is_auxiliary_runtime",
+        "Phase6FeatureGate::OutOfScopePhase10"
+      ],
+      "retained_runtime_boundary": "The manifest establishes explicit state vocabulary for later Rust contracts while preserving source-backed runtime behavior until non-local proof exists."
+    }
+  ]
+}

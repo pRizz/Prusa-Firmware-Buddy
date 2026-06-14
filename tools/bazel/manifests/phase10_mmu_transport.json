@@ -1,0 +1,268 @@
+{
+  "schema_version": 1,
+  "phase": "10-auxiliary-controllers-and-expansion-ecosystem",
+  "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+  "mmu_transport_contracts": [
+    {
+      "id": "mmu2-availability-reporting-stub",
+      "requirement_id": "IFCE-06",
+      "surface": "mmu2-availability-reporting",
+      "reference_sources": [
+        "src/mmu2/mmu2_reporting.cpp",
+        ".planning/codebase/CONCERNS.md",
+        "rust/crates/domain/src/feature.rs"
+      ],
+      "reference_behavior": "MMUAvailable() and UseMMU() currently return true and do not represent disabled, unavailable, bootloader, stopped, active, updating, update-failed, or communication-fault states reliably.",
+      "rust_surface": "buddy-domain::auxiliary::MmuTransportState",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "update_build_surface": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Live MMU availability over hardware transport requires simulator-flow or manual-hardware-required proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "mmu_transport_state": [
+        "disabled",
+        "unavailable",
+        "bootloader",
+        "stopped",
+        "active",
+        "updating",
+        "update-failed",
+        "communication-fault"
+      ],
+      "config_keys": [
+        "HAS_MMU2",
+        "MMUAvailable()",
+        "UseMMU()"
+      ],
+      "runtime_resource_paths": [],
+      "transport_surface": "availability-reporting-stub",
+      "known_reference_limitation": "preserve-with-explicit-risk: MMUAvailable() and UseMMU() are unconditional stubs until a later intentional delta replaces them with typed runtime states.",
+      "disposition": "preserve-with-explicit-risk",
+      "typed_replacement_states": [
+        "disabled",
+        "unavailable",
+        "bootloader",
+        "stopped",
+        "active",
+        "updating",
+        "update-failed",
+        "communication-fault"
+      ],
+      "regression_guard": [
+        "AuxiliaryRuntimeState",
+        "MmuTransportState",
+        "MMUAvailable()",
+        "UseMMU()"
+      ]
+    },
+    {
+      "id": "mmu2-usemmu-config-runtime-state",
+      "requirement_id": "IFCE-06",
+      "surface": "mmu2-usemmu-config-runtime-state",
+      "reference_sources": [
+        "ProjectOptions.cmake",
+        "src/mmu2/mmu2_reporting.cpp",
+        "rust/crates/domain/src/feature.rs",
+        "rust/crates/domain/src/product.rs"
+      ],
+      "reference_behavior": "HAS_MMU2, HAS_MMU2_OVER_UART, and UseMMU() influence MMU feature visibility, but runtime parity must distinguish configuration from live transport state.",
+      "rust_surface": "buddy-domain::auxiliary::MmuTransportState",
+      "evidence_class": "manifest-check",
+      "proof_scope": "local",
+      "update_build_surface": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Printer settings and physical MMU attachment proof remain non-local until simulator or hardware evidence exists"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "mmu_transport_state": [
+        "disabled",
+        "unavailable",
+        "active",
+        "communication-fault"
+      ],
+      "config_keys": [
+        "HAS_MMU2",
+        "HAS_MMU2_OVER_UART",
+        "UseMMU()"
+      ],
+      "runtime_resource_paths": [],
+      "transport_surface": "config-and-runtime-state",
+      "known_reference_limitation": "Configuration gates and UseMMU() do not by themselves prove live MMU availability.",
+      "regression_guard": [
+        "Feature::Mmu2",
+        "Phase6FeatureGate::HasMmu2",
+        "Phase6FeatureGate::HasMmu2OverUart",
+        "MmuTransportState"
+      ]
+    },
+    {
+      "id": "mmu2-bootloader-update-manager",
+      "requirement_id": "IFCE-06",
+      "surface": "mmu2-bootloader-update-manager",
+      "reference_sources": [
+        "src/mmu2/mmu2_bootloader.hpp",
+        "src/mmu2/mmu2_bootloader.cpp",
+        "src/mmu2/mmu2_serial.cpp",
+        "src/resources/CMakeLists.txt"
+      ],
+      "reference_behavior": "MMU2BootloaderManager enters bootloader communication, checks firmware version, reads /internal/res/mmu/fw.bin, writes firmware pages, and records fw_up_to_date, fw_updated, flashing_error, comm_error, or not_detected results.",
+      "rust_surface": "buddy-domain::auxiliary::MmuBootloaderUpdateContract",
+      "evidence_class": "source-audit",
+      "proof_scope": "non-local",
+      "update_build_surface": "mmu-firmware-resource",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Bootloader serial timing and live MMU firmware update success require hardware-smoke proof",
+        "Long-run update recovery requires manual-hardware-required proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "mmu_transport_state": [
+        "bootloader",
+        "updating",
+        "update-failed",
+        "active",
+        "communication-fault"
+      ],
+      "config_keys": [
+        "HAS_MMU2",
+        "force_fw_update"
+      ],
+      "runtime_resource_paths": [
+        "/mmu/fw.bin",
+        "/internal/res/mmu/fw.bin"
+      ],
+      "transport_surface": "mmu-bootloader-uart",
+      "known_reference_limitation": "Local source audit can verify update surfaces but cannot prove live bootloader timing or flashing success.",
+      "regression_guard": [
+        "MMU2BootloaderManager::start",
+        "MMU2BootloaderManager::main_coroutine",
+        "MMU2BootloaderResult"
+      ]
+    },
+    {
+      "id": "mmu2-uart-transport",
+      "requirement_id": "IFCE-06",
+      "surface": "mmu2-uart-transport",
+      "reference_sources": [
+        "src/mmu2/mmu2_serial.cpp",
+        "ProjectOptions.cmake",
+        "lib/AddMMU2.cmake"
+      ],
+      "reference_behavior": "MMU2Serial uses direct UART transport when HAS_MMU2_OVER_UART is active and includes recovery handling for reboot/frame-error conditions.",
+      "rust_surface": "buddy-domain::auxiliary::MmuTransportSurface::Uart",
+      "evidence_class": "source-audit",
+      "proof_scope": "non-local",
+      "update_build_surface": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "UART electrical behavior, reboot recovery, and timeout behavior require hardware-smoke proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "mmu_transport_state": [
+        "unavailable",
+        "active",
+        "communication-fault"
+      ],
+      "config_keys": [
+        "HAS_MMU2_OVER_UART",
+        "MMU_RX_GPIO_Port",
+        "MMU_RX_Pin"
+      ],
+      "runtime_resource_paths": [],
+      "transport_surface": "direct-uart",
+      "known_reference_limitation": "Source audit can classify the UART path, but live MMU transport proof is non-local.",
+      "regression_guard": [
+        "MMU2Serial::begin",
+        "MMU2Serial::read",
+        "MMU2Serial::write",
+        "MMU2Serial::check_recovery"
+      ]
+    },
+    {
+      "id": "mmu2-puppy-modbus-bridge",
+      "requirement_id": "IFCE-06",
+      "surface": "mmu2-puppy-modbus-bridge",
+      "reference_sources": [
+        "src/mmu2/mmu2_serial.cpp",
+        "src/puppies/xbuddy_extension.cpp",
+        "include/puppies/xbuddy_extension.hpp",
+        "src/puppy/xbuddy_extension_shared/xbuddy_extension_shared/mmu_bridge.hpp"
+      ],
+      "reference_behavior": "When HAS_PUPPIES and HAS_MMU2 are active, MMU2Serial delegates reads and writes through xBuddy Extension puppy Modbus bridge behavior instead of direct UART.",
+      "rust_surface": "buddy-domain::auxiliary::MmuTransportSurface::PuppyModbusBridge",
+      "evidence_class": "source-audit",
+      "proof_scope": "non-local",
+      "update_build_surface": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Bridge timing, accepted response state, and live MMU transport over RS485 require hardware-smoke proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "mmu_transport_state": [
+        "unavailable",
+        "active",
+        "communication-fault"
+      ],
+      "config_keys": [
+        "HAS_PUPPIES",
+        "HAS_MMU2",
+        "HAS_XBUDDY_EXTENSION"
+      ],
+      "runtime_resource_paths": [],
+      "transport_surface": "puppy-modbus-bridge",
+      "known_reference_limitation": "The bridge is source-backed but live bus timing is non-local evidence.",
+      "regression_guard": [
+        "MMU2Serial",
+        "XBuddyExtension::read_mmu",
+        "XBuddyExtension::write_mmu",
+        "XBuddyExtension::mmu_bridge_valid_response_received"
+      ]
+    },
+    {
+      "id": "mmu-firmware-runtime-resource",
+      "requirement_id": "IFCE-06",
+      "surface": "mmu-firmware-runtime-resource",
+      "reference_sources": [
+        "src/resources/CMakeLists.txt",
+        "utils/mmu_ihex_cleanup.py",
+        "rust/crates/domain/src/resource.rs",
+        "src/mmu2/mmu2_bootloader.cpp"
+      ],
+      "reference_behavior": "MMU firmware is converted into a runtime resource and exposed at /mmu/fw.bin for bootloader update code; manifests may name paths and tools but must not embed firmware contents.",
+      "rust_surface": "buddy-domain::resource::ResourceSurface::MmuFirmware",
+      "evidence_class": "manifest-check",
+      "proof_scope": "local",
+      "update_build_surface": "mmu-firmware-resource",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Actual MMU firmware conversion and live update behavior require full-build or hardware-smoke evidence"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "mmu_transport_state": [
+        "bootloader",
+        "updating",
+        "update-failed",
+        "active"
+      ],
+      "config_keys": [
+        "HAS_MMU2",
+        "mmu_fw_bin_file"
+      ],
+      "runtime_resource_paths": [
+        "/mmu/fw.bin",
+        "/internal/res/mmu/fw.bin"
+      ],
+      "transport_surface": "firmware-resource",
+      "known_reference_limitation": "This row records source paths and runtime resource paths only; no firmware bytes, Intel HEX contents, signing key material, serial traffic, credentials, or crash dump contents are embedded.",
+      "regression_guard": [
+        "ResourceSurface::MmuFirmware",
+        "MMU_FIRMWARE_RUNTIME_PATHS",
+        "add_resource(\"${mmu_fw_bin_file}\", \"/mmu/fw.bin\")"
+      ]
+    }
+  ]
+}
