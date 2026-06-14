@@ -188,7 +188,12 @@ Plans:
 1. Maintainer can build and package auxiliary firmware, startup flashing resources, skip-flash/prebuilt modes, and crash-dump/update flows through Bazel.
 1. Maintainer can inspect typed auxiliary-controller states for bootloader, unavailable, active, stopped, update, and fault paths instead of unconditional availability stubs.
 1. Maintainer can run protocol, bootload, update, and hardware-aware smoke checks for auxiliary-controller behavior required by supported printers.
-   **Plans**: TBD
+   **Plans**: 4 plans
+Plans:
+- [ ] 10-01-PLAN.md — Create source-backed auxiliary-controller, MMU, Modbus/RS485, toolchanger, build/update, and concern manifests.
+- [ ] 10-02-PLAN.md — Add pure Rust auxiliary-controller domain contracts and invariant tests.
+- [ ] 10-03-PLAN.md — Add Phase 10 verifier regression tests and static aggregate verifier.
+- [ ] 10-04-PLAN.md — Wire Phase 10 Bazel/just verification and complete Nyquist validation sign-off.
 
 ### Phase 11: Parity Pyramid and Cutover Evidence
 
@@ -219,5 +224,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 7. Persistence, Storage, and Resource Compatibility | 5/5 | Complete   | 2026-06-06 |
 | 8. Local Interface and Workflow Parity | 3/3 | Complete | 2026-06-13 |
 | 9. Network, Web Services, and Transfers | 0/4 | Not started | - |
-| 10. Auxiliary Controllers and Expansion Ecosystem | 0/TBD | Not started | - |
+| 10. Auxiliary Controllers and Expansion Ecosystem | 0/4 | Not started | - |
 | 11. Parity Pyramid and Cutover Evidence | 0/TBD | Not started | - |
