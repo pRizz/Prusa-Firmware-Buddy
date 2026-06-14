@@ -376,7 +376,8 @@ class Phase9VerifierTest(unittest.TestCase):
         }
         source_paths = sources_by_id.get(row_id, [".planning/codebase/CONCERNS.md"])
         self.write_source_paths(root, source_paths)
-        concern_id = row_id.removeprefix("concern-phase9-")
+        concern_prefix = "concern-phase9-"
+        concern_id = row_id[len(concern_prefix) :] if row_id.startswith(concern_prefix) else row_id
         row: dict[str, object] = {
             "id": row_id,
             "concern_id": concern_id,
