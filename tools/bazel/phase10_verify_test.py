@@ -545,6 +545,7 @@ class Phase10VerifierTest(unittest.TestCase):
                 row["runtime_paths"] = []
                 row["prebuilt_path_variables"] = []
                 row["descriptor_command"] = "none"
+                row["skip_flash_option"] = "none"
                 row["update_build_surface"] = "none"
             self.write_manifest_rows(
                 root,
