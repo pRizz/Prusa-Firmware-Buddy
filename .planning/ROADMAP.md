@@ -171,8 +171,8 @@ Plans:
 1. Maintainer can run negative protocol and TLS fixtures for custom certificates, invalid certificates, weak signatures, duplicate commands, large commands, proxy behavior, and stalled networks.
    **Plans**: 4 plans
 Plans:
-- [ ] 09-01-PLAN.md — Create source-backed Connect, WUI, transfer, service, and network concern manifests.
-- [ ] 09-02-PLAN.md — Add pure Rust network, web-service, transfer, evidence, and feature-gated service contracts.
+- [x] 09-01-PLAN.md — Create source-backed Connect, WUI, transfer, service, and network concern manifests.
+- [x] 09-02-PLAN.md — Add pure Rust network, web-service, transfer, evidence, and feature-gated service contracts.
 - [ ] 09-03-PLAN.md — Add Phase 9 verifier regression tests and static verifier.
 - [ ] 09-04-PLAN.md — Wire Phase 9 Bazel/just verification and complete Nyquist validation sign-off.
    **UI hint**: yes
