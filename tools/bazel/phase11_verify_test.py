@@ -639,6 +639,28 @@ class Phase11VerifierTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("token_value", result.stdout)
 
+    def test_security_only_rejects_context_and_research_secret_markers(self) -> None:
+        # Arrange
+        phase_doc_paths = [
+            f"{PHASE_DIR}/11-CONTEXT.md",
+            f"{PHASE_DIR}/11-RESEARCH.md",
+        ]
+
+        for phase_doc_path in phase_doc_paths:
+            with self.subTest(phase_doc_path=phase_doc_path):
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_phase11_surface(root)
+                    self.write_file(root, phase_doc_path, "token_value\n")
+
+                    # Act
+                    result = self.run_verifier(["--security-only"], maybe_root=root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(phase_doc_path, result.stdout)
+                self.assertIn("token_value", result.stdout)
+
     def test_security_only_rejects_private_key_header_variants(self) -> None:
         # Arrange
         private_key_headers = [

@@ -780,7 +780,14 @@ def existing_security_paths(root: Path) -> list[Path]:
         paths.append(VALIDATION_CONTRACT)
     phase_dir = root / ".planning/phases/11-parity-pyramid-and-cutover-evidence"
     if phase_dir.exists():
-        paths.extend(path.relative_to(root) for path in sorted(phase_dir.glob("11-*-SUMMARY.md")))
+        phase_doc_patterns = [
+            "11-CONTEXT.md",
+            "11-RESEARCH.md",
+            "11-VALIDATION.md",
+            "11-*-SUMMARY.md",
+        ]
+        for pattern in phase_doc_patterns:
+            paths.extend(path.relative_to(root) for path in sorted(phase_dir.glob(pattern)))
     return paths
 
 
