@@ -169,7 +169,12 @@ Plans:
 1. User can use PrusaLink/WUI HTTP API v1, OctoPrint-compatible endpoints, digest/API-key auth, static assets, SNTP, mDNS, metrics, and syslog behavior.
 1. User can start, monitor, recover, and fail transfers/downloads with the same single-slot, storage, range, timeout, and error semantics as the reference firmware.
 1. Maintainer can run negative protocol and TLS fixtures for custom certificates, invalid certificates, weak signatures, duplicate commands, large commands, proxy behavior, and stalled networks.
-   **Plans**: TBD
+   **Plans**: 4 plans
+Plans:
+- [ ] 09-01-PLAN.md — Create source-backed Connect, WUI, transfer, service, and network concern manifests.
+- [ ] 09-02-PLAN.md — Add pure Rust network, web-service, transfer, evidence, and feature-gated service contracts.
+- [ ] 09-03-PLAN.md — Add Phase 9 verifier regression tests and static verifier.
+- [ ] 09-04-PLAN.md — Wire Phase 9 Bazel/just verification and complete Nyquist validation sign-off.
    **UI hint**: yes
 
 ### Phase 10: Auxiliary Controllers and Expansion Ecosystem
@@ -213,6 +218,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 6. Printing Core, Safety, and Feature Gates | 5/5 | Complete    | 2026-06-04 |
 | 7. Persistence, Storage, and Resource Compatibility | 5/5 | Complete   | 2026-06-06 |
 | 8. Local Interface and Workflow Parity | 3/3 | Complete | 2026-06-13 |
-| 9. Network, Web Services, and Transfers | 0/TBD | Not started | - |
+| 9. Network, Web Services, and Transfers | 0/4 | Not started | - |
 | 10. Auxiliary Controllers and Expansion Ecosystem | 0/TBD | Not started | - |
 | 11. Parity Pyramid and Cutover Evidence | 0/TBD | Not started | - |
