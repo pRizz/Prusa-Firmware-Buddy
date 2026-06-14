@@ -61,6 +61,9 @@ class Phase11VerifierTest(unittest.TestCase):
 
     def write_source_paths(self, root: Path, source_paths: list[str]) -> None:
         for source_path in source_paths:
+            relative_path = Path(source_path)
+            if relative_path.is_absolute() or ".." in relative_path.parts:
+                continue
             if (root / source_path).exists():
                 continue
             self.write_file(root, source_path, "source-backed fixture\n")
