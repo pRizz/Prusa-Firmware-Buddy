@@ -1,0 +1,223 @@
+{
+  "schema_version": "1",
+  "phase": "11-parity-pyramid-and-cutover-evidence",
+  "phase_lifecycle_id": "11-2026-06-14T18-48-49",
+  "reference_comparisons": [
+    {
+      "id": "ref-product-artifacts",
+      "requirement_id": "VERF-03",
+      "reference_surface": "product artifacts .bin/.bbf/.dfu/map/provenance",
+      "rust_or_bazel_surface": "Bazel representative release artifact outputs and artifact metadata comparison helpers",
+      "comparison_kind": "normalized-semantic",
+      "normalization_rule": "Compare artifact kind, product identity, package member names, resource presence, signing mode names, status class, and provenance metadata; exclude binary payload bytes and signing material from local evidence.",
+      "byte_identity_claim": false,
+      "reference_command_policy": "reference-only-guarded",
+      "guard_environment": "BUDDY_BAZEL_EXECUTE_REFERENCE=1",
+      "source_artifacts": [
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-REFERENCE-CAPTURE.md",
+        ".planning/phases/03-artifact-and-generator-parity/03-VERIFICATION.md",
+        "tools/bazel/artifact_metadata_compare.py",
+        "tools/bazel/reference_contract.sh"
+      ],
+      "required_non_local_evidence": [
+        "release-candidate artifact metadata comparison artifact from an approved CI or release environment",
+        "reference-only guarded CMake/Python package status evidence when bootstrap prerequisites are available"
+      ],
+      "secret_handling": "name-only-or-redacted",
+      "proof_scope": "ci",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "ref-generated-resources",
+      "requirement_id": "VERF-03",
+      "reference_surface": "generated resources, translations, fonts, icons, littlefs images, WUI assets, ESP blobs, language packs, and generated headers",
+      "rust_or_bazel_surface": "Bazel generated drift registry and Phase 7 generated-output ownership manifest",
+      "comparison_kind": "normalized-semantic",
+      "normalization_rule": "Compare generator identity, declared source ownership, check/update label coverage, tracked output names, and resource package metadata; keep full generator byte comparisons in CI or release evidence.",
+      "byte_identity_claim": false,
+      "reference_command_policy": "reference-only-guarded",
+      "guard_environment": "BUDDY_BAZEL_EXECUTE_REFERENCE=1",
+      "source_artifacts": [
+        ".planning/phases/03-artifact-and-generator-parity/03-VERIFICATION.md",
+        ".planning/phases/07-persistence-storage-and-resource-compatibility/07-VERIFICATION.md",
+        "tools/bazel/generated_drift.py",
+        "tools/bazel/manifests/phase7_generated_outputs.json"
+      ],
+      "required_non_local_evidence": [
+        "CI generated-output drift report for source-writing and byte-oriented generators",
+        "release-candidate resource package comparison artifact"
+      ],
+      "secret_handling": "name-only-or-redacted",
+      "proof_scope": "ci",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "ref-storage-migrations",
+      "requirement_id": "VERF-03",
+      "reference_surface": "persistent config, deprecated item IDs, defaults, credentials by name, journal hash, and storage migration fixtures",
+      "rust_or_bazel_surface": "Phase 7 storage/resource manifests plus Rust storage compatibility contracts",
+      "comparison_kind": "normalized-semantic",
+      "normalization_rule": "Compare schema IDs, migration window names, defaults, deprecated-key identities, redacted credential key names, journal hash facts, and storage-surface names; do not store credential values or raw EEPROM bytes.",
+      "byte_identity_claim": false,
+      "reference_command_policy": "reference-only-guarded",
+      "guard_environment": "BUDDY_BAZEL_EXECUTE_REFERENCE=1",
+      "source_artifacts": [
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-REFERENCE-CAPTURE.md",
+        ".planning/phases/07-persistence-storage-and-resource-compatibility/07-VERIFICATION.md",
+        "tools/bazel/manifests/phase7_generated_outputs.json",
+        "rust/crates/domain/src/storage.rs"
+      ],
+      "required_non_local_evidence": [
+        "simulator or hardware storage migration run against approved redacted fixtures",
+        "storage media timing evidence for USB, internal flash, and semihosting paths"
+      ],
+      "secret_handling": "name-only-or-redacted",
+      "proof_scope": "simulator",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "ref-protocol-traces",
+      "requirement_id": "VERF-03",
+      "reference_surface": "protocol traces from reference capture, Connect/WUI command fixtures, and auxiliary transport traces by name",
+      "rust_or_bazel_surface": "Phase 9 network contracts, Phase 10 auxiliary controller contracts, and guarded reference trace contracts",
+      "comparison_kind": "normalized-semantic",
+      "normalization_rule": "Compare protocol state names, command IDs, trace fixture identities, response status classes, transport surface names, and retained error classes; keep live trace logs redacted and attached outside the manifest.",
+      "byte_identity_claim": false,
+      "reference_command_policy": "reference-only-guarded",
+      "guard_environment": "BUDDY_BAZEL_EXECUTE_REFERENCE=1",
+      "source_artifacts": [
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-REFERENCE-CAPTURE.md",
+        ".planning/phases/09-network-web-services-and-transfers/09-VERIFICATION.md",
+        ".planning/phases/10-auxiliary-controllers-and-expansion-ecosystem/10-VERIFICATION.md",
+        "tools/bazel/manifests/phase9_connect_contracts.json",
+        "tools/bazel/manifests/phase10_auxiliary_controllers.json"
+      ],
+      "required_non_local_evidence": [
+        "simulator protocol trace comparison artifact for Connect/WUI and transfer flows",
+        "hardware or simulator auxiliary transport trace artifact for RS485/MMU/toolchanger paths"
+      ],
+      "secret_handling": "name-only-or-redacted",
+      "proof_scope": "simulator",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "ref-gcode-behavior-fixtures",
+      "requirement_id": "VERF-03",
+      "reference_surface": "G-code behavior fixtures and Buddy-specific G/M-code routing fixtures",
+      "rust_or_bazel_surface": "Phase 6 printing-core contracts and Rust print domain routing surfaces",
+      "comparison_kind": "normalized-semantic",
+      "normalization_rule": "Compare fixture IDs, command mnemonics, route classifications, planner-visible state names, and accepted intentional-delta names; leave physical motion, thermal, and safety outcomes to simulator or hardware evidence.",
+      "byte_identity_claim": false,
+      "reference_command_policy": "reference-only-guarded",
+      "guard_environment": "BUDDY_BAZEL_EXECUTE_REFERENCE=1",
+      "source_artifacts": [
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-REFERENCE-CAPTURE.md",
+        ".planning/phases/06-printing-core-safety-and-feature-gates/06-VERIFICATION.md",
+        "rust/crates/domain/src/print.rs",
+        "rust/crates/domain/src/safety.rs"
+      ],
+      "required_non_local_evidence": [
+        "simulator G-code behavior fixture comparison artifact",
+        "hardware smoke evidence for motion, thermal, emergency, and recovery behavior"
+      ],
+      "secret_handling": "name-only-or-redacted",
+      "proof_scope": "simulator",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "ref-ui-display-state-fixtures",
+      "requirement_id": "VERF-03",
+      "reference_surface": "GUI workflow and display-state fixtures for 240x320 and 480x320 surfaces",
+      "rust_or_bazel_surface": "Phase 8 GUI workflow manifest and Rust GUI display/evidence contracts",
+      "comparison_kind": "normalized-semantic",
+      "normalization_rule": "Compare workflow row IDs, display class names, semantic action IDs, layout/localization surface names, and source-backed state labels; keep pixel, touch, encoder, and long-run rendering proof outside local manifest evidence.",
+      "byte_identity_claim": false,
+      "reference_command_policy": "reference-only-guarded",
+      "guard_environment": "BUDDY_BAZEL_EXECUTE_REFERENCE=1",
+      "source_artifacts": [
+        ".planning/phases/08-local-interface-and-workflow-parity/08-VERIFICATION.md",
+        "tools/bazel/manifests/phase8_gui_workflows.json",
+        "rust/crates/domain/src/gui.rs"
+      ],
+      "required_non_local_evidence": [
+        "simulator display-state fixture comparison artifact for 240x320 and 480x320 flows",
+        "hardware smoke or manual display interaction evidence for LCD, touch, encoder, and long-run UI behavior"
+      ],
+      "secret_handling": "name-only-or-redacted",
+      "proof_scope": "simulator",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "ref-network-tls-api-behavior",
+      "requirement_id": "VERF-03",
+      "reference_surface": "Connect, WUI, TLS, API, telemetry, transfer, and local service behavior",
+      "rust_or_bazel_surface": "Phase 9 Connect/WUI/transfer manifests, negative fixtures, and Rust network contracts",
+      "comparison_kind": "normalized-semantic",
+      "normalization_rule": "Compare endpoint family names, auth mode names, TLS policy labels, command state names, telemetry/event surfaces, transfer state classes, and negative fixture IDs; store only approved redacted evidence references.",
+      "byte_identity_claim": false,
+      "reference_command_policy": "reference-only-guarded",
+      "guard_environment": "BUDDY_BAZEL_EXECUTE_REFERENCE=1",
+      "source_artifacts": [
+        ".planning/phases/09-network-web-services-and-transfers/09-VERIFICATION.md",
+        "tools/bazel/manifests/phase9_connect_contracts.json",
+        "rust/crates/domain/src/network.rs"
+      ],
+      "required_non_local_evidence": [
+        "live Connect or approved service-compatible API evidence with redacted credential identities",
+        "real TLS handshake and custom certificate fixture evidence",
+        "simulator or hardware transfer/network fault-injection evidence"
+      ],
+      "secret_handling": "name-only-or-redacted",
+      "proof_scope": "manual-hardware-required",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "ref-auxiliary-controller-flows",
+      "requirement_id": "VERF-03",
+      "reference_surface": "puppy, Dwarf, ModularBed, xBuddy Extension, MMU2, Modbus/RS485, toolchanger, and update flows",
+      "rust_or_bazel_surface": "Phase 10 auxiliary controller manifests and Rust auxiliary domain contracts",
+      "comparison_kind": "normalized-semantic",
+      "normalization_rule": "Compare controller kind names, runtime state names, firmware source identities, Modbus request classes, MMU transport surface names, dock/tool-offset identities, and update mode labels; do not store firmware image bytes.",
+      "byte_identity_claim": false,
+      "reference_command_policy": "reference-only-guarded",
+      "guard_environment": "BUDDY_BAZEL_EXECUTE_REFERENCE=1",
+      "source_artifacts": [
+        ".planning/phases/10-auxiliary-controllers-and-expansion-ecosystem/10-VERIFICATION.md",
+        "tools/bazel/manifests/phase10_auxiliary_controllers.json",
+        "rust/crates/domain/src/auxiliary.rs"
+      ],
+      "required_non_local_evidence": [
+        "RS485/Modbus hardware-smoke or simulator-flow comparison artifact",
+        "live MMU transport evidence",
+        "toolchanger and auxiliary update hardware evidence"
+      ],
+      "secret_handling": "name-only-or-redacted",
+      "proof_scope": "hardware-smoke",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "ref-release-metadata",
+      "requirement_id": "VERF-03",
+      "reference_surface": "release metadata, package status, provenance, and signing-sensitive status names",
+      "rust_or_bazel_surface": "Bazel package status manifests, artifact metadata comparison helper, and guarded release reference contracts",
+      "comparison_kind": "normalized-semantic",
+      "normalization_rule": "Compare release status names, artifact kind names, product/profile provenance, unsigned-local versus signing-sensitive mode names, package member identities, and CI artifact metadata; exclude signing key material and firmware package bytes from checked-in evidence.",
+      "byte_identity_claim": false,
+      "reference_command_policy": "reference-only-guarded",
+      "guard_environment": "BUDDY_BAZEL_EXECUTE_REFERENCE=1",
+      "source_artifacts": [
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-REFERENCE-CAPTURE.md",
+        ".planning/phases/03-artifact-and-generator-parity/03-VERIFICATION.md",
+        "tools/bazel/artifact_metadata_compare.py",
+        "tools/bazel/reference_contract.sh"
+      ],
+      "required_non_local_evidence": [
+        "release-candidate metadata comparison artifact from an approved release environment",
+        "signing-sensitive status evidence recorded by name only"
+      ],
+      "secret_handling": "name-only-or-redacted",
+      "proof_scope": "ci",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    }
+  ]
+}
