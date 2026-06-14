@@ -1,0 +1,384 @@
+{
+  "schema_version": 1,
+  "phase": "09-network-web-services-and-transfers",
+  "phase_lifecycle_id": "9-2026-06-14T02-15-21",
+  "connect_contracts": [
+    {
+      "id": "connect-registration-token-fingerprint",
+      "requirement_id": "IFCE-02",
+      "surface": "connect-registration",
+      "reference_sources": [
+        "src/connect/registrator.cpp",
+        "src/connect/connect.cpp",
+        "src/connect/printer.hpp",
+        "src/connect/printer_common.cpp",
+        "src/persistent_stores/store_instances/config_store/store_definition.hpp"
+      ],
+      "reference_behavior": "Registration POSTs printer identity to /p/register, polls with the Code header, stores the returned Token through init_connect, and later identifies requests with Fingerprint plus Token headers.",
+      "rust_surface": "buddy-domain::network::ConnectRegistrationContract",
+      "auth_requirement": "connect-token",
+      "integration_point": "connect",
+      "evidence_class": "manual-hardware-required",
+      "proof_scope": "non-local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "live Prusa Connect registration against an approved cloud or test service",
+        "physical Wi-Fi/Ethernet path proving token persistence after registration"
+      ],
+      "config_keys": [
+        "connect_token",
+        "connect_enabled"
+      ],
+      "protocol_headers": [
+        "Token",
+        "Fingerprint",
+        "Code"
+      ],
+      "tls_policy": [],
+      "proxy_limitations": [],
+      "command_states": [
+        "RegistrationCode",
+        "RegistrationDone",
+        "RegistrationError"
+      ],
+      "host_test_references": [],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "connect-config-host-token-proxy-tls",
+      "requirement_id": "IFCE-02",
+      "surface": "connect-config-store",
+      "reference_sources": [
+        "src/connect/printer_common.cpp",
+        "src/connect/hostname.cpp",
+        "src/connect/printer.hpp",
+        "src/persistent_stores/store_instances/config_store/store_definition.hpp",
+        "src/persistent_stores/store_instances/config_store/defaults.hpp",
+        "doc/proxy_support.md"
+      ],
+      "reference_behavior": "Connect runtime config loads host, port, TLS enablement, token, custom certificate flag, proxy host, proxy port, and service enablement from config_store, then decompresses compressed default Connect hosts before use.",
+      "rust_surface": "buddy-domain::network::ConnectConfigContract",
+      "auth_requirement": "named-only-secret",
+      "integration_point": "config-store",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "physical Wi-Fi/Ethernet configuration import and persistence"
+      ],
+      "config_keys": [
+        "connect_host",
+        "connect_port",
+        "connect_tls",
+        "connect_token",
+        "connect_custom_tls_cert",
+        "connect_proxy_host",
+        "connect_proxy_port",
+        "connect_enabled"
+      ],
+      "protocol_headers": [],
+      "tls_policy": [
+        "custom DER certificate name-only path is controlled by connect_custom_tls_cert"
+      ],
+      "proxy_limitations": [
+        "proxy-active-only-when-connect_tls-true"
+      ],
+      "command_states": [],
+      "host_test_references": [],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "connect-telemetry-events",
+      "requirement_id": "IFCE-02",
+      "surface": "connect-telemetry-events",
+      "reference_sources": [
+        "src/connect/connect.cpp",
+        "src/connect/planner.cpp",
+        "src/connect/render.cpp",
+        "src/connect/printer.hpp"
+      ],
+      "reference_behavior": "Planner schedules INFO, telemetry, state, cancellable, file, job, and transfer events with bounded retry/backoff; render.cpp serializes telemetry and event JSON from printer snapshots and transfer monitor state.",
+      "rust_surface": "buddy-domain::network::ConnectTelemetryContract",
+      "auth_requirement": "connect-token",
+      "integration_point": "connect",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "live cloud telemetry/event acceptance and dashboard observation",
+        "physical Wi-Fi/Ethernet behavior under printer state changes"
+      ],
+      "config_keys": [
+        "connect_enabled"
+      ],
+      "protocol_headers": [
+        "Token",
+        "Fingerprint"
+      ],
+      "tls_policy": [],
+      "proxy_limitations": [],
+      "command_states": [
+        "INFO",
+        "TRANSFER_INFO",
+        "TRANSFER_ABORTED",
+        "TRANSFER_FINISHED",
+        "STATE_CHANGED"
+      ],
+      "host_test_references": [],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "connect-command-polling-websocket",
+      "requirement_id": "IFCE-02",
+      "surface": "connect-command-channel",
+      "reference_sources": [
+        "src/connect/connect.cpp",
+        "src/connect/command.cpp",
+        "src/connect/planner.cpp",
+        "src/common/http/websocket.cpp"
+      ],
+      "reference_behavior": "Connect accepts commands from HTTP responses or /p/ws WebSocket frames, validates command IDs and payload shape, rejects duplicate or oversized commands, and sends WebSocket upgrade requests with the prusa-connect protocol header.",
+      "rust_surface": "buddy-domain::network::ConnectCommandContract",
+      "auth_requirement": "connect-token",
+      "integration_point": "connect",
+      "evidence_class": "manual-hardware-required",
+      "proof_scope": "non-local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "live WebSocket commands over /p/ws",
+        "cloud command polling against approved Connect service"
+      ],
+      "config_keys": [
+        "connect_enabled",
+        "connect_tls"
+      ],
+      "protocol_headers": [
+        "Token",
+        "Fingerprint",
+        "prusa-connect"
+      ],
+      "tls_policy": [],
+      "proxy_limitations": [],
+      "command_states": [
+        "ReadCommand",
+        "ProcessingThisCommand",
+        "ProcessingOtherCommand",
+        "BrokenCommand",
+        "UnknownCommand",
+        "Accepted",
+        "Rejected"
+      ],
+      "host_test_references": [],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "connect-host-decompression-connection-reuse",
+      "requirement_id": "IFCE-02",
+      "surface": "connect-host-connection-cache",
+      "reference_sources": [
+        "src/connect/hostname.cpp",
+        "src/connect/connection_cache.cpp",
+        "src/connect/connect.cpp",
+        "src/persistent_stores/store_instances/config_store/defaults.hpp"
+      ],
+      "reference_behavior": "Default Connect host storage may use compressed suffix markers; runtime config decompresses host names and CachedFactory reuses valid TLS/plain sockets until config changes, response keep-alive is unavailable, or an error invalidates the cache.",
+      "rust_surface": "buddy-domain::network::ConnectEndpointContract",
+      "auth_requirement": "none",
+      "integration_point": "tls-proxy",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "real DNS and network reconnection behavior"
+      ],
+      "config_keys": [
+        "connect_host",
+        "connect_port",
+        "connect_tls"
+      ],
+      "protocol_headers": [],
+      "tls_policy": [],
+      "proxy_limitations": [],
+      "command_states": [
+        "Connecting",
+        "Ok",
+        "Error",
+        "Off",
+        "NoConfig"
+      ],
+      "host_test_references": [],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "connect-tls-required-verification-policy",
+      "requirement_id": "IFCE-02",
+      "surface": "connect-tls-policy",
+      "reference_sources": [
+        "src/connect/tls/tls.cpp",
+        "src/connect/tls/net_sockets.cpp",
+        "src/connect/connection_cache.cpp",
+        "src/persistent_stores/store_instances/config_store/store_definition.hpp"
+      ],
+      "reference_behavior": "Connect TLS uses mbedTLS client mode with required certificate verification, TLS 1.2 only, a single ECDHE/ECDSA AES-GCM cipher suite, host name verification, and a preserved custom DER certificate read concern for /internal/connect/connect.der.",
+      "rust_surface": "buddy-domain::network::ConnectTlsPolicyContract",
+      "auth_requirement": "named-only-secret",
+      "integration_point": "tls-proxy",
+      "evidence_class": "hardware-smoke",
+      "proof_scope": "non-local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "real TLS handshakes against approved Connect endpoint",
+        "valid, missing, and invalid custom DER fixtures in a later verifier plan"
+      ],
+      "config_keys": [
+        "connect_tls",
+        "connect_custom_tls_cert"
+      ],
+      "protocol_headers": [
+        "Token",
+        "Fingerprint"
+      ],
+      "tls_policy": [
+        "TLS 1.2",
+        "MBEDTLS_SSL_VERIFY_REQUIRED",
+        "MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+        "/internal/connect/connect.der preserved concern"
+      ],
+      "proxy_limitations": [],
+      "command_states": [],
+      "host_test_references": [],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "connect-proxy-minimal-limitations",
+      "requirement_id": "IFCE-02",
+      "surface": "connect-proxy",
+      "reference_sources": [
+        "src/connect/connection_cache.cpp",
+        "src/common/http/proxy.cpp",
+        "doc/proxy_support.md",
+        "src/persistent_stores/store_instances/config_store/store_definition.hpp"
+      ],
+      "reference_behavior": "When TLS and proxy settings are enabled, the printer opens the TCP leg to the proxy, sends HTTP CONNECT for the upstream Connect host, and then starts TLS to the destination host without proxy authentication.",
+      "rust_surface": "buddy-domain::network::ConnectProxyContract",
+      "auth_requirement": "none",
+      "integration_point": "tls-proxy",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "network smoke through an operator-approved proxy"
+      ],
+      "config_keys": [
+        "connect_tls",
+        "connect_proxy_host",
+        "connect_proxy_port"
+      ],
+      "protocol_headers": [],
+      "tls_policy": [
+        "TLS still terminates at the upstream Connect host after CONNECT"
+      ],
+      "proxy_limitations": [
+        "proxy-authentication-absent",
+        "printer-to-proxy-leg-unencrypted",
+        "proxy-active-only-when-connect_tls-true"
+      ],
+      "command_states": [],
+      "host_test_references": [],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "connect-transfer-download-integration",
+      "requirement_id": "IFCE-02",
+      "surface": "connect-transfer-download",
+      "reference_sources": [
+        "src/connect/command.cpp",
+        "src/connect/planner.cpp",
+        "src/connect/render.cpp",
+        "src/connect/connect.cpp",
+        "src/transfers/monitor.hpp"
+      ],
+      "reference_behavior": "Connect START_INLINE_DOWNLOAD, START_CONNECT_DOWNLOAD, and START_ENCRYPTED_DOWNLOAD commands enter the shared transfer monitor through Planner, expose TransferInfo events, stream inline chunks over WebSocket, and preserve the single active transfer slot.",
+      "rust_surface": "buddy-domain::network::ConnectTransferContract",
+      "auth_requirement": "connect-token",
+      "integration_point": "transfer-monitor",
+      "evidence_class": "manual-hardware-required",
+      "proof_scope": "non-local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "cloud transfer initiation from Connect",
+        "long-running transfer over physical network and media"
+      ],
+      "config_keys": [
+        "connect_enabled",
+        "connect_tls"
+      ],
+      "protocol_headers": [
+        "Token",
+        "Fingerprint",
+        "prusa-connect"
+      ],
+      "tls_policy": [],
+      "proxy_limitations": [],
+      "command_states": [
+        "START_INLINE_DOWNLOAD",
+        "START_CONNECT_DOWNLOAD",
+        "START_ENCRYPTED_DOWNLOAD",
+        "TRANSFER_INFO",
+        "TRANSFER_ABORTED",
+        "TRANSFER_FINISHED",
+        "TransferInProgress"
+      ],
+      "host_test_references": [],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "connect-sleep-backoff-shared-buffer-limits",
+      "requirement_id": "IFCE-02",
+      "surface": "connect-runtime-resource-limits",
+      "reference_sources": [
+        "src/connect/connect.cpp",
+        "src/connect/planner.cpp",
+        "src/connect/render.cpp",
+        "src/connect/command.cpp",
+        ".planning/codebase/CONCERNS.md"
+      ],
+      "reference_behavior": "Connect preserves bounded response buffers, shared command/path buffer ownership, planner sleep wakeups, retry cooldown, failed-attempt give-up behavior, and duplicate command rejection instead of claiming streaming or concurrent command redesign.",
+      "rust_surface": "buddy-domain::network::ConnectRuntimeLimitContract",
+      "auth_requirement": "none",
+      "integration_point": "connect",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "long-running cloud and network stability under printer workload"
+      ],
+      "config_keys": [
+        "connect_enabled"
+      ],
+      "protocol_headers": [],
+      "tls_policy": [],
+      "proxy_limitations": [
+        "whole-response-shared-buffer-limit-preserved"
+      ],
+      "command_states": [
+        "MAX_RESP_SIZE",
+        "ProcessingOtherCommand",
+        "Won't execute the same command multiple times",
+        "GIVE_UP_AFTER_ATTEMPTS",
+        "RECONNECT_AFTER"
+      ],
+      "host_test_references": [],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    }
+  ]
+}
