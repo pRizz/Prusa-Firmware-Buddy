@@ -1,0 +1,648 @@
+{
+  "schema_version": "1",
+  "phase": "11-parity-pyramid-and-cutover-evidence",
+  "phase_lifecycle_id": "11-2026-06-14T18-48-49",
+  "requirement_evidence": [
+    {
+      "id": "req-base-01",
+      "requirement_id": "BASE-01",
+      "owning_phase": "01-reference-baseline-and-safety-envelope",
+      "source_artifacts": [
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-VERIFICATION.md",
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-BASELINE-MATRIX.md"
+      ],
+      "verifier_command_or_evidence_class": "python3 .planning/phases/01-reference-baseline-and-safety-envelope/01-VERIFY.py",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-aggregate-cutover-approval",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "not-applicable - the supported matrix is reference baseline evidence, not retained-code acceptance.",
+      "required_non_local_evidence": [
+        "Plan 11-04 cutover readiness approval must accept the supported product matrix before reference demotion is considered."
+      ],
+      "cutover_blocker": "Plan 11-04 aggregate cutover readiness has not accepted demotion criteria yet.",
+      "proof_scope": "local",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-base-02",
+      "requirement_id": "BASE-02",
+      "owning_phase": "01-reference-baseline-and-safety-envelope",
+      "source_artifacts": [
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-VERIFICATION.md",
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-REFERENCE-CAPTURE.md"
+      ],
+      "verifier_command_or_evidence_class": "reference-capture catalog with local, CI, simulator, release, and hardware evidence classes",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-non-local-reference-capture-evidence",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "not-applicable - reference capture preserves behavior fixtures and evidence classes.",
+      "required_non_local_evidence": [
+        "Reference capture outputs for simulator, storage, release, protocol, and hardware flows must be attached or accepted before cutover approval."
+      ],
+      "cutover_blocker": "Final reference-capture artifact package is not attached in Phase 11 local evidence.",
+      "proof_scope": "simulator",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-base-03",
+      "requirement_id": "BASE-03",
+      "owning_phase": "01-reference-baseline-and-safety-envelope",
+      "source_artifacts": [
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-VERIFICATION.md",
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-CONCERN-LEDGER.md"
+      ],
+      "verifier_command_or_evidence_class": "Phase 1 concern ledger source audit",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-aggregate-concern-reconciliation",
+      "intentional_delta_status": "covered-by-source-backed-ledger",
+      "retained_code_justification": "not-applicable - known concerns are classified for later parity or v2 disposition.",
+      "required_non_local_evidence": [
+        "Plan 11-04 concern and cutover evidence must confirm no unresolved v1 blocker remains hidden."
+      ],
+      "cutover_blocker": "Final concern reconciliation is owned by Plan 11-04 cutover readiness evidence.",
+      "proof_scope": "local",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-base-04",
+      "requirement_id": "BASE-04",
+      "owning_phase": "01-reference-baseline-and-safety-envelope",
+      "source_artifacts": [
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-VERIFICATION.md",
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-SAFETY-ENVELOPE.md"
+      ],
+      "verifier_command_or_evidence_class": "Phase 1 safety envelope source audit",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-hardware-safety-evidence",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "not-applicable - the safety envelope defines acceptance evidence for later runtime proof.",
+      "required_non_local_evidence": [
+        "Hardware or approved simulator evidence for startup, watchdog, thermal, motion, crash, and emergency flows."
+      ],
+      "cutover_blocker": "Safety-critical hardware evidence remains non-local until accepted in final cutover readiness.",
+      "proof_scope": "hardware-smoke",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-bazl-01",
+      "requirement_id": "BAZL-01",
+      "owning_phase": "02-bazel-authority-and-developer-facade",
+      "source_artifacts": [
+        ".planning/phases/02-bazel-authority-and-developer-facade/02-VERIFICATION.md",
+        "MODULE.bazel",
+        ".bazelrc",
+        "platforms/BUILD.bazel"
+      ],
+      "verifier_command_or_evidence_class": "bazel query and Phase 2 verifier evidence",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-aggregate-cutover-approval",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "Reference build selection remains visible for comparison while Bazel is the planned authority.",
+      "required_non_local_evidence": [
+        "Final cutover evidence must keep reference-only commands guarded and confirm Bazel authority criteria."
+      ],
+      "cutover_blocker": "Plan 11-04 has not accepted the final Bazel authority cutover criteria.",
+      "proof_scope": "local",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-bazl-02",
+      "requirement_id": "BAZL-02",
+      "owning_phase": "02-bazel-authority-and-developer-facade",
+      "source_artifacts": [
+        ".planning/phases/02-bazel-authority-and-developer-facade/02-VERIFICATION.md",
+        "tools/bazel/BUILD.bazel",
+        "tools/bazel/reference_contract.sh",
+        ".bazelrc"
+      ],
+      "verifier_command_or_evidence_class": "Phase 2 Bazel workflow label and guarded reference-contract evidence",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-aggregate-cutover-approval",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "CMake and Python reference workflows are retained as guarded comparison inputs, not default build authority.",
+      "required_non_local_evidence": [
+        "Final evidence must show retained reference commands stay guarded and not default local gates."
+      ],
+      "cutover_blocker": "Plan 11-04 demotion criteria are not accepted yet.",
+      "proof_scope": "local",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-bazl-03",
+      "requirement_id": "BAZL-03",
+      "owning_phase": "03-artifact-and-generator-parity",
+      "source_artifacts": [
+        ".planning/phases/03-artifact-and-generator-parity/03-VERIFICATION.md",
+        "tools/bazel/manifests/representative_products.json",
+        "tools/bazel/BUILD.bazel"
+      ],
+      "verifier_command_or_evidence_class": "python3 tools/bazel/phase3_verify.py --all plus representative release artifact Bazel labels",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-release-candidate-evidence",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "Reference artifact tooling remains guarded for comparison and signing-sensitive proof.",
+      "required_non_local_evidence": [
+        "Release-candidate artifact and metadata evidence for the complete supported product surface."
+      ],
+      "cutover_blocker": "full release-candidate artifact proof not attached in Phase 11 local evidence",
+      "proof_scope": "ci",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-bazl-04",
+      "requirement_id": "BAZL-04",
+      "owning_phase": "02-bazel-authority-and-developer-facade",
+      "source_artifacts": [
+        ".planning/phases/02-bazel-authority-and-developer-facade/02-VERIFICATION.md",
+        "justfile",
+        "tools/bazel/BUILD.bazel"
+      ],
+      "verifier_command_or_evidence_class": "just --list plus Phase 2 verifier facade checks",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-aggregate-cutover-approval",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "not-applicable - this row verifies the developer facade contract.",
+      "required_non_local_evidence": [
+        "Final cutover readiness must keep the developer facade as the normal verification entrypoint."
+      ],
+      "cutover_blocker": "Plan 11-04 cutover readiness has not accepted aggregate developer workflow criteria.",
+      "proof_scope": "local",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-bazl-05",
+      "requirement_id": "BAZL-05",
+      "owning_phase": "03-artifact-and-generator-parity",
+      "source_artifacts": [
+        ".planning/phases/03-artifact-and-generator-parity/03-VERIFICATION.md",
+        "tools/bazel/manifests/phase7_generated_outputs.json",
+        "tools/bazel/generated_drift.py",
+        "tools/bazel/BUILD.bazel"
+      ],
+      "verifier_command_or_evidence_class": "generated drift labels and Phase 3 verifier evidence",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-release-candidate-evidence",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "Reference generator inputs remain named while Bazel-owned check and update labels guard drift.",
+      "required_non_local_evidence": [
+        "Release-candidate generator and tracked-output drift evidence for all supported generator surfaces."
+      ],
+      "cutover_blocker": "full release-candidate artifact proof not attached in Phase 11 local evidence",
+      "proof_scope": "ci",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-rust-01",
+      "requirement_id": "RUST-01",
+      "owning_phase": "04-rust-architecture-and-invariant-model",
+      "source_artifacts": [
+        ".planning/phases/04-rust-architecture-and-invariant-model/04-VERIFICATION.md",
+        "Cargo.toml",
+        "rust/crates/domain/src/lib.rs"
+      ],
+      "verifier_command_or_evidence_class": "cargo build/test and Phase 4 verifier evidence",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-aggregate-cutover-approval",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "not-applicable - this row covers Rust workspace architecture.",
+      "required_non_local_evidence": [
+        "Final cutover evidence must confirm adapter and application crates remain within the approved architecture."
+      ],
+      "cutover_blocker": "Aggregate cutover architecture review remains open until Plan 11-04.",
+      "proof_scope": "local",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-rust-02",
+      "requirement_id": "RUST-02",
+      "owning_phase": "04-rust-architecture-and-invariant-model",
+      "source_artifacts": [
+        ".planning/phases/04-rust-architecture-and-invariant-model/04-VERIFICATION.md",
+        "rust/crates/domain/src/product.rs",
+        "rust/crates/domain/src/artifact.rs",
+        "rust/crates/domain/src/storage.rs"
+      ],
+      "verifier_command_or_evidence_class": "cargo test --all-features and Phase 4 invariant verifier evidence",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-aggregate-cutover-approval",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "not-applicable - typed invariants are pure Rust domain evidence.",
+      "required_non_local_evidence": [
+        "Final cutover review must confirm newly added Phase 11 contracts continue using typed invariants."
+      ],
+      "cutover_blocker": "Plan 11-04 has not accepted aggregate invariant coverage yet.",
+      "proof_scope": "local",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-rust-03",
+      "requirement_id": "RUST-03",
+      "owning_phase": "05-foreign-code-unsafe-and-runtime-boundary",
+      "source_artifacts": [
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-VERIFICATION.md",
+        "tools/bazel/manifests/foreign_code_inventory.json",
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-FOREIGN-CODE-INVENTORY.md"
+      ],
+      "verifier_command_or_evidence_class": "python3 tools/bazel/phase5_verify.py --all retained-code inventory checks",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-retained-code-acceptance",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "Foreign C, C++, ASM, generated, and vendor surfaces are named with retention reason, boundary, facade, and replacement posture.",
+      "required_non_local_evidence": [
+        "Plan 11-04 retained-code justifications must accept, block, or defer every residual retained island before demotion is considered."
+      ],
+      "cutover_blocker": "Plan 11-04 retained-code acceptance rows are not created yet.",
+      "proof_scope": "retained-code-justification",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-rust-04",
+      "requirement_id": "RUST-04",
+      "owning_phase": "05-foreign-code-unsafe-and-runtime-boundary",
+      "source_artifacts": [
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-VERIFICATION.md",
+        "tools/bazel/manifests/unsafe_boundary_audit.json",
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-UNSAFE-BOUNDARY-AUDIT.md"
+      ],
+      "verifier_command_or_evidence_class": "python3 tools/bazel/phase5_verify.py --all unsafe boundary audit checks",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-runtime-non-local-evidence",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "Unsafe, FFI, MMIO, DMA, interrupt, linker, allocator, and panic surfaces are isolated behind audited adapter contracts.",
+      "required_non_local_evidence": [
+        "Simulator or hardware evidence for runtime side effects at unsafe and hardware-owned boundaries."
+      ],
+      "cutover_blocker": "Runtime side-effect proof remains non-local and final retained-code acceptance is owned by Plan 11-04.",
+      "proof_scope": "retained-code-justification",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-rust-05",
+      "requirement_id": "RUST-05",
+      "owning_phase": "04-rust-architecture-and-invariant-model",
+      "source_artifacts": [
+        ".planning/phases/04-rust-architecture-and-invariant-model/04-VERIFICATION.md",
+        "tools/bazel/BUILD.bazel",
+        "justfile",
+        "rust/crates/domain/src/lib.rs"
+      ],
+      "verifier_command_or_evidence_class": "cargo fmt, clippy, build, test, doc, Bazel labels, and just facade evidence",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-aggregate-cutover-approval",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "not-applicable - Rust checks are local deterministic workflow evidence.",
+      "required_non_local_evidence": [
+        "Final cutover evidence must keep Rust checks wired into aggregate verification."
+      ],
+      "cutover_blocker": "Plan 11-05 aggregate wiring has not completed Phase 11 final verification yet.",
+      "proof_scope": "local",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-core-01",
+      "requirement_id": "CORE-01",
+      "owning_phase": "05-foreign-code-unsafe-and-runtime-boundary",
+      "source_artifacts": [
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-VERIFICATION.md",
+        "tools/bazel/manifests/foreign_code_inventory.json",
+        "tools/bazel/manifests/unsafe_boundary_audit.json",
+        "rust/crates/runtime-adapter/src/startup.rs"
+      ],
+      "verifier_command_or_evidence_class": "Phase 5 runtime boundary verifier and startup/linker contract evidence",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-hardware-runtime-evidence",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "STM32 startup, linker, clock, HAL/CMSIS, watchdog, and crash paths remain retained behind explicit runtime and board adapter contracts.",
+      "required_non_local_evidence": [
+        "Simulator or hardware smoke evidence for startup, vector, clock, watchdog, memory layout, and crash behavior."
+      ],
+      "cutover_blocker": "Hardware-owned runtime proof is not attached in Phase 11 local evidence.",
+      "proof_scope": "hardware-smoke",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-core-02",
+      "requirement_id": "CORE-02",
+      "owning_phase": "05-foreign-code-unsafe-and-runtime-boundary",
+      "source_artifacts": [
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-VERIFICATION.md",
+        "tools/bazel/manifests/foreign_code_inventory.json",
+        "tools/bazel/manifests/unsafe_boundary_audit.json",
+        "rust/crates/runtime-adapter/src/task.rs",
+        "rust/crates/runtime-adapter/src/synchronization.rs"
+      ],
+      "verifier_command_or_evidence_class": "Phase 5 FreeRTOS runtime adapter contract and verifier evidence",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-scheduler-non-local-evidence",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "FreeRTOS kernel and Buddy task wrappers remain retained behind typed task, queue, timer, static-memory, and synchronization contracts.",
+      "required_non_local_evidence": [
+        "Simulator or hardware evidence for scheduler timing, event ordering, queue wakeups, semaphore behavior, and startup interleaving."
+      ],
+      "cutover_blocker": "Scheduler and wakeup timing proof is not attached in Phase 11 local evidence.",
+      "proof_scope": "simulator",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-core-03",
+      "requirement_id": "CORE-03",
+      "owning_phase": "06-printing-core-safety-and-feature-gates",
+      "source_artifacts": [
+        ".planning/phases/06-printing-core-safety-and-feature-gates/06-VERIFICATION.md",
+        "tools/bazel/manifests/phase6_printing_core.json",
+        "rust/crates/domain/src/print.rs"
+      ],
+      "verifier_command_or_evidence_class": "python3 tools/bazel/phase6_verify.py --quick and Rust print-domain tests",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-reference-fixture-and-simulator-evidence",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "Marlin remains the printing behavior oracle until Phase 11 reference comparison and non-local print gates are accepted.",
+      "required_non_local_evidence": [
+        "Reference fixture comparisons, simulator flows, and hardware smoke evidence for planner-visible and real print behavior."
+      ],
+      "cutover_blocker": "Plan 11-03 reference comparisons and non-local print proof are not attached yet.",
+      "proof_scope": "simulator",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-core-04",
+      "requirement_id": "CORE-04",
+      "owning_phase": "06-printing-core-safety-and-feature-gates",
+      "source_artifacts": [
+        ".planning/phases/06-printing-core-safety-and-feature-gates/06-VERIFICATION.md",
+        "tools/bazel/manifests/phase6_safety_gates.json",
+        "rust/crates/domain/src/safety.rs"
+      ],
+      "verifier_command_or_evidence_class": "python3 tools/bazel/phase6_verify.py --quick and Rust safety-domain tests",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-safety-hardware-evidence",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "Safety-critical retained paths remain source-backed and must be accepted through hardware or simulator evidence before demotion.",
+      "required_non_local_evidence": [
+        "Thermal, motion, crash, power-panic, emergency stop, safe-output, selftest, and recovery proof on hardware or approved simulator artifacts."
+      ],
+      "cutover_blocker": "Safety-critical non-local evidence is not attached in Phase 11 local evidence.",
+      "proof_scope": "manual-hardware-required",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-core-05",
+      "requirement_id": "CORE-05",
+      "owning_phase": "06-printing-core-safety-and-feature-gates",
+      "source_artifacts": [
+        ".planning/phases/06-printing-core-safety-and-feature-gates/06-VERIFICATION.md",
+        "tools/bazel/manifests/phase6_feature_gates.json",
+        "rust/crates/domain/src/feature.rs"
+      ],
+      "verifier_command_or_evidence_class": "Phase 6 feature-gate manifest verifier and Rust ProductProfile gate tests",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-product-matrix-hardware-evidence",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "Printer-specific gates are typed and source-backed while hardware feature behavior stays non-local.",
+      "required_non_local_evidence": [
+        "Product-matrix smoke evidence for filament sensors, TMC paths, homing, input shaper, loadcell, beds, chamber, MMU, NFC, LEDs, toolchanger, and xBuddy Extension behavior."
+      ],
+      "cutover_blocker": "Feature-gate hardware evidence remains outside the local Phase 11 manifest.",
+      "proof_scope": "hardware-smoke",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-ifce-01",
+      "requirement_id": "IFCE-01",
+      "owning_phase": "08-local-interface-and-workflow-parity",
+      "source_artifacts": [
+        ".planning/phases/08-local-interface-and-workflow-parity/08-VERIFICATION.md",
+        "tools/bazel/manifests/phase8_gui_workflows.json",
+        "tools/bazel/manifests/phase8_display_layouts.json",
+        "rust/crates/domain/src/gui.rs"
+      ],
+      "verifier_command_or_evidence_class": "python3 tools/bazel/phase8_verify.py --quick and Rust GUI-domain tests",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-display-simulator-and-hardware-evidence",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "GUI reference sources remain source-backed while physical display, touch, and final fixture comparisons stay non-local.",
+      "required_non_local_evidence": [
+        "Simulator display flows, UI state fixture comparisons, physical LCD rendering, touch or encoder timing, and long-run GUI evidence."
+      ],
+      "cutover_blocker": "Plan 11-03 reference comparisons and physical UI evidence are not attached yet.",
+      "proof_scope": "simulator",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-ifce-02",
+      "requirement_id": "IFCE-02",
+      "owning_phase": "09-network-web-services-and-transfers",
+      "source_artifacts": [
+        ".planning/phases/09-network-web-services-and-transfers/09-VERIFICATION.md",
+        "tools/bazel/manifests/phase9_connect_contracts.json",
+        "tools/bazel/manifests/phase9_transfer_contracts.json",
+        "rust/crates/domain/src/network.rs"
+      ],
+      "verifier_command_or_evidence_class": "python3 tools/bazel/phase9_verify.py --quick and negative network fixtures",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-live-network-and-transfer-evidence",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "Connect and transfer reference behavior remains source-backed; service credentials and TLS material stay named-only or redacted.",
+      "required_non_local_evidence": [
+        "Live or approved lab evidence for Connect registration, WebSocket commands, TLS, proxy behavior, cloud transfers, long-running downloads, and physical network paths."
+      ],
+      "cutover_blocker": "Live network, TLS, and transfer proof is not attached in Phase 11 local evidence.",
+      "proof_scope": "ci",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-ifce-03",
+      "requirement_id": "IFCE-03",
+      "owning_phase": "09-network-web-services-and-transfers",
+      "source_artifacts": [
+        ".planning/phases/09-network-web-services-and-transfers/09-VERIFICATION.md",
+        "tools/bazel/manifests/phase9_wui_contracts.json",
+        "tools/bazel/manifests/phase9_network_service_contracts.json",
+        "rust/crates/domain/src/network.rs"
+      ],
+      "verifier_command_or_evidence_class": "python3 tools/bazel/phase9_verify.py --quick and WUI/network-service source audit",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-prusalink-network-evidence",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "WUI, LwIP, auth, SNTP, mDNS, metrics, and syslog behavior remains source-backed until physical or simulator network proof is accepted.",
+      "required_non_local_evidence": [
+        "Simulator or hardware evidence for PrusaLink API flows, browser/static assets, digest/API-key auth, SNTP, mDNS, metrics, syslog, and mounted-media interactions."
+      ],
+      "cutover_blocker": "PrusaLink/WUI physical or simulator network proof is not attached in Phase 11 local evidence.",
+      "proof_scope": "simulator",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-ifce-04",
+      "requirement_id": "IFCE-04",
+      "owning_phase": "07-persistence-storage-and-resource-compatibility",
+      "source_artifacts": [
+        ".planning/phases/07-persistence-storage-and-resource-compatibility/07-VERIFICATION.md",
+        "tools/bazel/manifests/phase7_config_store.json",
+        "tools/bazel/fixtures/phase7_storage/redacted_migration_catalog.json",
+        "rust/crates/domain/src/storage.rs"
+      ],
+      "verifier_command_or_evidence_class": "python3 tools/bazel/phase7_verify.py --quick and Rust storage-domain tests",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-storage-media-and-migration-evidence",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "Persistent-store and filesystem reference behavior remains source-backed; credential evidence is name-only or redacted.",
+      "required_non_local_evidence": [
+        "Storage migration reference comparisons, USB/internal flash/media hardware evidence, crash persistence, and power-loss proof."
+      ],
+      "cutover_blocker": "Media, flash, and storage migration non-local proof is not attached in Phase 11 local evidence.",
+      "proof_scope": "manual-hardware-required",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-ifce-05",
+      "requirement_id": "IFCE-05",
+      "owning_phase": "07-persistence-storage-and-resource-compatibility",
+      "source_artifacts": [
+        ".planning/phases/07-persistence-storage-and-resource-compatibility/07-VERIFICATION.md",
+        "tools/bazel/manifests/phase7_resources.json",
+        "tools/bazel/manifests/phase7_generated_outputs.json",
+        "rust/crates/domain/src/resource.rs"
+      ],
+      "verifier_command_or_evidence_class": "python3 tools/bazel/phase7_verify.py --quick and generated-output label checks",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-release-resource-evidence",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "Resource, translation, font, ESP, WUI, MMU, and generated asset pipelines remain source-backed until release evidence is accepted.",
+      "required_non_local_evidence": [
+        "Release-candidate generated resource, translation, font, WUI asset, ESP blob, MMU resource, and package metadata evidence."
+      ],
+      "cutover_blocker": "Full release resource and generated-output proof is not attached in Phase 11 local evidence.",
+      "proof_scope": "ci",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-ifce-06",
+      "requirement_id": "IFCE-06",
+      "owning_phase": "10-auxiliary-controllers-and-expansion-ecosystem",
+      "source_artifacts": [
+        ".planning/phases/10-auxiliary-controllers-and-expansion-ecosystem/10-VERIFICATION.md",
+        "tools/bazel/manifests/phase10_auxiliary_controllers.json",
+        "tools/bazel/manifests/phase10_mmu_transport.json",
+        "rust/crates/domain/src/auxiliary.rs"
+      ],
+      "verifier_command_or_evidence_class": "python3 tools/bazel/phase10_verify.py --manifests-only and Rust auxiliary-domain tests",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-auxiliary-hardware-and-simulator-evidence",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "Auxiliary, MMU, Modbus, toolchanger, and update flows remain source-backed with retained runtime boundaries until non-local proof is accepted.",
+      "required_non_local_evidence": [
+        "Hardware or simulator proof for RS485/Modbus timing, Dwarf, ModularBed, xBuddy Extension, MMU, toolchanger, startup flashing, and auxiliary update recovery."
+      ],
+      "cutover_blocker": "Auxiliary-controller non-local proof is not attached in Phase 11 local evidence.",
+      "proof_scope": "manual-hardware-required",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-verf-01",
+      "requirement_id": "VERF-01",
+      "owning_phase": "11-parity-pyramid-and-cutover-evidence/11-01",
+      "source_artifacts": [
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-01-SUMMARY.md",
+        "tools/bazel/manifests/phase11_parity_pyramid.json",
+        "tools/bazel/phase11_verify.py"
+      ],
+      "verifier_command_or_evidence_class": "python3 tools/bazel/phase11_verify.py --pyramid-only",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-non-local-pyramid-evidence",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "Retained-code proof is represented as a first-class parity-pyramid layer rather than local firmware replacement proof.",
+      "required_non_local_evidence": [
+        "Simulator, CI, release, hardware, manual, and retained-code evidence rows named by the parity pyramid must be accepted before demotion."
+      ],
+      "cutover_blocker": "Parity pyramid non-local rows are named but not fully satisfied by local evidence.",
+      "proof_scope": "local",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-verf-02",
+      "requirement_id": "VERF-02",
+      "owning_phase": "04-rust-architecture-and-invariant-model",
+      "source_artifacts": [
+        ".planning/phases/04-rust-architecture-and-invariant-model/04-VERIFICATION.md",
+        "rust/crates/domain/src/lib.rs",
+        "tools/bazel/BUILD.bazel",
+        "justfile"
+      ],
+      "verifier_command_or_evidence_class": "cargo test --all-features and Rust unit-test facade evidence",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-aggregate-cutover-approval",
+      "intentional_delta_status": "none",
+      "retained_code_justification": "not-applicable - pure Rust domain tests are local deterministic evidence.",
+      "required_non_local_evidence": [
+        "Final aggregate verification must keep pure-domain tests wired before cutover approval."
+      ],
+      "cutover_blocker": "Plan 11-05 final aggregate verification has not completed yet.",
+      "proof_scope": "local",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-verf-03",
+      "requirement_id": "VERF-03",
+      "owning_phase": "11-parity-pyramid-and-cutover-evidence/11-03",
+      "source_artifacts": [
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md",
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-RESEARCH.md",
+        "tools/bazel/phase11_verify.py"
+      ],
+      "verifier_command_or_evidence_class": "pending manifest tools/bazel/manifests/phase11_reference_comparisons.json via python3 tools/bazel/phase11_verify.py --comparison-only",
+      "current_status": "pending-plan-11-03",
+      "cutover_status": "not-cutover-ready",
+      "intentional_delta_status": "pending-reference-comparison-contract",
+      "retained_code_justification": "Reference comparison proof is pending Plan 11-03 and must preserve CMake/C++ as reference oracle until accepted.",
+      "required_non_local_evidence": [
+        "Plan 11-03 reference comparison manifest for product artifacts, generated resources, storage migrations, protocol traces, G-code fixtures, UI state fixtures, network/TLS/API behavior, auxiliary flows, and release metadata."
+      ],
+      "cutover_blocker": "Plan 11-03 has not created tools/bazel/manifests/phase11_reference_comparisons.json yet.",
+      "proof_scope": "local",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-verf-04",
+      "requirement_id": "VERF-04",
+      "owning_phase": "11-parity-pyramid-and-cutover-evidence/11-02",
+      "source_artifacts": [
+        "tools/bazel/manifests/phase11_requirement_evidence.json",
+        "tools/bazel/phase11_verify.py",
+        ".planning/REQUIREMENTS.md"
+      ],
+      "verifier_command_or_evidence_class": "python3 tools/bazel/phase11_verify.py --requirements-only",
+      "current_status": "source-backed-local-passed",
+      "cutover_status": "pending-aggregate-cutover-approval",
+      "intentional_delta_status": "mapped-for-all-v1-requirements",
+      "retained_code_justification": "This manifest maps every v1 requirement to retained-code posture where applicable.",
+      "required_non_local_evidence": [
+        "Plan 11-04 cutover readiness must consume this manifest before final demotion criteria are accepted."
+      ],
+      "cutover_blocker": "Final cutover readiness remains owned by Plan 11-04 and aggregate wiring by Plan 11-05.",
+      "proof_scope": "local",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "req-verf-05",
+      "requirement_id": "VERF-05",
+      "owning_phase": "11-parity-pyramid-and-cutover-evidence/11-04",
+      "source_artifacts": [
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md",
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-VALIDATION.md",
+        "tools/bazel/phase11_verify.py"
+      ],
+      "verifier_command_or_evidence_class": "pending manifest tools/bazel/manifests/phase11_cutover_readiness.json via python3 tools/bazel/phase11_verify.py --cutover-only",
+      "current_status": "pending-plan-11-04",
+      "cutover_status": "not-cutover-ready",
+      "intentional_delta_status": "pending-cutover-readiness-contract",
+      "retained_code_justification": "Plan 11-04 must accept, block, or defer retained-code justifications before any reference demotion decision.",
+      "required_non_local_evidence": [
+        "Plan 11-04 cutover readiness and retained-code justification manifests plus maintainer acceptance of all non-local gates."
+      ],
+      "cutover_blocker": "Plan 11-04 has not created tools/bazel/manifests/phase11_cutover_readiness.json yet.",
+      "proof_scope": "manual-hardware-required",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    }
+  ]
+}
