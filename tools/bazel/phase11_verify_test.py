@@ -542,6 +542,13 @@ class Phase11VerifierTest(unittest.TestCase):
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             self.copy_phase11_surface(root, reconcile_requirements=False)
+            rows = self.manifest_rows(root, REQUIREMENT_MANIFEST)
+            for row in rows:
+                if row["id"] == "req-verf-03":
+                    row["current_status"] = "pending-plan-11-03"
+                if row["id"] == "req-verf-05":
+                    row["current_status"] = "pending-plan-11-04"
+            self.write_manifest_rows(root, REQUIREMENT_MANIFEST, rows)
 
             # Act
             result = self.run_verifier(["--requirements-only"], maybe_root=root)

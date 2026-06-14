@@ -586,19 +586,22 @@
       "requirement_id": "VERF-03",
       "owning_phase": "11-parity-pyramid-and-cutover-evidence/11-03",
       "source_artifacts": [
-        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md",
-        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-RESEARCH.md",
-        "tools/bazel/phase11_verify.py"
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-03-SUMMARY.md",
+        "tools/bazel/manifests/phase11_reference_comparisons.json",
+        "rust/crates/domain/src/cutover.rs"
       ],
-      "verifier_command_or_evidence_class": "pending manifest tools/bazel/manifests/phase11_reference_comparisons.json via python3 tools/bazel/phase11_verify.py --comparison-only",
-      "current_status": "pending-plan-11-03",
+      "verifier_command_or_evidence_class": "python3 tools/bazel/phase11_verify.py --comparison-only; python3 tools/bazel/phase11_verify.py --rust-only",
+      "current_status": "source-backed-local-passed",
       "cutover_status": "not-cutover-ready",
-      "intentional_delta_status": "pending-reference-comparison-contract",
-      "retained_code_justification": "Reference comparison proof is pending Plan 11-03 and must preserve CMake/C++ as reference oracle until accepted.",
+      "intentional_delta_status": "normalized-reference-comparisons-source-backed",
+      "retained_code_justification": "Reference comparison proof is source-backed by Plan 11-03 while CMake/C++ stays the guarded reference oracle until all non-local evidence is accepted.",
       "required_non_local_evidence": [
-        "Plan 11-03 reference comparison manifest for product artifacts, generated resources, storage migrations, protocol traces, G-code fixtures, UI state fixtures, network/TLS/API behavior, auxiliary flows, and release metadata."
+        "Simulator comparison artifacts for GUI, storage, protocol traces, G-code behavior, network/service flows, and auxiliary controller flows where rows name simulator proof.",
+        "Hardware or manual evidence for motion, thermal, storage media, physical UI, MMU, RS485, toolchanger, auxiliary update, and safety-critical behavior.",
+        "Live network/TLS/API evidence with credential, certificate, and token details represented by artifact names only.",
+        "Release-candidate artifact and metadata comparison evidence for product artifacts, generated resources, and signing-sensitive surfaces."
       ],
-      "cutover_blocker": "Plan 11-03 has not created tools/bazel/manifests/phase11_reference_comparisons.json yet.",
+      "cutover_blocker": "Reference comparison rows are locally valid, but simulator, hardware, live network/TLS, storage media, release-candidate, MMU, RS485, and toolchanger proof remains non-local.",
       "proof_scope": "local",
       "phase_lifecycle_id": "11-2026-06-14T18-48-49"
     },
@@ -628,19 +631,19 @@
       "requirement_id": "VERF-05",
       "owning_phase": "11-parity-pyramid-and-cutover-evidence/11-04",
       "source_artifacts": [
-        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md",
-        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-VALIDATION.md",
-        "tools/bazel/phase11_verify.py"
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-04-SUMMARY.md",
+        "tools/bazel/manifests/phase11_cutover_readiness.json",
+        "tools/bazel/manifests/phase11_retained_code_justifications.json"
       ],
-      "verifier_command_or_evidence_class": "pending manifest tools/bazel/manifests/phase11_cutover_readiness.json via python3 tools/bazel/phase11_verify.py --cutover-only",
-      "current_status": "pending-plan-11-04",
+      "verifier_command_or_evidence_class": "python3 tools/bazel/phase11_verify.py --cutover-only",
+      "current_status": "source-backed-local-passed",
       "cutover_status": "not-cutover-ready",
-      "intentional_delta_status": "pending-cutover-readiness-contract",
-      "retained_code_justification": "Plan 11-04 must accept, block, or defer retained-code justifications before any reference demotion decision.",
+      "intentional_delta_status": "cutover-readiness-contract-source-backed",
+      "retained_code_justification": "Cutover readiness and retained-code justifications are source-backed, while criteria-reference-demotion-blocked remains the active demotion gate.",
       "required_non_local_evidence": [
-        "Plan 11-04 cutover readiness and retained-code justification manifests plus maintainer acceptance of all non-local gates."
+        "criteria-reference-demotion-blocked remains unsatisfied until simulator, hardware-smoke, manual-hardware-required, live network/TLS, storage media, release-candidate, signing, MMU, RS485, toolchanger, retained-code review, and maintainer acceptance evidence are attached."
       ],
-      "cutover_blocker": "Plan 11-04 has not created tools/bazel/manifests/phase11_cutover_readiness.json yet.",
+      "cutover_blocker": "criteria-reference-demotion-blocked keeps demotion unavailable until all simulator, hardware, live network, release-candidate, MMU, RS485, and toolchanger evidence gates are accepted.",
       "proof_scope": "manual-hardware-required",
       "phase_lifecycle_id": "11-2026-06-14T18-48-49"
     }
