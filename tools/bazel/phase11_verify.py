@@ -58,20 +58,26 @@ REQUIRED_PYRAMID_ROW_IDS = {
     "pyramid-retained-code-justifications",
 }
 FORBIDDEN_MARKERS = {
+    "BEGIN CERTIFICATE",
+    "BEGIN PRIVATE KEY",
+    "certificate_pem",
     "password_value",
     "token_value",
     "certificate_bytes",
     "private_key",
     "SIGNING_KEY_VALUE",
+    "signing_key_value",
     "raw_crash_dump",
     "firmware_payload",
 }
 OVERCLAIM_STRINGS = {
     "hardware verified locally",
+    "local hardware proof",
     "simulator passed locally",
     "byte-identical firmware",
     "cutover complete",
     "reference path removed",
+    "reference removal complete",
 }
 
 REQUIRED_REQUIREMENT_ROWS = {
@@ -383,6 +389,7 @@ def extract_v1_requirement_ids(root: Path) -> set[str]:
 
 
 def check_requirements(root: Path) -> None:
+    manifest_text = read_text(root, REQUIREMENT_EVIDENCE_MANIFEST)
     rows = require_top_level(root, REQUIREMENT_EVIDENCE_MANIFEST, "requirement_evidence")
     required_requirement_ids = extract_v1_requirement_ids(root)
     require_exact_row_ids(rows, set(REQUIRED_REQUIREMENT_ROWS), REQUIREMENT_EVIDENCE_MANIFEST)
@@ -403,6 +410,27 @@ def check_requirements(root: Path) -> None:
         "proof_scope",
         "phase_lifecycle_id",
     ]
+    later_phase_artifacts_exist = all(
+        (root / path).exists()
+        for path in [
+            REFERENCE_COMPARISONS_MANIFEST,
+            CUTOVER_READINESS_MANIFEST,
+            RETAINED_CODE_JUSTIFICATIONS_MANIFEST,
+            CUTOVER_RUST,
+        ]
+    )
+    if later_phase_artifacts_exist and "pending-plan-" in manifest_text:
+        pending_values = sorted(
+            {
+                value
+                for value in manifest_text.replace('"', " ").replace(",", " ").split()
+                if value.startswith("pending-plan-")
+            }
+        )
+        errors.append(
+            f"{REQUIREMENT_EVIDENCE_MANIFEST.as_posix()} contains stale pending-plan markers after Plan 11-03/11-04 artifacts exist: "
+            + ", ".join(pending_values)
+        )
     for row in rows:
         row_name = f"{REQUIREMENT_EVIDENCE_MANIFEST.as_posix()} row {row.get('id', '<unknown>')}"
         try:
@@ -432,6 +460,10 @@ def check_requirements(root: Path) -> None:
                     raise VerificationError(
                         f"{row_name} missing pending-requirement handling for {requirement_id}"
                     )
+            if later_phase_artifacts_exist and requirement_id == "VERF-03":
+                require_final_verf03_row(row, row_name)
+            if later_phase_artifacts_exist and requirement_id == "VERF-05":
+                require_final_verf05_row(row, row_name)
         except VerificationError as error:
             errors.append(str(error))
     missing_requirements = sorted(required_requirement_ids - actual_requirement_ids)
@@ -442,6 +474,98 @@ def check_requirements(root: Path) -> None:
         errors.append("unexpected requirement IDs: " + ", ".join(extra_requirements))
     if errors:
         raise VerificationError("\n".join(errors))
+
+
+def require_source_artifact_values(
+    row: dict[str, object],
+    row_name: str,
+    required_artifacts: set[str],
+) -> None:
+    source_artifacts = set(require_non_empty_list_of_strings(row, "source_artifacts", row_name))
+    missing = sorted(required_artifacts - source_artifacts)
+    if missing:
+        raise VerificationError(f"{row_name} missing source_artifacts: {', '.join(missing)}")
+
+
+def require_text_values(
+    row: dict[str, object],
+    fields: list[str],
+    row_name: str,
+    needles: list[str],
+) -> None:
+    text = "\n".join(str(row.get(field, "")) for field in fields).lower()
+    missing = [needle for needle in needles if needle.lower() not in text]
+    if missing:
+        raise VerificationError(f"{row_name} missing final evidence text: {', '.join(missing)}")
+
+
+def require_final_verf03_row(row: dict[str, object], row_name: str) -> None:
+    if row.get("current_status") != "source-backed-local-passed":
+        raise VerificationError(f"{row_name} current_status must be source-backed-local-passed")
+    require_source_artifact_values(
+        row,
+        row_name,
+        {
+            REFERENCE_COMPARISONS_MANIFEST.as_posix(),
+            CUTOVER_RUST.as_posix(),
+        },
+    )
+    require_text_values(
+        row,
+        ["verifier_command_or_evidence_class"],
+        row_name,
+        [
+            "python3 tools/bazel/phase11_verify.py --comparison-only",
+            "python3 tools/bazel/phase11_verify.py --rust-only",
+        ],
+    )
+    require_text_values(
+        row,
+        ["required_non_local_evidence", "cutover_blocker"],
+        row_name,
+        [
+            "simulator",
+            "hardware",
+            "live network",
+            "release-candidate",
+        ],
+    )
+
+
+def require_final_verf05_row(row: dict[str, object], row_name: str) -> None:
+    if row.get("current_status") != "source-backed-local-passed":
+        raise VerificationError(f"{row_name} current_status must be source-backed-local-passed")
+    if row.get("cutover_status") != "not-cutover-ready":
+        raise VerificationError(f"{row_name} cutover_status must remain not-cutover-ready")
+    require_source_artifact_values(
+        row,
+        row_name,
+        {
+            CUTOVER_READINESS_MANIFEST.as_posix(),
+            RETAINED_CODE_JUSTIFICATIONS_MANIFEST.as_posix(),
+        },
+    )
+    require_text_values(
+        row,
+        ["verifier_command_or_evidence_class"],
+        row_name,
+        ["python3 tools/bazel/phase11_verify.py --cutover-only"],
+    )
+    require_text_values(
+        row,
+        ["required_non_local_evidence", "cutover_blocker"],
+        row_name,
+        [
+            "criteria-reference-demotion-blocked",
+            "simulator",
+            "hardware",
+            "live network",
+            "release-candidate",
+            "MMU",
+            "RS485",
+            "toolchanger",
+        ],
+    )
 
 
 def check_comparisons(root: Path) -> None:
@@ -552,6 +676,10 @@ def check_cutover(root: Path) -> None:
                 raise VerificationError(f"{row_name} proof_scope is not allowed: {row.get('proof_scope')}")
             if row.get("id") == "criteria-reference-demotion-blocked" and row.get("demotion_allowed") is not False:
                 raise VerificationError(f"{row_name} must keep demotion_allowed false")
+            if row.get("demotion_allowed") is True and row.get("status") != "passed-local":
+                raise VerificationError(
+                    f"{row_name} demotion_allowed must stay false until status is passed-local"
+                )
             require_source_artifacts(root, row, row_name)
         except VerificationError as error:
             errors.append(str(error))
@@ -685,7 +813,16 @@ def check_wiring(root: Path) -> None:
 
 
 def check_quick(root: Path) -> None:
-    collect_errors([lambda: check_pyramid(root), lambda: check_security(root)])
+    collect_errors(
+        [
+            lambda: check_pyramid(root),
+            lambda: check_requirements(root),
+            lambda: check_comparisons(root),
+            lambda: check_cutover(root),
+            lambda: check_security(root),
+            lambda: check_rust(root),
+        ]
+    )
 
 
 def run_command(root: Path, command: list[str]) -> None:
@@ -707,13 +844,13 @@ def check_all(root: Path) -> None:
     collect_errors(
         [
             lambda: check_quick(root),
-            lambda: check_requirements(root),
-            lambda: check_comparisons(root),
-            lambda: check_cutover(root),
-            lambda: check_rust(root),
             lambda: check_wiring(root),
         ]
     )
+    run_command(root, ["cargo", "fmt", "--all", "--", "--check"])
+    run_command(root, ["cargo", "clippy", "--all-targets", "--all-features", "--", "-D", "warnings"])
+    run_command(root, ["cargo", "build", "--all-targets", "--all-features"])
+    run_command(root, ["cargo", "test", "--all-features"])
 
 
 def collect_errors(checks: list[object]) -> None:
@@ -734,7 +871,11 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Repository root to inspect; useful for wiring fixtures.",
     )
-    parser.add_argument("--quick", action="store_true", help="run pyramid plus existing security scans")
+    parser.add_argument(
+        "--quick",
+        action="store_true",
+        help="run local deterministic Phase 11 aggregate checks",
+    )
     parser.add_argument("--all", action="store_true", help="run all Phase 11 verification modes")
     parser.add_argument("--pyramid-only", action="store_true", help="verify only the parity pyramid")
     parser.add_argument("--requirements-only", action="store_true", help="verify only requirement evidence")
