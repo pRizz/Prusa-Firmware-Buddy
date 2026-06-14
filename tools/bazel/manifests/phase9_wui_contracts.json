@@ -1,0 +1,572 @@
+{
+  "schema_version": 1,
+  "phase": "09-network-web-services-and-transfers",
+  "phase_lifecycle_id": "9-2026-06-14T02-15-21",
+  "wui_contracts": [
+    {
+      "id": "wui-server-resource-model",
+      "requirement_id": "IFCE-03",
+      "surface": "wui-http-server",
+      "reference_sources": [
+        "lib/WUI/nhttp/server.h",
+        "lib/WUI/nhttp/server.cpp",
+        "lib/WUI/nhttp/req_parser.cpp",
+        "lib/WUI/nhttp/common_selectors.cpp",
+        "lib/WUI/nhttp/README.md"
+      ],
+      "reference_behavior": "The WUI HTTP server keeps idle connections cheap, promotes active requests into a limited active slot set, parses requests with generated automata, and shares send buffers across response handlers.",
+      "rust_surface": "buddy-domain::network::WuiServerResourceContract",
+      "auth_requirement": "selector-dependent",
+      "integration_point": "wui-server",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "none",
+      "intentional_delta": "none",
+      "endpoint_family": "server-core",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST",
+        "PUT",
+        "DELETE",
+        "unknown-method-refused"
+      ],
+      "status_behavior": [
+        "BadRequest closes malformed bodies",
+        "UriTooLong when parsed URL exceeds buffer",
+        "RequestHeaderFieldsTooLarge when multipart boundary exceeds buffer",
+        "MethodNotAllowed for unknown methods",
+        "NotFound through UnknownRequest selector"
+      ],
+      "auth_modes": [
+        "none",
+        "digest",
+        "api-key"
+      ],
+      "resource_limits": [
+        "streaming-parser",
+        "limited-active-connections",
+        "shared-send-buffers",
+        "idle-active-connection-distinction",
+        "generated-automata",
+        "unsupported-protocol-refusal",
+        "transfer-slot-pbuf-queue"
+      ],
+      "storage_or_transfer_integration": [
+        "TransferSlot accepts socket-to-file handoff for uploads",
+        "ConnectionSlot returns transfer completion responses"
+      ],
+      "ui_surface": [
+        "PrusaLink HTTP server"
+      ],
+      "host_test_references": [
+        "tests/unit/lib/WUI/nhttp/server_tests.cpp",
+        "tests/unit/lib/WUI/nhttp/req_parser_tests.cpp",
+        "tests/unit/common/automata/generated.cpp"
+      ],
+      "non_local_evidence": [
+        "physical Ethernet or Wi-Fi browser concurrency under printer load"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "wui-static-assets",
+      "requirement_id": "IFCE-03",
+      "surface": "wui-static-assets",
+      "reference_sources": [
+        "lib/WUI/link_content/static_file.cpp",
+        "src/resources/web/index.html",
+        "src/resources/web/README.md",
+        "lib/WUI/nhttp/send_file.cpp"
+      ],
+      "reference_behavior": "Static PrusaLink assets are served from /internal/res/web, default to index.html, carry gzip content encoding, and avoid index caching so reflashed assets do not strand old clients.",
+      "rust_surface": "buddy-domain::network::WuiEndpointContract",
+      "auth_requirement": "none",
+      "integration_point": "wui-static-assets",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "none",
+      "intentional_delta": "none",
+      "endpoint_family": "StaticAssets",
+      "methods": [
+        "GET"
+      ],
+      "status_behavior": [
+        "existing static files are streamed with guessed content type",
+        "index.html disables cache headers",
+        "unmatched static paths fall through to later selectors"
+      ],
+      "auth_modes": [
+        "none"
+      ],
+      "resource_limits": [
+        "shared-send-buffers",
+        "gzip-embedded-resources",
+        "etag-aware-send-file"
+      ],
+      "storage_or_transfer_integration": [
+        "internal resource filesystem path /internal/res/web"
+      ],
+      "ui_surface": [
+        "PrusaLink responsive static single-page UI",
+        "dashboard",
+        "storage"
+      ],
+      "host_test_references": [
+        "tests/unit/lib/WUI/nhttp/server_tests.cpp"
+      ],
+      "non_local_evidence": [
+        "browser rendering on supported printer screens and desktop clients"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "prusalink-api-v1-status-job-files-transfer",
+      "requirement_id": "IFCE-03",
+      "surface": "prusalink-api-v1",
+      "reference_sources": [
+        "lib/WUI/link_content/prusa_link_api_v1.cpp",
+        "lib/WUI/link_content/basic_gets.cpp",
+        "lib/WUI/nhttp/status_renderer.cpp",
+        "lib/WUI/nhttp/transfer_renderer.cpp",
+        "lib/WUI/wui_api.h"
+      ],
+      "reference_behavior": "/api/v1 handles storage, info, job, status, transfer, and files endpoints with authenticated printer state, transfer monitor, file upload, file info, delete, and print commands.",
+      "rust_surface": "buddy-domain::network::WuiEndpointContract",
+      "auth_requirement": "prusalink-auth",
+      "integration_point": "prusalink-api",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "endpoint_family": "PrusaLinkApiV1",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST",
+        "PUT",
+        "DELETE"
+      ],
+      "status_behavior": [
+        "NoContent for absent job or transfer",
+        "Conflict when job commands are invalid for current printer state",
+        "BadRequest for malformed job IDs and unsupported commands",
+        "MethodNotAllowed for unsupported methods",
+        "NotFound for missing file or job resources",
+        "NotModified for matching file etag"
+      ],
+      "auth_modes": [
+        "digest",
+        "api-key"
+      ],
+      "resource_limits": [
+        "streaming-parser",
+        "limited-active-connections",
+        "shared-send-buffers"
+      ],
+      "storage_or_transfer_integration": [
+        "transfers::Monitor status",
+        "GcodeUpload::start for PUT files",
+        "wui_uploaded_gcode callback",
+        "ChangedPath media cache invalidation",
+        "/usb path restriction"
+      ],
+      "ui_surface": [
+        "PrusaLink API v1",
+        "web storage browser",
+        "transfer status widget"
+      ],
+      "host_test_references": [
+        "tests/unit/lib/WUI/nhttp/server_tests.cpp",
+        "tests/unit/lib/WUI/nhttp/file_command_tests.cpp",
+        "tests/unit/lib/WUI/nhttp/job_command_tests.cpp"
+      ],
+      "non_local_evidence": [
+        "simulator or printer PrusaLink API flow with mounted USB media"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "octoprint-compatible-api",
+      "requirement_id": "IFCE-03",
+      "surface": "octoprint-compatible-api",
+      "reference_sources": [
+        "lib/WUI/link_content/prusa_link_api_octo.cpp",
+        "lib/WUI/link_content/prusa_link_api.cpp",
+        "lib/WUI/link_content/prusa_api_helpers.cpp",
+        "lib/WUI/nhttp/file_command.cpp",
+        "lib/WUI/nhttp/job_command.cpp"
+      ],
+      "reference_behavior": "The compatibility API claims /api, remaps OctoPrint local and sdcard roots to /usb, supports version, printer, job, files, download, and transfer endpoints, and reports unsupported multipart upload variants as Gone.",
+      "rust_surface": "buddy-domain::network::WuiEndpointContract",
+      "auth_requirement": "prusalink-auth",
+      "integration_point": "octoprint-api",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "endpoint_family": "OctoPrintCompatible",
+      "methods": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "status_behavior": [
+        "Gone for boundary-bearing /api/files POST compatibility path",
+        "LengthRequired when POST file or job command bodies omit Content-Length",
+        "MethodNotAllowed for unsupported methods",
+        "NotFound for unknown API suffixes"
+      ],
+      "auth_modes": [
+        "digest",
+        "api-key"
+      ],
+      "resource_limits": [
+        "streaming-parser",
+        "limited-active-connections",
+        "shared-send-buffers"
+      ],
+      "storage_or_transfer_integration": [
+        "OctoPrint root remap to /usb",
+        "FileCommand for file POST commands",
+        "JobCommand for job POST commands",
+        "TransferRenderer for download and transfer status"
+      ],
+      "ui_surface": [
+        "OctoPrint-compatible clients"
+      ],
+      "host_test_references": [
+        "tests/unit/lib/WUI/nhttp/file_command_tests.cpp",
+        "tests/unit/lib/WUI/nhttp/job_command_tests.cpp"
+      ],
+      "non_local_evidence": [
+        "client compatibility smoke with OctoPrint-style tooling"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "wui-digest-auth-nonce-stale",
+      "requirement_id": "IFCE-03",
+      "surface": "wui-digest-auth",
+      "reference_sources": [
+        "lib/WUI/nhttp/req_parser.cpp",
+        "lib/WUI/nhttp/headers.cpp",
+        "lib/WUI/wui_api.h",
+        "tests/unit/lib/WUI/nhttp/server_tests.cpp"
+      ],
+      "reference_behavior": "Digest authentication computes MD5 responses over method, URI, nonce, and named PrusaLink password material; expired but otherwise valid nonces return nonce-stale so clients retry with a fresh nonce.",
+      "rust_surface": "buddy-domain::network::WuiAuthContract",
+      "auth_requirement": "digest",
+      "integration_point": "wui-auth",
+      "evidence_class": "unit-test-backed",
+      "proof_scope": "local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "endpoint_family": "auth",
+      "methods": [
+        "all restricted methods"
+      ],
+      "status_behavior": [
+        "Unauthorized with WWW-Authenticate Digest challenge",
+        "nonce-stale true when stale nonce has valid digest",
+        "nonce-stale false for wrong credentials",
+        "error-close for unauthenticated unsafe bodies"
+      ],
+      "auth_modes": [
+        "digest",
+        "nonce-stale",
+        "empty-password-disabled"
+      ],
+      "resource_limits": [
+        "streaming-parser",
+        "fixed-size-md5-response-storage"
+      ],
+      "storage_or_transfer_integration": [
+        "prusalink_password config key is referenced by name only"
+      ],
+      "ui_surface": [
+        "PrusaLink login challenge"
+      ],
+      "host_test_references": [
+        "tests/unit/lib/WUI/nhttp/server_tests.cpp"
+      ],
+      "non_local_evidence": [
+        "browser authentication retry behavior"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "wui-api-key-auth",
+      "requirement_id": "IFCE-03",
+      "surface": "wui-api-key-auth",
+      "reference_sources": [
+        "lib/WUI/nhttp/req_parser.cpp",
+        "lib/WUI/nhttp/headers.cpp",
+        "lib/WUI/wui_api.h",
+        "tests/unit/common/automata/generated.cpp"
+      ],
+      "reference_behavior": "X-Api-Key is matched byte-for-byte against the named PrusaLink password material, succeeds only on a full-length match, and is disabled when the configured secret is empty.",
+      "rust_surface": "buddy-domain::network::WuiAuthContract",
+      "auth_requirement": "api-key",
+      "integration_point": "wui-auth",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "endpoint_family": "auth",
+      "methods": [
+        "all restricted methods"
+      ],
+      "status_behavior": [
+        "Unauthorized with API-key auth challenge",
+        "api-key-full-match required",
+        "empty-password-disabled"
+      ],
+      "auth_modes": [
+        "api-key",
+        "api-key-full-match",
+        "empty-password-disabled"
+      ],
+      "resource_limits": [
+        "streaming-parser",
+        "header-automata"
+      ],
+      "storage_or_transfer_integration": [
+        "prusalink_password config key is referenced by name only"
+      ],
+      "ui_surface": [
+        "PrusaLink API clients"
+      ],
+      "host_test_references": [
+        "tests/unit/common/automata/generated.cpp"
+      ],
+      "non_local_evidence": [
+        "API client authentication against simulator or printer"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "wui-usb-file-storage-paths",
+      "requirement_id": "IFCE-03",
+      "surface": "wui-usb-file-storage",
+      "reference_sources": [
+        "lib/WUI/link_content/usb_files.cpp",
+        "lib/WUI/link_content/previews.cpp",
+        "lib/WUI/link_content/prusa_link_api.cpp",
+        "lib/WUI/link_content/prusa_link_api_v1.cpp",
+        "lib/WUI/link_content/prusa_api_helpers.cpp"
+      ],
+      "reference_behavior": "USB file and thumbnail paths are URL-decoded through uri_filename, reject directory traversal, require authenticated access, and keep API file paths constrained to /usb before file streaming, delete, print, or preview handling.",
+      "rust_surface": "buddy-domain::network::WuiStoragePathContract",
+      "auth_requirement": "prusalink-auth",
+      "integration_point": "usb-storage",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "endpoint_family": "UsbFiles",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST",
+        "PUT",
+        "DELETE"
+      ],
+      "status_behavior": [
+        "Forbidden for file API paths outside /usb",
+        "NotFound for invalid filenames and missing files",
+        "MethodNotAllowed for unsupported direct USB methods",
+        "Conflict for busy file delete or print conflicts"
+      ],
+      "auth_modes": [
+        "digest",
+        "api-key"
+      ],
+      "resource_limits": [
+        "FILE_PATH_BUFFER_LEN",
+        "directory-traversal-refusal",
+        "etag-aware-send-file"
+      ],
+      "storage_or_transfer_integration": [
+        "/usb path restriction",
+        "ChangedPath change-chain etags",
+        "GCodePreview thumbnail reader",
+        "SendFile direct USB streaming"
+      ],
+      "ui_surface": [
+        "storage browser",
+        "thumbnail preview"
+      ],
+      "host_test_references": [
+        "tests/unit/lib/WUI/nhttp/server_tests.cpp"
+      ],
+      "non_local_evidence": [
+        "USB media insert, remove, and file browsing on printer or simulator"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "wui-upload-transfer-renderer",
+      "requirement_id": "IFCE-03",
+      "surface": "wui-upload-transfer",
+      "reference_sources": [
+        "lib/WUI/nhttp/gcode_upload.cpp",
+        "lib/WUI/nhttp/transfer_renderer.cpp",
+        "lib/WUI/nhttp/server.cpp",
+        "lib/WUI/link_content/prusa_link_api_v1.cpp",
+        "lib/WUI/link_content/prusa_link_api_octo.cpp"
+      ],
+      "reference_behavior": "WUI uploads create GcodeUpload state, hand socket payloads to the server TransferSlot, stream data into storage, and expose current transfer status through API v1 and OctoPrint-compatible transfer renderers.",
+      "rust_surface": "buddy-domain::network::WuiTransferContract",
+      "auth_requirement": "prusalink-auth",
+      "integration_point": "transfers",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "endpoint_family": "Transfer",
+      "methods": [
+        "PUT",
+        "POST",
+        "GET"
+      ],
+      "status_behavior": [
+        "Ok after upload completion response is attached",
+        "LengthRequired when upload body length is absent",
+        "RequestHeaderFieldsTooLarge for oversized upload filename",
+        "BadRequest for truncated upload body",
+        "InternalServerError for storage-layer unexpected errors"
+      ],
+      "auth_modes": [
+        "digest",
+        "api-key"
+      ],
+      "resource_limits": [
+        "single-transfer-slot",
+        "PbufQueueMax=8",
+        "shared-send-buffers",
+        "nonblocking-usb-callback"
+      ],
+      "storage_or_transfer_integration": [
+        "GcodeUpload::start",
+        "TransferSlot socket-to-file splice",
+        "transfers::Monitor",
+        "TransferRenderer"
+      ],
+      "ui_surface": [
+        "upload progress",
+        "transfer status"
+      ],
+      "host_test_references": [
+        "tests/unit/lib/WUI/nhttp/server_tests.cpp"
+      ],
+      "non_local_evidence": [
+        "upload to USB media with progress observation"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "wui-unknown-request-error",
+      "requirement_id": "IFCE-03",
+      "surface": "wui-unknown-request",
+      "reference_sources": [
+        "lib/WUI/nhttp/common_selectors.cpp",
+        "lib/WUI/nhttp/req_parser.cpp",
+        "lib/WUI/nhttp/headers.cpp",
+        "lib/WUI/link_content/prusa_link_api.cpp",
+        "lib/WUI/link_content/prusa_link_api_v1.cpp"
+      ],
+      "reference_behavior": "Malformed, unsupported, unknown-method, and unmatched requests are normalized into explicit HTTP status responses before any handler-specific operation proceeds.",
+      "rust_surface": "buddy-domain::network::WuiEndpointContract",
+      "auth_requirement": "selector-dependent",
+      "integration_point": "wui-routing",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "none",
+      "intentional_delta": "none",
+      "endpoint_family": "UnknownRequest",
+      "methods": [
+        "unknown-method",
+        "unmatched-path",
+        "malformed-request"
+      ],
+      "status_behavior": [
+        "BadRequest for malformed requests",
+        "MethodNotAllowed for unknown methods",
+        "NotFound for unmatched paths",
+        "ErrorClose when body handling could leave unread data"
+      ],
+      "auth_modes": [
+        "none",
+        "digest",
+        "api-key"
+      ],
+      "resource_limits": [
+        "unsupported-protocol-refusal",
+        "generated-automata"
+      ],
+      "storage_or_transfer_integration": [
+        "unknown requests do not reach storage or transfer handlers"
+      ],
+      "ui_surface": [
+        "HTTP clients"
+      ],
+      "host_test_references": [
+        "tests/unit/lib/WUI/nhttp/server_tests.cpp",
+        "tests/unit/common/automata/generated.cpp"
+      ],
+      "non_local_evidence": [
+        "negative HTTP smoke against simulator or printer"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "wui-responsive-static-ui-contract",
+      "requirement_id": "IFCE-03",
+      "surface": "wui-responsive-static-ui",
+      "reference_sources": [
+        "src/resources/web/index.html",
+        "src/resources/web/README.md",
+        "lib/WUI/link_content/static_file.cpp"
+      ],
+      "reference_behavior": "The embedded PrusaLink web application is a static client-side UI bundle served by firmware and sourced from the Prusa-Link-Web mini configuration.",
+      "rust_surface": "buddy-domain::network::WuiStaticUiContract",
+      "auth_requirement": "none",
+      "integration_point": "wui-static-assets",
+      "evidence_class": "manual-hardware-required",
+      "proof_scope": "non-local",
+      "secret_handling": "none",
+      "intentional_delta": "none",
+      "endpoint_family": "StaticAssets",
+      "methods": [
+        "GET"
+      ],
+      "status_behavior": [
+        "index.html served for root static route",
+        "static asset cache headers differ between index and hashed assets"
+      ],
+      "auth_modes": [
+        "none"
+      ],
+      "resource_limits": [
+        "gzip-embedded-resources",
+        "shared-send-buffers"
+      ],
+      "storage_or_transfer_integration": [
+        "web UI calls PrusaLink storage and transfer APIs"
+      ],
+      "ui_surface": [
+        "responsive PrusaLink dashboard",
+        "responsive PrusaLink storage view"
+      ],
+      "host_test_references": [
+        "tests/integration/test_prusa_link.py"
+      ],
+      "non_local_evidence": [
+        "browser visual verification on desktop and supported mobile widths",
+        "printer or simulator HTTP serving of embedded resources"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    }
+  ]
+}

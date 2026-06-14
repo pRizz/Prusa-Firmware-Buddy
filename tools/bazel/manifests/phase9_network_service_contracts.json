@@ -1,0 +1,358 @@
+{
+  "schema_version": 1,
+  "phase": "09-network-web-services-and-transfers",
+  "phase_lifecycle_id": "9-2026-06-14T02-15-21",
+  "network_service_contracts": [
+    {
+      "id": "sntp-client-default-server",
+      "requirement_id": "IFCE-03",
+      "surface": "sntp-client",
+      "reference_sources": [
+        "lib/WUI/sntp/sntp_client.c",
+        "lib/WUI/sntp/sntp_opts.h",
+        "include/buddy/lwipopts.h"
+      ],
+      "reference_behavior": "SNTP starts when Ethernet or Wi-Fi netif is up, stops when both are down, uses poll mode, supports DNS server names, and defaults to prusa3d.pool.ntp.org.",
+      "rust_surface": "buddy-domain::network::NetworkServiceContract",
+      "service_family": "Sntp",
+      "feature_gate": [
+        "Feature::WebUi"
+      ],
+      "build_gate": [
+        "BUDDY_ENABLE_WUI()"
+      ],
+      "transport": [
+        "UDP",
+        "SNTP port from LWIP_IANA_PORT_SNTP"
+      ],
+      "config_keys": [
+        "none"
+      ],
+      "runtime_defaults": [
+        "SNTP_SERVER_DNS=1",
+        "SNTP_SERVER_ADDRESS=prusa3d.pool.ntp.org",
+        "SNTP_UPDATE_DELAY=3600000",
+        "SNTP_RECV_TIMEOUT=15000"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "none",
+      "intentional_delta": "none",
+      "host_test_references": [
+        "source-audit-only-for-current-plan"
+      ],
+      "non_local_evidence": [
+        "live SNTP clock update on a networked printer or simulator"
+      ],
+      "local_proof_exclusions": [
+        "live SNTP is not required as local proof",
+        "physical Ethernet or Wi-Fi is not required as local proof"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "mdns-optional-announcement",
+      "requirement_id": "IFCE-03",
+      "surface": "mdns-responder",
+      "reference_sources": [
+        "lib/WUI/mdns/mdns.c",
+        "include/buddy/lwipopts.h"
+      ],
+      "reference_behavior": "mDNS is compiled only when MDNS() enables the responder, opens UDP port 5353, limits stored packets and extra timeouts, and advertises the hardcoded _prusalink TCP service on port 80.",
+      "rust_surface": "buddy-domain::network::NetworkServiceContract",
+      "service_family": "Mdns",
+      "feature_gate": [
+        "Feature::WebUi"
+      ],
+      "build_gate": [
+        "MDNS()",
+        "LWIP_MDNS_RESPONDER",
+        "BUDDY_ENABLE_WUI()"
+      ],
+      "transport": [
+        "UDP",
+        "5353",
+        "_prusalink",
+        "DNSSD_PROTO_TCP",
+        "port 80"
+      ],
+      "config_keys": [
+        "none"
+      ],
+      "runtime_defaults": [
+        "MDNS_MAX_STORED_PKTS=1",
+        "one active interface is intended by lwipopts comments",
+        "service announcement restarts after netif or service changes"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "none",
+      "intentional_delta": "none",
+      "host_test_references": [
+        "source-audit-only-for-current-plan"
+      ],
+      "non_local_evidence": [
+        "mDNS packet capture or browser discovery on a real network"
+      ],
+      "local_proof_exclusions": [
+        "mDNS packet capture is not required as local proof",
+        "physical network discovery is not required as local proof"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "dns-lwip-network-resolution",
+      "requirement_id": "IFCE-03",
+      "surface": "lwip-dns-resolution",
+      "reference_sources": [
+        "include/buddy/lwipopts.h",
+        "src/syslog/syslog_transport.cpp",
+        "src/connect/tls/net_sockets.cpp"
+      ],
+      "reference_behavior": "LwIP DNS is enabled with secure DNS checks, bounded name length, and async dns_gethostbyname use in UDP syslog/metrics transport and network socket code.",
+      "rust_surface": "buddy-domain::network::NetworkServiceContract",
+      "service_family": "Dns",
+      "feature_gate": [
+        "Feature::WebUi"
+      ],
+      "build_gate": [
+        "LWIP_DNS",
+        "BUDDY_ENABLE_WUI()"
+      ],
+      "transport": [
+        "UDP",
+        "DNS through LwIP"
+      ],
+      "config_keys": [
+        "metrics_host",
+        "connect_host"
+      ],
+      "runtime_defaults": [
+        "LWIP_DNS=1",
+        "LWIP_DNS_SECURE=7",
+        "DNS_MAX_NAME_LENGTH=128"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "none",
+      "intentional_delta": "none",
+      "host_test_references": [
+        "source-audit-only-for-current-plan"
+      ],
+      "non_local_evidence": [
+        "live DNS resolution under configured Ethernet or Wi-Fi"
+      ],
+      "local_proof_exclusions": [
+        "live DNS is not required as local proof",
+        "simulator network flow is not required as local proof"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "metrics-runtime-config-udp",
+      "requirement_id": "IFCE-03",
+      "surface": "metrics-runtime-config",
+      "reference_sources": [
+        "src/common/metric.cpp",
+        "src/common/metric_handlers.cpp",
+        "src/persistent_stores/store_instances/config_store/store_definition.hpp",
+        "src/persistent_stores/store_instances/config_store/defaults.hpp",
+        "doc/metrics.md"
+      ],
+      "reference_behavior": "Metrics are configured at runtime through config_store, use syslog-style UDP transport to the configured metrics host and port, and production defaults disable or empty the destination unless enabled intentionally.",
+      "rust_surface": "buddy-domain::network::NetworkServiceContract",
+      "service_family": "Metrics",
+      "feature_gate": [
+        "Feature::WebUi"
+      ],
+      "build_gate": [
+        "BUDDY_ENABLE_WUI()"
+      ],
+      "transport": [
+        "UDP",
+        "SyslogTransport",
+        "development-collector-documentation"
+      ],
+      "config_keys": [
+        "metrics_host",
+        "metrics_port",
+        "syslog_port",
+        "enable_metrics",
+        "metrics_allow"
+      ],
+      "runtime_defaults": [
+        "disabled-or-empty-production-defaults",
+        "development builds may default to matrix.prusa.vc",
+        "M334 configures metrics destination"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "none",
+      "intentional_delta": "none",
+      "host_test_references": [
+        "source-audit-only-for-current-plan"
+      ],
+      "non_local_evidence": [
+        "external metrics collector receiving UDP packets"
+      ],
+      "local_proof_exclusions": [
+        "Docker is not required as local proof",
+        "external metrics services are not required as local proof"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "metrics-line-protocol-throttling",
+      "requirement_id": "IFCE-03",
+      "surface": "metrics-line-protocol",
+      "reference_sources": [
+        "src/common/metric.cpp",
+        "src/common/metric_handlers.cpp",
+        "doc/metrics.md"
+      ],
+      "reference_behavior": "Metric definitions carry a minimum interval, recording is dropped when a point is not due or the queue is full, and metric_handler batches points in a line-protocol-compatible payload before UDP send.",
+      "rust_surface": "buddy-domain::network::NetworkServiceContract",
+      "service_family": "Metrics",
+      "feature_gate": [
+        "Feature::WebUi"
+      ],
+      "build_gate": [
+        "BUDDY_ENABLE_WUI()"
+      ],
+      "transport": [
+        "UDP",
+        "line-protocol-compatible"
+      ],
+      "config_keys": [
+        "enable_metrics",
+        "metrics_allow",
+        "metrics_host",
+        "metrics_port"
+      ],
+      "runtime_defaults": [
+        "metric-throttling",
+        "min_interval_ms",
+        "metric_system_queue_size",
+        "BUFFER_OLD_MS=1000",
+        "TEXTPROTOCOL_POINT_MAXLEN=63"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "none",
+      "intentional_delta": "none",
+      "host_test_references": [
+        "source-audit-only-for-current-plan"
+      ],
+      "non_local_evidence": [
+        "collector-side parsing of line-protocol-compatible packets"
+      ],
+      "local_proof_exclusions": [
+        "Docker is not required as local proof",
+        "external metrics services are not required as local proof"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "syslog-udp-destination",
+      "requirement_id": "IFCE-03",
+      "surface": "syslog-udp-destination",
+      "reference_sources": [
+        "src/logging/log_dest_syslog.cpp",
+        "src/syslog/syslog_transport.cpp",
+        "src/common/metric_handlers.cpp",
+        "src/persistent_stores/store_instances/config_store/store_definition.hpp"
+      ],
+      "reference_behavior": "Syslog logging and metrics share SyslogTransport, resolve the configured host asynchronously, allocate bounded pbuf-backed messages, and send RFC5424-like payloads to the configured UDP port.",
+      "rust_surface": "buddy-domain::network::NetworkServiceContract",
+      "service_family": "Syslog",
+      "feature_gate": [
+        "Feature::WebUi"
+      ],
+      "build_gate": [
+        "BUDDY_ENABLE_WUI()"
+      ],
+      "transport": [
+        "UDP",
+        "SyslogTransport",
+        "bounded SYSLOG_MSGS pool"
+      ],
+      "config_keys": [
+        "metrics_host",
+        "metrics_port",
+        "syslog_port",
+        "enable_metrics",
+        "metrics_allow"
+      ],
+      "runtime_defaults": [
+        "syslog_port default 13514",
+        "metrics_port default 8514",
+        "transport disabled when remote port is zero or metrics are disabled"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "none",
+      "intentional_delta": "none",
+      "host_test_references": [
+        "source-audit-only-for-current-plan"
+      ],
+      "non_local_evidence": [
+        "UDP syslog receiver smoke under configured metrics host"
+      ],
+      "local_proof_exclusions": [
+        "external metrics services are not required as local proof",
+        "physical Ethernet or Wi-Fi is not required as local proof"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "network-feature-gates-wui-connect",
+      "requirement_id": "IFCE-03",
+      "surface": "network-service-feature-gates",
+      "reference_sources": [
+        "ProjectOptions.cmake",
+        "src/buddy/main.cpp",
+        "rust/crates/domain/src/feature.rs",
+        "rust/crates/domain/src/network.rs",
+        ".planning/phases/09-network-web-services-and-transfers/09-02-PLAN.md"
+      ],
+      "reference_behavior": "CMake exposes WUI and Connect as BUDDY_ENABLE_WUI() and BUDDY_ENABLE_CONNECT(); firmware currently requires Connect to run with WUI, and Rust domain contracts reject unsupported service and feature combinations in Plan 09-02.",
+      "rust_surface": "buddy-domain::network::NetworkServiceContract",
+      "service_family": "FeatureGates",
+      "feature_gate": [
+        "Feature::WebUi",
+        "Feature::Connect"
+      ],
+      "build_gate": [
+        "BUDDY_ENABLE_WUI()",
+        "BUDDY_ENABLE_CONNECT()"
+      ],
+      "transport": [
+        "not-a-network-transport"
+      ],
+      "config_keys": [
+        "connect_enabled",
+        "enable_metrics"
+      ],
+      "runtime_defaults": [
+        "unsupported combinations are rejected by Rust domain contracts in Plan 09-02",
+        "PrusaConnect requires Feature::Connect",
+        "PrusaLinkWui, Sntp, Mdns, Dns, Metrics, and Syslog require Feature::WebUi",
+        "firmware C preprocessor rejects Connect without WUI"
+      ],
+      "evidence_class": "unit-test-backed",
+      "proof_scope": "local",
+      "secret_handling": "none",
+      "intentional_delta": "none",
+      "host_test_references": [
+        "rust/crates/domain/src/network.rs tests for UnsupportedNetworkService"
+      ],
+      "non_local_evidence": [
+        "build matrix verification for WUI and Connect feature combinations"
+      ],
+      "local_proof_exclusions": [
+        "physical network flow is not required as local proof"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    }
+  ]
+}
