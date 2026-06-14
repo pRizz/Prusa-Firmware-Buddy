@@ -43,7 +43,7 @@
 - [x] **IFCE-03**: Rust firmware preserves PrusaLink/WUI behavior including HTTP API v1, OctoPrint-compatible endpoints, digest/API-key auth, WUI static assets, SNTP, mDNS, metrics, and syslog.
 - [x] **IFCE-04**: Rust firmware preserves persistent configuration, schema migrations, defaults, deprecated item IDs, credentials, settings import/export, EEPROM/internal flash behavior, FatFs/littlefs mounts, USB/internal/semihosting paths, and config hash/journal behavior.
 - [x] **IFCE-05**: Rust firmware preserves resources, translations, fonts, icons, littlefs images, bootloader resources, ESP blobs, WUI assets, language packs, and generated headers visible to runtime or release artifacts.
-- [ ] **IFCE-06**: Rust firmware preserves puppy, Dwarf, ModularBed, xBuddy Extension, MMU2, Modbus/RS485, toolchanger, dock/tool offset, startup flashing, skip-flash/prebuilt firmware, and auxiliary-controller update flows.
+- [x] **IFCE-06**: Rust firmware preserves puppy, Dwarf, ModularBed, xBuddy Extension, MMU2, Modbus/RS485, toolchanger, dock/tool offset, startup flashing, skip-flash/prebuilt firmware, and auxiliary-controller update flows.
 
 ### Verification and Cutover
 
@@ -106,7 +106,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | IFCE-03 | Phase 9 | Complete |
 | IFCE-04 | Phase 7 | Complete |
 | IFCE-05 | Phase 7 | Complete |
-| IFCE-06 | Phase 10 | Pending |
+| IFCE-06 | Phase 10 | Complete |
 | VERF-01 | Phase 11 | Pending |
 | VERF-02 | Phase 4 | Completed |
 | VERF-03 | Phase 11 | Pending |
