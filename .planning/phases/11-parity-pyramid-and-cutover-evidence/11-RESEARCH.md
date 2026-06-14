@@ -433,22 +433,22 @@ This guard extends Phase 9 and Phase 10 overclaim scans to the final cutover lan
 | Source path escape in manifests | Tampering | Reject absolute paths and `..` components, following existing verifier path checks. [VERIFIED: tools/bazel/phase10_verify.py] |
 | Byte-identity claim without fixture | Tampering / Repudiation | Require named fixtures, normalization rules, or semantic comparison status. [VERIFIED: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md; VERIFIED: tools/bazel/artifact_metadata_compare.py] |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Which non-local evidence artifacts will maintainers accept for cutover?**  
    What we know: prior phases list simulator, hardware-smoke, manual-hardware-required, CI, and retained-code evidence categories. [VERIFIED: .planning/phases/*/*-VALIDATION.md]  
-   What's unclear: the exact required log/artifact format for hardware lab, simulator, release-candidate, and live network/TLS proof is not defined in the repo artifacts read during research. [VERIFIED: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md]  
-   Recommendation: Phase 11 should define required artifact names or placeholder evidence row IDs for each non-local gate and keep cutover blocked until they exist. [VERIFIED: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md]
+   Resolution basis: the repo does not define a final hardware-lab, simulator, release-candidate, or live network/TLS artifact format in the artifacts read during research. [VERIFIED: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md]  
+   **RESOLVED:** Phase 11 will not invent a new acceptance format or mark those gates locally passed. The manifests must name required non-local artifact IDs/classes for simulator flows, hardware smoke/manual gates, live network/TLS/API proof, storage media, release-candidate proof, RS485/MMU/toolchanger proof, and final demotion approval, and `phase11_cutover_readiness.json` must keep cutover blocked until maintainers attach or approve those artifacts. [VERIFIED: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md]
 
 2. **Are BAZL-03 and BAZL-05 pending statuses stale or current blockers?**  
    What we know: `.planning/REQUIREMENTS.md` marks BAZL-03 and BAZL-05 pending, while Phase 3 verification reports both passed for scoped artifact/generator parity. [VERIFIED: .planning/REQUIREMENTS.md; VERIFIED: .planning/phases/03-artifact-and-generator-parity/03-VERIFICATION.md]  
-   What's unclear: whether the requirements file should be updated by the orchestrator or Phase 11 should preserve them as pending cutover blockers. [VERIFIED: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md]  
-   Recommendation: Requirement evidence rows should cite Phase 3 verification and explicitly record whether each remains blocked by full release-candidate byte/signing proof. [VERIFIED: .planning/phases/03-artifact-and-generator-parity/03-VERIFICATION.md; VERIFIED: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md]
+   Resolution basis: the revision instructions prohibit updating `.planning/REQUIREMENTS.md`, and D-08 requires pending requirements to be resolved by Phase 11 evidence or kept pending with named cutover blockers. [VERIFIED: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md]  
+   **RESOLVED:** Phase 11 will preserve `.planning/REQUIREMENTS.md` as-is and make `phase11_requirement_evidence.json` the source-backed resolution layer: BAZL-03 and BAZL-05 cite Phase 3 verification as scoped local evidence, but remain cutover-blocked for full release-candidate artifact/signing-sensitive proof where that evidence is not attached locally. [VERIFIED: .planning/phases/03-artifact-and-generator-parity/03-VERIFICATION.md; VERIFIED: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md]
 
 3. **Should Phase 11 add Rust cutover domain types?**  
    What we know: prior phases add pure Rust types when evidence invariants benefit from type-level checks. [VERIFIED: rust/crates/domain/src/gui.rs; VERIFIED: rust/crates/domain/src/network.rs; VERIFIED: rust/crates/domain/src/auxiliary.rs]  
-   What's unclear: Python manifest validation may be sufficient for Phase 11 if no production Rust code consumes cutover evidence. [VERIFIED: tools/bazel/phase10_verify.py]  
-   Recommendation: Add `cutover.rs` only if it removes real duplication in proof-scope/status validation or is needed by a verifier/Rust API check. [CITED: https://raw.githubusercontent.com/bright-builds-llc/bright-builds-rules/05f8d7a6c9c2e157ec4f922a05273e72dab97676/standards/core/architecture.md]
+   Resolution basis: Phase 11 plans include a Rust-only verifier surface, and Bright Builds architecture/Rust guidance favors typed domain contracts when they make invalid proof-scope, status, and comparison states harder to represent. [CITED: https://raw.githubusercontent.com/bright-builds-llc/bright-builds-rules/05f8d7a6c9c2e157ec4f922a05273e72dab97676/standards/core/architecture.md; CITED: https://raw.githubusercontent.com/bright-builds-llc/bright-builds-rules/05f8d7a6c9c2e157ec4f922a05273e72dab97676/standards/languages/rust.md]  
+   **RESOLVED:** Plan 11-03 will add `rust/crates/domain/src/cutover.rs` and export it from `lib.rs` as pure, unsafe-free evidence contracts. The Python verifier remains authoritative for checked-in manifests; the Rust module adds focused domain invariants and tests for proof scopes, comparison contracts, cutover statuses, retained-code dispositions, and row IDs. [VERIFIED: rust/crates/domain/src/gui.rs; VERIFIED: rust/crates/domain/src/network.rs; VERIFIED: rust/crates/domain/src/auxiliary.rs; VERIFIED: tools/bazel/phase10_verify.py]
 
 ## Assumptions Log
 
