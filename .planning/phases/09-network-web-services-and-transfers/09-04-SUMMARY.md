@@ -10,7 +10,7 @@ requires:
 provides:
   - Bazel labels for Phase 9 verifier and verifier tests
   - Root aliases and Phase 9 docs filegroup for verifier runfiles
-  - `just phase9-verify` developer facade
+  - just phase9-verify developer facade
   - Complete lifecycle-tagged Phase 9 Nyquist validation evidence
 affects: [phase-09-verification, IFCE-02, IFCE-03, phase-11-cutover-evidence]
 
@@ -102,7 +102,7 @@ Each task was committed atomically:
 - **Verification:** `python3 tools/bazel/phase9_verify.py --quick` passed.
 - **Committed in:** `9da93b09d`
 
----
+***
 
 **Total deviations:** 1 auto-fixed (1 blocking)
 **Impact on plan:** No scope expansion. The validation artifact keeps the planned exact task mapping while satisfying the already committed verifier contract.
@@ -152,6 +152,6 @@ Phase 9 local verification is complete and ready for orchestrator-owned state/ro
 - Task commits exist: `50782bb64` and `9da93b09d`.
 - Owned summary file is the only new uncommitted file expected before the final metadata commit.
 
----
+***
 *Phase: 09-network-web-services-and-transfers*
 *Completed: 2026-06-14*
