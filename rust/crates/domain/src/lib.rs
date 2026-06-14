@@ -19,6 +19,13 @@ pub mod safety;
 pub mod storage;
 
 pub use artifact::{ArtifactFileName, ArtifactKind, ArtifactRequest};
+pub use auxiliary::{
+    AuxiliaryControllerContract, AuxiliaryControllerContractInput, AuxiliaryControllerKind,
+    AuxiliaryParityContract, AuxiliaryParityContractInput, AuxiliaryParityRowId,
+    AuxiliaryProofScope, AuxiliaryRuntimeState, AuxiliaryUpdateMode, BusEvidenceClass,
+    ControllerFaultClass, DockIdentity, FirmwareImageSource, MmuTransportState, ModbusRequestKind,
+    ModbusUnitIdentity, ToolOffsetAxis, ToolOffsetIdentity,
+};
 pub use feature::{
     BurstSteppingMode, Feature, FeatureSet, GateState, Phase6FeatureGate, Phase6FeatureGates,
 };
@@ -79,6 +86,38 @@ pub enum InvariantError {
         /// Requested feature.
         feature: Feature,
     },
+    /// An auxiliary parity row ID was empty.
+    EmptyAuxiliaryParityRowId,
+    /// An auxiliary parity row ID contained unsupported syntax or characters.
+    InvalidAuxiliaryParityRowId,
+    /// An auxiliary controller kind was not recognized.
+    InvalidAuxiliaryControllerKind,
+    /// An auxiliary runtime state was not recognized.
+    InvalidAuxiliaryRuntimeState,
+    /// A firmware image source was not recognized.
+    InvalidFirmwareImageSource,
+    /// An auxiliary update mode was not recognized.
+    InvalidAuxiliaryUpdateMode,
+    /// A Modbus unit identity was outside the accepted unit range.
+    InvalidModbusUnitIdentity,
+    /// A Modbus request kind was not recognized.
+    InvalidModbusRequestKind,
+    /// A bus evidence class was not recognized.
+    InvalidBusEvidenceClass,
+    /// An auxiliary proof scope was not recognized.
+    InvalidAuxiliaryProofScope,
+    /// An MMU transport state was not recognized.
+    InvalidMmuTransportState,
+    /// A dock identity was not recognized.
+    InvalidDockIdentity,
+    /// A tool offset identity was outside the accepted range.
+    InvalidToolOffsetIdentity,
+    /// A controller fault class was not recognized.
+    InvalidControllerFaultClass,
+    /// An auxiliary parity contract paired an invalid proof scope with evidence.
+    InvalidAuxiliaryParityContract,
+    /// The selected product profile cannot own the requested auxiliary controller.
+    UnsupportedAuxiliaryController,
     /// A file name was empty.
     EmptyArtifactName,
     /// A file name contained path syntax instead of a plain artifact name.
@@ -211,6 +250,50 @@ impl fmt::Display for InvariantError {
             } => write!(
                 formatter,
                 "unsupported feature {feature:?} for firmware profile {printer:?}/{board:?}"
+            ),
+            Self::EmptyAuxiliaryParityRowId => {
+                formatter.write_str("auxiliary parity row ID must not be empty")
+            }
+            Self::InvalidAuxiliaryParityRowId => formatter.write_str(
+                "auxiliary parity row ID must be path-free printable ASCII at most 96 bytes",
+            ),
+            Self::InvalidAuxiliaryControllerKind => formatter.write_str(
+                "auxiliary controller kind must be dwarf, modular-bed, xbuddy-extension, or mmu2",
+            ),
+            Self::InvalidAuxiliaryRuntimeState => formatter.write_str(
+                "auxiliary runtime state must be one of the Phase 10 accepted values",
+            ),
+            Self::InvalidFirmwareImageSource => formatter.write_str(
+                "firmware image source must be a named Phase 10 CMake variable or resource path",
+            ),
+            Self::InvalidAuxiliaryUpdateMode => formatter.write_str(
+                "auxiliary update mode must be one of the Phase 10 accepted values",
+            ),
+            Self::InvalidModbusUnitIdentity => {
+                formatter.write_str("Modbus unit identity must be in range 1..=247")
+            }
+            Self::InvalidModbusRequestKind => formatter
+                .write_str("Modbus request kind must be one of the Phase 10 accepted values"),
+            Self::InvalidBusEvidenceClass => formatter
+                .write_str("bus evidence class must be one of the Phase 10 accepted values"),
+            Self::InvalidAuxiliaryProofScope => formatter.write_str(
+                "auxiliary proof scope must be local or non-local",
+            ),
+            Self::InvalidMmuTransportState => formatter
+                .write_str("MMU transport state must be one of the Phase 10 accepted values"),
+            Self::InvalidDockIdentity => formatter
+                .write_str("dock identity must be MODULAR_BED, DWARF_1..DWARF_6, or XBUDDY_EXTENSION"),
+            Self::InvalidToolOffsetIdentity => {
+                formatter.write_str("tool offset identity tool number must be in range 1..=6")
+            }
+            Self::InvalidControllerFaultClass => formatter.write_str(
+                "controller fault class must be one of the Phase 10 accepted values",
+            ),
+            Self::InvalidAuxiliaryParityContract => formatter.write_str(
+                "auxiliary local proof scope cannot be paired with simulator, hardware, or manual evidence",
+            ),
+            Self::UnsupportedAuxiliaryController => formatter.write_str(
+                "auxiliary controller requires a compatible validated product profile",
             ),
             Self::EmptyArtifactName => formatter.write_str("artifact name must not be empty"),
             Self::ArtifactNameContainsPath => {

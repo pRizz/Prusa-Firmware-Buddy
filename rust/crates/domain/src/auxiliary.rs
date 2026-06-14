@@ -1,3 +1,696 @@
+use crate::{BoardKind, Feature, InvariantError, ProductProfile};
+
+fn is_valid_auxiliary_row_id(raw: &str) -> bool {
+    raw != "."
+        && raw != ".."
+        && raw.len() <= 96
+        && !raw.contains('/')
+        && !raw.contains('\\')
+        && raw.bytes().all(|byte| byte.is_ascii_graphic())
+}
+
+/// Auxiliary controller family represented by Phase 10 parity contracts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum AuxiliaryControllerKind {
+    /// Dwarf toolhead auxiliary controller.
+    Dwarf,
+    /// Modular Bed auxiliary controller.
+    ModularBed,
+    /// xBuddy Extension auxiliary controller.
+    XBuddyExtension,
+    /// MMU2 controller or transport integration.
+    Mmu2,
+}
+
+impl AuxiliaryControllerKind {
+    /// Parses an auxiliary controller kind string.
+    pub fn parse(raw: &str) -> Result<Self, InvariantError> {
+        match raw {
+            "dwarf" => Ok(Self::Dwarf),
+            "modular-bed" => Ok(Self::ModularBed),
+            "xbuddy-extension" => Ok(Self::XBuddyExtension),
+            "mmu2" => Ok(Self::Mmu2),
+            _ => Err(InvariantError::InvalidAuxiliaryControllerKind),
+        }
+    }
+
+    /// Returns the manifest string for this controller kind.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Dwarf => "dwarf",
+            Self::ModularBed => "modular-bed",
+            Self::XBuddyExtension => "xbuddy-extension",
+            Self::Mmu2 => "mmu2",
+        }
+    }
+}
+
+/// Auxiliary-controller runtime state visible to compatibility contracts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum AuxiliaryRuntimeState {
+    /// Controller is in bootloader mode.
+    Bootloader,
+    /// Controller is unavailable.
+    Unavailable,
+    /// Controller is active.
+    Active,
+    /// Controller is stopped.
+    Stopped,
+    /// Controller is updating.
+    Updating,
+    /// Controller update failed.
+    UpdateFailed,
+    /// Controller communication fault is present.
+    CommunicationFault,
+    /// Reference behavior is unknown and explicitly deferred.
+    UnknownReferenceDeferred,
+}
+
+impl AuxiliaryRuntimeState {
+    /// Parses an auxiliary runtime state string.
+    pub fn parse(raw: &str) -> Result<Self, InvariantError> {
+        match raw {
+            "bootloader" => Ok(Self::Bootloader),
+            "unavailable" => Ok(Self::Unavailable),
+            "active" => Ok(Self::Active),
+            "stopped" => Ok(Self::Stopped),
+            "updating" => Ok(Self::Updating),
+            "update-failed" => Ok(Self::UpdateFailed),
+            "communication-fault" => Ok(Self::CommunicationFault),
+            "unknown-reference-deferred" => Ok(Self::UnknownReferenceDeferred),
+            _ => Err(InvariantError::InvalidAuxiliaryRuntimeState),
+        }
+    }
+
+    /// Returns the manifest string for this runtime state.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Bootloader => "bootloader",
+            Self::Unavailable => "unavailable",
+            Self::Active => "active",
+            Self::Stopped => "stopped",
+            Self::Updating => "updating",
+            Self::UpdateFailed => "update-failed",
+            Self::CommunicationFault => "communication-fault",
+            Self::UnknownReferenceDeferred => "unknown-reference-deferred",
+        }
+    }
+}
+
+/// Named firmware image source without firmware payload bytes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum FirmwareImageSource {
+    /// Dwarf firmware prebuilt path CMake variable.
+    DwarfBinaryPath,
+    /// Modular Bed firmware prebuilt path CMake variable.
+    ModularBedBinaryPath,
+    /// xBuddy Extension firmware prebuilt path CMake variable.
+    XBuddyExtensionBinaryPath,
+    /// Dwarf firmware runtime resource path.
+    DwarfResourcePath,
+    /// Modular Bed firmware runtime resource path.
+    ModularBedResourcePath,
+    /// xBuddy Extension firmware runtime resource path.
+    XBuddyExtensionResourcePath,
+    /// MMU firmware runtime resource path.
+    MmuFirmwareResourcePath,
+}
+
+impl FirmwareImageSource {
+    /// Parses a named firmware image source string.
+    pub fn parse(raw: &str) -> Result<Self, InvariantError> {
+        match raw {
+            "DWARF_BINARY_PATH" => Ok(Self::DwarfBinaryPath),
+            "MODULARBED_BINARY_PATH" => Ok(Self::ModularBedBinaryPath),
+            "XBUDDY_EXTENSION_BINARY_PATH" => Ok(Self::XBuddyExtensionBinaryPath),
+            "/puppies/fw-dwarf.bin" => Ok(Self::DwarfResourcePath),
+            "/puppies/fw-modularbed.bin" => Ok(Self::ModularBedResourcePath),
+            "/puppies/fw-xbuddy-extension.bin" => Ok(Self::XBuddyExtensionResourcePath),
+            "/mmu/fw.bin" => Ok(Self::MmuFirmwareResourcePath),
+            _ => Err(InvariantError::InvalidFirmwareImageSource),
+        }
+    }
+
+    /// Returns the manifest string for this named source.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::DwarfBinaryPath => "DWARF_BINARY_PATH",
+            Self::ModularBedBinaryPath => "MODULARBED_BINARY_PATH",
+            Self::XBuddyExtensionBinaryPath => "XBUDDY_EXTENSION_BINARY_PATH",
+            Self::DwarfResourcePath => "/puppies/fw-dwarf.bin",
+            Self::ModularBedResourcePath => "/puppies/fw-modularbed.bin",
+            Self::XBuddyExtensionResourcePath => "/puppies/fw-xbuddy-extension.bin",
+            Self::MmuFirmwareResourcePath => "/mmu/fw.bin",
+        }
+    }
+}
+
+/// Auxiliary firmware update or packaging mode.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum AuxiliaryUpdateMode {
+    /// Flash auxiliary firmware at startup.
+    StartupFlash,
+    /// Skip auxiliary flashing.
+    SkipFlash,
+    /// Use a prebuilt firmware path.
+    PrebuiltPath,
+    /// Use a firmware descriptor.
+    FirmwareDescriptor,
+    /// Download a crash dump from an auxiliary controller.
+    CrashDumpDownload,
+    /// Run an MMU bootloader update.
+    MmuBootloaderUpdate,
+}
+
+impl AuxiliaryUpdateMode {
+    /// Parses an auxiliary update mode string.
+    pub fn parse(raw: &str) -> Result<Self, InvariantError> {
+        match raw {
+            "startup-flash" => Ok(Self::StartupFlash),
+            "skip-flash" => Ok(Self::SkipFlash),
+            "prebuilt-path" => Ok(Self::PrebuiltPath),
+            "firmware-descriptor" => Ok(Self::FirmwareDescriptor),
+            "crash-dump-download" => Ok(Self::CrashDumpDownload),
+            "mmu-bootloader-update" => Ok(Self::MmuBootloaderUpdate),
+            _ => Err(InvariantError::InvalidAuxiliaryUpdateMode),
+        }
+    }
+
+    /// Returns the manifest string for this update mode.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::StartupFlash => "startup-flash",
+            Self::SkipFlash => "skip-flash",
+            Self::PrebuiltPath => "prebuilt-path",
+            Self::FirmwareDescriptor => "firmware-descriptor",
+            Self::CrashDumpDownload => "crash-dump-download",
+            Self::MmuBootloaderUpdate => "mmu-bootloader-update",
+        }
+    }
+}
+
+/// Valid Modbus unit identity for auxiliary bus contracts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ModbusUnitIdentity(u8);
+
+impl ModbusUnitIdentity {
+    /// Creates a Modbus unit identity in the valid unit range.
+    pub fn new(unit: u8) -> Result<Self, InvariantError> {
+        if !(1..=247).contains(&unit) {
+            return Err(InvariantError::InvalidModbusUnitIdentity);
+        }
+
+        Ok(Self(unit))
+    }
+
+    /// Returns the validated unit identity.
+    pub fn as_u8(self) -> u8 {
+        self.0
+    }
+}
+
+/// Modbus request kind preserved by auxiliary parity contracts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ModbusRequestKind {
+    /// Read input registers.
+    ReadInput,
+    /// Read holding registers.
+    ReadHolding,
+    /// Write holding registers.
+    WriteHolding,
+    /// Write a coil.
+    WriteCoil,
+    /// Read FIFO data.
+    ReadFifo,
+    /// Query request.
+    Query,
+    /// Command request.
+    Command,
+}
+
+impl ModbusRequestKind {
+    /// Parses a Modbus request kind string.
+    pub fn parse(raw: &str) -> Result<Self, InvariantError> {
+        match raw {
+            "read-input" => Ok(Self::ReadInput),
+            "read-holding" => Ok(Self::ReadHolding),
+            "write-holding" => Ok(Self::WriteHolding),
+            "write-coil" => Ok(Self::WriteCoil),
+            "read-fifo" => Ok(Self::ReadFifo),
+            "query" => Ok(Self::Query),
+            "command" => Ok(Self::Command),
+            _ => Err(InvariantError::InvalidModbusRequestKind),
+        }
+    }
+
+    /// Returns the manifest string for this request kind.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::ReadInput => "read-input",
+            Self::ReadHolding => "read-holding",
+            Self::WriteHolding => "write-holding",
+            Self::WriteCoil => "write-coil",
+            Self::ReadFifo => "read-fifo",
+            Self::Query => "query",
+            Self::Command => "command",
+        }
+    }
+}
+
+/// Evidence class for a Phase 10 auxiliary parity claim.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum BusEvidenceClass {
+    /// Manifest structure and source paths are checked locally.
+    ManifestCheck,
+    /// Source audit against retained auxiliary paths.
+    SourceAudit,
+    /// Static source audit against retained boundary paths.
+    StaticSourceAudit,
+    /// Host test evidence in the retained or mixed codebase.
+    HostTest,
+    /// Rust host test evidence for pure Rust auxiliary classification.
+    RustHostTest,
+    /// Simulator flow evidence is required.
+    SimulatorFlow,
+    /// Hardware smoke evidence is required.
+    HardwareSmoke,
+    /// Manual hardware or failure-injection evidence is required.
+    ManualHardwareRequired,
+}
+
+impl BusEvidenceClass {
+    /// Parses a Phase 10 evidence class string.
+    pub fn parse(raw: &str) -> Result<Self, InvariantError> {
+        match raw {
+            "manifest-check" => Ok(Self::ManifestCheck),
+            "source-audit" => Ok(Self::SourceAudit),
+            "static-source-audit" => Ok(Self::StaticSourceAudit),
+            "host-test" => Ok(Self::HostTest),
+            "rust-host-test" => Ok(Self::RustHostTest),
+            "simulator-flow" => Ok(Self::SimulatorFlow),
+            "hardware-smoke" => Ok(Self::HardwareSmoke),
+            "manual-hardware-required" => Ok(Self::ManualHardwareRequired),
+            _ => Err(InvariantError::InvalidBusEvidenceClass),
+        }
+    }
+
+    /// Returns the manifest string for this evidence class.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::ManifestCheck => "manifest-check",
+            Self::SourceAudit => "source-audit",
+            Self::StaticSourceAudit => "static-source-audit",
+            Self::HostTest => "host-test",
+            Self::RustHostTest => "rust-host-test",
+            Self::SimulatorFlow => "simulator-flow",
+            Self::HardwareSmoke => "hardware-smoke",
+            Self::ManualHardwareRequired => "manual-hardware-required",
+        }
+    }
+
+    /// Returns whether this evidence class can support a local proof scope.
+    pub fn is_local_proof(self) -> bool {
+        !matches!(
+            self,
+            Self::SimulatorFlow | Self::HardwareSmoke | Self::ManualHardwareRequired
+        )
+    }
+}
+
+/// Locality scope for Phase 10 auxiliary proof.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum AuxiliaryProofScope {
+    /// Locally provable by manifest, source, host, or Rust checks.
+    Local,
+    /// Requires simulator, hardware, update-flow, or manual evidence.
+    NonLocal,
+}
+
+impl AuxiliaryProofScope {
+    /// Parses a Phase 10 proof-scope string.
+    pub fn parse(raw: &str) -> Result<Self, InvariantError> {
+        match raw {
+            "local" => Ok(Self::Local),
+            "non-local" => Ok(Self::NonLocal),
+            _ => Err(InvariantError::InvalidAuxiliaryProofScope),
+        }
+    }
+
+    /// Returns the manifest string for this proof scope.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Local => "local",
+            Self::NonLocal => "non-local",
+        }
+    }
+}
+
+/// MMU transport state represented by Phase 10 auxiliary contracts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum MmuTransportState {
+    /// MMU transport is disabled.
+    Disabled,
+    /// MMU is connected over direct UART.
+    DirectUart,
+    /// MMU is bridged through puppy Modbus.
+    PuppyModbusBridge,
+    /// MMU transport is in bootloader mode.
+    Bootloader,
+    /// MMU transport is updating.
+    Updating,
+    /// MMU transport update failed.
+    UpdateFailed,
+    /// MMU communication fault is present.
+    CommunicationFault,
+    /// Reference behavior is explicitly deferred.
+    ReferenceDeferred,
+}
+
+impl MmuTransportState {
+    /// Parses an MMU transport state string.
+    pub fn parse(raw: &str) -> Result<Self, InvariantError> {
+        match raw {
+            "disabled" => Ok(Self::Disabled),
+            "direct-uart" => Ok(Self::DirectUart),
+            "puppy-modbus-bridge" => Ok(Self::PuppyModbusBridge),
+            "bootloader" => Ok(Self::Bootloader),
+            "updating" => Ok(Self::Updating),
+            "update-failed" => Ok(Self::UpdateFailed),
+            "communication-fault" => Ok(Self::CommunicationFault),
+            "reference-deferred" => Ok(Self::ReferenceDeferred),
+            _ => Err(InvariantError::InvalidMmuTransportState),
+        }
+    }
+
+    /// Returns the manifest string for this transport state.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Disabled => "disabled",
+            Self::DirectUart => "direct-uart",
+            Self::PuppyModbusBridge => "puppy-modbus-bridge",
+            Self::Bootloader => "bootloader",
+            Self::Updating => "updating",
+            Self::UpdateFailed => "update-failed",
+            Self::CommunicationFault => "communication-fault",
+            Self::ReferenceDeferred => "reference-deferred",
+        }
+    }
+}
+
+/// Dock identity for toolchanger and expansion ecosystem contracts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum DockIdentity {
+    /// Modular Bed identity.
+    ModularBed,
+    /// Dwarf dock 1 identity.
+    Dwarf1,
+    /// Dwarf dock 2 identity.
+    Dwarf2,
+    /// Dwarf dock 3 identity.
+    Dwarf3,
+    /// Dwarf dock 4 identity.
+    Dwarf4,
+    /// Dwarf dock 5 identity.
+    Dwarf5,
+    /// Dwarf dock 6 identity.
+    Dwarf6,
+    /// xBuddy Extension identity.
+    XBuddyExtension,
+}
+
+impl DockIdentity {
+    /// Parses a dock identity string.
+    pub fn parse(raw: &str) -> Result<Self, InvariantError> {
+        match raw {
+            "MODULAR_BED" => Ok(Self::ModularBed),
+            "DWARF_1" => Ok(Self::Dwarf1),
+            "DWARF_2" => Ok(Self::Dwarf2),
+            "DWARF_3" => Ok(Self::Dwarf3),
+            "DWARF_4" => Ok(Self::Dwarf4),
+            "DWARF_5" => Ok(Self::Dwarf5),
+            "DWARF_6" => Ok(Self::Dwarf6),
+            "XBUDDY_EXTENSION" => Ok(Self::XBuddyExtension),
+            _ => Err(InvariantError::InvalidDockIdentity),
+        }
+    }
+
+    /// Returns the manifest string for this dock identity.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::ModularBed => "MODULAR_BED",
+            Self::Dwarf1 => "DWARF_1",
+            Self::Dwarf2 => "DWARF_2",
+            Self::Dwarf3 => "DWARF_3",
+            Self::Dwarf4 => "DWARF_4",
+            Self::Dwarf5 => "DWARF_5",
+            Self::Dwarf6 => "DWARF_6",
+            Self::XBuddyExtension => "XBUDDY_EXTENSION",
+        }
+    }
+}
+
+/// Tool-offset axis represented by Phase 10 contracts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ToolOffsetAxis {
+    /// X offset axis.
+    X,
+    /// Y offset axis.
+    Y,
+    /// Z offset axis.
+    Z,
+}
+
+/// Tool-offset identity limited to retained tool numbers.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ToolOffsetIdentity {
+    tool_number: u8,
+    axis: ToolOffsetAxis,
+}
+
+impl ToolOffsetIdentity {
+    /// Creates a tool-offset identity for tool numbers 1 through 6.
+    pub fn new(tool_number: u8, axis: ToolOffsetAxis) -> Result<Self, InvariantError> {
+        if !(1..=6).contains(&tool_number) {
+            return Err(InvariantError::InvalidToolOffsetIdentity);
+        }
+
+        Ok(Self { tool_number, axis })
+    }
+
+    /// Returns the validated tool number.
+    pub fn tool_number(self) -> u8 {
+        self.tool_number
+    }
+
+    /// Returns the offset axis.
+    pub fn axis(self) -> ToolOffsetAxis {
+        self.axis
+    }
+}
+
+/// Auxiliary controller fault classification.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ControllerFaultClass {
+    /// No fault is present.
+    NoFault,
+    /// Bootloader is incompatible.
+    BootloaderIncompatible,
+    /// Firmware fingerprint mismatch.
+    FingerprintMismatch,
+    /// Controller discovery failed.
+    DiscoverError,
+    /// Flash write failed.
+    FlashWriteError,
+    /// Modbus communication failed.
+    ModbusCommunication,
+    /// Dwarf TMC fault.
+    DwarfTmc,
+    /// Dwarf Marlin killed state.
+    DwarfMarlinKilled,
+    /// Modular Bed fault.
+    ModularBedFault,
+    /// Modular Bed panic.
+    ModularBedPanic,
+    /// xBuddy Extension MMU bridge fault.
+    XBuddyExtensionMmuBridge,
+    /// Unknown retained fault class.
+    Unknown,
+}
+
+impl ControllerFaultClass {
+    /// Parses an auxiliary controller fault class string.
+    pub fn parse(raw: &str) -> Result<Self, InvariantError> {
+        match raw {
+            "no-fault" => Ok(Self::NoFault),
+            "bootloader-incompatible" => Ok(Self::BootloaderIncompatible),
+            "fingerprint-mismatch" => Ok(Self::FingerprintMismatch),
+            "discover-error" => Ok(Self::DiscoverError),
+            "flash-write-error" => Ok(Self::FlashWriteError),
+            "modbus-communication" => Ok(Self::ModbusCommunication),
+            "dwarf-tmc" => Ok(Self::DwarfTmc),
+            "dwarf-marlin-killed" => Ok(Self::DwarfMarlinKilled),
+            "modular-bed-fault" => Ok(Self::ModularBedFault),
+            "modular-bed-panic" => Ok(Self::ModularBedPanic),
+            "xbuddy-extension-mmu-bridge" => Ok(Self::XBuddyExtensionMmuBridge),
+            "unknown" => Ok(Self::Unknown),
+            _ => Err(InvariantError::InvalidControllerFaultClass),
+        }
+    }
+
+    /// Returns the manifest string for this fault class.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::NoFault => "no-fault",
+            Self::BootloaderIncompatible => "bootloader-incompatible",
+            Self::FingerprintMismatch => "fingerprint-mismatch",
+            Self::DiscoverError => "discover-error",
+            Self::FlashWriteError => "flash-write-error",
+            Self::ModbusCommunication => "modbus-communication",
+            Self::DwarfTmc => "dwarf-tmc",
+            Self::DwarfMarlinKilled => "dwarf-marlin-killed",
+            Self::ModularBedFault => "modular-bed-fault",
+            Self::ModularBedPanic => "modular-bed-panic",
+            Self::XBuddyExtensionMmuBridge => "xbuddy-extension-mmu-bridge",
+            Self::Unknown => "unknown",
+        }
+    }
+}
+
+/// Phase 10 auxiliary parity row identity.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct AuxiliaryParityRowId(String);
+
+impl AuxiliaryParityRowId {
+    /// Parses a path-free printable ASCII auxiliary parity row ID.
+    pub fn parse(raw: impl Into<String>) -> Result<Self, InvariantError> {
+        let raw = raw.into();
+        if raw.is_empty() {
+            return Err(InvariantError::EmptyAuxiliaryParityRowId);
+        }
+
+        if !is_valid_auxiliary_row_id(&raw) {
+            return Err(InvariantError::InvalidAuxiliaryParityRowId);
+        }
+
+        Ok(Self(raw))
+    }
+
+    /// Returns the validated row ID as a string slice.
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+/// Raw inputs for creating an [`AuxiliaryParityContract`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AuxiliaryParityContractInput {
+    /// Phase 10 row identity.
+    pub row_id: AuxiliaryParityRowId,
+    /// Evidence class for this row.
+    pub evidence_class: BusEvidenceClass,
+    /// Proof scope for this row.
+    pub proof_scope: AuxiliaryProofScope,
+}
+
+/// Validated Phase 10 auxiliary parity row contract.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AuxiliaryParityContract {
+    row_id: AuxiliaryParityRowId,
+    evidence_class: BusEvidenceClass,
+    proof_scope: AuxiliaryProofScope,
+}
+
+impl AuxiliaryParityContract {
+    /// Creates a parity contract when evidence/proof compatibility is valid.
+    pub fn new(input: AuxiliaryParityContractInput) -> Result<Self, InvariantError> {
+        let AuxiliaryParityContractInput {
+            row_id,
+            evidence_class,
+            proof_scope,
+        } = input;
+
+        if matches!(proof_scope, AuxiliaryProofScope::Local) && !evidence_class.is_local_proof() {
+            return Err(InvariantError::InvalidAuxiliaryParityContract);
+        }
+
+        Ok(Self {
+            row_id,
+            evidence_class,
+            proof_scope,
+        })
+    }
+
+    /// Returns the row ID.
+    pub fn row_id(&self) -> &AuxiliaryParityRowId {
+        &self.row_id
+    }
+
+    /// Returns the evidence class.
+    pub fn evidence_class(&self) -> BusEvidenceClass {
+        self.evidence_class
+    }
+
+    /// Returns the proof scope.
+    pub fn proof_scope(&self) -> AuxiliaryProofScope {
+        self.proof_scope
+    }
+}
+
+/// Raw inputs for creating an [`AuxiliaryControllerContract`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AuxiliaryControllerContractInput {
+    /// Validated product profile that owns this controller contract.
+    pub profile: ProductProfile,
+    /// Auxiliary controller kind to expose for this profile.
+    pub controller_kind: AuxiliaryControllerKind,
+}
+
+/// Product/profile-gated auxiliary controller contract.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AuxiliaryControllerContract {
+    profile: ProductProfile,
+    controller_kind: AuxiliaryControllerKind,
+}
+
+impl AuxiliaryControllerContract {
+    /// Creates a controller contract only for supported profile/controller pairs.
+    pub fn new(input: AuxiliaryControllerContractInput) -> Result<Self, InvariantError> {
+        let AuxiliaryControllerContractInput {
+            profile,
+            controller_kind,
+        } = input;
+
+        let supported = match (profile.board(), controller_kind) {
+            (BoardKind::Dwarf, AuxiliaryControllerKind::Dwarf)
+            | (BoardKind::ModularBed, AuxiliaryControllerKind::ModularBed)
+            | (BoardKind::XBuddyExtension, AuxiliaryControllerKind::XBuddyExtension) => true,
+            (_, AuxiliaryControllerKind::Mmu2) => {
+                !profile.is_auxiliary() && profile.features().contains(Feature::Mmu2)
+            }
+            _ => false,
+        };
+
+        if !supported {
+            return Err(InvariantError::UnsupportedAuxiliaryController);
+        }
+
+        Ok(Self {
+            profile,
+            controller_kind,
+        })
+    }
+
+    /// Returns the validated product profile.
+    pub fn profile(&self) -> &ProductProfile {
+        &self.profile
+    }
+
+    /// Returns the auxiliary controller kind.
+    pub fn controller_kind(&self) -> AuxiliaryControllerKind {
+        self.controller_kind
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
