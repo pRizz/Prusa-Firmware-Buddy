@@ -3,6 +3,7 @@ use crate::InvariantError;
 fn is_path_free_printable_ascii(raw: &str) -> bool {
     raw != "."
         && raw != ".."
+        && !raw.contains("..")
         && !raw.contains('/')
         && !raw.contains('\\')
         && raw.bytes().all(|byte| byte.is_ascii_graphic())
@@ -315,6 +316,7 @@ mod tests {
             "../ref",
             "ref\\artifact",
             "ref artifact",
+            "ref..artifact",
             "ref\nartifact",
         ];
 

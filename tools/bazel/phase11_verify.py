@@ -254,6 +254,7 @@ def require_exact_row_ids(rows: list[dict[str, object]], expected_ids: set[str],
         row_id = row.get("id")
         if not isinstance(row_id, str):
             raise VerificationError(f"{path.as_posix()} row has non-string id: {row_id!r}")
+        require_row_id_shape(row_id, f"{path.as_posix()} row {row_id}")
         if row_id in actual_ids:
             duplicates.add(row_id)
         actual_ids.add(row_id)
@@ -277,9 +278,9 @@ def require_row_id_shape(row_id: str, row_name: str) -> None:
         raise VerificationError(f"{row_name} id must be printable ASCII") from error
     if len(encoded) > 96:
         raise VerificationError(f"{row_name} id must be at most 96 bytes")
-    if any(ord(char) < 32 or ord(char) > 126 for char in row_id):
+    if any(ord(char) < 33 or ord(char) > 126 for char in row_id):
         raise VerificationError(f"{row_name} id must be printable ASCII")
-    if "/" in row_id or "\\" in row_id or ".." in row_id:
+    if row_id in {".", ".."} or "/" in row_id or "\\" in row_id or ".." in row_id:
         raise VerificationError(f"{row_name} id must be path-free")
 
 

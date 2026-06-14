@@ -328,6 +328,29 @@ class Phase11VerifierTest(unittest.TestCase):
         self.assertIn("../outside", result.stdout)
         self.assertIn("repo-relative", result.stdout)
 
+    def test_pyramid_only_rejects_path_confusing_row_ids(self) -> None:
+        # Arrange
+        invalid_row_ids = {
+            "pyramid rust unit tests": "id must be printable ASCII",
+            "pyramid-rust..unit-tests": "id must be path-free",
+        }
+
+        for invalid_row_id, expected_message in invalid_row_ids.items():
+            with self.subTest(invalid_row_id=invalid_row_id):
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    rows = [self.pyramid_row(row_id) for row_id in REQUIRED_PYRAMID_ROW_IDS]
+                    rows[0]["id"] = invalid_row_id
+                    self.write_complete_pyramid_manifest(root, rows=rows)
+
+                    # Act
+                    result = self.run_verifier(["--pyramid-only"], maybe_root=root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(invalid_row_id, result.stdout)
+                self.assertIn(expected_message, result.stdout)
+
     def test_pyramid_only_rejects_secret_marker(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
