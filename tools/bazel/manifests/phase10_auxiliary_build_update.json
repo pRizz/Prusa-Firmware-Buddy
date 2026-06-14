@@ -1,0 +1,429 @@
+{
+  "schema_version": 1,
+  "phase": "10-auxiliary-controllers-and-expansion-ecosystem",
+  "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+  "auxiliary_build_update_contracts": [
+    {
+      "id": "aux-build-dwarf-external-project",
+      "requirement_id": "IFCE-06",
+      "surface": "dwarf-external-project-build",
+      "reference_sources": [
+        "ProjectOptions.cmake",
+        "CMakeLists.txt",
+        "src/CMakeLists.txt",
+        "src/puppy/dwarf/main.cpp"
+      ],
+      "reference_behavior": "When HAS_PUPPIES_BOOTLOADER and HAS_DWARF are active without a prebuilt path, CMake uses ExternalProject_Add to build Dwarf firmware and produce DWARF_BINARY_PATH.",
+      "rust_surface": "manifest-only",
+      "evidence_class": "static-source-audit",
+      "proof_scope": "local",
+      "update_build_surface": "cmake-reference",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Full Dwarf firmware build and bootloader flashing require full-build or hardware-smoke proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "cmake_reference": [
+        "ExternalProject_Add",
+        "DWARF_BINARY_PATH",
+        "HAS_DWARF",
+        "HAS_PUPPIES_BOOTLOADER"
+      ],
+      "bazel_surface": [
+        "//tools/bazel:phase10_auxiliary_build_update_manifest",
+        "//tools/bazel:phase10_verify",
+        "//:phase10_verify",
+        "planned-contract-targets-only"
+      ],
+      "runtime_paths": [
+        "/puppies/fw-dwarf.bin"
+      ],
+      "prebuilt_path_variables": [
+        "DWARF_BINARY_PATH"
+      ],
+      "skip_flash_option": "PUPPY_SKIP_FLASH_FW",
+      "descriptor_command": "none",
+      "resource_owner": "src/resources/CMakeLists.txt"
+    },
+    {
+      "id": "aux-build-modularbed-external-project",
+      "requirement_id": "IFCE-06",
+      "surface": "modularbed-external-project-build",
+      "reference_sources": [
+        "ProjectOptions.cmake",
+        "CMakeLists.txt",
+        "src/CMakeLists.txt",
+        "src/puppy/modularbed/main.cpp"
+      ],
+      "reference_behavior": "When HAS_PUPPIES_BOOTLOADER and HAS_PUPPY_MODULARBED are active without a prebuilt path, CMake uses ExternalProject_Add to build ModularBed firmware and produce MODULARBED_BINARY_PATH.",
+      "rust_surface": "manifest-only",
+      "evidence_class": "static-source-audit",
+      "proof_scope": "local",
+      "update_build_surface": "cmake-reference",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Full ModularBed firmware build and remote-bed flashing require full-build or hardware-smoke proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "cmake_reference": [
+        "ExternalProject_Add",
+        "MODULARBED_BINARY_PATH",
+        "HAS_PUPPY_MODULARBED",
+        "HAS_PUPPIES_BOOTLOADER"
+      ],
+      "bazel_surface": [
+        "//tools/bazel:phase10_auxiliary_build_update_manifest",
+        "//tools/bazel:phase10_verify",
+        "//:phase10_verify",
+        "planned-contract-targets-only"
+      ],
+      "runtime_paths": [
+        "/puppies/fw-modularbed.bin"
+      ],
+      "prebuilt_path_variables": [
+        "MODULARBED_BINARY_PATH"
+      ],
+      "skip_flash_option": "PUPPY_SKIP_FLASH_FW",
+      "descriptor_command": "none",
+      "resource_owner": "src/resources/CMakeLists.txt"
+    },
+    {
+      "id": "aux-build-xbuddy-extension-external-project",
+      "requirement_id": "IFCE-06",
+      "surface": "xbuddy-extension-external-project-build",
+      "reference_sources": [
+        "ProjectOptions.cmake",
+        "CMakeLists.txt",
+        "src/CMakeLists.txt",
+        "src/puppy/xbuddy_extension/CMakeLists.txt",
+        "src/puppy/xbuddy_extension/main.cpp",
+        "src/puppy/xbuddy_extension/hal_clock.cpp"
+      ],
+      "reference_behavior": "When HAS_PUPPIES_BOOTLOADER and HAS_XBUDDY_EXTENSION are active without a prebuilt path, CMake uses ExternalProject_Add to build the STM32H503 xBuddy Extension firmware and produce XBUDDY_EXTENSION_BINARY_PATH.",
+      "rust_surface": "manifest-only",
+      "evidence_class": "static-source-audit",
+      "proof_scope": "non-local",
+      "update_build_surface": "cmake-reference",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "STM32H503 xBuddy Extension build, clock, linker, and runtime proof require full-build plus hardware-smoke evidence"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "cmake_reference": [
+        "ExternalProject_Add",
+        "XBUDDY_EXTENSION_BINARY_PATH",
+        "HAS_XBUDDY_EXTENSION",
+        "HAS_PUPPIES_BOOTLOADER",
+        "STM32H503"
+      ],
+      "bazel_surface": [
+        "//tools/bazel:phase10_auxiliary_build_update_manifest",
+        "//tools/bazel:phase10_verify",
+        "//:phase10_verify",
+        "planned-contract-targets-only"
+      ],
+      "runtime_paths": [
+        "/puppies/fw-xbuddy-extension.bin"
+      ],
+      "prebuilt_path_variables": [
+        "XBUDDY_EXTENSION_BINARY_PATH"
+      ],
+      "skip_flash_option": "PUPPY_SKIP_FLASH_FW",
+      "descriptor_command": "none",
+      "resource_owner": "src/resources/CMakeLists.txt"
+    },
+    {
+      "id": "aux-firmware-descriptor-generation",
+      "requirement_id": "IFCE-06",
+      "surface": "auxiliary-firmware-descriptor-generation",
+      "reference_sources": [
+        "CMakeLists.txt",
+        "utils/gen_puppies_descriptor.py",
+        "tools/bazel/manifests/phase7_generated_outputs.json"
+      ],
+      "reference_behavior": "Auxiliary firmware post-build creates firmware_no_descriptor.bin, runs utils/gen_puppies_descriptor.py to produce fw_descriptor.bin, and updates the .fw_descriptor section.",
+      "rust_surface": "manifest-only",
+      "evidence_class": "static-source-audit",
+      "proof_scope": "local",
+      "update_build_surface": "descriptor-generation",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Byte-level descriptor parity requires full-build/release artifact evidence"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "cmake_reference": [
+        "firmware_no_descriptor.bin",
+        "utils/gen_puppies_descriptor.py",
+        "fw_descriptor.bin",
+        "CMAKE_OBJCOPY"
+      ],
+      "bazel_surface": [
+        "//tools/bazel:phase10_auxiliary_build_update_manifest",
+        "//tools/bazel:phase10_verify",
+        "//:phase10_verify",
+        "planned-contract-targets-only"
+      ],
+      "runtime_paths": [],
+      "prebuilt_path_variables": [],
+      "skip_flash_option": "none",
+      "descriptor_command": "utils/gen_puppies_descriptor.py firmware_no_descriptor.bin fw_descriptor.bin",
+      "resource_owner": "CMakeLists.txt"
+    },
+    {
+      "id": "aux-puppy-resource-runtime-paths",
+      "requirement_id": "IFCE-06",
+      "surface": "auxiliary-puppy-resource-runtime-paths",
+      "reference_sources": [
+        "src/resources/CMakeLists.txt",
+        "include/puppies/puppy_constants.hpp",
+        "tools/bazel/manifests/phase7_resources.json"
+      ],
+      "reference_behavior": "When PUPPY_FLASH_FW is active, resources package Dwarf, ModularBed, and xBuddy Extension firmware at /puppies/fw-dwarf.bin, /puppies/fw-modularbed.bin, and /puppies/fw-xbuddy-extension.bin.",
+      "rust_surface": "buddy-domain::auxiliary::AuxiliaryFirmwareResourcePath",
+      "evidence_class": "manifest-check",
+      "proof_scope": "local",
+      "update_build_surface": "resource-path",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Resource image membership and startup flashing require full-build or hardware-smoke proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "cmake_reference": [
+        "PUPPY_FLASH_FW",
+        "add_resource"
+      ],
+      "bazel_surface": [
+        "//tools/bazel:phase10_auxiliary_build_update_manifest",
+        "//tools/bazel:phase10_verify",
+        "//:phase10_verify",
+        "planned-contract-targets-only"
+      ],
+      "runtime_paths": [
+        "/puppies/fw-dwarf.bin",
+        "/puppies/fw-modularbed.bin",
+        "/puppies/fw-xbuddy-extension.bin"
+      ],
+      "prebuilt_path_variables": [
+        "DWARF_BINARY_PATH",
+        "MODULARBED_BINARY_PATH",
+        "XBUDDY_EXTENSION_BINARY_PATH"
+      ],
+      "skip_flash_option": "PUPPY_SKIP_FLASH_FW",
+      "descriptor_command": "utils/gen_puppies_descriptor.py",
+      "resource_owner": "src/resources/CMakeLists.txt"
+    },
+    {
+      "id": "mmu-firmware-resource-conversion",
+      "requirement_id": "IFCE-06",
+      "surface": "mmu-firmware-resource-conversion",
+      "reference_sources": [
+        "src/resources/CMakeLists.txt",
+        "utils/mmu_ihex_cleanup.py",
+        "rust/crates/domain/src/resource.rs",
+        "tools/bazel/manifests/phase7_resources.json"
+      ],
+      "reference_behavior": "MMU firmware resource packaging cleans the MMU hex input with utils/mmu_ihex_cleanup.py, converts it with arm-none-eabi-objcopy, and packages /mmu/fw.bin.",
+      "rust_surface": "buddy-domain::resource::ResourceSurface::MmuFirmware",
+      "evidence_class": "manifest-check",
+      "proof_scope": "local",
+      "update_build_surface": "mmu-firmware-resource",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Actual conversion output and MMU live flashing require full-build or hardware-smoke evidence"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "cmake_reference": [
+        "utils/mmu_ihex_cleanup.py",
+        "arm-none-eabi-objcopy",
+        "HAS_MMU2"
+      ],
+      "bazel_surface": [
+        "//tools/bazel:phase10_auxiliary_build_update_manifest",
+        "//tools/bazel:phase10_verify",
+        "//:phase10_verify",
+        "planned-contract-targets-only"
+      ],
+      "runtime_paths": [
+        "/mmu/fw.bin"
+      ],
+      "prebuilt_path_variables": [],
+      "skip_flash_option": "none",
+      "descriptor_command": "utils/mmu_ihex_cleanup.py then arm-none-eabi-objcopy",
+      "resource_owner": "src/resources/CMakeLists.txt"
+    },
+    {
+      "id": "prebuilt-binary-paths-dwarf-modularbed-xbe",
+      "requirement_id": "IFCE-06",
+      "surface": "prebuilt-binary-paths-dwarf-modularbed-xbe",
+      "reference_sources": [
+        "ProjectOptions.cmake",
+        "CMakeLists.txt"
+      ],
+      "reference_behavior": "DWARF_BINARY_PATH, MODULARBED_BINARY_PATH, and XBUDDY_EXTENSION_BINARY_PATH allow prebuilt auxiliary firmware binaries to bypass ExternalProject_Add builds while preserving resource package paths.",
+      "rust_surface": "manifest-only",
+      "evidence_class": "static-source-audit",
+      "proof_scope": "local",
+      "update_build_surface": "prebuilt-path",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Prebuilt binary provenance, signing, and compatibility require release artifact evidence"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "cmake_reference": [
+        "DWARF_BINARY_PATH",
+        "MODULARBED_BINARY_PATH",
+        "XBUDDY_EXTENSION_BINARY_PATH"
+      ],
+      "bazel_surface": [
+        "//tools/bazel:phase10_auxiliary_build_update_manifest",
+        "//tools/bazel:phase10_verify",
+        "//:phase10_verify",
+        "planned-contract-targets-only"
+      ],
+      "runtime_paths": [
+        "/puppies/fw-dwarf.bin",
+        "/puppies/fw-modularbed.bin",
+        "/puppies/fw-xbuddy-extension.bin"
+      ],
+      "prebuilt_path_variables": [
+        "DWARF_BINARY_PATH",
+        "MODULARBED_BINARY_PATH",
+        "XBUDDY_EXTENSION_BINARY_PATH"
+      ],
+      "skip_flash_option": "PUPPY_SKIP_FLASH_FW",
+      "descriptor_command": "none",
+      "resource_owner": "ProjectOptions.cmake"
+    },
+    {
+      "id": "puppy-skip-flash-mode",
+      "requirement_id": "IFCE-06",
+      "surface": "puppy-skip-flash-mode",
+      "reference_sources": [
+        "ProjectOptions.cmake",
+        "src/puppies/PuppyBootstrap.cpp",
+        "include/puppies/PuppyBootstrap.hpp"
+      ],
+      "reference_behavior": "PUPPY_SKIP_FLASH_FW disables startup flashing while retaining bootloader availability; PUPPY_FLASH_FW is false when skip-flash is active.",
+      "rust_surface": "buddy-domain::auxiliary::AuxiliaryUpdateMode::SkipFlash",
+      "evidence_class": "static-source-audit",
+      "proof_scope": "local",
+      "update_build_surface": "startup-flashing",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Skip-flash behavior on real auxiliary controllers requires hardware-smoke proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "cmake_reference": [
+        "PUPPY_SKIP_FLASH_FW",
+        "PUPPY_FLASH_FW",
+        "HAS_PUPPIES_BOOTLOADER"
+      ],
+      "bazel_surface": [
+        "//tools/bazel:phase10_auxiliary_build_update_manifest",
+        "//tools/bazel:phase10_verify",
+        "//:phase10_verify",
+        "planned-contract-targets-only"
+      ],
+      "runtime_paths": [
+        "/puppies/fw-dwarf.bin",
+        "/puppies/fw-modularbed.bin",
+        "/puppies/fw-xbuddy-extension.bin"
+      ],
+      "prebuilt_path_variables": [],
+      "skip_flash_option": "PUPPY_SKIP_FLASH_FW",
+      "descriptor_command": "none",
+      "resource_owner": "ProjectOptions.cmake"
+    },
+    {
+      "id": "startup-flashing-bootloader-gates",
+      "requirement_id": "IFCE-06",
+      "surface": "startup-flashing-bootloader-gates",
+      "reference_sources": [
+        "ProjectOptions.cmake",
+        "src/puppies/PuppyBootstrap.cpp",
+        "src/puppies/BootloaderProtocol.cpp",
+        "include/puppies/BootloaderProtocol.hpp",
+        "include/puppies/PuppyBootstrap.hpp"
+      ],
+      "reference_behavior": "HAS_PUPPIES_BOOTLOADER gates startup bootloader behavior; PUPPY_FLASH_FW controls firmware fingerprint calculation, write_flash, verification, and run_app flow.",
+      "rust_surface": "buddy-domain::auxiliary::StartupFlashingContract",
+      "evidence_class": "source-audit",
+      "proof_scope": "non-local",
+      "update_build_surface": "startup-flashing",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Startup flashing timing, reset behavior, fingerprint verification, and failure recovery require hardware-smoke proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "cmake_reference": [
+        "HAS_PUPPIES_BOOTLOADER",
+        "PUPPY_FLASH_FW",
+        "PUPPY_SKIP_FLASH_FW"
+      ],
+      "bazel_surface": [
+        "//tools/bazel:phase10_auxiliary_build_update_manifest",
+        "//tools/bazel:phase10_verify",
+        "//:phase10_verify",
+        "planned-contract-targets-only"
+      ],
+      "runtime_paths": [
+        "/puppies/fw-dwarf.bin",
+        "/puppies/fw-modularbed.bin",
+        "/puppies/fw-xbuddy-extension.bin"
+      ],
+      "prebuilt_path_variables": [
+        "DWARF_BINARY_PATH",
+        "MODULARBED_BINARY_PATH",
+        "XBUDDY_EXTENSION_BINARY_PATH"
+      ],
+      "skip_flash_option": "PUPPY_SKIP_FLASH_FW",
+      "descriptor_command": "utils/gen_puppies_descriptor.py",
+      "resource_owner": "PuppyBootstrap and BootloaderProtocol"
+    },
+    {
+      "id": "puppy-crash-dump-download",
+      "requirement_id": "IFCE-06",
+      "surface": "puppy-crash-dump-download",
+      "reference_sources": [
+        "src/puppies/PuppyBootstrap.cpp",
+        "src/puppies/puppy_crash_dump.cpp",
+        "include/puppies/puppy_crash_dump.hpp",
+        "include/puppies/puppy_constants.hpp"
+      ],
+      "reference_behavior": "PuppyBootstrap attempts auxiliary crash-dump download before flashing; puppy_crash_dump fetches descriptors, saves named dump files under /internal, and supports USB/server transfer/removal flows without embedding dump contents in manifests.",
+      "rust_surface": "buddy-domain::auxiliary::PuppyCrashDumpContract",
+      "evidence_class": "static-source-audit",
+      "proof_scope": "non-local",
+      "update_build_surface": "crash-dump",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Crash-dump contents, upload, and hardware fault capture require manual-hardware-required proof and must stay out of Phase 10 manifests"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "cmake_reference": [
+        "HAS_PUPPIES_BOOTLOADER",
+        "PuppyBootstrap::attempt_crash_dump_download"
+      ],
+      "bazel_surface": [
+        "//tools/bazel:phase10_auxiliary_build_update_manifest",
+        "//tools/bazel:phase10_verify",
+        "//:phase10_verify",
+        "planned-contract-targets-only"
+      ],
+      "runtime_paths": [
+        "/internal/dump_dwarf1.dmp",
+        "/internal/dump_dwarf2.dmp",
+        "/internal/dump_dwarf3.dmp",
+        "/internal/dump_dwarf4.dmp",
+        "/internal/dump_dwarf5.dmp",
+        "/internal/dump_dwarf6.dmp",
+        "/internal/dump_modularbed.dmp",
+        "/internal/dump_xbuddy_extension.dmp"
+      ],
+      "prebuilt_path_variables": [],
+      "skip_flash_option": "none",
+      "descriptor_command": "puppy_crash_dump::fetch_fw_descriptor",
+      "resource_owner": "src/puppies/puppy_crash_dump.cpp"
+    }
+  ]
+}

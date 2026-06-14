@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "phase": "10-auxiliary-controllers-and-expansion-ecosystem",
+  "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+  "concerns": [
+    {
+      "id": "concern-phase10-mmu-availability-reporting",
+      "concern_id": "mmu-runtime-availability-domain-state",
+      "requirement_id": "IFCE-06",
+      "reference_sources": [
+        ".planning/codebase/CONCERNS.md",
+        "src/mmu2/mmu2_reporting.cpp",
+        "tools/bazel/manifests/phase10_mmu_transport.json"
+      ],
+      "disposition": "preserve-with-explicit-risk",
+      "phase10_handling": "Preserve the MMUAvailable() and UseMMU() reference limitation as an explicit risk and require future typed states instead of unconditional availability claims.",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "intentional_delta": "none",
+      "regression_guard": [
+        "AuxiliaryRuntimeState",
+        "MmuTransportState",
+        "MMUAvailable()",
+        "UseMMU()"
+      ],
+      "secret_handling": "named-only-redacted",
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30"
+    },
+    {
+      "id": "concern-phase10-xbuddy-extension-h503-special",
+      "concern_id": "xbuddy-extension-stm32h503-special-runtime",
+      "requirement_id": "IFCE-06",
+      "reference_sources": [
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-FOREIGN-CODE-INVENTORY.md",
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-UNSAFE-BOUNDARY-AUDIT.md",
+        "src/puppy/xbuddy_extension/CMakeLists.txt",
+        "src/puppy/xbuddy_extension/hal_clock.cpp"
+      ],
+      "disposition": "preserve-special-retained-runtime-surface",
+      "phase10_handling": "Keep xBuddy Extension STM32H503 startup, linker, clock, FreeRTOS config, and fpv5-sp-d16 facts explicit; do not collapse them into a generic H5 abstraction.",
+      "evidence_class": "static-source-audit",
+      "proof_scope": "non-local",
+      "intentional_delta": "none",
+      "regression_guard": [
+        "STM32H503",
+        "fpv5-sp-d16",
+        "src/puppy/xbuddy_extension/stm32h503.s",
+        "src/puppy/xbuddy_extension/stm32h503.ld",
+        "src/puppy/xbuddy_extension/hal_clock.cpp",
+        "src/puppy/xbuddy_extension/config/FreeRTOSConfig.h"
+      ],
+      "secret_handling": "named-only-redacted",
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30"
+    },
+    {
+      "id": "concern-phase10-xbe-mmu-bridge-timing",
+      "concern_id": "xbuddy-extension-mmu-bridge-timing",
+      "requirement_id": "IFCE-06",
+      "reference_sources": [
+        "src/puppies/xbuddy_extension.cpp",
+        "include/puppies/PuppyModbus.hpp",
+        "tools/bazel/manifests/phase10_modbus_rs485.json"
+      ],
+      "disposition": "preserve-with-explicit-non-local-proof",
+      "phase10_handling": "Record this is a bit speculative accepted-response behavior, the 10-20 ms command round-trip warning, and the MODBUS_READ_TIMEOUT_MS response gate without claiming local timing proof.",
+      "evidence_class": "manual-hardware-required",
+      "proof_scope": "non-local",
+      "intentional_delta": "none",
+      "regression_guard": [
+        "this is a bit speculative",
+        "10-20 ms",
+        "MODBUS_READ_TIMEOUT_MS",
+        "accepted = true",
+        "accepted = false"
+      ],
+      "secret_handling": "named-only-redacted",
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30"
+    },
+    {
+      "id": "concern-phase10-buddyheaders-error-codes-coupling",
+      "concern_id": "buddyheaders-error-codes-coupling",
+      "requirement_id": "IFCE-06",
+      "reference_sources": [
+        ".planning/codebase/CONCERNS.md",
+        "CMakeLists.txt",
+        "lib/AddMMU2.cmake",
+        "lib/AddMarlin.cmake"
+      ],
+      "disposition": "track-as-build-boundary-risk",
+      "phase10_handling": "Keep BuddyHeaders and error_codes_mmu coupling visible as a build-boundary concern for later Bazel wiring; Plan 10-01 only records source-backed auxiliary manifests.",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "intentional_delta": "none",
+      "regression_guard": [
+        "BuddyHeaders",
+        "error_codes_mmu",
+        "HAS_MMU2",
+        "IFCE-06"
+      ],
+      "secret_handling": "named-only-redacted",
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30"
+    },
+    {
+      "id": "concern-phase10-credential-payload-leakage",
+      "concern_id": "phase10-sensitive-artifact-leakage",
+      "requirement_id": "IFCE-06",
+      "reference_sources": [
+        ".planning/phases/07-persistence-storage-and-resource-compatibility/07-CONTEXT.md",
+        "ProjectOptions.cmake",
+        "src/resources/CMakeLists.txt",
+        "src/puppies/puppy_crash_dump.cpp"
+      ],
+      "disposition": "named-only-redacted",
+      "phase10_handling": "Phase 10 artifacts may name source paths, runtime paths, variables, and tools only; they must reject firmware bytes, signing key values, credentials, MMU hex payload bytes, and raw crash dumps.",
+      "evidence_class": "manifest-check",
+      "proof_scope": "local",
+      "intentional_delta": "none",
+      "regression_guard": [
+        "named-only-redacted",
+        "DWARF_BINARY_PATH",
+        "MODULARBED_BINARY_PATH",
+        "XBUDDY_EXTENSION_BINARY_PATH",
+        "/mmu/fw.bin"
+      ],
+      "secret_handling": "named-only-redacted",
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30"
+    },
+    {
+      "id": "concern-phase10-non-local-hardware-proof",
+      "concern_id": "non-local-auxiliary-hardware-proof",
+      "requirement_id": "IFCE-06",
+      "reference_sources": [
+        ".planning/phases/10-auxiliary-controllers-and-expansion-ecosystem/10-VALIDATION.md",
+        ".planning/phases/10-auxiliary-controllers-and-expansion-ecosystem/10-CONTEXT.md",
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-UNSAFE-BOUNDARY-AUDIT.md"
+      ],
+      "disposition": "defer-to-simulator-or-hardware-evidence",
+      "phase10_handling": "Local manifests may prove source coverage and schema completeness only; RS485 timing, physical toolchanger mechanics, MMU live transport, startup flashing, long-run update, simulator, crash-dump, and final cutover proof remain non-local.",
+      "evidence_class": "manifest-check",
+      "proof_scope": "non-local",
+      "intentional_delta": "none",
+      "regression_guard": [
+        "manual-hardware-required",
+        "hardware-smoke",
+        "simulator-flow",
+        "proof_scope"
+      ],
+      "secret_handling": "named-only-redacted",
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30"
+    },
+    {
+      "id": "concern-phase10-ix-xbuddy-extension-branch",
+      "concern_id": "ix-xbuddy-extension-source-branch",
+      "requirement_id": "IFCE-06",
+      "reference_sources": [
+        "src/puppy/xbuddy_extension/CMakeLists.txt",
+        "ProjectOptions.cmake",
+        "tools/bazel/manifests/phase10_auxiliary_controllers.json"
+      ],
+      "disposition": "reference-deferred",
+      "phase10_handling": "Record the iX branch in the xBuddy Extension source CMake file without silently enabling unsupported product profiles; COREONE remains the source-backed standard xBuddy Extension product row unless later evidence proves another supported combination.",
+      "evidence_class": "static-source-audit",
+      "proof_scope": "local",
+      "intentional_delta": "none",
+      "regression_guard": [
+        "EXTENSION_IX",
+        "EXTENSION_STANDARD",
+        "COREONE",
+        "iX",
+        "XBUDDY_EXTENSION_VARIANT_STANDARD"
+      ],
+      "secret_handling": "named-only-redacted",
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30"
+    }
+  ]
+}
