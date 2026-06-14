@@ -576,6 +576,25 @@ class Phase11VerifierTest(unittest.TestCase):
         self.assertIn("criteria-local-verifier-passed", result.stdout)
         self.assertIn("demotion_allowed", result.stdout)
 
+    def test_cutover_only_rejects_ready_reference_demotion_status(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase11_surface(root)
+            rows = self.manifest_rows(root, CUTOVER_MANIFEST)
+            for row in rows:
+                if row["id"] == "criteria-reference-demotion-blocked":
+                    row["status"] = "passed-local"
+            self.write_manifest_rows(root, CUTOVER_MANIFEST, rows)
+
+            # Act
+            result = self.run_verifier(["--cutover-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("criteria-reference-demotion-blocked", result.stdout)
+        self.assertIn("status must remain not-cutover-ready", result.stdout)
+
     def test_security_only_rejects_secret_markers(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()

@@ -685,8 +685,11 @@ def check_cutover(root: Path) -> None:
                 raise VerificationError(f"{row_name} phase_lifecycle_id must be {PHASE_LIFECYCLE_ID}")
             if row.get("proof_scope") not in ALLOWED_PROOF_SCOPES:
                 raise VerificationError(f"{row_name} proof_scope is not allowed: {row.get('proof_scope')}")
-            if row.get("id") == "criteria-reference-demotion-blocked" and row.get("demotion_allowed") is not False:
-                raise VerificationError(f"{row_name} must keep demotion_allowed false")
+            if row.get("id") == "criteria-reference-demotion-blocked":
+                if row.get("status") != "not-cutover-ready":
+                    raise VerificationError(f"{row_name} status must remain not-cutover-ready")
+                if row.get("demotion_allowed") is not False:
+                    raise VerificationError(f"{row_name} must keep demotion_allowed false")
             if row.get("demotion_allowed") is True and row.get("status") != "passed-local":
                 raise VerificationError(
                     f"{row_name} demotion_allowed must stay false until status is passed-local"
