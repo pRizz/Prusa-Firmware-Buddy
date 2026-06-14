@@ -232,6 +232,14 @@ pub enum InvariantError {
     InvalidNetworkServiceSurface,
     /// A network service was requested without its required feature gate.
     UnsupportedNetworkService,
+    /// A cutover evidence row ID was empty.
+    EmptyCutoverEvidenceRowId,
+    /// A cutover evidence row ID contained unsupported syntax or characters.
+    InvalidCutoverEvidenceRowId,
+    /// A cutover proof scope was invalid for its evidence class.
+    InvalidCutoverProofScope,
+    /// A reference comparison contract overclaimed or missed required fixture data.
+    InvalidReferenceComparisonContract,
 }
 
 impl fmt::Display for InvariantError {
@@ -445,6 +453,18 @@ impl fmt::Display for InvariantError {
                 .write_str("network service surface must be one of the Phase 9 accepted values"),
             Self::UnsupportedNetworkService => formatter.write_str(
                 "network service requires Feature::Connect or Feature::WebUi to be enabled",
+            ),
+            Self::EmptyCutoverEvidenceRowId => {
+                formatter.write_str("cutover evidence row ID must not be empty")
+            }
+            Self::InvalidCutoverEvidenceRowId => formatter.write_str(
+                "cutover evidence row ID must be path-free printable ASCII at most 96 bytes",
+            ),
+            Self::InvalidCutoverProofScope => formatter.write_str(
+                "cutover local proof scope cannot be paired with simulator, hardware, manual, or retained-code-only evidence",
+            ),
+            Self::InvalidReferenceComparisonContract => formatter.write_str(
+                "reference comparison contract requires normalized semantic evidence or an explicit fixture with normalization for byte identity",
             ),
         }
     }
