@@ -7,6 +7,7 @@
 //! adapter code can use unchecked primitive values.
 
 pub mod artifact;
+pub mod auxiliary;
 pub mod feature;
 pub mod gui;
 pub mod network;
