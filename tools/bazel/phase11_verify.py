@@ -120,6 +120,10 @@ REQUIRED_COMPARISON_ROW_IDS = {
     "ref-auxiliary-controller-flows",
     "ref-release-metadata",
 }
+ALLOWED_REFERENCE_COMPARISON_KINDS = {
+    "normalized-semantic",
+    "byte-identity-with-fixture",
+}
 REQUIRED_CUTOVER_CRITERION_ROW_IDS = {
     "criteria-all-v1-requirements-mapped",
     "criteria-local-verifier-passed",
@@ -594,7 +598,17 @@ def check_comparisons(root: Path) -> None:
             proof_scope = require_string(row, "proof_scope", row_name)
             if proof_scope not in ALLOWED_PROOF_SCOPES:
                 raise VerificationError(f"{row_name} proof_scope is not allowed: {proof_scope}")
-            if row.get("byte_identity_claim") is True:
+            comparison_kind = require_string(row, "comparison_kind", row_name)
+            if comparison_kind not in ALLOWED_REFERENCE_COMPARISON_KINDS:
+                raise VerificationError(f"{row_name} comparison_kind is not allowed: {comparison_kind}")
+            byte_identity_claim = row.get("byte_identity_claim")
+            if not isinstance(byte_identity_claim, bool):
+                raise VerificationError(f"{row_name} byte_identity_claim must be a boolean")
+            if comparison_kind == "normalized-semantic" and byte_identity_claim:
+                raise VerificationError(f"{row_name} normalized comparisons must not claim byte identity")
+            if comparison_kind == "byte-identity-with-fixture" and not byte_identity_claim:
+                raise VerificationError(f"{row_name} byte identity comparisons must set byte_identity_claim true")
+            if byte_identity_claim:
                 if is_missing(row.get("reference_fixture")) or is_missing(row.get("normalization_rule")):
                     raise VerificationError(
                         f"{row_name} byte_identity_claim true requires reference_fixture and normalization_rule"

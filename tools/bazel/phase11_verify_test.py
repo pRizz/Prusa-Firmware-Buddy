@@ -481,6 +481,7 @@ class Phase11VerifierTest(unittest.TestCase):
             rows = self.manifest_rows(root, COMPARISON_MANIFEST)
             for row in rows:
                 if row["id"] == "ref-release-metadata":
+                    row["comparison_kind"] = "byte-identity-with-fixture"
                     row["byte_identity_claim"] = True
                     row.pop("reference_fixture", None)
                     row["normalization_rule"] = "normalize release metadata"
@@ -493,6 +494,67 @@ class Phase11VerifierTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("ref-release-metadata", result.stdout)
         self.assertIn("byte_identity_claim", result.stdout)
+
+    def test_comparison_only_rejects_unknown_comparison_kind(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase11_surface(root)
+            rows = self.manifest_rows(root, COMPARISON_MANIFEST)
+            for row in rows:
+                if row["id"] == "ref-release-metadata":
+                    row["comparison_kind"] = "normalized-semantics"
+            self.write_manifest_rows(root, COMPARISON_MANIFEST, rows)
+
+            # Act
+            result = self.run_verifier(["--comparison-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("ref-release-metadata", result.stdout)
+        self.assertIn("comparison_kind is not allowed", result.stdout)
+
+    def test_comparison_only_rejects_normalized_byte_identity_claim(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase11_surface(root)
+            rows = self.manifest_rows(root, COMPARISON_MANIFEST)
+            for row in rows:
+                if row["id"] == "ref-release-metadata":
+                    row["comparison_kind"] = "normalized-semantic"
+                    row["byte_identity_claim"] = True
+                    row["reference_fixture"] = "release-candidate-metadata"
+            self.write_manifest_rows(root, COMPARISON_MANIFEST, rows)
+
+            # Act
+            result = self.run_verifier(["--comparison-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("ref-release-metadata", result.stdout)
+        self.assertIn("normalized comparisons must not claim byte identity", result.stdout)
+
+    def test_comparison_only_rejects_byte_identity_kind_without_claim(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase11_surface(root)
+            rows = self.manifest_rows(root, COMPARISON_MANIFEST)
+            for row in rows:
+                if row["id"] == "ref-release-metadata":
+                    row["comparison_kind"] = "byte-identity-with-fixture"
+                    row["byte_identity_claim"] = False
+                    row["reference_fixture"] = "release-candidate-metadata"
+            self.write_manifest_rows(root, COMPARISON_MANIFEST, rows)
+
+            # Act
+            result = self.run_verifier(["--comparison-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("ref-release-metadata", result.stdout)
+        self.assertIn("byte identity comparisons must set byte_identity_claim true", result.stdout)
 
     def test_cutover_only_rejects_demote_reference_true(self) -> None:
         # Arrange
