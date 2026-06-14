@@ -685,22 +685,6 @@ def strip_rust_comments_and_strings(source: str) -> str:
             result.append('""')
             continue
 
-        if char == "'":
-            index += 1
-            escaped = False
-            while index < length:
-                current = source[index]
-                if escaped:
-                    escaped = False
-                elif current == "\\":
-                    escaped = True
-                elif current == "'":
-                    index += 1
-                    break
-                index += 1
-            result.append("''")
-            continue
-
         result.append(char)
         index += 1
     return "".join(result)

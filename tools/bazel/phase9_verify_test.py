@@ -897,6 +897,28 @@ class Phase9VerifierTest(unittest.TestCase):
         ]:
             self.assertIn(needle, result.stdout)
 
+    def test_rust_unsafe_scan_does_not_swallow_lifetimes(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase9_quick_surface(root)
+            network_text = "\n".join(
+                [
+                    *(f"pub struct {api_string};" for api_string in RUST_API_STRINGS),
+                    "pub fn lifetime_bound<'a>(value: &'a str) -> &'a str {",
+                    "    unsafe { value }",
+                    "}",
+                ]
+            )
+            self.write_rust_api_surface(root, network_text=network_text)
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unsafe block", result.stdout)
+
     def test_requires_bazel_and_just_wiring(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
