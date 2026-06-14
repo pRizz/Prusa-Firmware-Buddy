@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 11 context gathered
-last_updated: "2026-06-14T19:49:25.537Z"
-last_activity: 2026-06-14 -- Phase 11 execution started
+stopped_at: Completed 11-01-PLAN.md
+last_updated: "2026-06-14T20:04:16.725Z"
+last_activity: 2026-06-14
 progress:
   total_phases: 11
   completed_phases: 10
   total_plans: 37
-  completed_plans: 32
-  percent: 86
+  completed_plans: 33
+  percent: 89
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-06-02)
 ## Current Position
 
 Phase: 11 (Parity Pyramid and Cutover Evidence) — EXECUTING
-Plan: 1 of 5
-Status: Executing Phase 11
-Last activity: 2026-06-14 -- Phase 11 execution started
+Plan: 2 of 5
+Status: Ready to execute
+Last activity: 2026-06-14
 
 Progress: [██████████] 100%
 
@@ -66,6 +66,7 @@ Progress: [██████████] 100%
 | Phase 07 P03 | 10 min | 2 tasks | 4 files |
 | Phase 07 P04 | 8 min | 2 tasks | 3 files |
 | Phase 07 P05 | 7 min | 2 tasks | 6 files |
+| Phase 11 P01 | 10m43s | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -92,6 +93,8 @@ Recent decisions affecting current work:
 - [Phase 07]: Expose Phase 7 aggregate verification through Bazel labels and just phase7-verify using the existing Rust workflow dispatch pattern.
 - [Phase 07]: Record only passed local verifier, Bazel, just, and Rust evidence as green while preserving hardware, media, simulator, generator, and release parity as non-local evidence.
 - [Phase 07]: Reference the redacted migration catalog from the root filegroup through the tools/bazel package label to respect Bazel package boundaries.
+- [Phase 11]: Plan 11-01 classified simulator, CI, release, hardware, manual, and retained-code evidence as non-local or pending proof rather than local pass evidence.
+- [Phase 11]: Plan 11-01 implemented later Phase 11 verifier modes now so absent later-owned manifests fail with explicit missing-manifest errors.
 
 ### Pending Todos
 
@@ -105,6 +108,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-14T18:50:32.980Z
-Stopped at: Phase 11 context gathered
-Resume file: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md
+Last session: 2026-06-14T20:04:16.722Z
+Stopped at: Completed 11-01-PLAN.md
+Resume file: None
