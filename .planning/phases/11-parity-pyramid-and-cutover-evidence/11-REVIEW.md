@@ -1,6 +1,6 @@
 ---
 phase: 11-parity-pyramid-and-cutover-evidence
-reviewed: 2026-06-14T21:25:22Z
+reviewed: 2026-06-14T21:45:06Z
 depth: standard
 files_reviewed: 13
 files_reviewed_list:
@@ -19,102 +19,91 @@ files_reviewed_list:
   - rust/crates/domain/src/lib.rs
 findings:
   critical: 0
-  warning: 5
+  warning: 4
   info: 0
-  total: 5
+  total: 4
 status: issues_found
 ---
 
 # Phase 11: Code Review Report
 
-**Reviewed:** 2026-06-14T21:25:22Z
+**Reviewed:** 2026-06-14T21:45:06Z
 **Depth:** standard
 **Files Reviewed:** 13
 **Status:** issues_found
 
 ## Summary
 
-Reviewed the Phase 11 Bazel wiring, just facade, verifier, verifier tests, evidence manifests, and Rust cutover domain contract. The current Phase 11 quick verifier, Python verifier tests, and Rust cutover unit tests pass locally, but the verifier has several schema and guard gaps that could allow future malformed cutover evidence to pass.
+Re-reviewed the Phase 11 Bazel wiring, just facade, verifier, verifier tests, evidence manifests, and Rust cutover domain contract after the WR-01 through WR-05 fixes. The earlier five warnings are addressed, and the current local verifier/test surface passes. The remaining findings are verifier/evidence gaps that can still allow malformed or stale cutover evidence to pass.
 
-Review context included repo `AGENTS.md`, `AGENTS.bright-builds.md`, `standards-overrides.md`, and the pinned Bright Builds architecture, code-shape, verification, testing, and Rust standards.
+Review context included repo `AGENTS.md`, `AGENTS.bright-builds.md`, `standards-overrides.md`, the installed `gsd-code-review` and `bright-builds-rules` skill instructions, and the pinned Bright Builds architecture, code-shape, verification, testing, and Rust standards.
+
+Verification run during review:
+
+- `python3 tools/bazel/phase11_verify.py --quick` passed.
+- `python3 tools/bazel/phase11_verify.py --wiring-only` passed.
+- `python3 tools/bazel/phase11_verify_test.py` passed, 26 tests.
+- `python3 -m json.tool` passed for all five Phase 11 manifests.
+- `cargo test --all-features -p buddy-domain` passed, 89 tests.
+- `cargo clippy -p buddy-domain --all-targets --all-features -- -D warnings` passed.
+- `bash -n tools/bazel/rust_workflow.sh` passed.
 
 ## Warnings
 
-### WR-01: Secret Scan Misses Common Private-Key Variants
+### WR-01: Security Scan Misses Phase 11 Context And Research Docs
 
-**File:** `tools/bazel/phase11_verify.py:60`
-**Issue:** The forbidden marker list is matched with case-sensitive substring checks at `tools/bazel/phase11_verify.py:306`. It catches `BEGIN PRIVATE KEY`, but not common PEM headers such as `BEGIN RSA PRIVATE KEY`, `BEGIN EC PRIVATE KEY`, or different casing of secret-like field names. Since this verifier is the Phase 11 redaction gate, those variants could be committed in evidence files while `--security-only` still passes.
+**File:** `tools/bazel/phase11_verify.py:774`
+**Issue:** `existing_security_paths()` scans Phase 11 manifests, `11-VALIDATION.md`, and `11-*-SUMMARY.md`, but it skips `11-CONTEXT.md` and `11-RESEARCH.md`. Those files are cited as source artifacts by the reviewed manifests, so a secret marker or overclaim can be added there while `python3 tools/bazel/phase11_verify.py --security-only` still passes. I verified this with a temp fixture containing `token_value` in `11-CONTEXT.md`; the security check returned success.
 **Fix:**
 ```python
-import re
-
-FORBIDDEN_TEXT_PATTERNS = [
-    re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----", re.IGNORECASE),
-    re.compile(r"-----BEGIN CERTIFICATE-----", re.IGNORECASE),
-    re.compile(r"(certificate[_-]?pem|password[_-]?value|token[_-]?value|private[_-]?key)", re.IGNORECASE),
+phase_doc_patterns = [
+    "11-CONTEXT.md",
+    "11-RESEARCH.md",
+    "11-VALIDATION.md",
+    "11-*-SUMMARY.md",
 ]
-
-for pattern in FORBIDDEN_TEXT_PATTERNS:
-    if pattern.search(text):
-        errors.append(f"{path.as_posix()} contains forbidden evidence marker: {pattern.pattern}")
+for pattern in phase_doc_patterns:
+    paths.extend(path.relative_to(root) for path in sorted(phase_dir.glob(pattern)))
 ```
-Add regression tests for RSA/EC/OpenSSH private-key headers and mixed-case secret field names.
+Add a regression test that writes a forbidden marker to `11-CONTEXT.md` or `11-RESEARCH.md` and expects `--security-only` to fail.
 
-### WR-02: Rust And Python Row-ID Validators Disagree
+### WR-02: Non-Local Evidence Rows Can Omit Their Required Evidence List
 
-**File:** `rust/crates/domain/src/cutover.rs:3`
-**Issue:** The Rust validator rejects spaces via `is_ascii_graphic()` but accepts IDs containing `..` unless the whole ID is exactly `..`. The Python verifier does the opposite at `tools/bazel/phase11_verify.py:277`: it accepts spaces as printable ASCII but rejects any `..` substring. That means a future manifest row can pass one boundary and fail another, or a Rust caller can accept a path-confusing ID that the verifier would reject.
-**Fix:**
-```rust
-fn is_path_free_printable_ascii(raw: &str) -> bool {
-    raw != "."
-        && raw != ".."
-        && !raw.contains("..")
-        && !raw.contains('/')
-        && !raw.contains('\\')
-        && raw.bytes().all(|byte| byte.is_ascii_graphic())
-}
-```
-Mirror the same definition in `require_row_id_shape()` by rejecting ASCII space (`ord(char) < 33`) and add paired Python/Rust tests for `"ref artifact"` and `"ref..artifact"`.
-
-### WR-03: Reference Comparison Kind Is Not Validated
-
-**File:** `tools/bazel/phase11_verify.py:571`
-**Issue:** `check_comparisons()` requires the `comparison_kind` field but never checks that it is one of the contract values represented by `ReferenceComparisonKind` in Rust. A typo such as `"normalized-semantics"` would pass as long as `byte_identity_claim` stays false, weakening the reference-comparison evidence contract.
+**File:** `tools/bazel/phase11_verify.py:356`
+**Issue:** `check_pyramid()` and `check_comparisons()` allow `required_non_local_evidence` to be empty, and `check_requirements()` only checks that field for a subset of pending requirement IDs. That lets simulator, CI, hardware, manual, or retained-code rows pass without naming the non-local evidence gate they are supposed to preserve. I verified temp fixtures where a simulator pyramid row and a CI comparison row had `required_non_local_evidence: []`; both checks returned success.
 **Fix:**
 ```python
-comparison_kind = require_string(row, "comparison_kind", row_name)
-if comparison_kind not in {"normalized-semantic", "byte-identity-with-fixture"}:
-    raise VerificationError(f"{row_name} comparison_kind is not allowed: {comparison_kind}")
-if comparison_kind == "normalized-semantic" and row.get("byte_identity_claim") is True:
-    raise VerificationError(f"{row_name} normalized comparisons must not claim byte identity")
-if comparison_kind == "byte-identity-with-fixture" and row.get("byte_identity_claim") is not True:
-    raise VerificationError(f"{row_name} byte identity comparisons must set byte_identity_claim true")
+def require_required_non_local_evidence(
+    row: dict[str, object],
+    row_name: str,
+    proof_scope: str,
+) -> None:
+    if proof_scope in NON_LOCAL_PROOF_SCOPES:
+        require_non_empty_list_of_strings(row, "required_non_local_evidence", row_name)
+        return
+    require_list_of_strings(row, "required_non_local_evidence", row_name)
 ```
-Add a negative verifier test for an unknown `comparison_kind`.
+Call this helper after `proof_scope` validation in `check_pyramid()`, `check_requirements()`, and `check_comparisons()`, and add negative tests for non-local rows with empty evidence lists.
 
-### WR-04: Reference-Demotion Criterion Can Report Ready Status
+### WR-03: Cutover Evidence Lists Accept Non-String Values
 
-**File:** `tools/bazel/phase11_verify.py:677`
-**Issue:** The verifier only ensures `criteria-reference-demotion-blocked` keeps `demotion_allowed` false. It does not require the row status to remain `not-cutover-ready`, even though the manifest row at `tools/bazel/manifests/phase11_cutover_readiness.json:152` is the explicit guard preventing CMake/C++ reference demotion. A future edit could change the status to `passed-local` while keeping `demotion_allowed: false`, and `--cutover-only` would still pass despite the evidence no longer communicating the blocking state.
-**Fix:** Extend the special-case check:
+**File:** `tools/bazel/phase11_verify.py:719`
+**Issue:** `check_cutover()` uses `require_fields()` for `required_evidence` and `verifier_commands`, which only rejects missing or empty values. It does not verify that these fields are lists of strings. A manifest can set `required_evidence` to `[123]` in `cutover_criteria` or `retained_code_justifications` and `--cutover-only` still passes, leaving malformed machine-readable evidence in the cutover contract.
+**Fix:**
 ```python
-if row.get("id") == "criteria-reference-demotion-blocked":
-    if row.get("status") != "not-cutover-ready":
-        raise VerificationError(f"{row_name} status must remain not-cutover-ready")
-    if row.get("demotion_allowed") is not False:
-        raise VerificationError(f"{row_name} must keep demotion_allowed false")
+require_non_empty_list_of_strings(row, "verifier_commands", row_name)
+require_non_empty_list_of_strings(row, "required_evidence", row_name)
 ```
-Add a test that flips this row to `passed-local` and expects `--cutover-only` to fail.
+Apply the `required_evidence` check to retained-code rows as well, and add negative tests for non-string list entries.
 
-### WR-05: Known Concern Dispositions Are Unvalidated
+### WR-04: Phase 11 Manifests Still Contain Stale Plan-Prerequisite Statuses
 
-**File:** `tools/bazel/manifests/phase11_cutover_readiness.json:177`
-**Issue:** `known_concern_dispositions` carries source artifacts, proof scopes, secret-handling fields, and regression guards, but `check_cutover()` only loads `cutover_criteria` from this file at `tools/bazel/phase11_verify.py:620`. The extra collection can contain stale lifecycle IDs, invalid proof scopes, missing source artifacts, or path escapes without failing `--cutover-only`.
-**Fix:** Either move these rows to a separately validated manifest or add a `check_known_concern_dispositions()` path that enforces exact IDs, required fields, `phase_lifecycle_id`, allowed `proof_scope`, `secret_handling == "name-only-or-redacted"`, and `require_source_artifacts()` for every row. Add a negative test for a `source_artifacts` path escape under `known_concern_dispositions`.
+**File:** `tools/bazel/manifests/phase11_parity_pyramid.json:77`
+**Issue:** The pyramid still reports `requires-plan-11-03-reference-comparison-rows` and `requires-plan-11-04-retained-code-review` even though the reference-comparison and retained-code manifests now exist and are wired. `phase11_requirement_evidence.json:254` also says retained-code acceptance rows are "not created yet." These stale values can mislead downstream cutover consumers into treating completed evidence rows as missing plan prerequisites instead of source-backed rows that remain blocked only by non-local/maintainer evidence.
+**Fix:** Update those statuses/blockers to describe the current state, for example `reference-comparisons-source-backed-pending-non-local-evidence` and `retained-code-justifications-source-backed-pending-maintainer-acceptance`. Extend the verifier's stale-marker check to reject `requires-plan-11-03`, `requires-plan-11-04`, and "not created yet" once the later Phase 11 manifests exist.
 
 ---
 
-_Reviewed: 2026-06-14T21:25:22Z_
+_Reviewed: 2026-06-14T21:45:06Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
