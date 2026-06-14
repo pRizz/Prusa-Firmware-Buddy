@@ -1,0 +1,252 @@
+{
+  "schema_version": 1,
+  "phase": "09-network-web-services-and-transfers",
+  "phase_lifecycle_id": "9-2026-06-14T02-15-21",
+  "concerns": [
+    {
+      "id": "concern-phase9-custom-der-cert-read",
+      "concern_id": "custom-tls-certificate-path-never-reads-certificate-bytes",
+      "requirement_id": "IFCE-02",
+      "reference_sources": [
+        "src/connect/tls/tls.cpp",
+        ".planning/codebase/CONCERNS.md",
+        ".planning/phases/09-network-web-services-and-transfers/09-RESEARCH.md"
+      ],
+      "disposition": "preserve-with-explicit-risk",
+      "phase9_handling": [
+        "/internal/connect/connect.der is opened and sized by the reference path",
+        "current code allocates DER storage before mbedtls_x509_crt_parse_der_nocopy but does not add a read in this plan",
+        "valid, missing, and invalid DER tests were not added by Plan 09-01",
+        "built-in certificates remain the current safe path"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "intentional_delta": "none",
+      "regression_guard": [
+        "future fix must add valid DER, missing DER, and invalid DER fixtures",
+        "future fix must document provisioning for /internal/connect/connect.der",
+        "Phase 9 manifests must not mark custom DER behavior as fixed"
+      ],
+      "secret_handling": "named-only-redacted",
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "concern-phase9-weak-digest-modules",
+      "concern_id": "tls-build-enables-legacy-digest-modules",
+      "requirement_id": "IFCE-02",
+      "reference_sources": [
+        "include/mbedtls/cipher_config_ece.h",
+        "src/connect/tls/tls.cpp",
+        ".planning/codebase/CONCERNS.md"
+      ],
+      "disposition": "preserve-with-explicit-risk",
+      "phase9_handling": [
+        "MBEDTLS_SHA1_C remains enabled in the current mbedTLS config",
+        "MBEDTLS_MD5_C remains enabled in the current mbedTLS config",
+        "runtime Connect TLS remains TLS 1.2 with MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+        "runtime certificate verification remains MBEDTLS_SSL_VERIFY_REQUIRED"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "intentional_delta": "none",
+      "regression_guard": [
+        "future TLS hardening must prove whether X.509 parsing still needs SHA1 or MD5 compatibility",
+        "future weak-certificate rejection tests must be added before claiming this concern fixed"
+      ],
+      "secret_handling": "none",
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "concern-phase9-proxy-limitations",
+      "concern_id": "minimal-connect-proxy-limitations",
+      "requirement_id": "IFCE-02",
+      "reference_sources": [
+        "doc/proxy_support.md",
+        "src/common/http/proxy.cpp",
+        "src/connect/connection_cache.cpp",
+        "tools/bazel/manifests/phase9_connect_contracts.json"
+      ],
+      "disposition": "preserve-current-limitations",
+      "phase9_handling": [
+        "proxy-authentication-absent",
+        "printer-to-proxy-leg-unencrypted",
+        "proxy-active-only-when-connect_tls-true",
+        "broader proxy authentication, MITM support, and TLS policy expansion remain out of scope"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "intentional_delta": "none",
+      "regression_guard": [
+        "future proxy behavior change must include approved intentional-delta row",
+        "future proxy verification must include tunnel handoff and authentication expectations"
+      ],
+      "secret_handling": "named-only-redacted",
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "concern-phase9-stale-connect-module-tests",
+      "concern_id": "stale-connect-module-integration-target",
+      "requirement_id": "IFCE-02",
+      "reference_sources": [
+        "tests/module/Connect/CMakeLists.txt",
+        ".planning/codebase/TESTING.md",
+        ".planning/codebase/CONCERNS.md"
+      ],
+      "disposition": "preserve-as-known-gap",
+      "phase9_handling": [
+        "tests/module/Connect/CMakeLists.txt still references stale src/Connect paths",
+        "tests/CMakeLists.txt excludes this stale manual module target",
+        "Plan 09-01 does not port or delete the stale target"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "intentional_delta": "none",
+      "regression_guard": [
+        "future Connect integration work must either archive this target or port it to src/connect",
+        "manifest verifier must avoid treating stale module material as current green evidence"
+      ],
+      "secret_handling": "none",
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "concern-phase9-whole-response-shared-buffers",
+      "concern_id": "connect-whole-response-and-shared-buffer-limits",
+      "requirement_id": "IFCE-02",
+      "reference_sources": [
+        "src/connect/connect.cpp",
+        "src/connect/command.cpp",
+        "src/connect/render.cpp",
+        ".planning/codebase/CONCERNS.md",
+        "tools/bazel/manifests/phase9_connect_contracts.json"
+      ],
+      "disposition": "preserve-current-limitations",
+      "phase9_handling": [
+        "Connect response handling remains bounded by shared-buffer and whole-response constraints",
+        "large or oversized command behavior is documented rather than redesigned",
+        "Plan 09-01 does not introduce incremental JSON or G-code streaming parsers"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "intentional_delta": "none",
+      "regression_guard": [
+        "future buffer ownership changes must add duplicate-command and oversized-command tests",
+        "future streaming parser change must include explicit behavior parity evidence"
+      ],
+      "secret_handling": "named-only-redacted",
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "concern-phase9-transfer-media-races",
+      "concern_id": "transfer-media-race-and-direct-sector-write-gap",
+      "requirement_id": "IFCE-02/IFCE-03",
+      "reference_sources": [
+        "src/transfers/partial_file.cpp",
+        "src/transfers/partial_file.hpp",
+        "src/transfers/transfer.cpp",
+        ".planning/codebase/CONCERNS.md",
+        "tools/bazel/manifests/phase9_transfer_contracts.json"
+      ],
+      "disposition": "classify-as-non-local-proof",
+      "phase9_handling": [
+        "direct-sector-write is preserved as current behavior",
+        "delete-recreate-race remains a named media risk",
+        "usb-unplug-replug remains manual-hardware-required",
+        "non-contiguous file rejection and USB write queue saturation require representative media evidence"
+      ],
+      "evidence_class": "manual-hardware-required",
+      "proof_scope": "non-local",
+      "intentional_delta": "none",
+      "regression_guard": [
+        "future hardware tests must cover unplug/replug between lock and write",
+        "future hardware tests must cover delete/recreate race and non-contiguous file rejection"
+      ],
+      "secret_handling": "none",
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "concern-phase9-transfer-monitor-lock-order",
+      "concern_id": "transfer-monitor-lock-order-deadlock-rules",
+      "requirement_id": "IFCE-02/IFCE-03",
+      "reference_sources": [
+        "src/transfers/monitor.hpp",
+        "src/transfers/monitor.cpp",
+        ".planning/codebase/CONCERNS.md",
+        "tests/unit/transfers/monitor.cpp"
+      ],
+      "disposition": "preserve-api-contract",
+      "phase9_handling": [
+        "Status remains a lock-holding object and must not be kept across slow operations",
+        "calling allocate or dropping Slot while holding Status remains a documented deadlock hazard",
+        "calling Slot methods while holding Status remains forbidden by API contract"
+      ],
+      "evidence_class": "unit-test-backed",
+      "proof_scope": "local",
+      "intentional_delta": "none",
+      "regression_guard": [
+        "future monitor API changes should return snapshots instead of exposing long-lived locks",
+        "future concurrency tests should exercise lock-order misuse boundaries"
+      ],
+      "secret_handling": "none",
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "concern-phase9-crash-dump-upload-boundary",
+      "concern_id": "crash-dump-upload-not-phase9-green",
+      "requirement_id": "IFCE-02",
+      "reference_sources": [
+        ".planning/codebase/CONCERNS.md",
+        ".planning/phases/09-network-web-services-and-transfers/09-RESEARCH.md",
+        ".planning/phases/09-network-web-services-and-transfers/09-UI-SPEC.md"
+      ],
+      "disposition": "exclude-from-green-claims",
+      "phase9_handling": [
+        "crash dump upload remains outside Phase 9 green claims",
+        "raw crash dump bytes remain outside manifests and fixtures",
+        "this plan adds no TLS, user consent, or redaction evidence for crash dump upload",
+        "default disabled upload behavior is preserved as a boundary note only"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "intentional_delta": "none",
+      "regression_guard": [
+        "future crash dump upload claim must include TLS evidence",
+        "future crash dump upload claim must include explicit consent and redaction evidence",
+        "verifier must reject raw dump byte payloads in network artifacts"
+      ],
+      "secret_handling": "named-only-redacted",
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "concern-phase9-network-tls-coverage-gaps",
+      "concern_id": "network-tls-edge-cases-lack-targeted-coverage",
+      "requirement_id": "IFCE-02",
+      "reference_sources": [
+        "src/connect/tls/tls.cpp",
+        "src/connect/tls/net_sockets.cpp",
+        "doc/proxy_support.md",
+        "tests/unit/connect/",
+        "tests/module/Connect/CMakeLists.txt",
+        ".planning/codebase/CONCERNS.md",
+        ".planning/phases/09-network-web-services-and-transfers/09-VALIDATION.md"
+      ],
+      "disposition": "preserve-as-known-gap",
+      "phase9_handling": [
+        "custom DER loading lacks targeted coverage",
+        "TLS timeout side channel lacks targeted coverage",
+        "proxy tunnel handoff lacks targeted coverage",
+        "weak certificate rejection lacks targeted coverage",
+        "Plan 09-01 records the gap and does not claim live TLS or proxy proof"
+      ],
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "intentional_delta": "none",
+      "regression_guard": [
+        "future verifier must add targeted custom DER and weak-certificate cases",
+        "future verifier must add proxy tunnel handoff and TLS timeout coverage",
+        "live TLS handshakes remain non-local evidence unless actually run"
+      ],
+      "secret_handling": "named-only-redacted",
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    }
+  ]
+}

@@ -1,0 +1,569 @@
+{
+  "schema_version": 1,
+  "phase": "09-network-web-services-and-transfers",
+  "phase_lifecycle_id": "9-2026-06-14T02-15-21",
+  "transfer_contracts": [
+    {
+      "id": "transfer-single-active-slot",
+      "requirement_id": "IFCE-02/IFCE-03",
+      "surface": "transfer-monitor-slot",
+      "reference_sources": [
+        "src/transfers/monitor.hpp",
+        "src/transfers/monitor.cpp",
+        "src/transfers/transfer.hpp",
+        "src/transfers/transfer.cpp",
+        "src/connect/planner.cpp",
+        "lib/WUI/nhttp/gcode_upload.cpp"
+      ],
+      "reference_behavior": "Monitor::allocate reserves one active transfer slot for Connect or Link/WUI transfers; allocation failure returns NoTransferSlot for Connect and an HTTP conflict for WUI uploads.",
+      "rust_surface": "buddy-domain::network::TransferSlotContract",
+      "auth_requirement": "source-dependent",
+      "integration_point": "transfer-monitor",
+      "evidence_class": "unit-test-backed",
+      "proof_scope": "local",
+      "secret_handling": "none",
+      "intentional_delta": "none",
+      "transfer_source": [
+        "ConnectCommand",
+        "WuiUpload",
+        "PrusaLinkApi",
+        "OctoPrintApi"
+      ],
+      "slot_state": [
+        "single-active-transfer-slot",
+        "Monitor::Type::Connect",
+        "Monitor::Type::Link",
+        "NoTransferSlot",
+        "TransferInProgress"
+      ],
+      "range_behavior": [
+        "range behavior delegated to active Download when slot allocation succeeds"
+      ],
+      "encryption_behavior": [
+        "encryption behavior delegated to StartEncryptedDownload and Download"
+      ],
+      "media_behavior": [
+        "one active slot prevents concurrent transfer writers by design",
+        "concurrency redesign is out of scope"
+      ],
+      "recovery_behavior": [
+        "slot lifetime owns current_id and transfer_active",
+        "outcome history keeps last reduced results"
+      ],
+      "error_mapping": [
+        "Connect NoTransferSlot maps to Rejected with MachineReason::TransferInProgress",
+        "WUI allocation failure maps to HTTP Conflict with Another transfer in progress"
+      ],
+      "host_test_references": [
+        "tests/unit/transfers/monitor.cpp",
+        "tests/unit/connect/planner.cpp",
+        "tests/unit/connect/render.cpp"
+      ],
+      "non_local_evidence": [
+        "long-running overlapping Connect and WUI transfer attempts on simulator or hardware"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "transfer-connect-command-initiation",
+      "requirement_id": "IFCE-02",
+      "surface": "connect-transfer-command-initiation",
+      "reference_sources": [
+        "src/connect/command.hpp",
+        "src/connect/planner.cpp",
+        "src/transfers/transfer.cpp",
+        "src/transfers/download.hpp"
+      ],
+      "reference_behavior": "Connect START_CONNECT_DOWNLOAD and START_ENCRYPTED_DOWNLOAD command variants validate /usb destination paths, supported file types, config stability, and transfer recovery state before calling Transfer::begin.",
+      "rust_surface": "buddy-domain::network::TransferCommandContract",
+      "auth_requirement": "connect-token",
+      "integration_point": "connect-command-channel",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "transfer_source": [
+        "ConnectCommand",
+        "StartInlineDownload",
+        "StartEncryptedDownload"
+      ],
+      "slot_state": [
+        "Reserved",
+        "Downloading",
+        "NoTransferSlot",
+        "TransferInProgress"
+      ],
+      "range_behavior": [
+        "Download::Request created with original size and transfer ID",
+        "active transfer restart computes later Range offsets"
+      ],
+      "encryption_behavior": [
+        "StartEncryptedDownload carries named-only key identity and nonce/IV fields",
+        "encrypted URL uses /f/{iv}/raw"
+      ],
+      "media_behavior": [
+        "destination path must be allowed under /usb",
+        "filename must be transferrable before storage allocation"
+      ],
+      "recovery_behavior": [
+        "commands are rejected as NotReady while transfer recovery waits for USB",
+        "transfer_recovery_finished can recover a stored transfer before new downloads"
+      ],
+      "error_mapping": [
+        "Switching config rejects encrypted download before contacting server",
+        "Storage failures map to Rejected with MachineReason::StorageFailure",
+        "AlreadyExists maps to Rejected with MachineReason::FileExists"
+      ],
+      "host_test_references": [
+        "tests/unit/connect/command.cpp",
+        "tests/unit/connect/planner.cpp"
+      ],
+      "non_local_evidence": [
+        "live Connect command initiation through polling or WebSocket"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "transfer-wui-upload-api-integration",
+      "requirement_id": "IFCE-03",
+      "surface": "wui-upload-transfer-integration",
+      "reference_sources": [
+        "lib/WUI/nhttp/gcode_upload.cpp",
+        "lib/WUI/nhttp/server.cpp",
+        "lib/WUI/nhttp/transfer_renderer.cpp",
+        "lib/WUI/link_content/prusa_link_api_v1.cpp",
+        "lib/WUI/link_content/prusa_link_api_octo.cpp"
+      ],
+      "reference_behavior": "WUI PUT and POST upload flows allocate a Link transfer slot, preallocate a PartialFile, splice socket payloads through the server TransferSlot, and expose status through API v1 and OctoPrint transfer renderers.",
+      "rust_surface": "buddy-domain::network::TransferWuiUploadContract",
+      "auth_requirement": "digest-or-api-key",
+      "integration_point": "wui-transfer-api",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "transfer_source": [
+        "WuiUpload",
+        "PrusaLinkApi",
+        "OctoPrintApi"
+      ],
+      "slot_state": [
+        "Reserved",
+        "Uploading",
+        "Finished",
+        "ErrorStorage",
+        "Stopped"
+      ],
+      "range_behavior": [
+        "upload path does not issue HTTP Range requests"
+      ],
+      "encryption_behavior": [
+        "upload path stores client payload as received"
+      ],
+      "media_behavior": [
+        "PartialFile::create preallocates upload storage",
+        "PUT path knows final file name before body transfer",
+        "legacy POST path truncates preallocated temporary file to written length"
+      ],
+      "recovery_behavior": [
+        "WUI upload completion reports ChangedPath Created",
+        "monitor slot is marked Finished, Stopped, or storage error based on upload result"
+      ],
+      "error_mapping": [
+        "LengthRequired when Content-Length is missing",
+        "Conflict for another active transfer",
+        "InsufficientStorage for USB write or sync failure",
+        "BadRequest for truncated body or client close",
+        "RequestTimeout for transfer timeout"
+      ],
+      "host_test_references": [
+        "tests/unit/lib/WUI/nhttp/server_tests.cpp",
+        "tests/unit/lib/WUI/nhttp/partial_file_mock.cpp",
+        "tests/unit/lib/WUI/nhttp/transfer_mock.cpp"
+      ],
+      "non_local_evidence": [
+        "browser or slicer upload to USB media with transfer progress"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "transfer-range-request",
+      "requirement_id": "IFCE-02",
+      "surface": "connect-download-range",
+      "reference_sources": [
+        "src/transfers/download.cpp",
+        "src/transfers/download.hpp",
+        "src/transfers/transfer.cpp",
+        "src/transfers/partial_file.hpp"
+      ],
+      "reference_behavior": "Download requests generate Range headers in bytes= form, accept Ok or PartialContent as appropriate, align restart positions to sector boundaries, and use inclusive end ranges when a valid tail is already present.",
+      "rust_surface": "buddy-domain::network::TransferRangeContract",
+      "auth_requirement": "connect-token",
+      "integration_point": "connect-download",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "none",
+      "intentional_delta": "none",
+      "transfer_source": [
+        "ConnectCommand",
+        "Recovery"
+      ],
+      "slot_state": [
+        "Downloading",
+        "Recovering",
+        "Retrying"
+      ],
+      "range_behavior": [
+        "Range",
+        "bytes=",
+        "start_range",
+        "end_range inclusive",
+        "sector-boundary restart alignment",
+        "Status::PartialContent required when destination offset is nonzero"
+      ],
+      "encryption_behavior": [
+        "range requests are used for both encrypted and inline download modes"
+      ],
+      "media_behavior": [
+        "PartialFile valid head and tail decide next offset",
+        "plain G-code downloads may jump ranges to fetch head and tail first"
+      ],
+      "recovery_behavior": [
+        "backup state restores partial file valid ranges",
+        "RangeJump forces backup update before restart"
+      ],
+      "error_mapping": [
+        "unexpected full response for nonzero destination maps to FailedRemote",
+        "missing Content-Length maps to FailedRemote",
+        "network failures map to retryable FailedNetwork"
+      ],
+      "host_test_references": [
+        "tests/unit/transfers/transfer_tests.cpp",
+        "tests/unit/transfers/monitor.cpp"
+      ],
+      "non_local_evidence": [
+        "long transfer with network interruption and resumed range request"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "transfer-encrypted-aes-ctr-payload",
+      "requirement_id": "IFCE-02",
+      "surface": "connect-encrypted-download",
+      "reference_sources": [
+        "src/connect/command.hpp",
+        "src/connect/planner.cpp",
+        "src/transfers/download.cpp",
+        "src/transfers/download.hpp",
+        "src/transfers/decrypt.hpp",
+        "src/transfers/decrypt.cpp",
+        "include/mbedtls/cipher_config_ece.h"
+      ],
+      "reference_behavior": "Encrypted Connect downloads build an encrypted URL from the IV/nonce field, require Content-Encryption-Mode: AES-CTR in the HTTP response, and decrypt through mbedTLS AES-CTR while trimming sender-side block padding to the original file size.",
+      "rust_surface": "buddy-domain::network::EncryptedPayloadMetadata",
+      "auth_requirement": "connect-token",
+      "integration_point": "connect-download",
+      "evidence_class": "unit-test-backed",
+      "proof_scope": "local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "transfer_source": [
+        "ConnectCommand",
+        "StartEncryptedDownload"
+      ],
+      "slot_state": [
+        "Downloading",
+        "Retrying",
+        "Finished",
+        "ErrorNetwork",
+        "ErrorOther"
+      ],
+      "range_behavior": [
+        "Range",
+        "bytes=",
+        "Decryptor offset must be block-aligned"
+      ],
+      "encryption_behavior": [
+        "Content-Encryption-Mode",
+        "AES-CTR",
+        "MBEDTLS_CIPHER_MODE_CTR",
+        "historical IV field acts as AES-CTR nonce",
+        "no key or IV byte values are stored in this manifest"
+      ],
+      "media_behavior": [
+        "decrypted bytes are written to PartialFile storage"
+      ],
+      "recovery_behavior": [
+        "backup serialization stores encryption metadata required to resume",
+        "restored encrypted request preserves transfer ID"
+      ],
+      "error_mapping": [
+        "missing AES_CTR response mode maps to FailedRemote",
+        "unexpected decrypt failure is firmware-fatal in reference behavior"
+      ],
+      "host_test_references": [
+        "tests/unit/transfers/decrypt.cpp",
+        "tests/unit/connect/command.cpp",
+        "tests/unit/transfers/transfer_tests.cpp"
+      ],
+      "non_local_evidence": [
+        "encrypted Connect download against approved server or simulator flow"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "transfer-partial-file-direct-sector",
+      "requirement_id": "IFCE-02/IFCE-03",
+      "surface": "partial-file-direct-sector-write",
+      "reference_sources": [
+        "src/transfers/partial_file.hpp",
+        "src/transfers/partial_file.cpp",
+        "src/transfers/transfer.cpp",
+        ".planning/codebase/CONCERNS.md"
+      ],
+      "reference_behavior": "PartialFile preallocates a contiguous FatFS file, verifies contiguity, maps it to the first sector, holds a read-only file descriptor as a lock, and writes full sectors through usbh_msc_submit_request.",
+      "rust_surface": "buddy-domain::network::TransferMediaContract",
+      "auth_requirement": "source-dependent",
+      "integration_point": "usb-storage",
+      "evidence_class": "hardware-smoke",
+      "proof_scope": "non-local",
+      "secret_handling": "none",
+      "intentional_delta": "none",
+      "transfer_source": [
+        "ConnectCommand",
+        "WuiUpload",
+        "Recovery"
+      ],
+      "slot_state": [
+        "Downloading",
+        "Uploading",
+        "ErrorStorage"
+      ],
+      "range_behavior": [
+        "seek allowed only on sector boundaries for restart paths"
+      ],
+      "encryption_behavior": [
+        "storage layer writes decrypted or plain bytes after upper-layer processing"
+      ],
+      "media_behavior": [
+        "direct-sector-write",
+        "contiguous-allocation",
+        "delete-recreate-race",
+        "usb-unplug-replug",
+        "manual-hardware-required",
+        "usbh_msc_submit_request",
+        "file descriptor lseek poke before direct write"
+      ],
+      "recovery_behavior": [
+        "write callbacks extend valid ranges only after USB completion",
+        "sync waits for sector pool completion"
+      ],
+      "error_mapping": [
+        "non-contiguous file maps to storage error",
+        "write past end maps to firmware fatal error",
+        "USB write failure sets write_error and maps to storage failure"
+      ],
+      "host_test_references": [
+        "tests/unit/transfers/partial_file_mock.cpp",
+        "tests/unit/lib/WUI/nhttp/partial_file_mock.cpp"
+      ],
+      "non_local_evidence": [
+        "USB unplug/replug during transfer",
+        "delete/recreate race while transfer holds file lock",
+        "non-contiguous media allocation under concurrent access"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "transfer-recovery-and-changed-path",
+      "requirement_id": "IFCE-02/IFCE-03",
+      "surface": "transfer-recovery-changed-path",
+      "reference_sources": [
+        "src/transfers/transfer_recovery.cpp",
+        "src/transfers/transfer.cpp",
+        "src/transfers/changed_path.cpp",
+        "src/connect/planner.cpp",
+        "lib/WUI/nhttp/gcode_upload.cpp"
+      ],
+      "reference_behavior": "Transfer recovery serializes partial-file state, firmware version, request metadata, transfer ID, optional encryption metadata, and CRCs; ChangedPath coalesces file/folder and media events for Connect and WUI etags.",
+      "rust_surface": "buddy-domain::network::TransferRecoveryContract",
+      "auth_requirement": "source-dependent",
+      "integration_point": "transfer-recovery",
+      "evidence_class": "unit-test-backed",
+      "proof_scope": "local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "transfer_source": [
+        "ConnectCommand",
+        "WuiUpload",
+        "Recovery"
+      ],
+      "slot_state": [
+        "Recovering",
+        "Finished",
+        "Failed",
+        "WaitingForUSB"
+      ],
+      "range_behavior": [
+        "restored PartialFile::State drives resumed Range selection"
+      ],
+      "encryption_behavior": [
+        "encrypted recovery metadata is stored by type and identity only in this manifest"
+      ],
+      "media_behavior": [
+        "cleanup moves partial file into final destination",
+        "media_inserted changes directory etag hash base"
+      ],
+      "recovery_behavior": [
+        "backup partial_file_state_crc",
+        "firmware version compatibility check",
+        "data buffer CRC validation",
+        "RecoverySearchResult::WaitingForUSB",
+        "ChangedPath Created and Deleted incidents"
+      ],
+      "error_mapping": [
+        "corrupt backup maps to restoration failure",
+        "missing USB maps to WaitingForUSB",
+        "cleanup failure schedules retry"
+      ],
+      "host_test_references": [
+        "tests/unit/transfers/transfer_tests.cpp",
+        "tests/unit/transfers/changed_path_tests.cpp",
+        "tests/unit/connect/planner.cpp"
+      ],
+      "non_local_evidence": [
+        "power loss or restart during transfer with USB media present",
+        "media removal and reinsertion during recovery"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "transfer-error-outcome-mapping",
+      "requirement_id": "IFCE-02/IFCE-03",
+      "surface": "transfer-error-outcomes",
+      "reference_sources": [
+        "src/transfers/download.hpp",
+        "src/transfers/transfer.cpp",
+        "src/transfers/monitor.hpp",
+        "src/connect/planner.cpp",
+        "lib/WUI/nhttp/gcode_upload.cpp"
+      ],
+      "reference_behavior": "DownloadStep, Transfer::State, Monitor::Outcome, Connect events, and WUI HTTP status pages preserve distinct network, storage, remote, stopped, timeout, and client-close outcomes.",
+      "rust_surface": "buddy-domain::network::TransferErrorContract",
+      "auth_requirement": "source-dependent",
+      "integration_point": "transfer-error-mapping",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "none",
+      "intentional_delta": "none",
+      "transfer_source": [
+        "ConnectCommand",
+        "WuiUpload",
+        "PrusaLinkApi",
+        "OctoPrintApi",
+        "Recovery"
+      ],
+      "slot_state": [
+        "ErrorStorage",
+        "ErrorNetwork",
+        "ErrorOther",
+        "Stopped",
+        "Finished"
+      ],
+      "range_behavior": [
+        "range failures feed DownloadStep::FailedNetwork or FailedRemote"
+      ],
+      "encryption_behavior": [
+        "wrong encryption mode feeds FailedRemote"
+      ],
+      "media_behavior": [
+        "USB write or sync failure feeds storage error paths"
+      ],
+      "recovery_behavior": [
+        "failed transfers leave an empty backup marker before cleanup",
+        "outcome history stores reduced results for later Connect reporting"
+      ],
+      "error_mapping": [
+        "DownloadStep::FailedNetwork -> retry or Monitor::Outcome::ErrorNetwork",
+        "DownloadStep::FailedStorage -> Monitor::Outcome::ErrorStorage",
+        "DownloadStep::FailedRemote -> Monitor::Outcome::ErrorOther",
+        "Stopped -> Monitor::Outcome::Stopped",
+        "Finished -> Monitor::Outcome::Finished",
+        "WUI CantWrite -> HTTP InsufficientStorage",
+        "WUI ClosedByClient -> HTTP BadRequest",
+        "WUI Timeout -> HTTP RequestTimeout"
+      ],
+      "host_test_references": [
+        "tests/unit/transfers/monitor.cpp",
+        "tests/unit/connect/planner.cpp",
+        "tests/unit/lib/WUI/nhttp/server_tests.cpp"
+      ],
+      "non_local_evidence": [
+        "network stalls, proxy failures, storage failures, and client-close upload scenarios"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "transfer-media-race-non-local",
+      "requirement_id": "IFCE-02/IFCE-03",
+      "surface": "transfer-media-race-proof",
+      "reference_sources": [
+        "src/transfers/partial_file.cpp",
+        "src/transfers/transfer.cpp",
+        ".planning/codebase/CONCERNS.md",
+        ".planning/phases/09-network-web-services-and-transfers/09-VALIDATION.md",
+        ".planning/phases/09-network-web-services-and-transfers/09-UI-SPEC.md"
+      ],
+      "reference_behavior": "Media race behavior is explicitly not locally proven by this plan; direct-sector writes, USB removal, queue saturation, and delete/recreate races remain hardware or simulator evidence requirements.",
+      "rust_surface": "buddy-domain::network::TransferMediaEvidenceContract",
+      "auth_requirement": "source-dependent",
+      "integration_point": "usb-storage",
+      "evidence_class": "manual-hardware-required",
+      "proof_scope": "non-local",
+      "secret_handling": "none",
+      "intentional_delta": "none",
+      "transfer_source": [
+        "ConnectCommand",
+        "WuiUpload",
+        "Recovery"
+      ],
+      "slot_state": [
+        "Downloading",
+        "Uploading",
+        "Recovering",
+        "ErrorStorage"
+      ],
+      "range_behavior": [
+        "long-running range proof remains non-local"
+      ],
+      "encryption_behavior": [
+        "encrypted long-transfer proof remains non-local"
+      ],
+      "media_behavior": [
+        "direct-sector-write",
+        "delete-recreate-race",
+        "usb-unplug-replug",
+        "manual-hardware-required",
+        "queue saturation in usbh_msc_submit_request",
+        "non-contiguous file rejection under concurrent access"
+      ],
+      "recovery_behavior": [
+        "unplug and replug recovery must be proven on representative media"
+      ],
+      "error_mapping": [
+        "local manifests classify the risk but do not claim hardware media-race success"
+      ],
+      "host_test_references": [
+        "tests/unit/transfers/transfer_tests.cpp",
+        "tests/unit/transfers/changed_path_tests.cpp"
+      ],
+      "non_local_evidence": [
+        "USB unplug/replug transfer interruption",
+        "delete/recreate race between file lock close and reopen",
+        "direct-sector write queue saturation",
+        "long transfer on representative media"
+      ],
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    }
+  ]
+}
