@@ -623,6 +623,50 @@ class Phase11VerifierTest(unittest.TestCase):
         self.assertIn("ref-product-artifacts", result.stdout)
         self.assertIn("required_non_local_evidence", result.stdout)
 
+    def test_cutover_only_rejects_non_string_cutover_lists(self) -> None:
+        # Arrange
+        invalid_fields = ["required_evidence", "verifier_commands"]
+
+        for invalid_field in invalid_fields:
+            with self.subTest(invalid_field=invalid_field):
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_phase11_surface(root)
+                    rows = self.manifest_rows(root, CUTOVER_MANIFEST)
+                    for row in rows:
+                        if row["id"] == "criteria-all-v1-requirements-mapped":
+                            row[invalid_field] = [123]
+                    self.write_manifest_rows(root, CUTOVER_MANIFEST, rows)
+
+                    # Act
+                    result = self.run_verifier(["--cutover-only"], maybe_root=root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("criteria-all-v1-requirements-mapped", result.stdout)
+                self.assertIn(invalid_field, result.stdout)
+                self.assertIn("list of strings", result.stdout)
+
+    def test_cutover_only_rejects_non_string_retained_required_evidence(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase11_surface(root)
+            rows = self.manifest_rows(root, RETAINED_MANIFEST)
+            for row in rows:
+                if row["id"] == "retained-hal-cmsis-vendor":
+                    row["required_evidence"] = [123]
+            self.write_manifest_rows(root, RETAINED_MANIFEST, rows)
+
+            # Act
+            result = self.run_verifier(["--cutover-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("retained-hal-cmsis-vendor", result.stdout)
+        self.assertIn("required_evidence", result.stdout)
+        self.assertIn("list of strings", result.stdout)
+
     def test_cutover_only_rejects_demote_reference_true(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()

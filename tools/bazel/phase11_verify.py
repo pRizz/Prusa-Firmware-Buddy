@@ -735,6 +735,8 @@ def check_cutover(root: Path) -> None:
                 raise VerificationError(f"{row_name} phase_lifecycle_id must be {PHASE_LIFECYCLE_ID}")
             if row.get("proof_scope") not in ALLOWED_PROOF_SCOPES:
                 raise VerificationError(f"{row_name} proof_scope is not allowed: {row.get('proof_scope')}")
+            require_non_empty_list_of_strings(row, "verifier_commands", row_name)
+            require_non_empty_list_of_strings(row, "required_evidence", row_name)
             if row.get("id") == "criteria-reference-demotion-blocked":
                 if row.get("status") != "not-cutover-ready":
                     raise VerificationError(f"{row_name} status must remain not-cutover-ready")
@@ -774,6 +776,7 @@ def check_cutover(root: Path) -> None:
                 raise VerificationError(f"{row_name} phase_lifecycle_id must be {PHASE_LIFECYCLE_ID}")
             if row.get("proof_scope") != "retained-code-justification":
                 raise VerificationError(f"{row_name} proof_scope must be retained-code-justification")
+            require_non_empty_list_of_strings(row, "required_evidence", row_name)
             if row.get("secret_handling") != "name-only-or-redacted":
                 raise VerificationError(f"{row_name} secret_handling must be name-only-or-redacted")
             if row.get("disposition") not in {"accepted", "blocked", "deferred"}:
