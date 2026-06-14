@@ -168,6 +168,16 @@ class Phase11VerifierTest(unittest.TestCase):
                 source_artifacts = row.get("source_artifacts")
                 if isinstance(source_artifacts, list):
                     self.write_source_paths(root, [str(item) for item in source_artifacts])
+            if manifest_path == CUTOVER_MANIFEST:
+                data = json.loads((root / manifest_path).read_text(encoding="utf-8"))
+                known_concern_rows = data.get("known_concern_dispositions")
+                if isinstance(known_concern_rows, list):
+                    for row in known_concern_rows:
+                        if not isinstance(row, dict):
+                            continue
+                        source_artifacts = row.get("source_artifacts")
+                        if isinstance(source_artifacts, list):
+                            self.write_source_paths(root, [str(item) for item in source_artifacts])
         self.copy_file(root, "rust/crates/domain/src/cutover.rs")
         self.copy_file(root, "rust/crates/domain/src/lib.rs")
         if reconcile_requirements:
@@ -594,6 +604,26 @@ class Phase11VerifierTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("criteria-reference-demotion-blocked", result.stdout)
         self.assertIn("status must remain not-cutover-ready", result.stdout)
+
+    def test_cutover_only_rejects_known_concern_source_path_escape(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase11_surface(root)
+            data = json.loads((root / CUTOVER_MANIFEST).read_text(encoding="utf-8"))
+            rows = data["known_concern_dispositions"]
+            self.assertIsInstance(rows, list)
+            rows[0]["source_artifacts"] = ["../outside"]
+            self.write_file(root, CUTOVER_MANIFEST, json.dumps(data, indent=2))
+
+            # Act
+            result = self.run_verifier(["--cutover-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("known concern", result.stdout)
+        self.assertIn("../outside", result.stdout)
+        self.assertIn("repo-relative", result.stdout)
 
     def test_security_only_rejects_secret_markers(self) -> None:
         # Arrange

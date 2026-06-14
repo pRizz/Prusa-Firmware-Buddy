@@ -133,6 +133,18 @@ REQUIRED_CUTOVER_CRITERION_ROW_IDS = {
     "criteria-overclaim-scan-clean",
     "criteria-reference-demotion-blocked",
 }
+REQUIRED_KNOWN_CONCERN_ROW_IDS = {
+    "concern-phase11-known-defect-ledger",
+    "concern-phase11-non-local-hardware-proof",
+    "concern-phase11-secret-redaction",
+    "concern-phase11-byte-identity-overclaim",
+    "concern-phase11-reference-demotion",
+}
+ALLOWED_KNOWN_CONCERN_DISPOSITIONS = {
+    "preserved-temporarily",
+    "blocked",
+    "accepted-retained-behavior",
+}
 REQUIRED_RETAINED_CODE_ROW_IDS = {
     "retained-hal-cmsis-vendor",
     "retained-freertos-rtos",
@@ -626,12 +638,26 @@ def check_comparisons(root: Path) -> None:
 def check_cutover(root: Path) -> None:
     errors: list[str] = []
     cutover_rows: list[dict[str, object]] = []
+    known_concern_rows: list[dict[str, object]] = []
     retained_rows: list[dict[str, object]] = []
     try:
         cutover_rows = require_top_level(root, CUTOVER_READINESS_MANIFEST, "cutover_criteria")
         require_exact_row_ids(
             cutover_rows,
             REQUIRED_CUTOVER_CRITERION_ROW_IDS,
+            CUTOVER_READINESS_MANIFEST,
+        )
+    except VerificationError as error:
+        errors.append(str(error))
+    try:
+        known_concern_rows = require_top_level(
+            root,
+            CUTOVER_READINESS_MANIFEST,
+            "known_concern_dispositions",
+        )
+        require_exact_row_ids(
+            known_concern_rows,
+            REQUIRED_KNOWN_CONCERN_ROW_IDS,
             CUTOVER_READINESS_MANIFEST,
         )
     except VerificationError as error:
@@ -660,6 +686,16 @@ def check_cutover(root: Path) -> None:
         "required_evidence",
         "demotion_allowed",
         "proof_scope",
+        "phase_lifecycle_id",
+    ]
+    known_concern_fields = [
+        "id",
+        "source_artifacts",
+        "disposition",
+        "phase11_handling",
+        "regression_guard",
+        "proof_scope",
+        "secret_handling",
         "phase_lifecycle_id",
     ]
     retained_fields = [
@@ -694,6 +730,23 @@ def check_cutover(root: Path) -> None:
                 raise VerificationError(
                     f"{row_name} demotion_allowed must stay false until status is passed-local"
                 )
+            require_source_artifacts(root, row, row_name)
+        except VerificationError as error:
+            errors.append(str(error))
+    for row in known_concern_rows:
+        row_name = f"{CUTOVER_READINESS_MANIFEST.as_posix()} known concern {row.get('id', '<unknown>')}"
+        try:
+            require_fields(row, known_concern_fields, row_name)
+            if row.get("phase_lifecycle_id") != PHASE_LIFECYCLE_ID:
+                raise VerificationError(f"{row_name} phase_lifecycle_id must be {PHASE_LIFECYCLE_ID}")
+            proof_scope = require_string(row, "proof_scope", row_name)
+            if proof_scope not in ALLOWED_PROOF_SCOPES:
+                raise VerificationError(f"{row_name} proof_scope is not allowed: {proof_scope}")
+            if row.get("secret_handling") != "name-only-or-redacted":
+                raise VerificationError(f"{row_name} secret_handling must be name-only-or-redacted")
+            disposition = require_string(row, "disposition", row_name)
+            if disposition not in ALLOWED_KNOWN_CONCERN_DISPOSITIONS:
+                raise VerificationError(f"{row_name} disposition is not allowed: {disposition}")
             require_source_artifacts(root, row, row_name)
         except VerificationError as error:
             errors.append(str(error))
