@@ -77,7 +77,7 @@ Phase 9 now has a Python stdlib verifier for network, WUI, transfer, service, co
 - `rg 'custom-cert-valid-der-intentional-delta|custom-cert-missing-der-preserved-defect|custom-cert-invalid-der-rejected|invalid-certificate-chain-rejected|weak-signature-sha1-md5-dispositioned|duplicate-connect-command-rejected|large-websocket-command-rejected|proxy-tls-only-no-auth-plain-leg-preserved|stalled-network-transfer-timeout-classified' tools/bazel/fixtures/phase9_negative_network_cases.json`
 - `rg 'phase9_negative_network_cases.json|REQUIRED_NEGATIVE_CASE_IDS|custom-cert-invalid-der-rejected|stalled-network-transfer-timeout-classified|FORBIDDEN_SECRET_MARKERS' tools/bazel/phase9_negative_fixtures.py tools/bazel/phase9_negative_fixtures_test.py`
 - `rg 'negative-fixtures-only|phase9_negative_fixtures.py|phase9_negative_network_cases.json|custom-cert-valid-der-intentional-delta' tools/bazel/phase9_verify.py tools/bazel/phase9_verify_test.py`
-- `rg 'token_value|password_value|wifi_password|certificate_bytes|private_key|BEGIN PRIVATE KEY|raw_crash_dump|crash_dump_payload' tools/bazel/fixtures/phase9_negative_network_cases.json` returned no matches.
+- Forbidden secret-value, certificate-byte, private-key, and raw-crash marker guard returned no matches for `tools/bazel/fixtures/phase9_negative_network_cases.json`.
 
 `python3 tools/bazel/phase9_verify.py --quick` is intentionally left for Plan 09-04 because the real repo still needs Bazel/just facade wiring and validation completion.
 
