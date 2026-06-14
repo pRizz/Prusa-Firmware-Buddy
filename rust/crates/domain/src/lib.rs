@@ -8,6 +8,7 @@
 
 pub mod artifact;
 pub mod auxiliary;
+pub mod cutover;
 pub mod feature;
 pub mod gui;
 pub mod network;
