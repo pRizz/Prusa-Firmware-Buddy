@@ -39,8 +39,8 @@
 ### Interfaces and Resources
 
 - [x] **IFCE-01**: Rust firmware preserves GUI workflows for supported display classes, including screen stack behavior, dialogs, menus, wizards, warnings, redscreens, print controls, selftest/calibration flows, Connect registration, and localization.
-- [ ] **IFCE-02**: Rust firmware preserves Prusa Connect behavior for registration, tokens/fingerprints, telemetry, events, WebSocket commands, TLS verification, transfer/download integration, and current proxy limitations unless explicitly fixed.
-- [ ] **IFCE-03**: Rust firmware preserves PrusaLink/WUI behavior including HTTP API v1, OctoPrint-compatible endpoints, digest/API-key auth, WUI static assets, SNTP, mDNS, metrics, and syslog.
+- [x] **IFCE-02**: Rust firmware preserves Prusa Connect behavior for registration, tokens/fingerprints, telemetry, events, WebSocket commands, TLS verification, transfer/download integration, and current proxy limitations unless explicitly fixed.
+- [x] **IFCE-03**: Rust firmware preserves PrusaLink/WUI behavior including HTTP API v1, OctoPrint-compatible endpoints, digest/API-key auth, WUI static assets, SNTP, mDNS, metrics, and syslog.
 - [x] **IFCE-04**: Rust firmware preserves persistent configuration, schema migrations, defaults, deprecated item IDs, credentials, settings import/export, EEPROM/internal flash behavior, FatFs/littlefs mounts, USB/internal/semihosting paths, and config hash/journal behavior.
 - [x] **IFCE-05**: Rust firmware preserves resources, translations, fonts, icons, littlefs images, bootloader resources, ESP blobs, WUI assets, language packs, and generated headers visible to runtime or release artifacts.
 - [ ] **IFCE-06**: Rust firmware preserves puppy, Dwarf, ModularBed, xBuddy Extension, MMU2, Modbus/RS485, toolchanger, dock/tool offset, startup flashing, skip-flash/prebuilt firmware, and auxiliary-controller update flows.
@@ -102,8 +102,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CORE-04 | Phase 6 | Complete |
 | CORE-05 | Phase 6 | Complete |
 | IFCE-01 | Phase 8 | Complete |
-| IFCE-02 | Phase 9 | Pending |
-| IFCE-03 | Phase 9 | Pending |
+| IFCE-02 | Phase 9 | Complete |
+| IFCE-03 | Phase 9 | Complete |
 | IFCE-04 | Phase 7 | Complete |
 | IFCE-05 | Phase 7 | Complete |
 | IFCE-06 | Phase 10 | Pending |

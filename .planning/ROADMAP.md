@@ -21,7 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6: Printing Core, Safety, and Feature Gates** - Preserve print behavior, safety-critical flows, and printer-specific feature combinations through typed Rust models and parity fixtures. (completed 2026-06-04)
 - [x] **Phase 7: Persistence, Storage, and Resource Compatibility** - Preserve config stores, migrations, filesystems, credentials, generated resources, translations, and bundled runtime assets. (completed 2026-06-06)
 - [x] **Phase 8: Local Interface and Workflow Parity** - Preserve local GUI workflows, display-class behavior, dialogs, warnings, setup flows, and print controls. (completed 2026-06-13)
-- [ ] **Phase 9: Network, Web Services, and Transfers** - Preserve Connect, PrusaLink/WUI, TLS, telemetry, transfer, and local service behavior.
+- [x] **Phase 9: Network, Web Services, and Transfers** - Preserve Connect, PrusaLink/WUI, TLS, telemetry, transfer, and local service behavior.
 - [ ] **Phase 10: Auxiliary Controllers and Expansion Ecosystem** - Preserve puppy, Dwarf, ModularBed, xBuddy Extension, MMU2, toolchanger, and auxiliary update flows.
 - [ ] **Phase 11: Parity Pyramid and Cutover Evidence** - Prove the Rust+Bazel firmware satisfies all parity gates before demoting the CMake/C++ reference path.
 
@@ -174,7 +174,7 @@ Plans:
 - [x] 09-01-PLAN.md — Create source-backed Connect, WUI, transfer, service, and network concern manifests.
 - [x] 09-02-PLAN.md — Add pure Rust network, web-service, transfer, evidence, and feature-gated service contracts.
 - [x] 09-03-PLAN.md — Add Phase 9 verifier regression tests and static verifier.
-- [ ] 09-04-PLAN.md — Wire Phase 9 Bazel/just verification and complete Nyquist validation sign-off.
+- [x] 09-04-PLAN.md — Wire Phase 9 Bazel/just verification and complete Nyquist validation sign-off.
    **UI hint**: yes
 
 ### Phase 10: Auxiliary Controllers and Expansion Ecosystem
