@@ -1,0 +1,254 @@
+{
+  "schema_version": "1",
+  "phase": "11-parity-pyramid-and-cutover-evidence",
+  "phase_lifecycle_id": "11-2026-06-14T18-48-49",
+  "cutover_criteria": [
+    {
+      "id": "criteria-all-v1-requirements-mapped",
+      "requirement_id": "VERF-05",
+      "criterion": "Every v1 requirement has a source-backed Phase 11 evidence row with current status, cutover status, retained-code posture, intentional-delta handling, and required non-local evidence.",
+      "status": "passed-local",
+      "blocking_reason": "No local mapping blocker remains, but final demotion is still blocked until aggregate, non-local, retained-code, and maintainer acceptance evidence is attached.",
+      "source_artifacts": [
+        "tools/bazel/manifests/phase11_requirement_evidence.json",
+        ".planning/REQUIREMENTS.md"
+      ],
+      "verifier_commands": [
+        "python3 tools/bazel/phase11_verify.py --requirements-only",
+        "python3 tools/bazel/phase11_verify.py --cutover-only"
+      ],
+      "required_evidence": [
+        "All requirement evidence rows remain valid under the aggregate Phase 11 verifier.",
+        "Maintainer review accepts remaining cutover blockers by evidence class before demotion."
+      ],
+      "demotion_allowed": false,
+      "proof_scope": "local",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "criteria-local-verifier-passed",
+      "requirement_id": "VERF-05",
+      "criterion": "The aggregate Phase 11 local verifier, security scan, Rust contract checks, Bazel labels, and just facade all pass in the final verification plan.",
+      "status": "pending-aggregate-verifier",
+      "blocking_reason": "Plan 11-05 owns aggregate verifier, Bazel, just, and validation sign-off; this plan records the readiness criterion only.",
+      "source_artifacts": [
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-VALIDATION.md",
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-05-PLAN.md",
+        "tools/bazel/phase11_verify.py"
+      ],
+      "verifier_commands": [
+        "python3 tools/bazel/phase11_verify.py --all",
+        "just phase11-verify"
+      ],
+      "required_evidence": [
+        "Plan 11-05 aggregate verifier evidence.",
+        "Bazel and just facade proof that Phase 11 verifier tests run before aggregate verification."
+      ],
+      "demotion_allowed": false,
+      "proof_scope": "local",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "criteria-non-local-gates-identified",
+      "requirement_id": "VERF-05",
+      "criterion": "Simulator, CI, release-candidate, hardware-smoke, manual hardware, live network/TLS, storage-media, MMU, RS485, toolchanger, and signing-sensitive evidence gates are named instead of treated as local proof.",
+      "status": "passed-local",
+      "blocking_reason": "The gate inventory is locally present, but each non-local evidence item must still be attached or accepted before reference demotion.",
+      "source_artifacts": [
+        "tools/bazel/manifests/phase11_parity_pyramid.json",
+        "tools/bazel/manifests/phase11_requirement_evidence.json",
+        "tools/bazel/manifests/phase11_reference_comparisons.json",
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-VALIDATION.md"
+      ],
+      "verifier_commands": [
+        "python3 tools/bazel/phase11_verify.py --pyramid-only",
+        "python3 tools/bazel/phase11_verify.py --requirements-only",
+        "python3 tools/bazel/phase11_verify.py --comparison-only"
+      ],
+      "required_evidence": [
+        "Approved simulator logs for GUI, storage, protocol, network, and auxiliary flows.",
+        "Hardware or manual evidence for startup, safety, motion, thermal, USB/media, MMU, RS485, toolchanger, and auxiliary update gates.",
+        "Live network/TLS/API evidence with credential and certificate details recorded by name only.",
+        "Release-candidate and signing-sensitive evidence stored as approved artifact names only."
+      ],
+      "demotion_allowed": false,
+      "proof_scope": "manual-hardware-required",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "criteria-retained-code-justifications-accepted",
+      "requirement_id": "VERF-05",
+      "criterion": "Every residual C, C++, ASM, generated, vendor, runtime, filesystem, network, USB, auxiliary, and reference-oracle island has an owner, boundary, retained-code disposition, and source-backed justification.",
+      "status": "pending-retained-code-review",
+      "blocking_reason": "Retained-code rows are added by Plan 11-04 Task 2 and still require maintainer acceptance before reference demotion.",
+      "source_artifacts": [
+        "tools/bazel/manifests/foreign_code_inventory.json",
+        "tools/bazel/manifests/unsafe_boundary_audit.json",
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-VERIFICATION.md",
+        "tools/bazel/manifests/phase11_retained_code_justifications.json"
+      ],
+      "verifier_commands": [
+        "python3 tools/bazel/phase11_verify.py --cutover-only"
+      ],
+      "required_evidence": [
+        "Retained-code justification manifest with exactly the eight D-15 rows.",
+        "Maintainer acceptance, blocker resolution, or explicit deferral for each retained island."
+      ],
+      "demotion_allowed": false,
+      "proof_scope": "retained-code-justification",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "criteria-intentional-deltas-documented",
+      "requirement_id": "VERF-05",
+      "criterion": "Known defects and fragile areas from the codebase concern ledger and Phase 6 through Phase 10 concern manifests are preserved, fixed with tests, accepted as retained behavior, or blocked.",
+      "status": "passed-local",
+      "blocking_reason": "Local concern disposition evidence is present, while final cutover remains blocked until aggregate review confirms no v1 blocker is hidden.",
+      "source_artifacts": [
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-CONCERN-LEDGER.md",
+        "tools/bazel/manifests/phase6_concern_dispositions.json",
+        "tools/bazel/manifests/phase7_concern_dispositions.json",
+        "tools/bazel/manifests/phase8_concern_dispositions.json",
+        "tools/bazel/manifests/phase9_network_concern_dispositions.json",
+        "tools/bazel/manifests/phase10_concern_dispositions.json"
+      ],
+      "verifier_commands": [
+        "python3 tools/bazel/phase11_verify.py --security-only",
+        "python3 tools/bazel/phase11_verify.py --cutover-only"
+      ],
+      "required_evidence": [
+        "Known-concern disposition rows remain lifecycle-tagged and source-backed.",
+        "Any future fix claim must cite tests or approved non-local evidence."
+      ],
+      "demotion_allowed": false,
+      "proof_scope": "local",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "criteria-overclaim-scan-clean",
+      "requirement_id": "VERF-05",
+      "criterion": "Phase 11 manifests, validation records, and summaries avoid secret markers, local hardware/simulator proof overclaims, ungrounded byte identity wording, final demotion claims, and source path escapes.",
+      "status": "pending-aggregate-verifier",
+      "blocking_reason": "Security-only scan is available now, but aggregate Plan 11-05 must rerun the full scan after final wiring and summary metadata exist.",
+      "source_artifacts": [
+        "tools/bazel/phase11_verify.py",
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-VALIDATION.md",
+        "tools/bazel/manifests/phase11_parity_pyramid.json",
+        "tools/bazel/manifests/phase11_reference_comparisons.json"
+      ],
+      "verifier_commands": [
+        "python3 tools/bazel/phase11_verify.py --security-only",
+        "python3 tools/bazel/phase11_verify.py --all"
+      ],
+      "required_evidence": [
+        "Security-only scan passes after cutover and retained-code manifests are present.",
+        "Aggregate verifier reruns after final Phase 11 wiring and summary artifacts exist."
+      ],
+      "demotion_allowed": false,
+      "proof_scope": "local",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "criteria-reference-demotion-blocked",
+      "requirement_id": "VERF-05",
+      "criterion": "The CMake/C++ reference path remains visible and guarded until all parity gates, retained-code review, non-local evidence, release-candidate evidence, and maintainer acceptance criteria are satisfied.",
+      "status": "not-cutover-ready",
+      "blocking_reason": "CMake/C++ reference path demotion remains blocked until all local, CI, simulator, hardware-smoke, manual-hardware-required, retained-code, and release-candidate criteria are attached and accepted.",
+      "source_artifacts": [
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md",
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-VALIDATION.md",
+        "tools/bazel/manifests/phase11_requirement_evidence.json",
+        "tools/bazel/reference_contract.sh"
+      ],
+      "verifier_commands": [
+        "python3 tools/bazel/phase11_verify.py --cutover-only",
+        "python3 tools/bazel/phase11_verify.py --security-only"
+      ],
+      "required_evidence": [
+        "All local and non-local parity gates attached or formally accepted.",
+        "Retained-code review accepted or blocked with explicit owner decisions.",
+        "Maintainer approval recorded before any reference path demotion work is planned."
+      ],
+      "demotion_allowed": false,
+      "proof_scope": "manual-hardware-required",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    }
+  ],
+  "known_concern_dispositions": [
+    {
+      "id": "concern-phase11-known-defect-ledger",
+      "source_artifacts": [
+        ".planning/codebase/CONCERNS.md",
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-CONCERN-LEDGER.md",
+        "tools/bazel/manifests/phase6_concern_dispositions.json",
+        "tools/bazel/manifests/phase8_concern_dispositions.json"
+      ],
+      "disposition": "preserved-temporarily",
+      "phase11_handling": "Known defects such as probe-classifier coupling, home-screen flash start freeze, crash-dump handling, RNG fallback, STM32G0 IRQ behavior, and MMU availability remain visible in source-backed concern rows until an approved intentional delta with tests or non-local proof replaces the reference behavior.",
+      "regression_guard": "Phase 11 cutover evidence must continue citing the Phase 1 ledger and Phase 6/8/10 concern manifests before accepting any demotion decision.",
+      "proof_scope": "local",
+      "secret_handling": "name-only-or-redacted",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "concern-phase11-non-local-hardware-proof",
+      "source_artifacts": [
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-VALIDATION.md",
+        "tools/bazel/manifests/phase11_parity_pyramid.json",
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-VERIFICATION.md",
+        ".planning/phases/10-auxiliary-controllers-and-expansion-ecosystem/10-VERIFICATION.md"
+      ],
+      "disposition": "blocked",
+      "phase11_handling": "Startup, clocks, interrupts, watchdogs, thermal and motion safety, storage media timing, USB behavior, RS485, MMU, toolchanger, auxiliary update, and physical UI proof remain non-local evidence gates and are not converted into local pass claims.",
+      "regression_guard": "Any final readiness row that changes hardware or simulator proof to local evidence must cite actual approved artifact names and maintain name-only redaction.",
+      "proof_scope": "manual-hardware-required",
+      "secret_handling": "name-only-or-redacted",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "concern-phase11-secret-redaction",
+      "source_artifacts": [
+        ".planning/codebase/CONCERNS.md",
+        ".planning/codebase/INTEGRATIONS.md",
+        "tools/bazel/manifests/phase7_concern_dispositions.json",
+        "tools/bazel/manifests/phase9_network_concern_dispositions.json",
+        "tools/bazel/manifests/phase10_concern_dispositions.json"
+      ],
+      "disposition": "accepted-retained-behavior",
+      "phase11_handling": "Wi-Fi, PrusaLink, Connect, TLS, crash-dump, signing, firmware image, and auxiliary payload evidence is represented by source path, key name, status name, or artifact name only; checked-in manifests do not carry secret values, certificate bytes, signing material, raw dump contents, or firmware package bytes.",
+      "regression_guard": "python3 tools/bazel/phase11_verify.py --security-only must pass before metadata completion and again during aggregate Plan 11 verification.",
+      "proof_scope": "local",
+      "secret_handling": "name-only-or-redacted",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "concern-phase11-byte-identity-overclaim",
+      "source_artifacts": [
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md",
+        "tools/bazel/manifests/phase11_reference_comparisons.json",
+        "rust/crates/domain/src/cutover.rs"
+      ],
+      "disposition": "blocked",
+      "phase11_handling": "Reference comparisons remain normalized semantic contracts unless a deterministic fixture and normalization rule are named; release bytes, firmware package bytes, and signing-sensitive bytes stay outside local evidence.",
+      "regression_guard": "Comparison rows must keep byte_identity_claim false unless a deterministic fixture and normalization rule are present, and the security scan must reject forbidden overclaim phrases.",
+      "proof_scope": "ci",
+      "secret_handling": "name-only-or-redacted",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "concern-phase11-reference-demotion",
+      "source_artifacts": [
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md",
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-VALIDATION.md",
+        "tools/bazel/manifests/phase11_requirement_evidence.json",
+        "tools/bazel/reference_contract.sh"
+      ],
+      "disposition": "blocked",
+      "phase11_handling": "CMake/C++ remains the guarded reference oracle and comparison source. Plan 11-04 records demotion criteria but does not remove, hide, or default-enable demotion of reference paths.",
+      "regression_guard": "criteria-reference-demotion-blocked must keep status not-cutover-ready and demotion_allowed false until all local, non-local, retained-code, release-candidate, and maintainer acceptance evidence is attached.",
+      "proof_scope": "manual-hardware-required",
+      "secret_handling": "name-only-or-redacted",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    }
+  ]
+}
