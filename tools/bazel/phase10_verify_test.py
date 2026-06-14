@@ -96,6 +96,7 @@ RUST_API_STRINGS = [
     "BusEvidenceClass",
     "AuxiliaryProofScope",
     "MmuTransportState",
+    "MmuTransportSurface",
     "DockIdentity",
     "ToolOffsetAxis",
     "ToolOffsetIdentity",
@@ -400,6 +401,45 @@ class Phase10VerifierTest(unittest.TestCase):
         for row_id in [*REQUIRED_MMU_ROW_IDS, *REQUIRED_CONCERN_ROW_IDS]:
             self.assertIn(row_id, result.stdout)
 
+    def test_rejects_mmu_manifest_state_not_accepted_by_rust_parser(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase10_surface(root)
+            auxiliary_path = root / "rust/crates/domain/src/auxiliary.rs"
+            auxiliary_text = auxiliary_path.read_text(encoding="utf-8")
+            auxiliary_text = auxiliary_text.replace('            "active" => Ok(Self::Active),\n', "")
+            auxiliary_path.write_text(auxiliary_text, encoding="utf-8")
+
+            # Act
+            result = self.run_verifier(["--manifests-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("mmu_transport_state 'active'", result.stdout)
+        self.assertIn("MmuTransportState::parse", result.stdout)
+
+    def test_ignores_commented_mmu_parser_arms(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase10_surface(root)
+            auxiliary_path = root / "rust/crates/domain/src/auxiliary.rs"
+            auxiliary_text = auxiliary_path.read_text(encoding="utf-8")
+            auxiliary_text = auxiliary_text.replace(
+                '            "active" => Ok(Self::Active),\n',
+                '            // "active" => Ok(Self::Active),\n',
+            )
+            auxiliary_path.write_text(auxiliary_text, encoding="utf-8")
+
+            # Act
+            result = self.run_verifier(["--manifests-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("mmu_transport_state 'active'", result.stdout)
+        self.assertIn("MmuTransportState::parse", result.stdout)
+
     def test_requires_modbus_toolchanger_rows(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -527,6 +567,7 @@ class Phase10VerifierTest(unittest.TestCase):
             "AuxiliaryRuntimeState",
             "FirmwareImageSource",
             "MmuTransportState",
+            "MmuTransportSurface",
             "AuxiliaryParityContract",
             "AuxiliaryControllerContract",
         ]:

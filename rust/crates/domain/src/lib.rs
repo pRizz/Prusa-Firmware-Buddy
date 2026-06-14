@@ -23,8 +23,8 @@ pub use auxiliary::{
     AuxiliaryControllerContract, AuxiliaryControllerContractInput, AuxiliaryControllerKind,
     AuxiliaryParityContract, AuxiliaryParityContractInput, AuxiliaryParityRowId,
     AuxiliaryProofScope, AuxiliaryRuntimeState, AuxiliaryUpdateMode, BusEvidenceClass,
-    ControllerFaultClass, DockIdentity, FirmwareImageSource, MmuTransportState, ModbusRequestKind,
-    ModbusUnitIdentity, ToolOffsetAxis, ToolOffsetIdentity,
+    ControllerFaultClass, DockIdentity, FirmwareImageSource, MmuTransportState,
+    MmuTransportSurface, ModbusRequestKind, ModbusUnitIdentity, ToolOffsetAxis, ToolOffsetIdentity,
 };
 pub use feature::{
     BurstSteppingMode, Feature, FeatureSet, GateState, Phase6FeatureGate, Phase6FeatureGates,
@@ -108,6 +108,8 @@ pub enum InvariantError {
     InvalidAuxiliaryProofScope,
     /// An MMU transport state was not recognized.
     InvalidMmuTransportState,
+    /// An MMU transport surface was not recognized.
+    InvalidMmuTransportSurface,
     /// A dock identity was not recognized.
     InvalidDockIdentity,
     /// A tool offset identity was outside the accepted range.
@@ -281,6 +283,8 @@ impl fmt::Display for InvariantError {
             ),
             Self::InvalidMmuTransportState => formatter
                 .write_str("MMU transport state must be one of the Phase 10 accepted values"),
+            Self::InvalidMmuTransportSurface => formatter
+                .write_str("MMU transport surface must be direct-uart or puppy-modbus-bridge"),
             Self::InvalidDockIdentity => formatter
                 .write_str("dock identity must be MODULAR_BED, DWARF_1..DWARF_6, or XBUDDY_EXTENSION"),
             Self::InvalidToolOffsetIdentity => {

@@ -350,20 +350,20 @@ impl AuxiliaryProofScope {
 pub enum MmuTransportState {
     /// MMU transport is disabled.
     Disabled,
-    /// MMU is connected over direct UART.
-    DirectUart,
-    /// MMU is bridged through puppy Modbus.
-    PuppyModbusBridge,
+    /// MMU transport is unavailable.
+    Unavailable,
     /// MMU transport is in bootloader mode.
     Bootloader,
+    /// MMU transport is stopped.
+    Stopped,
+    /// MMU transport is active.
+    Active,
     /// MMU transport is updating.
     Updating,
     /// MMU transport update failed.
     UpdateFailed,
     /// MMU communication fault is present.
     CommunicationFault,
-    /// Reference behavior is explicitly deferred.
-    ReferenceDeferred,
 }
 
 impl MmuTransportState {
@@ -371,13 +371,13 @@ impl MmuTransportState {
     pub fn parse(raw: &str) -> Result<Self, InvariantError> {
         match raw {
             "disabled" => Ok(Self::Disabled),
-            "direct-uart" => Ok(Self::DirectUart),
-            "puppy-modbus-bridge" => Ok(Self::PuppyModbusBridge),
+            "unavailable" => Ok(Self::Unavailable),
             "bootloader" => Ok(Self::Bootloader),
+            "stopped" => Ok(Self::Stopped),
+            "active" => Ok(Self::Active),
             "updating" => Ok(Self::Updating),
             "update-failed" => Ok(Self::UpdateFailed),
             "communication-fault" => Ok(Self::CommunicationFault),
-            "reference-deferred" => Ok(Self::ReferenceDeferred),
             _ => Err(InvariantError::InvalidMmuTransportState),
         }
     }
@@ -386,13 +386,41 @@ impl MmuTransportState {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Disabled => "disabled",
-            Self::DirectUart => "direct-uart",
-            Self::PuppyModbusBridge => "puppy-modbus-bridge",
+            Self::Unavailable => "unavailable",
             Self::Bootloader => "bootloader",
+            Self::Stopped => "stopped",
+            Self::Active => "active",
             Self::Updating => "updating",
             Self::UpdateFailed => "update-failed",
             Self::CommunicationFault => "communication-fault",
-            Self::ReferenceDeferred => "reference-deferred",
+        }
+    }
+}
+
+/// MMU transport surface represented by Phase 10 auxiliary contracts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum MmuTransportSurface {
+    /// MMU is connected over direct UART.
+    Uart,
+    /// MMU is bridged through puppy Modbus.
+    PuppyModbusBridge,
+}
+
+impl MmuTransportSurface {
+    /// Parses an MMU transport surface string.
+    pub fn parse(raw: &str) -> Result<Self, InvariantError> {
+        match raw {
+            "direct-uart" => Ok(Self::Uart),
+            "puppy-modbus-bridge" => Ok(Self::PuppyModbusBridge),
+            _ => Err(InvariantError::InvalidMmuTransportSurface),
+        }
+    }
+
+    /// Returns the manifest string for this transport surface.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Uart => "direct-uart",
+            Self::PuppyModbusBridge => "puppy-modbus-bridge",
         }
     }
 }
@@ -939,9 +967,11 @@ mod tests {
     fn parses_mmu_transport_states() {
         // Arrange
         let raw_states = [
-            "puppy-modbus-bridge",
-            "direct-uart",
+            "disabled",
+            "unavailable",
             "bootloader",
+            "stopped",
+            "active",
             "updating",
             "update-failed",
             "communication-fault",
@@ -952,6 +982,31 @@ mod tests {
 
         // Assert
         assert!(results.iter().all(Result::is_ok));
+    }
+
+    #[test]
+    fn parses_mmu_transport_surfaces() {
+        // Arrange
+        let raw_surfaces = ["direct-uart", "puppy-modbus-bridge"];
+        let unknown_surface = "availability-reporting-stub";
+
+        // Act
+        let results = raw_surfaces.map(MmuTransportSurface::parse);
+        let unknown_result = MmuTransportSurface::parse(unknown_surface);
+
+        // Assert
+        assert!(matches!(
+            results[0],
+            Ok(surface) if surface.as_str() == raw_surfaces[0]
+        ));
+        assert!(matches!(
+            results[1],
+            Ok(surface) if surface.as_str() == raw_surfaces[1]
+        ));
+        assert_eq!(
+            unknown_result,
+            Err(InvariantError::InvalidMmuTransportSurface)
+        );
     }
 
     #[test]

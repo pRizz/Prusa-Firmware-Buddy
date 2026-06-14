@@ -153,6 +153,7 @@ RUST_API_STRINGS = [
     "BusEvidenceClass",
     "AuxiliaryProofScope",
     "MmuTransportState",
+    "MmuTransportSurface",
     "DockIdentity",
     "ToolOffsetAxis",
     "ToolOffsetIdentity",
@@ -174,12 +175,29 @@ INVARIANT_ERROR_STRINGS = [
     "InvalidBusEvidenceClass",
     "InvalidAuxiliaryProofScope",
     "InvalidMmuTransportState",
+    "InvalidMmuTransportSurface",
     "InvalidDockIdentity",
     "InvalidToolOffsetIdentity",
     "InvalidControllerFaultClass",
     "InvalidAuxiliaryParityContract",
     "UnsupportedAuxiliaryController",
 ]
+
+REQUIRED_MMU_TRANSPORT_STATES = {
+    "disabled",
+    "unavailable",
+    "bootloader",
+    "stopped",
+    "active",
+    "updating",
+    "update-failed",
+    "communication-fault",
+}
+
+REQUIRED_MMU_TRANSPORT_SURFACES = {
+    "direct-uart": "MmuTransportSurface::Uart",
+    "puppy-modbus-bridge": "MmuTransportSurface::PuppyModbusBridge",
+}
 
 PACKAGE_UPDATE_STRINGS = [
     "DWARF_BINARY_PATH",
@@ -364,6 +382,69 @@ def require_reference_sources(root: Path, row: dict[str, Any], row_name: str) ->
             raise VerificationError(f"{row_name} references missing source path: {reference_source}")
 
 
+def extract_parse_strings(rust_source: str, type_name: str) -> set[str]:
+    sanitized_source = strip_rust_comments(rust_source)
+    impl_marker = f"impl {type_name}"
+    impl_start = sanitized_source.find(impl_marker)
+    if impl_start == -1:
+        raise VerificationError(f"{AUXILIARY_RUST.as_posix()} missing impl {type_name}")
+
+    next_impl = sanitized_source.find("\nimpl ", impl_start + len(impl_marker))
+    impl_body = sanitized_source[impl_start:] if next_impl == -1 else sanitized_source[impl_start:next_impl]
+    parse_marker = "pub fn parse"
+    parse_start = impl_body.find(parse_marker)
+    if parse_start == -1:
+        raise VerificationError(f"{AUXILIARY_RUST.as_posix()} missing {type_name}::parse")
+
+    parse_body = impl_body[parse_start:]
+    return set(re.findall(r'"([^"]+)"\s*=>\s*Ok\(Self::', parse_body))
+
+
+def require_mmu_transport_contracts(root: Path, rows: list[dict[str, Any]]) -> None:
+    auxiliary_text = read_text(root, AUXILIARY_RUST)
+    accepted_states = extract_parse_strings(auxiliary_text, "MmuTransportState")
+    accepted_surfaces = extract_parse_strings(auxiliary_text, "MmuTransportSurface")
+    errors: list[str] = []
+
+    missing_required_states = sorted(REQUIRED_MMU_TRANSPORT_STATES - accepted_states)
+    if missing_required_states:
+        errors.append(
+            f"{AUXILIARY_RUST.as_posix()} MmuTransportState::parse missing manifest states: "
+            + ", ".join(missing_required_states)
+        )
+
+    missing_required_surfaces = sorted(set(REQUIRED_MMU_TRANSPORT_SURFACES) - accepted_surfaces)
+    if missing_required_surfaces:
+        errors.append(
+            f"{AUXILIARY_RUST.as_posix()} MmuTransportSurface::parse missing manifest surfaces: "
+            + ", ".join(missing_required_surfaces)
+        )
+
+    for row in rows:
+        row_name = f"{MMU_TRANSPORT_MANIFEST.as_posix()} row {row.get('id', '<unknown>')}"
+        state_values = row.get("mmu_transport_state")
+        if not isinstance(state_values, list) or not state_values:
+            errors.append(f"{row_name} mmu_transport_state must be a non-empty list")
+            continue
+        for state in state_values:
+            if not isinstance(state, str):
+                errors.append(f"{row_name} mmu_transport_state contains non-string value: {state!r}")
+            elif state not in accepted_states:
+                errors.append(f"{row_name} mmu_transport_state {state!r} is not accepted by MmuTransportState::parse")
+
+        rust_surface = row.get("rust_surface")
+        transport_surface = row.get("transport_surface")
+        expected_surface = REQUIRED_MMU_TRANSPORT_SURFACES.get(str(transport_surface))
+        if expected_surface is not None and rust_surface != f"buddy-domain::auxiliary::{expected_surface}":
+            errors.append(
+                f"{row_name} transport_surface {transport_surface!r} must use rust_surface "
+                f"buddy-domain::auxiliary::{expected_surface}"
+            )
+
+    if errors:
+        raise VerificationError("\n".join(errors))
+
+
 def require_requirement_lifecycle_evidence(row: dict[str, Any], row_name: str) -> None:
     requirement_id = require_string(row, "requirement_id", row_name)
     if requirement_id != "IFCE-06":
@@ -414,6 +495,12 @@ def validate_manifest(root: Path, path: Path) -> list[dict[str, Any]]:
                 secret_handling = require_string(row, "secret_handling", row_name)
                 if secret_handling not in {"none", "named-only-redacted"}:
                     raise VerificationError(f"{row_name} secret_handling must be none or named-only-redacted")
+        except VerificationError as error:
+            errors.append(str(error))
+
+    if path == MMU_TRANSPORT_MANIFEST:
+        try:
+            require_mmu_transport_contracts(root, rows)
         except VerificationError as error:
             errors.append(str(error))
 
@@ -494,6 +581,73 @@ def strip_rust_comments_and_strings(source: str) -> str:
                     break
                 index += 1
             result.append('""')
+            continue
+
+        result.append(char)
+        index += 1
+    return "".join(result)
+
+
+def strip_rust_comments(source: str) -> str:
+    result: list[str] = []
+    index = 0
+    length = len(source)
+    while index < length:
+        char = source[index]
+        next_char = source[index + 1] if index + 1 < length else ""
+
+        if char == "/" and next_char == "/":
+            index += 2
+            while index < length and source[index] != "\n":
+                index += 1
+            result.append("\n")
+            continue
+
+        if char == "/" and next_char == "*":
+            index += 2
+            depth = 1
+            while index < length and depth > 0:
+                if source[index : index + 2] == "/*":
+                    depth += 1
+                    index += 2
+                    continue
+                if source[index : index + 2] == "*/":
+                    depth -= 1
+                    index += 2
+                    continue
+                if source[index] == "\n":
+                    result.append("\n")
+                index += 1
+            continue
+
+        raw_match = re.match(r'r(#*)"', source[index:])
+        if raw_match:
+            hashes = raw_match.group(1)
+            terminator = '"' + hashes
+            raw_start = index
+            index += len(raw_match.group(0))
+            end_index = source.find(terminator, index)
+            if end_index == -1:
+                result.append(source[raw_start:])
+                break
+            index = end_index + len(terminator)
+            result.append(source[raw_start:index])
+            continue
+
+        if char == '"':
+            result.append(char)
+            index += 1
+            escaped = False
+            while index < length:
+                current = source[index]
+                result.append(current)
+                index += 1
+                if escaped:
+                    escaped = False
+                elif current == "\\":
+                    escaped = True
+                elif current == '"':
+                    break
             continue
 
         result.append(char)
