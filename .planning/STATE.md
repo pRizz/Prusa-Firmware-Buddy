@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 11-02-PLAN.md
-last_updated: "2026-06-14T20:19:19.434Z"
+stopped_at: Completed 11-03-PLAN.md
+last_updated: "2026-06-14T20:35:13.629Z"
 last_activity: 2026-06-14
 progress:
   total_phases: 11
   completed_phases: 10
   total_plans: 37
-  completed_plans: 34
-  percent: 92
+  completed_plans: 35
+  percent: 95
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-06-02)
 ## Current Position
 
 Phase: 11 (Parity Pyramid and Cutover Evidence) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-06-14
 
@@ -68,6 +68,7 @@ Progress: [██████████] 100%
 | Phase 07 P05 | 7 min | 2 tasks | 6 files |
 | Phase 11 P01 | 10m43s | 2 tasks | 4 files |
 | Phase 11 P02 | 6m09s | 1 tasks | 2 files |
+| Phase 11 P03 | 8m12s | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -98,6 +99,9 @@ Recent decisions affecting current work:
 - [Phase 11]: Plan 11-01 implemented later Phase 11 verifier modes now so absent later-owned manifests fail with explicit missing-manifest errors.
 - [Phase 11]: Preserved release-candidate, simulator, hardware, live network, and final cutover proof as named blockers instead of local pass evidence.
 - [Phase 11]: Referenced Plan 11-03 and Plan 11-04 manifests as pending evidence classes rather than source artifacts until those files exist.
+- [Phase 11]: Represent every VERF-03 comparison row as normalized semantic evidence with guarded reference-only execution.
+- [Phase 11]: Keep byte-identity claims available only through an explicit Rust contract requiring fixture and normalization data.
+- [Phase 11]: Classify simulator, hardware, manual, and retained-code evidence as non-local so local cutover proofs cannot overclaim.
 
 ### Pending Todos
 
@@ -111,6 +115,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-14T20:19:19.431Z
-Stopped at: Completed 11-02-PLAN.md
+Last session: 2026-06-14T20:35:13.627Z
+Stopped at: Completed 11-03-PLAN.md
 Resume file: None
