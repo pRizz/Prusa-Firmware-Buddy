@@ -1,0 +1,247 @@
+{
+  "schema_version": 1,
+  "phase": "09-network-web-services-and-transfers",
+  "phase_lifecycle_id": "9-2026-06-14T02-15-21",
+  "negative_cases": [
+    {
+      "id": "custom-cert-valid-der-intentional-delta",
+      "requirement_id": "IFCE-02",
+      "category": "custom-certificate",
+      "reference_sources": [
+        "src/connect/tls/tls.cpp",
+        "tools/bazel/manifests/phase9_network_concern_dispositions.json",
+        ".planning/phases/09-network-web-services-and-transfers/09-CONTEXT.md"
+      ],
+      "input_fixture": {
+        "custom_certificate_path": "/internal/connect/connect.der",
+        "certificate_material": "omitted",
+        "condition": "valid DER file provisioned by a future targeted test"
+      },
+      "expected_outcome": {
+        "classification": "intentional-delta-fixture",
+        "runtime_claim": "non-local until implementation or hardware evidence records it",
+        "path_only": true
+      },
+      "evidence_class": "manual-hardware-required",
+      "proof_scope": "non-local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "approved",
+      "runnable_check": "metadata-schema-only",
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "custom-cert-missing-der-preserved-defect",
+      "requirement_id": "IFCE-02",
+      "category": "custom-certificate",
+      "reference_sources": [
+        "src/connect/tls/tls.cpp",
+        "tools/bazel/manifests/phase9_network_concern_dispositions.json",
+        ".planning/phases/09-network-web-services-and-transfers/09-RESEARCH.md"
+      ],
+      "input_fixture": {
+        "custom_certificate_path": "/internal/connect/connect.der",
+        "certificate_material": "omitted",
+        "condition": "path missing"
+      },
+      "expected_outcome": {
+        "classification": "preserved-defect",
+        "preserved_defect": true,
+        "path_only": true
+      },
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "runnable_check": "metadata-schema-only",
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "custom-cert-invalid-der-rejected",
+      "requirement_id": "IFCE-02",
+      "category": "custom-certificate",
+      "reference_sources": [
+        "src/connect/tls/tls.cpp",
+        "tools/bazel/manifests/phase9_network_concern_dispositions.json",
+        ".planning/phases/09-network-web-services-and-transfers/09-CONTEXT.md"
+      ],
+      "input_fixture": {
+        "custom_certificate_path": "/internal/connect/connect.der",
+        "certificate_material": "omitted",
+        "condition": "invalid DER file"
+      },
+      "expected_outcome": {
+        "classification": "rejected-invalid-der",
+        "rejected": true,
+        "path_only": true
+      },
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "runnable_check": "metadata-schema-only",
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "invalid-certificate-chain-rejected",
+      "requirement_id": "IFCE-02",
+      "category": "tls-certificate-chain",
+      "reference_sources": [
+        "src/connect/tls/tls.cpp",
+        "src/connect/tls/net_sockets.cpp",
+        "tools/bazel/manifests/phase9_connect_contracts.json"
+      ],
+      "input_fixture": {
+        "tls_policy": "MBEDTLS_SSL_VERIFY_REQUIRED",
+        "condition": "invalid certificate chain from approved future TLS fixture",
+        "certificate_material": "omitted"
+      },
+      "expected_outcome": {
+        "classification": "rejected-invalid-chain",
+        "rejected": true,
+        "runtime_claim": "non-local until targeted TLS evidence records it"
+      },
+      "evidence_class": "manual-hardware-required",
+      "proof_scope": "non-local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "runnable_check": "metadata-schema-only",
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "weak-signature-sha1-md5-dispositioned",
+      "requirement_id": "IFCE-02",
+      "category": "tls-weak-signature",
+      "reference_sources": [
+        "include/mbedtls/cipher_config_ece.h",
+        "src/connect/tls/tls.cpp",
+        "tools/bazel/manifests/phase9_network_concern_dispositions.json"
+      ],
+      "input_fixture": {
+        "retained_modules": [
+          "MBEDTLS_SHA1_C",
+          "MBEDTLS_MD5_C"
+        ],
+        "runtime_policy": "not-accepted-runtime-policy"
+      },
+      "expected_outcome": {
+        "classification": "preserve-with-explicit-risk",
+        "runtime_acceptance": false,
+        "future_test_needed": "weak certificate rejection"
+      },
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "none",
+      "intentional_delta": "none",
+      "runnable_check": "metadata-schema-only",
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "duplicate-connect-command-rejected",
+      "requirement_id": "IFCE-02",
+      "category": "connect-command",
+      "reference_sources": [
+        "src/connect/connect.cpp",
+        "src/connect/planner.cpp",
+        "src/common/http/websocket.cpp"
+      ],
+      "input_fixture": {
+        "command_condition": "duplicate command id",
+        "transport": [
+          "polling-response",
+          "websocket-frame"
+        ]
+      },
+      "expected_outcome": {
+        "classification": "duplicate-command-rejected",
+        "event": "Rejected",
+        "state": "ProcessingOtherCommand"
+      },
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "runnable_check": "metadata-schema-only",
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "large-websocket-command-rejected",
+      "requirement_id": "IFCE-02",
+      "category": "connect-command",
+      "reference_sources": [
+        "src/connect/connect.cpp",
+        "src/connect/planner.cpp",
+        "src/common/http/websocket.cpp",
+        ".planning/phases/09-network-web-services-and-transfers/09-RESEARCH.md"
+      ],
+      "input_fixture": {
+        "command_condition": "oversized command frame",
+        "buffer_model": "whole-response shared buffer"
+      },
+      "expected_outcome": {
+        "classification": "large-command-rejected",
+        "event": "Rejected",
+        "state": "BrokenCommand"
+      },
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "runnable_check": "metadata-schema-only",
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "proxy-tls-only-no-auth-plain-leg-preserved",
+      "requirement_id": "IFCE-02",
+      "category": "connect-proxy",
+      "reference_sources": [
+        "doc/proxy_support.md",
+        "src/common/http/proxy.cpp",
+        "src/connect/tls/tls.cpp",
+        "tools/bazel/manifests/phase9_connect_contracts.json"
+      ],
+      "input_fixture": {
+        "proxy_limitations": [
+          "proxy-authentication-absent",
+          "printer-to-proxy-leg-unencrypted",
+          "proxy-active-only-when-connect_tls-true"
+        ]
+      },
+      "expected_outcome": {
+        "classification": "preserve-current-limitations",
+        "proxy_behavior_change": false
+      },
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "secret_handling": "named-only-redacted",
+      "intentional_delta": "none",
+      "runnable_check": "metadata-schema-only",
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    },
+    {
+      "id": "stalled-network-transfer-timeout-classified",
+      "requirement_id": "IFCE-02/IFCE-03",
+      "category": "transfer-network-timeout",
+      "reference_sources": [
+        "src/transfers/download.cpp",
+        "src/transfers/transfer.cpp",
+        "src/connect/connect.cpp",
+        "tools/bazel/manifests/phase9_transfer_contracts.json"
+      ],
+      "input_fixture": {
+        "transfer_condition": "stalled network transfer",
+        "range_behavior": "Range restart metadata retained"
+      },
+      "expected_outcome": {
+        "classification": "timeout-or-recovery",
+        "recovery_behavior": "non-local long-running proof required",
+        "runtime_claim": "metadata-only"
+      },
+      "evidence_class": "manual-hardware-required",
+      "proof_scope": "non-local",
+      "secret_handling": "none",
+      "intentional_delta": "none",
+      "runnable_check": "metadata-schema-only",
+      "phase_lifecycle_id": "9-2026-06-14T02-15-21"
+    }
+  ]
+}

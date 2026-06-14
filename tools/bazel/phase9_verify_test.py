@@ -12,6 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 VERIFIER = ROOT / "tools/bazel/phase9_verify.py"
+NEGATIVE_RUNNER = ROOT / "tools/bazel/phase9_negative_fixtures.py"
 
 PHASE = "09-network-web-services-and-transfers"
 PHASE_LIFECYCLE_ID = "9-2026-06-14T02-15-21"
@@ -76,6 +77,18 @@ REQUIRED_CONCERN_ROW_IDS = [
     "concern-phase9-network-tls-coverage-gaps",
 ]
 
+REQUIRED_NEGATIVE_CASE_IDS = [
+    "custom-cert-valid-der-intentional-delta",
+    "custom-cert-missing-der-preserved-defect",
+    "custom-cert-invalid-der-rejected",
+    "invalid-certificate-chain-rejected",
+    "weak-signature-sha1-md5-dispositioned",
+    "duplicate-connect-command-rejected",
+    "large-websocket-command-rejected",
+    "proxy-tls-only-no-auth-plain-leg-preserved",
+    "stalled-network-transfer-timeout-classified",
+]
+
 RUST_API_STRINGS = [
     "NetworkEvidenceClass",
     "NetworkParityRowId",
@@ -138,8 +151,11 @@ class Phase9VerifierTest(unittest.TestCase):
         temp_dir = tempfile.TemporaryDirectory()
         root = Path(temp_dir.name)
         (root / "tools/bazel").mkdir(parents=True)
+        (root / "tools/bazel/fixtures").mkdir(parents=True)
         if VERIFIER.exists():
             shutil.copy2(VERIFIER, root / "tools/bazel/phase9_verify.py")
+        if NEGATIVE_RUNNER.exists():
+            shutil.copy2(NEGATIVE_RUNNER, root / "tools/bazel/phase9_negative_fixtures.py")
         return temp_dir, root
 
     def write_file(self, root: Path, path: str, text: str = "") -> None:
@@ -518,12 +534,156 @@ class Phase9VerifierTest(unittest.TestCase):
             ),
         )
 
+    def negative_case(self, root: Path, case_id: str) -> dict[str, object]:
+        row: dict[str, object] = {
+            "id": case_id,
+            "requirement_id": "IFCE-02",
+            "category": "connect-command",
+            "reference_sources": ["src/connect/connect.cpp", "src/connect/planner.cpp"],
+            "input_fixture": {"condition": "metadata-only"},
+            "expected_outcome": {"classification": "source-backed"},
+            "evidence_class": "source-audit",
+            "proof_scope": "local",
+            "secret_handling": "named-only-redacted",
+            "intentional_delta": "none",
+            "runnable_check": "metadata-schema-only",
+            "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
+        }
+        if case_id == "custom-cert-valid-der-intentional-delta":
+            row.update(
+                {
+                    "category": "custom-certificate",
+                    "reference_sources": ["src/connect/tls/tls.cpp"],
+                    "input_fixture": {
+                        "custom_certificate_path": "/internal/connect/connect.der",
+                        "certificate_material": "omitted",
+                    },
+                    "expected_outcome": {"classification": "intentional-delta-fixture"},
+                    "evidence_class": "manual-hardware-required",
+                    "proof_scope": "non-local",
+                    "intentional_delta": "approved",
+                }
+            )
+        elif case_id == "custom-cert-missing-der-preserved-defect":
+            row.update(
+                {
+                    "category": "custom-certificate",
+                    "reference_sources": ["src/connect/tls/tls.cpp"],
+                    "input_fixture": {
+                        "custom_certificate_path": "/internal/connect/connect.der",
+                        "certificate_material": "omitted",
+                    },
+                    "expected_outcome": {
+                        "classification": "preserved-defect",
+                        "preserved_defect": True,
+                    },
+                }
+            )
+        elif case_id == "custom-cert-invalid-der-rejected":
+            row.update(
+                {
+                    "category": "custom-certificate",
+                    "reference_sources": ["src/connect/tls/tls.cpp"],
+                    "input_fixture": {
+                        "custom_certificate_path": "/internal/connect/connect.der",
+                        "certificate_material": "omitted",
+                    },
+                    "expected_outcome": {
+                        "classification": "rejected-invalid-der",
+                        "rejected": True,
+                    },
+                }
+            )
+        elif case_id == "invalid-certificate-chain-rejected":
+            row.update(
+                {
+                    "category": "tls-certificate-chain",
+                    "reference_sources": ["src/connect/tls/tls.cpp"],
+                    "input_fixture": {
+                        "tls_policy": "MBEDTLS_SSL_VERIFY_REQUIRED",
+                        "certificate_material": "omitted",
+                    },
+                    "expected_outcome": {"classification": "rejected-invalid-chain", "rejected": True},
+                    "evidence_class": "manual-hardware-required",
+                    "proof_scope": "non-local",
+                }
+            )
+        elif case_id == "weak-signature-sha1-md5-dispositioned":
+            row.update(
+                {
+                    "category": "tls-weak-signature",
+                    "reference_sources": ["include/mbedtls/cipher_config_ece.h"],
+                    "input_fixture": {
+                        "retained_modules": ["MBEDTLS_SHA1_C", "MBEDTLS_MD5_C"],
+                        "runtime_policy": "not-accepted-runtime-policy",
+                    },
+                    "expected_outcome": {"classification": "preserve-with-explicit-risk"},
+                    "secret_handling": "none",
+                }
+            )
+        elif case_id == "duplicate-connect-command-rejected":
+            row["input_fixture"] = {"condition": "duplicate command id"}
+            row["expected_outcome"] = {"event": "Rejected"}
+        elif case_id == "large-websocket-command-rejected":
+            row["input_fixture"] = {"condition": "oversized command frame"}
+            row["expected_outcome"] = {"state": "BrokenCommand"}
+        elif case_id == "proxy-tls-only-no-auth-plain-leg-preserved":
+            row.update(
+                {
+                    "category": "connect-proxy",
+                    "reference_sources": ["doc/proxy_support.md", "src/common/http/proxy.cpp"],
+                    "input_fixture": {
+                        "proxy_limitations": [
+                            "proxy-authentication-absent",
+                            "printer-to-proxy-leg-unencrypted",
+                            "proxy-active-only-when-connect_tls-true",
+                        ]
+                    },
+                    "expected_outcome": {"classification": "preserve-current-limitations"},
+                }
+            )
+        elif case_id == "stalled-network-transfer-timeout-classified":
+            row.update(
+                {
+                    "requirement_id": "IFCE-02/IFCE-03",
+                    "category": "transfer-network-timeout",
+                    "reference_sources": ["src/transfers/download.cpp", "src/transfers/transfer.cpp"],
+                    "input_fixture": {"condition": "stalled network transfer"},
+                    "expected_outcome": {
+                        "classification": "timeout-or-recovery",
+                        "recovery_behavior": "non-local long-running proof required",
+                    },
+                    "evidence_class": "manual-hardware-required",
+                    "proof_scope": "non-local",
+                    "secret_handling": "none",
+                }
+            )
+        self.write_source_paths(root, row["reference_sources"])
+        return row
+
+    def write_negative_fixture_surface(self, root: Path) -> None:
+        self.write_file(
+            root,
+            "tools/bazel/fixtures/phase9_negative_network_cases.json",
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "phase": PHASE,
+                    "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
+                    "negative_cases": [
+                        self.negative_case(root, case_id) for case_id in REQUIRED_NEGATIVE_CASE_IDS
+                    ],
+                }
+            ),
+        )
+
     def write_phase9_quick_surface(self, root: Path) -> None:
         self.write_connect_manifest(root)
         self.write_wui_manifest(root)
         self.write_transfer_manifest(root)
         self.write_network_service_manifest(root)
         self.write_concern_manifest(root)
+        self.write_negative_fixture_surface(root)
         self.write_rust_api_surface(root)
         self.write_facade_files(root)
         self.write_validation_contract(root)
@@ -782,6 +942,39 @@ class Phase9VerifierTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn(PHASE_LIFECYCLE_ID, result.stdout)
         self.assertIn("nyquist_compliant: true", result.stdout)
+
+    def test_requires_negative_fixture_runner_wiring(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase9_quick_surface(root)
+
+            # Act
+            focused_result = self.run_verifier(["--negative-fixtures-only"], maybe_root=root)
+
+            # Assert
+            self.assertEqual(focused_result.returncode, 0, focused_result.stdout)
+
+            # Arrange
+            (root / "tools/bazel/fixtures/phase9_negative_network_cases.json").unlink()
+
+            # Act
+            missing_cases_result = self.run_verifier(["--quick"], maybe_root=root)
+
+            # Assert
+            self.assertNotEqual(missing_cases_result.returncode, 0)
+            self.assertIn("phase9_negative_network_cases.json", missing_cases_result.stdout)
+
+            # Arrange
+            self.write_negative_fixture_surface(root)
+            (root / "tools/bazel/phase9_negative_fixtures.py").unlink()
+
+            # Act
+            missing_runner_result = self.run_verifier(["--quick"], maybe_root=root)
+
+            # Assert
+            self.assertNotEqual(missing_runner_result.returncode, 0)
+            self.assertIn("phase9_negative_fixtures.py", missing_runner_result.stdout)
 
 
 if __name__ == "__main__":

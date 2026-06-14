@@ -25,6 +25,8 @@ CONCERN_DISPOSITIONS_MANIFEST = Path(
 VALIDATION_CONTRACT = Path(".planning/phases/09-network-web-services-and-transfers/09-VALIDATION.md")
 NETWORK_RUST = Path("rust/crates/domain/src/network.rs")
 RUST_DOMAIN_LIB = Path("rust/crates/domain/src/lib.rs")
+NEGATIVE_FIXTURE_CASES = Path("tools/bazel/fixtures/phase9_negative_network_cases.json")
+NEGATIVE_FIXTURE_RUNNER = Path("tools/bazel/phase9_negative_fixtures.py")
 
 ALLOWED_EVIDENCE_CLASSES = {
     "manifest-check",
@@ -242,6 +244,7 @@ PHASE9_ARTIFACTS_FOR_SECURITY_SCAN = [
     TRANSFER_MANIFEST,
     NETWORK_SERVICES_MANIFEST,
     CONCERN_DISPOSITIONS_MANIFEST,
+    NEGATIVE_FIXTURE_CASES,
     VALIDATION_CONTRACT,
 ]
 
@@ -869,7 +872,7 @@ def check_manifests() -> None:
 
 
 def check_security_contract() -> None:
-    collect_errors([check_secret_markers, check_no_phase9_overclaim])
+    collect_errors([check_secret_markers, check_no_phase9_overclaim, check_negative_fixtures])
 
 
 def check_quick() -> None:
@@ -886,6 +889,7 @@ def check_quick() -> None:
             check_just_surface,
             check_secret_markers,
             check_no_phase9_overclaim,
+            check_negative_fixtures,
         ]
     )
 
@@ -902,6 +906,17 @@ def run_command(command: list[str]) -> None:
     if result.returncode != 0:
         joined = " ".join(command)
         raise VerificationError(f"{joined} failed with exit code {result.returncode}\n{result.stdout}")
+
+
+def check_negative_fixtures() -> None:
+    run_command(
+        [
+            sys.executable,
+            NEGATIVE_FIXTURE_RUNNER.as_posix(),
+            "--cases",
+            NEGATIVE_FIXTURE_CASES.as_posix(),
+        ]
+    )
 
 
 def check_all() -> None:
@@ -933,6 +948,11 @@ def parse_args() -> argparse.Namespace:
     modes.add_argument("--manifests-only", action="store_true", help="verify only Phase 9 manifests")
     modes.add_argument("--rust-only", action="store_true", help="verify only Rust domain API surface")
     modes.add_argument("--security-only", action="store_true", help="verify only secret and overclaim guards")
+    modes.add_argument(
+        "--negative-fixtures-only",
+        action="store_true",
+        help="verify only Phase 9 negative protocol/TLS fixtures",
+    )
     return parser.parse_args()
 
 
@@ -946,6 +966,8 @@ def main() -> int:
         check = check_network_rust_api_surface
     elif args.security_only:
         check = check_security_contract
+    elif args.negative_fixtures_only:
+        check = check_negative_fixtures
     else:
         check = check_quick
 
