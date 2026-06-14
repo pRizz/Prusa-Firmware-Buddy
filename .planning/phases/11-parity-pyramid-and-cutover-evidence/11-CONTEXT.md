@@ -56,7 +56,7 @@ This phase does not add new product behavior. It aggregates, hardens, and audits
 ### Verification And Lifecycle
 
 - **D-17:** Relevant local verification should include the Phase 11 verifier tests, the Phase 11 verifier, Rust format/lint/build/test checks through existing Bazel/just labels, and lifecycle validation.
-- **D-18:** The Phase 11 verifier must check for overclaim language such as local hardware proof, final cutover completion, or byte-identical firmware output when the evidence is only manifest, CI, simulator, hardware/manual, or retained-code justification.
+- **D-18:** The Phase 11 verifier must check for overclaim language that asserts hardware proof from local-only evidence, final cutover completion, or firmware byte identity when the evidence is only manifest, CI, simulator, hardware/manual, or retained-code justification.
 - **D-19:** Lifecycle validation must stay clean: context, research, plans, summaries, verification, and phase artifacts should carry `phase_lifecycle_id: 11-2026-06-14T18-48-49`.
 
 ### the agent's Discretion

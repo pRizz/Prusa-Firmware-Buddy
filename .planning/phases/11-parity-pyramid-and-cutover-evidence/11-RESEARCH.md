@@ -49,7 +49,7 @@ The following constraints are copied verbatim from `.planning/phases/11-parity-p
 ### Verification And Lifecycle
 
 - **D-17:** Relevant local verification should include the Phase 11 verifier tests, the Phase 11 verifier, Rust format/lint/build/test checks through existing Bazel/just labels, and lifecycle validation.
-- **D-18:** The Phase 11 verifier must check for overclaim language such as local hardware proof, final cutover completion, or byte-identical firmware output when the evidence is only manifest, CI, simulator, hardware/manual, or retained-code justification.
+- **D-18:** The Phase 11 verifier must check for overclaim language that asserts hardware proof from local-only evidence, final cutover completion, or firmware byte identity when the evidence is only manifest, CI, simulator, hardware/manual, or retained-code justification.
 - **D-19:** Lifecycle validation must stay clean: context, research, plans, summaries, verification, and phase artifacts should carry `phase_lifecycle_id: 11-2026-06-14T18-48-49`.
 
 ### the agent's Discretion
@@ -236,8 +236,8 @@ This follows the verifier pattern of parsing JSON rows and raising `Verification
 ### Anti-Patterns to Avoid
 
 - **Roadmap checkbox as proof:** Do not map a requirement as satisfied from `.planning/ROADMAP.md` alone; cross-check actual artifacts. [VERIFIED: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md]
-- **Local hardware proof wording:** Do not write that hardware, simulator, live TLS, RS485, MMU, toolchanger, physical UI, media timing, or release-candidate proof passed locally unless a command/artifact exists. [VERIFIED: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md; VERIFIED: tools/bazel/phase10_verify.py]
-- **Byte identity without fixture basis:** Do not claim byte-identical firmware outputs without a deterministic reference fixture or normalization rule. [VERIFIED: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md]
+- **Hardware proof from local-only evidence:** Do not write that hardware, simulator, live TLS, RS485, MMU, toolchanger, physical UI, media timing, or release-candidate proof passed locally unless a command/artifact exists. [VERIFIED: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md; VERIFIED: tools/bazel/phase10_verify.py]
+- **Byte identity without fixture basis:** Do not claim firmware byte identity without a deterministic reference fixture or normalization rule. [VERIFIED: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md]
 - **Secret-bearing evidence:** Do not store Wi-Fi passwords, PrusaLink passwords, Connect tokens, certificate bytes, signing key values, raw crash dumps, or firmware payload bytes in Phase 11 manifests. [VERIFIED: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md]
 - **Default reference execution:** Do not make local `just phase11-verify` run heavy CMake/Python reference tooling by default. [VERIFIED: .bazelrc; VERIFIED: tools/bazel/reference_contract.sh]
 
@@ -260,7 +260,7 @@ This follows the verifier pattern of parsing JSON rows and raising `Verification
 **What goes wrong:** The local verifier passes and the report implies final production cutover is approved. [VERIFIED: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md]  
 **Why it happens:** Prior phase verifiers intentionally pass static/source-backed checks while deferring hardware, simulator, live service, and release proof. [VERIFIED: .planning/phases/07-persistence-storage-and-resource-compatibility/07-VERIFICATION.md; VERIFIED: .planning/phases/09-network-web-services-and-transfers/09-VERIFICATION.md; VERIFIED: .planning/phases/10-auxiliary-controllers-and-expansion-ecosystem/10-VERIFICATION.md]  
 **How to avoid:** Make the cutover contract report `not-cutover-ready` until all required non-local evidence is attached or accepted. [VERIFIED: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md]  
-**Warning signs:** Phrases such as "cutover evidence complete", "hardware verified locally", or "byte-identical firmware output" appear without artifacts. [VERIFIED: tools/bazel/phase10_verify.py; VERIFIED: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md]
+**Warning signs:** Phrases that mark cutover evidence as final, assert hardware passed from local-only evidence, or claim firmware byte identity appear without artifacts. [VERIFIED: tools/bazel/phase10_verify.py; VERIFIED: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md]
 
 ### Pitfall 2: Pending Requirement Drift
 **What goes wrong:** `.planning/REQUIREMENTS.md` still marks BAZL-03, BAZL-05, VERF-01, VERF-03, VERF-04, and VERF-05 as pending, and Phase 11 silently ignores the non-VERF pending rows. [VERIFIED: .planning/REQUIREMENTS.md]  
@@ -278,7 +278,7 @@ This follows the verifier pattern of parsing JSON rows and raising `Verification
 **What goes wrong:** Cutover evidence includes certificate bytes, token values, signing key material, firmware payload bytes, or raw crash dumps. [VERIFIED: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md]  
 **Why it happens:** Release, TLS, crash dump, credential, and firmware payload surfaces are evidence-rich but sensitive. [VERIFIED: .planning/codebase/CONCERNS.md; VERIFIED: .planning/codebase/INTEGRATIONS.md]  
 **How to avoid:** Enforce forbidden marker scans and name-only/redacted policies in Phase 11 manifests and validation docs. [VERIFIED: tools/bazel/phase9_verify.py; VERIFIED: tools/bazel/phase10_verify.py]  
-**Warning signs:** Manifest fields named `token_value`, `password_value`, `certificate_bytes`, `private_key`, `SIGNING_KEY_VALUE`, `firmware_payload`, or `raw_crash_dump`. [VERIFIED: tools/bazel/phase9_verify.py; VERIFIED: tools/bazel/phase10_verify.py]
+**Warning signs:** Manifest fields that store token values, password values, certificate bytes, private key material, signing key values, firmware payload bytes, or raw crash dumps. [VERIFIED: tools/bazel/phase9_verify.py; VERIFIED: tools/bazel/phase10_verify.py]
 
 ### Pitfall 5: Reference Path Demotion Inside Evidence Work
 **What goes wrong:** A plan removes or demotes CMake/C++ before all parity gates are satisfied. [VERIFIED: .planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md]  
@@ -333,12 +333,12 @@ The v1 requirement set is derived from `.planning/REQUIREMENTS.md`, which lists 
 
 ```python
 OVERCLAIM_STRINGS = [
-    "hardware verified locally",
-    "simulator passed locally",
-    "byte-identical firmware",
-    "cutover complete",
-    "reference path removed",
-    "signing key value recorded",
+    "hardware verified from local-only evidence",
+    "simulator marked passed locally",
+    "firmware byte identity claimed",
+    "cutover marked complete without evidence",
+    "reference path deletion claimed",
+    "signing key material recorded",
 ]
 ```
 
