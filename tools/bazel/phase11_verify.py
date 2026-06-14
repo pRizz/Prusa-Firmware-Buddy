@@ -223,6 +223,17 @@ def require_non_empty_list_of_strings(row: dict[str, object], field: str, row_na
     return values
 
 
+def require_required_non_local_evidence(
+    row: dict[str, object],
+    row_name: str,
+    proof_scope: str,
+) -> None:
+    if proof_scope in NON_LOCAL_PROOF_SCOPES:
+        require_non_empty_list_of_strings(row, "required_non_local_evidence", row_name)
+        return
+    require_list_of_strings(row, "required_non_local_evidence", row_name)
+
+
 def require_fields(
     row: dict[str, object],
     fields: list[str],
@@ -359,6 +370,7 @@ def check_pyramid(root: Path) -> None:
             proof_scope = require_string(row, "proof_scope", row_name)
             if proof_scope not in ALLOWED_PROOF_SCOPES:
                 raise VerificationError(f"{row_name} proof_scope is not allowed: {proof_scope}")
+            require_required_non_local_evidence(row, row_name, proof_scope)
             evidence_class = require_string(row, "evidence_class", row_name)
             if proof_scope == "local" and evidence_class not in LOCAL_ONLY_EVIDENCE_CLASSES:
                 raise VerificationError(
@@ -459,6 +471,7 @@ def check_requirements(root: Path) -> None:
             proof_scope = require_string(row, "proof_scope", row_name)
             if proof_scope not in ALLOWED_PROOF_SCOPES:
                 raise VerificationError(f"{row_name} proof_scope is not allowed: {proof_scope}")
+            require_required_non_local_evidence(row, row_name, proof_scope)
             source_artifacts = require_non_empty_list_of_strings(row, "source_artifacts", row_name)
             if source_artifacts == [".planning/ROADMAP.md"]:
                 raise VerificationError(f"{row_name} must not use roadmap-only evidence")
@@ -610,6 +623,7 @@ def check_comparisons(root: Path) -> None:
             proof_scope = require_string(row, "proof_scope", row_name)
             if proof_scope not in ALLOWED_PROOF_SCOPES:
                 raise VerificationError(f"{row_name} proof_scope is not allowed: {proof_scope}")
+            require_required_non_local_evidence(row, row_name, proof_scope)
             comparison_kind = require_string(row, "comparison_kind", row_name)
             if comparison_kind not in ALLOWED_REFERENCE_COMPARISON_KINDS:
                 raise VerificationError(f"{row_name} comparison_kind is not allowed: {comparison_kind}")

@@ -396,6 +396,25 @@ class Phase11VerifierTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("pyramid-retained-code-justifications", result.stdout)
 
+    def test_pyramid_only_rejects_empty_non_local_evidence_list(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_complete_pyramid_manifest(root)
+            rows = self.manifest_rows(root, PYRAMID_MANIFEST)
+            for row in rows:
+                if row["id"] == "pyramid-simulator-flows":
+                    row["required_non_local_evidence"] = []
+            self.write_manifest_rows(root, PYRAMID_MANIFEST, rows)
+
+            # Act
+            result = self.run_verifier(["--pyramid-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("pyramid-simulator-flows", result.stdout)
+        self.assertIn("required_non_local_evidence", result.stdout)
+
     def test_requirements_only_reports_missing_manifest(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -483,6 +502,25 @@ class Phase11VerifierTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("roadmap-only", result.stdout)
 
+    def test_requirements_only_rejects_empty_non_local_evidence_list(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase11_surface(root)
+            rows = self.manifest_rows(root, REQUIREMENT_MANIFEST)
+            for row in rows:
+                if row["id"] == "req-base-02":
+                    row["required_non_local_evidence"] = []
+            self.write_manifest_rows(root, REQUIREMENT_MANIFEST, rows)
+
+            # Act
+            result = self.run_verifier(["--requirements-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("req-base-02", result.stdout)
+        self.assertIn("required_non_local_evidence", result.stdout)
+
     def test_comparison_only_rejects_byte_identity_without_fixture(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -565,6 +603,25 @@ class Phase11VerifierTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("ref-release-metadata", result.stdout)
         self.assertIn("byte identity comparisons must set byte_identity_claim true", result.stdout)
+
+    def test_comparison_only_rejects_empty_non_local_evidence_list(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase11_surface(root)
+            rows = self.manifest_rows(root, COMPARISON_MANIFEST)
+            for row in rows:
+                if row["id"] == "ref-product-artifacts":
+                    row["required_non_local_evidence"] = []
+            self.write_manifest_rows(root, COMPARISON_MANIFEST, rows)
+
+            # Act
+            result = self.run_verifier(["--comparison-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("ref-product-artifacts", result.stdout)
+        self.assertIn("required_non_local_evidence", result.stdout)
 
     def test_cutover_only_rejects_demote_reference_true(self) -> None:
         # Arrange
