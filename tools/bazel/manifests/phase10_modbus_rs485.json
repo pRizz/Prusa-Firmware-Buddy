@@ -1,0 +1,272 @@
+{
+  "schema_version": 1,
+  "phase": "10-auxiliary-controllers-and-expansion-ecosystem",
+  "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+  "modbus_rs485_contracts": [
+    {
+      "id": "lightmodbus-retained-dependency",
+      "requirement_id": "IFCE-06",
+      "surface": "lightmodbus-retained-dependency",
+      "reference_sources": [
+        "lib/AddLiblightmodbus.cmake",
+        "lib/liblightmodbus/include/lightmodbus/lightmodbus.h",
+        "include/puppies/PuppyModbus.hpp",
+        "src/puppies/PuppyModbus.cpp"
+      ],
+      "reference_behavior": "lightmodbus is retained as the Modbus RTU master dependency wrapped by PuppyModbus for auxiliary-controller communication.",
+      "rust_surface": "buddy-domain::auxiliary::ModbusRetainedDependency::LightModbus",
+      "evidence_class": "static-source-audit",
+      "proof_scope": "local",
+      "update_build_surface": "cmake-reference",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Replacing lightmodbus or proving live RTU framing parity requires hardware-smoke proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "bus_surface": "PuppyBus RS485 through lightmodbus",
+      "modbus_units": [
+        "Dwarf dynamic units",
+        "ModularBed dynamic unit",
+        "XBuddyExtension fixed dock unit",
+        "modbusUnitNr = 220"
+      ],
+      "request_kinds": [
+        "read discrete input",
+        "read input register",
+        "read holding register",
+        "write holding register",
+        "write coil",
+        "read FIFO"
+      ],
+      "timeout_or_retry_semantics": [
+        "MODBUS_READ_TIMEOUT_MS",
+        "lightmodbus request and response parsing"
+      ],
+      "fault_handling": "PuppyModbus logs LightModbus errors and maps failed requests to CommunicationStatus::ERROR or CommunicationStatus::SKIPPED.",
+      "retained_dependency": "lightmodbus"
+    },
+    {
+      "id": "puppy-modbus-master-request-retry-timeout",
+      "requirement_id": "IFCE-06",
+      "surface": "puppy-modbus-master-request-retry-timeout",
+      "reference_sources": [
+        "include/puppies/PuppyModbus.hpp",
+        "src/puppies/PuppyModbus.cpp",
+        "src/puppies/PuppyBus.cpp"
+      ],
+      "reference_behavior": "PuppyModbus reads responses with MODBUS_READ_TIMEOUT_MS and repeats failed requests only for MODBUS_ERROR_LENGTH or MODBUS_ERROR_CRC while logging Request failed, will repeat.",
+      "rust_surface": "buddy-domain::auxiliary::ModbusRetryContract",
+      "evidence_class": "hardware-smoke",
+      "proof_scope": "non-local",
+      "update_build_surface": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "RS485 timing and timeout behavior require hardware-smoke proof",
+        "Physical bus contention and power-panic recovery cannot be proven by local source audit"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "bus_surface": "PuppyModbus master over PuppyBus RS485",
+      "modbus_units": [
+        "Dwarf",
+        "ModularBed",
+        "XBuddyExtension",
+        "modbusUnitNr = 220"
+      ],
+      "request_kinds": [
+        "read",
+        "write",
+        "FIFO",
+        "holding-register"
+      ],
+      "timeout_or_retry_semantics": [
+        "MODBUS_READ_TIMEOUT_MS",
+        "MODBUS_ERROR_LENGTH",
+        "MODBUS_ERROR_CRC",
+        "Request failed, will repeat"
+      ],
+      "fault_handling": "Failed requests trigger serial recovery unless power panic is active; selected length and CRC response errors may retry before surfacing CommunicationStatus::ERROR.",
+      "retained_dependency": "lightmodbus"
+    },
+    {
+      "id": "puppy-rs485-flow-control",
+      "requirement_id": "IFCE-06",
+      "surface": "puppy-rs485-flow-control",
+      "reference_sources": [
+        "src/puppies/PuppyBus.cpp",
+        "include/puppies/PuppyBus.hpp",
+        "src/puppies/PuppyBootstrap.cpp"
+      ],
+      "reference_behavior": "PuppyBus toggles RS485FlowControlPuppies around writes and reads UART data with caller-provided timeout values for the shared auxiliary bus.",
+      "rust_surface": "buddy-domain::auxiliary::Rs485BusSurface::Puppies",
+      "evidence_class": "manual-hardware-required",
+      "proof_scope": "non-local",
+      "update_build_surface": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "RS485FlowControlPuppies direction timing and physical bus contention require manual-hardware-required proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "bus_surface": "RS485FlowControlPuppies shared bus",
+      "modbus_units": [
+        "Dwarf docks",
+        "MODULAR_BED",
+        "XBUDDY_EXTENSION"
+      ],
+      "request_kinds": [
+        "PuppyBus::Write",
+        "PuppyBus::Read",
+        "PuppyBus::EnsurePause",
+        "PuppyBus::ErrorRecovery"
+      ],
+      "timeout_or_retry_semantics": [
+        "caller-provided read timeout",
+        "MODBUS_READ_TIMEOUT_MS for Modbus requests"
+      ],
+      "fault_handling": "PuppyBus owns serial flush, pause, flow-control switching, and error recovery for the shared RS485 channel.",
+      "retained_dependency": "PuppyBus UART and RS485FlowControlPuppies GPIO"
+    },
+    {
+      "id": "puppy-modbus-register-block-limits",
+      "requirement_id": "IFCE-06",
+      "surface": "puppy-modbus-register-block-limits",
+      "reference_sources": [
+        "include/puppies/PuppyModbus.hpp",
+        "src/puppy/shared/modbus/ModbusProtocol.cpp",
+        "src/puppy/shared/modbus/ModbusBuffer.cpp"
+      ],
+      "reference_behavior": "PuppyModbus register block templates enforce Modbus data-count limits and packed standard-layout register mappings before requests reach lightmodbus.",
+      "rust_surface": "buddy-domain::auxiliary::ModbusRegisterBlockContract",
+      "evidence_class": "source-audit",
+      "proof_scope": "local",
+      "update_build_surface": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Live register block compatibility still requires auxiliary firmware or simulator evidence"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "bus_surface": "Modbus register block cache",
+      "modbus_units": [
+        "per-device Modbus unit",
+        "modbusUnitNr = 220"
+      ],
+      "request_kinds": [
+        "ModbusDiscreteInputBlock",
+        "ModbusInputRegisterBlock",
+        "ModbusHoldingRegisterBlock",
+        "ModbusCoil",
+        "ReadFIFO"
+      ],
+      "timeout_or_retry_semantics": [
+        "register cache max_age_ms",
+        "MODBUS_READ_TIMEOUT_MS"
+      ],
+      "fault_handling": "Invalid or failed reads clear affected data to INVALID_REGISTER_VALUE and report CommunicationStatus::ERROR.",
+      "retained_dependency": "lightmodbus plus shared puppy Modbus protocol code"
+    },
+    {
+      "id": "xbuddy-extension-mmu-read-write-query-command",
+      "requirement_id": "IFCE-06",
+      "surface": "xbuddy-extension-mmu-read-write-query-command",
+      "reference_sources": [
+        "src/puppies/xbuddy_extension.cpp",
+        "include/puppies/xbuddy_extension.hpp",
+        "src/puppy/xbuddy_extension_shared/xbuddy_extension_shared/mmu_bridge.hpp"
+      ],
+      "reference_behavior": "xBuddy Extension MMU bridge handles read, write, query, and command requests against modbusUnitNr = 220, deactivating each request after it is processed by the puppy task.",
+      "rust_surface": "buddy-domain::auxiliary::XBuddyExtensionMmuBridgeContract",
+      "evidence_class": "hardware-smoke",
+      "proof_scope": "non-local",
+      "update_build_surface": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "xBuddy Extension MMU bridge live timing requires hardware-smoke proof",
+        "Physical RS485 contention and MMU protocol interaction remain non-local"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "bus_surface": "xBuddy Extension MMU bridge over PuppyModbus",
+      "modbus_units": [
+        "modbusUnitNr = 220"
+      ],
+      "request_kinds": [
+        "read",
+        "write",
+        "query",
+        "command"
+      ],
+      "timeout_or_retry_semantics": [
+        "MMU state machine handles failed bridge communication",
+        "PuppyModbus::MODBUS_READ_TIMEOUT_MS"
+      ],
+      "fault_handling": "Failed read, write, query, or command requests leave timeout handling to the MMU protocol logic and return the Modbus communication status.",
+      "retained_dependency": "xBuddy Extension shared MMU bridge registers and PuppyModbus"
+    },
+    {
+      "id": "xbuddy-extension-mmu-speculative-accepted",
+      "requirement_id": "IFCE-06",
+      "surface": "xbuddy-extension-mmu-speculative-accepted",
+      "reference_sources": [
+        "src/puppies/xbuddy_extension.cpp",
+        "include/puppies/xbuddy_extension.hpp"
+      ],
+      "reference_behavior": "xBuddy Extension marks read/write MMU bridge requests with accepted = true on CommunicationStatus::OK and accepted = false otherwise; the source comment says this is a bit speculative.",
+      "rust_surface": "buddy-domain::auxiliary::XBuddyExtensionAcceptedResponse",
+      "evidence_class": "hardware-smoke",
+      "proof_scope": "non-local",
+      "update_build_surface": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "accepted = true and accepted = false semantics over a live MMU bridge require hardware-smoke proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "bus_surface": "xBuddy Extension accepted-response bridge",
+      "modbus_units": [
+        "modbusUnitNr = 220"
+      ],
+      "request_kinds": [
+        "read accepted",
+        "write accepted"
+      ],
+      "timeout_or_retry_semantics": [
+        "this is a bit speculative",
+        "accepted = true",
+        "accepted = false"
+      ],
+      "fault_handling": "The retained bridge preserves speculative accepted-response reporting and relies on MMU protocol logic to handle later timeouts.",
+      "retained_dependency": "xBuddy Extension MMU bridge request structure"
+    },
+    {
+      "id": "xbuddy-extension-mmu-response-timeout-window",
+      "requirement_id": "IFCE-06",
+      "surface": "xbuddy-extension-mmu-response-timeout-window",
+      "reference_sources": [
+        "src/puppies/xbuddy_extension.cpp",
+        "include/puppies/PuppyModbus.hpp"
+      ],
+      "reference_behavior": "xBuddy Extension command round-trip may span 10-20 ms and mmu_response_received accepts responses only when elapsed time is below PuppyModbus::MODBUS_READ_TIMEOUT_MS.",
+      "rust_surface": "buddy-domain::auxiliary::XBuddyExtensionMmuTimeoutWindow",
+      "evidence_class": "manual-hardware-required",
+      "proof_scope": "non-local",
+      "update_build_surface": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "10-20 ms bridge timing and MODBUS_READ_TIMEOUT_MS threshold behavior require manual-hardware-required proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "bus_surface": "xBuddy Extension MMU response timeout",
+      "modbus_units": [
+        "modbusUnitNr = 220"
+      ],
+      "request_kinds": [
+        "command status readback",
+        "mmu_response_received"
+      ],
+      "timeout_or_retry_semantics": [
+        "10-20 ms",
+        "MODBUS_READ_TIMEOUT_MS",
+        "PuppyModbus::MODBUS_READ_TIMEOUT_MS"
+      ],
+      "fault_handling": "If round trips exceed the retained timeout, the MMU protocol logic is expected to time out and later evidence must prove the behavior on hardware.",
+      "retained_dependency": "xBuddy Extension command bridge timing"
+    }
+  ]
+}

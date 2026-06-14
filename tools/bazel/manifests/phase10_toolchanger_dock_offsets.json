@@ -1,0 +1,220 @@
+{
+  "schema_version": 1,
+  "phase": "10-auxiliary-controllers-and-expansion-ecosystem",
+  "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+  "toolchanger_dock_offset_contracts": [
+    {
+      "id": "toolchanger-dwarf-update-loop",
+      "requirement_id": "IFCE-06",
+      "surface": "toolchanger-dwarf-update-loop",
+      "reference_sources": [
+        "src/puppies/puppy_task.cpp",
+        "src/puppies/Dwarf.cpp",
+        "lib/Marlin/Marlin/src/module/prusa/toolchanger.cpp",
+        "src/common/marlin_server.cpp"
+      ],
+      "reference_behavior": "The puppy task updates prusa_toolchanger, selects the active Dwarf, pulls FIFO data from the active tool, refreshes non-selected Dwarfs, and lets Marlin server loop toolchanger state.",
+      "rust_surface": "buddy-domain::auxiliary::ToolchangerRuntimeContract",
+      "evidence_class": "source-audit",
+      "proof_scope": "non-local",
+      "update_build_surface": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Physical toolchanger mechanics and power-panic toolchanger recovery require hardware-smoke proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "dock_identities": [
+        "DWARF_1",
+        "DWARF_2",
+        "DWARF_3",
+        "DWARF_4",
+        "DWARF_5",
+        "DWARF_6"
+      ],
+      "tool_offset_axes": [
+        "XYZ"
+      ],
+      "toolchanger_surface": "prusa_toolchanger.update, active Dwarf refresh, park/pick state, crash recovery",
+      "ui_surface": "none",
+      "selftest_surface": "none",
+      "persistence_surface": "power_panic_storage.hpp state_toolchanger_t"
+    },
+    {
+      "id": "toolchanger-dock-identity-dwarf1-6",
+      "requirement_id": "IFCE-06",
+      "surface": "toolchanger-dock-identity-dwarf1-6",
+      "reference_sources": [
+        "include/puppies/puppy_constants.hpp",
+        "src/puppies/Dwarf.cpp",
+        "lib/Marlin/Marlin/src/module/prusa/toolchanger.cpp"
+      ],
+      "reference_behavior": "Dwarf dock identities DWARF_1 through DWARF_6 map to Dwarf instances and retained toolchanger dock behavior.",
+      "rust_surface": "buddy-domain::auxiliary::DockIdentity::Dwarf",
+      "evidence_class": "manifest-check",
+      "proof_scope": "local",
+      "update_build_surface": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Dock calibration and physical dock occupancy require manual-hardware-required proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "dock_identities": [
+        "DWARF_1",
+        "DWARF_2",
+        "DWARF_3",
+        "DWARF_4",
+        "DWARF_5",
+        "DWARF_6"
+      ],
+      "tool_offset_axes": [
+        "XYZ"
+      ],
+      "toolchanger_surface": "Dwarf dock identity and Dwarf index mapping",
+      "ui_surface": "toolhead-specific dock and nozzle settings depend on Dwarf tool index",
+      "selftest_surface": "tool offset selftest iterates enabled Dwarf tools",
+      "persistence_surface": "dockoffset and tooloffset retained in toolchanger/eeprom result surfaces"
+    },
+    {
+      "id": "toolchanger-dock-identity-modular-bed-xbe",
+      "requirement_id": "IFCE-06",
+      "surface": "toolchanger-dock-identity-modular-bed-xbuddy-extension",
+      "reference_sources": [
+        "include/puppies/puppy_constants.hpp",
+        "src/puppies/modular_bed.cpp",
+        "src/puppies/xbuddy_extension.cpp"
+      ],
+      "reference_behavior": "MODULAR_BED and XBUDDY_EXTENSION are retained Dock identities sharing the puppy dock namespace with Dwarf docks.",
+      "rust_surface": "buddy-domain::auxiliary::DockIdentity::AuxiliaryController",
+      "evidence_class": "manifest-check",
+      "proof_scope": "local",
+      "update_build_surface": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Physical dock addressing and xBuddy Extension fixed eighth-puppy behavior require hardware-smoke proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "dock_identities": [
+        "MODULAR_BED",
+        "XBUDDY_EXTENSION"
+      ],
+      "tool_offset_axes": [],
+      "toolchanger_surface": "Shared puppy Dock enum and address selection surface",
+      "ui_surface": "none",
+      "selftest_surface": "none",
+      "persistence_surface": "crash dump path and dock identity retention"
+    },
+    {
+      "id": "toolchanger-dock-settings-ui",
+      "requirement_id": "IFCE-06",
+      "surface": "toolchanger-dock-settings-ui",
+      "reference_sources": [
+        "src/gui/screen/toolhead/screen_toolhead_settings_dock.cpp",
+        "lib/Marlin/Marlin/src/module/prusa/toolchanger_utils.cpp",
+        "lib/Marlin/Marlin/src/module/prusa/toolchanger.cpp"
+      ],
+      "reference_behavior": "Toolhead dock settings expose Dock X and Dock Y UI controls, read PrusaToolInfo dock_x/dock_y, write updated tool info, and save tool info through the retained toolchanger utility.",
+      "rust_surface": "buddy-domain::auxiliary::DockSettingsContract",
+      "evidence_class": "source-audit",
+      "proof_scope": "non-local",
+      "update_build_surface": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Dock calibration UI needs simulator or physical printer verification",
+        "Physical dock calibration movement requires hardware-smoke proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "dock_identities": [
+        "DWARF_1",
+        "DWARF_2",
+        "DWARF_3",
+        "DWARF_4",
+        "DWARF_5",
+        "DWARF_6"
+      ],
+      "tool_offset_axes": [],
+      "toolchanger_surface": "PrusaToolInfo dock_x/dock_y and save_tool_info",
+      "ui_surface": "ScreenToolheadDetailDock, Dock X, Dock Y, Calibrate Dock Position",
+      "selftest_surface": "stmDocks",
+      "persistence_surface": "dockoffset"
+    },
+    {
+      "id": "tool-offset-nozzle-settings-ui",
+      "requirement_id": "IFCE-06",
+      "surface": "tool-offset-nozzle-settings-ui",
+      "reference_sources": [
+        "src/gui/screen/toolhead/screen_toolhead_settings_nozzle_offset.cpp",
+        "lib/Marlin/Marlin/src/module/prusa/toolchanger.cpp",
+        "src/common/marlin_server.cpp"
+      ],
+      "reference_behavior": "Nozzle offset UI labels axes with Offset %c over XYZ, reads/writes hotend_offset, and persists changes through save_tool_offsets.",
+      "rust_surface": "buddy-domain::auxiliary::ToolOffsetSettingsContract",
+      "evidence_class": "source-audit",
+      "proof_scope": "non-local",
+      "update_build_surface": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Tool offset calibration hardware movement and UI behavior require simulator-flow or hardware-smoke proof"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "dock_identities": [
+        "DWARF_1",
+        "DWARF_2",
+        "DWARF_3",
+        "DWARF_4",
+        "DWARF_5",
+        "DWARF_6"
+      ],
+      "tool_offset_axes": [
+        "Offset %c",
+        "XYZ",
+        "hotend_offset",
+        "save_tool_offsets"
+      ],
+      "toolchanger_surface": "hotend_offset and active tool offset application",
+      "ui_surface": "ScreenToolheadSettingsNozzleOffset axis controls",
+      "selftest_surface": "none",
+      "persistence_surface": "tooloffset"
+    },
+    {
+      "id": "tool-offset-selftest-flow",
+      "requirement_id": "IFCE-06",
+      "surface": "tool-offset-selftest-flow",
+      "reference_sources": [
+        "src/common/selftest/selftest_tool_offsets_interface.cpp",
+        "src/common/selftest/selftest_tool_offsets.hpp",
+        "src/common/marlin_server.cpp",
+        "src/common/power_panic_storage.hpp"
+      ],
+      "reference_behavior": "Selftest tool offset flow uses SelftestToolOffsets_t, checks enabled tools, writes eeprom-style tooloffset results, and interacts with crash/power-panic toolchanger recovery surfaces.",
+      "rust_surface": "buddy-domain::auxiliary::ToolOffsetSelftestContract",
+      "evidence_class": "source-audit",
+      "proof_scope": "non-local",
+      "update_build_surface": "none",
+      "intentional_delta": "none",
+      "non_local_evidence": [
+        "Tool offset selftest motion and power-panic recovery proof require manual-hardware-required evidence"
+      ],
+      "phase_lifecycle_id": "10-2026-06-14T15-08-30",
+      "dock_identities": [
+        "DWARF_1",
+        "DWARF_2",
+        "DWARF_3",
+        "DWARF_4",
+        "DWARF_5",
+        "DWARF_6",
+        "MODULAR_BED",
+        "XBUDDY_EXTENSION"
+      ],
+      "tool_offset_axes": [
+        "XYZ",
+        "SelftestToolOffsets_t",
+        "dockoffset",
+        "tooloffset"
+      ],
+      "toolchanger_surface": "enabled tool mask, parked mask, precrash toolchanger recovery",
+      "ui_surface": "selftest flow result display",
+      "selftest_surface": "SelftestToolOffsets_t and CSelftestPart_ToolOffsets",
+      "persistence_surface": "eeres.tools[i].tooloffset, dockoffset, power_panic_storage.hpp state_toolchanger_t"
+    }
+  ]
+}
