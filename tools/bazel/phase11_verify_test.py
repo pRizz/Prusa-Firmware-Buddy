@@ -14,7 +14,20 @@ VERIFIER = ROOT / "tools/bazel/phase11_verify.py"
 
 PHASE = "11-parity-pyramid-and-cutover-evidence"
 PHASE_LIFECYCLE_ID = "11-2026-06-14T18-48-49"
+PHASE_DIR = ".planning/phases/11-parity-pyramid-and-cutover-evidence"
 PYRAMID_MANIFEST = "tools/bazel/manifests/phase11_parity_pyramid.json"
+REQUIREMENT_MANIFEST = "tools/bazel/manifests/phase11_requirement_evidence.json"
+COMPARISON_MANIFEST = "tools/bazel/manifests/phase11_reference_comparisons.json"
+CUTOVER_MANIFEST = "tools/bazel/manifests/phase11_cutover_readiness.json"
+RETAINED_MANIFEST = "tools/bazel/manifests/phase11_retained_code_justifications.json"
+
+MANIFEST_COLLECTIONS = {
+    PYRAMID_MANIFEST: "parity_pyramid",
+    REQUIREMENT_MANIFEST: "requirement_evidence",
+    COMPARISON_MANIFEST: "reference_comparisons",
+    CUTOVER_MANIFEST: "cutover_criteria",
+    RETAINED_MANIFEST: "retained_code_justifications",
+}
 
 REQUIRED_PYRAMID_ROW_IDS = [
     "pyramid-rust-unit-tests",
@@ -59,6 +72,11 @@ class Phase11VerifierTest(unittest.TestCase):
         full_path.parent.mkdir(parents=True, exist_ok=True)
         full_path.write_text(text, encoding="utf-8")
 
+    def copy_file(self, root: Path, path: str) -> None:
+        full_path = root / path
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / path, full_path)
+
     def write_source_paths(self, root: Path, source_paths: list[str]) -> None:
         for source_path in source_paths:
             relative_path = Path(source_path)
@@ -67,6 +85,93 @@ class Phase11VerifierTest(unittest.TestCase):
             if (root / source_path).exists():
                 continue
             self.write_file(root, source_path, "source-backed fixture\n")
+
+    def manifest_rows(self, root: Path, path: str) -> list[dict[str, object]]:
+        data = json.loads((root / path).read_text(encoding="utf-8"))
+        rows = data[MANIFEST_COLLECTIONS[path]]
+        self.assertIsInstance(rows, list)
+        return rows
+
+    def write_manifest_rows(
+        self,
+        root: Path,
+        path: str,
+        rows: list[dict[str, object]],
+    ) -> None:
+        data = json.loads((root / path).read_text(encoding="utf-8"))
+        data[MANIFEST_COLLECTIONS[path]] = rows
+        self.write_file(root, path, json.dumps(data, indent=2))
+
+    def reconcile_requirement_fixture(self, root: Path) -> None:
+        rows = self.manifest_rows(root, REQUIREMENT_MANIFEST)
+        for row in rows:
+            if row["id"] == "req-verf-03":
+                row["source_artifacts"] = [
+                    f"{PHASE_DIR}/11-03-SUMMARY.md",
+                    COMPARISON_MANIFEST,
+                    "rust/crates/domain/src/cutover.rs",
+                ]
+                row["verifier_command_or_evidence_class"] = (
+                    "python3 tools/bazel/phase11_verify.py --comparison-only; "
+                    "python3 tools/bazel/phase11_verify.py --rust-only"
+                )
+                row["current_status"] = "source-backed-local-passed"
+                row["cutover_status"] = "pending-non-local-reference-comparison-evidence"
+                row["intentional_delta_status"] = "normalized-reference-comparisons-source-backed"
+                row["retained_code_justification"] = (
+                    "Reference comparison proof is source-backed by Plan 11-03 while CMake/C++ "
+                    "stays the guarded reference oracle until all non-local evidence is accepted."
+                )
+                row["required_non_local_evidence"] = [
+                    "Simulator, hardware, live network/TLS, storage media, release-candidate, MMU, RS485, and toolchanger proof remains required where reference comparison rows name those gates."
+                ]
+                row["cutover_blocker"] = (
+                    "Reference comparison rows are locally valid, but non-local comparison gates remain open."
+                )
+            if row["id"] == "req-verf-05":
+                row["source_artifacts"] = [
+                    f"{PHASE_DIR}/11-04-SUMMARY.md",
+                    CUTOVER_MANIFEST,
+                    RETAINED_MANIFEST,
+                ]
+                row["verifier_command_or_evidence_class"] = (
+                    "python3 tools/bazel/phase11_verify.py --cutover-only"
+                )
+                row["current_status"] = "source-backed-local-passed"
+                row["cutover_status"] = "not-cutover-ready"
+                row["intentional_delta_status"] = "cutover-readiness-contract-source-backed"
+                row["retained_code_justification"] = (
+                    "Cutover readiness and retained-code justifications are source-backed, while "
+                    "criteria-reference-demotion-blocked remains the active demotion gate."
+                )
+                row["required_non_local_evidence"] = [
+                    "Simulator, hardware-smoke, manual-hardware-required, live network/TLS, storage media, release-candidate, signing, MMU, RS485, toolchanger, and maintainer acceptance evidence remain required before demotion."
+                ]
+                row["cutover_blocker"] = (
+                    "criteria-reference-demotion-blocked keeps demotion unavailable until all non-local evidence gates are attached and accepted."
+                )
+        self.write_manifest_rows(root, REQUIREMENT_MANIFEST, rows)
+
+    def copy_phase11_surface(self, root: Path, reconcile_requirements: bool = True) -> None:
+        self.copy_file(root, ".planning/REQUIREMENTS.md")
+        self.write_file(root, f"{PHASE_DIR}/11-VALIDATION.md", "local validation fixture\n")
+        for path in [
+            f"{PHASE_DIR}/11-01-SUMMARY.md",
+            f"{PHASE_DIR}/11-02-SUMMARY.md",
+            f"{PHASE_DIR}/11-03-SUMMARY.md",
+            f"{PHASE_DIR}/11-04-SUMMARY.md",
+        ]:
+            self.write_file(root, path, "source-backed summary fixture\n")
+        for manifest_path in MANIFEST_COLLECTIONS:
+            self.copy_file(root, manifest_path)
+            for row in self.manifest_rows(root, manifest_path):
+                source_artifacts = row.get("source_artifacts")
+                if isinstance(source_artifacts, list):
+                    self.write_source_paths(root, [str(item) for item in source_artifacts])
+        self.copy_file(root, "rust/crates/domain/src/cutover.rs")
+        self.copy_file(root, "rust/crates/domain/src/lib.rs")
+        if reconcile_requirements:
+            self.reconcile_requirement_fixture(root)
 
     def pyramid_row(
         self,
@@ -306,6 +411,157 @@ class Phase11VerifierTest(unittest.TestCase):
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("rust/crates/domain/src/cutover.rs", result.stdout)
+
+    def test_requirements_only_rejects_missing_v1_requirement(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase11_surface(root)
+            rows = [
+                row
+                for row in self.manifest_rows(root, REQUIREMENT_MANIFEST)
+                if row["id"] != "req-verf-05"
+            ]
+            self.write_manifest_rows(root, REQUIREMENT_MANIFEST, rows)
+
+            # Act
+            result = self.run_verifier(["--requirements-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("req-verf-05", result.stdout)
+
+    def test_requirements_only_rejects_roadmap_only_proof(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase11_surface(root)
+            self.write_file(root, ".planning/ROADMAP.md", "roadmap fixture\n")
+            rows = self.manifest_rows(root, REQUIREMENT_MANIFEST)
+            for row in rows:
+                if row["id"] == "req-verf-04":
+                    row["source_artifacts"] = [".planning/ROADMAP.md"]
+            self.write_manifest_rows(root, REQUIREMENT_MANIFEST, rows)
+
+            # Act
+            result = self.run_verifier(["--requirements-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("roadmap-only", result.stdout)
+
+    def test_comparison_only_rejects_byte_identity_without_fixture(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase11_surface(root)
+            rows = self.manifest_rows(root, COMPARISON_MANIFEST)
+            for row in rows:
+                if row["id"] == "ref-release-metadata":
+                    row["byte_identity_claim"] = True
+                    row.pop("reference_fixture", None)
+                    row["normalization_rule"] = "normalize release metadata"
+            self.write_manifest_rows(root, COMPARISON_MANIFEST, rows)
+
+            # Act
+            result = self.run_verifier(["--comparison-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("ref-release-metadata", result.stdout)
+        self.assertIn("byte_identity_claim", result.stdout)
+
+    def test_cutover_only_rejects_demote_reference_true(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase11_surface(root)
+            rows = self.manifest_rows(root, CUTOVER_MANIFEST)
+            for row in rows:
+                if row["id"] == "criteria-local-verifier-passed":
+                    row["status"] = "pending-aggregate-verifier"
+                    row["demotion_allowed"] = True
+            self.write_manifest_rows(root, CUTOVER_MANIFEST, rows)
+
+            # Act
+            result = self.run_verifier(["--cutover-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("criteria-local-verifier-passed", result.stdout)
+        self.assertIn("demotion_allowed", result.stdout)
+
+    def test_security_only_rejects_secret_markers(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase11_surface(root)
+            self.write_file(root, f"{PHASE_DIR}/11-VALIDATION.md", "token_value\n")
+
+            # Act
+            result = self.run_verifier(["--security-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("token_value", result.stdout)
+
+    def test_security_only_rejects_cutover_overclaim(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase11_surface(root)
+            self.write_file(root, f"{PHASE_DIR}/11-01-SUMMARY.md", "hardware verified locally\n")
+
+            # Act
+            result = self.run_verifier(["--security-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("hardware verified locally", result.stdout)
+
+    def test_rust_only_rejects_unsafe_cutover_contract(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase11_surface(root)
+            cutover_path = root / "rust/crates/domain/src/cutover.rs"
+            cutover_path.write_text(
+                cutover_path.read_text(encoding="utf-8") + "\nunsafe fn unsound() {}\n",
+                encoding="utf-8",
+            )
+
+            # Act
+            result = self.run_verifier(["--rust-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unsafe function", result.stdout)
+
+    def test_requirements_only_rejects_stale_pending_plan_status(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase11_surface(root, reconcile_requirements=False)
+
+            # Act
+            result = self.run_verifier(["--requirements-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("pending-plan-11-03", result.stdout)
+        self.assertIn("pending-plan-11-04", result.stdout)
+
+    def test_quick_accepts_complete_phase11_surface(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase11_surface(root)
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
 
 
 if __name__ == "__main__":
