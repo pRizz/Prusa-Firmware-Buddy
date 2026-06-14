@@ -1,0 +1,206 @@
+{
+  "schema_version": "1",
+  "phase": "11-parity-pyramid-and-cutover-evidence",
+  "phase_lifecycle_id": "11-2026-06-14T18-48-49",
+  "retained_code_justifications": [
+    {
+      "id": "retained-hal-cmsis-vendor",
+      "requirement_id": "CORE-01",
+      "retained_surface": "STM32 HAL/CMSIS/vendor startup and board support.",
+      "owner": "Phase 5 board and runtime boundary owner",
+      "disposition": "deferred",
+      "justification": "STM32 startup assembly, linker scripts, CMSIS, HAL, board clocks, interrupts, DMA, watchdog setup, and xBuddy Extension H503 support remain the hardware reference boundary until simulator and hardware-smoke artifacts prove a Rust replacement is equivalent.",
+      "boundary": "Rust code may consume typed board/runtime adapter facts, but retained STM32 HAL/CMSIS/vendor sources remain the owner of reset, vector, clock, peripheral, and board-support side effects.",
+      "safe_facade_or_contract": "rust/crates/board-adapter/src/mcu.rs, rust/crates/board-adapter/src/clock.rs, rust/crates/board-adapter/src/dma.rs, rust/crates/board-adapter/src/interrupt.rs, rust/crates/runtime-adapter/src/startup.rs, and rust/crates/runtime-adapter/src/linker.rs",
+      "source_artifacts": [
+        "tools/bazel/manifests/foreign_code_inventory.json",
+        "tools/bazel/manifests/unsafe_boundary_audit.json",
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-VERIFICATION.md"
+      ],
+      "required_evidence": [
+        "hardware-smoke proof for STM32F4, STM32G0, and STM32H503 startup, clock, interrupt, DMA, watchdog, and board-support behavior",
+        "simulator-flow proof where supported by the approved reference fixture environment",
+        "manual-hardware-required review before any retained startup, linker, HAL, or CMSIS source is replaced"
+      ],
+      "proof_scope": "retained-code-justification",
+      "secret_handling": "name-only-or-redacted",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "retained-freertos-rtos",
+      "requirement_id": "CORE-02",
+      "retained_surface": "FreeRTOS/CMSIS-RTOS scheduler and synchronization runtime.",
+      "owner": "Phase 5 runtime boundary owner",
+      "disposition": "deferred",
+      "justification": "FreeRTOS kernel, CMSIS-RTOS integration, static task memory, queues, timers, mutexes, semaphores, event groups, wait conditions, and TaskDeps startup ordering remain retained because scheduler timing and wakeup behavior are safety-critical.",
+      "boundary": "Rust runtime-adapter contracts describe task, queue, timer, static-memory, and synchronization invariants while retained FreeRTOS code owns scheduling and wakeup side effects.",
+      "safe_facade_or_contract": "rust/crates/runtime-adapter/src/task.rs, rust/crates/runtime-adapter/src/static_memory.rs, rust/crates/runtime-adapter/src/queue.rs, rust/crates/runtime-adapter/src/timer.rs, and rust/crates/runtime-adapter/src/synchronization.rs",
+      "source_artifacts": [
+        "tools/bazel/manifests/foreign_code_inventory.json",
+        "tools/bazel/manifests/unsafe_boundary_audit.json",
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-VERIFICATION.md"
+      ],
+      "required_evidence": [
+        "simulator-flow or hardware-smoke evidence for scheduler ordering, mutex timing, semaphore wakeups, queue behavior, event groups, timers, and startup readiness",
+        "manual-hardware-required review before replacing retained FreeRTOS or CMSIS-RTOS scheduler code"
+      ],
+      "proof_scope": "retained-code-justification",
+      "secret_handling": "name-only-or-redacted",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "retained-marlin-print-core-oracle",
+      "requirement_id": "CORE-03",
+      "retained_surface": "retained Marlin print-core oracle and Buddy G/M-code reference behavior.",
+      "owner": "Phase 6 printing-core parity owner",
+      "disposition": "accepted",
+      "justification": "Marlin and Buddy G/M-code sources remain the behavior oracle for G-code routing, planner-visible behavior, thermal/motion policy names, pause/resume/cancel flows, and retained printer semantics during the Rust+Bazel rewrite.",
+      "boundary": "Marlin and Buddy G/M-code code stay reference-only for comparison and fixture generation; Rust print and safety domain contracts consume normalized behavior rows and must not hide physical proof requirements.",
+      "safe_facade_or_contract": "rust/crates/domain/src/print.rs, rust/crates/domain/src/safety.rs, tools/bazel/manifests/phase6_printing_core.json, and tools/bazel/manifests/phase6_safety_gates.json",
+      "source_artifacts": [
+        "tools/bazel/manifests/foreign_code_inventory.json",
+        ".planning/phases/06-printing-core-safety-and-feature-gates/06-VERIFICATION.md",
+        "tools/bazel/manifests/phase6_printing_core.json",
+        "tools/bazel/manifests/phase6_safety_gates.json"
+      ],
+      "required_evidence": [
+        "simulator G-code behavior fixture comparison artifacts",
+        "hardware smoke evidence for motion, thermal, emergency stop, recovery, watchdog, and safe-output flows",
+        "approved intentional-delta tests before fixing known probe or safety behavior defects"
+      ],
+      "proof_scope": "retained-code-justification",
+      "secret_handling": "name-only-or-redacted",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "retained-lwip-mbedtls-wui",
+      "requirement_id": "IFCE-02",
+      "retained_surface": "LwIP, mbedTLS, WUI, TLS, auth, and network service reference surfaces.",
+      "owner": "Phase 9 network and transfer parity owner",
+      "disposition": "blocked",
+      "justification": "LwIP, mbedTLS, WUI, Connect, PrusaLink auth, TLS, telemetry, WebSocket, proxy, metrics, syslog, and transfer networking remain retained or reference-backed because live network and real TLS behavior cannot be proven by local manifests alone.",
+      "boundary": "Rust network domain contracts name service, auth, TLS, proxy, transfer, and redaction behavior while retained networking code remains the oracle for protocol and transport side effects.",
+      "safe_facade_or_contract": "rust/crates/domain/src/network.rs, tools/bazel/manifests/phase9_connect_contracts.json, tools/bazel/manifests/phase9_wui_contracts.json, tools/bazel/manifests/phase9_transfer_contracts.json, and tools/bazel/manifests/phase9_network_service_contracts.json",
+      "source_artifacts": [
+        "tools/bazel/manifests/foreign_code_inventory.json",
+        ".planning/phases/09-network-web-services-and-transfers/09-VERIFICATION.md",
+        "tools/bazel/manifests/phase9_connect_contracts.json",
+        "tools/bazel/manifests/phase9_wui_contracts.json",
+        "tools/bazel/manifests/phase9_network_service_contracts.json"
+      ],
+      "required_evidence": [
+        "live Connect or approved service-compatible API evidence with credential identities redacted",
+        "real TLS and custom certificate provisioning evidence recorded by artifact name only",
+        "simulator or hardware transfer and network fault-injection evidence",
+        "security review for retained custom DER, weak digest, proxy, crash-dump upload, and stale Connect test concerns"
+      ],
+      "proof_scope": "retained-code-justification",
+      "secret_handling": "name-only-or-redacted",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "retained-fatfs-littlefs",
+      "requirement_id": "IFCE-04",
+      "retained_surface": "FatFs/littlefs media and storage implementations.",
+      "owner": "Phase 7 persistence, storage, and resource parity owner",
+      "disposition": "deferred",
+      "justification": "FatFs, littlefs, USB media dispatch, internal resource image behavior, config persistence, journal migration, and storage fixture compatibility remain retained until physical media timing, flash behavior, simulator storage flows, and release package evidence are attached.",
+      "boundary": "Rust storage/resource contracts define IDs, schema facts, redaction policy, resource paths, and generated-output ownership while retained filesystem and image tooling own runtime media side effects.",
+      "safe_facade_or_contract": "rust/crates/domain/src/storage.rs, rust/crates/domain/src/resource.rs, tools/bazel/manifests/phase7_storage_media.json, tools/bazel/manifests/phase7_config_store.json, and tools/bazel/manifests/phase7_resources.json",
+      "source_artifacts": [
+        "tools/bazel/manifests/foreign_code_inventory.json",
+        ".planning/phases/07-persistence-storage-and-resource-compatibility/07-VERIFICATION.md",
+        "tools/bazel/manifests/phase7_storage_media.json",
+        "tools/bazel/manifests/phase7_config_store.json",
+        "tools/bazel/manifests/phase7_resources.json"
+      ],
+      "required_evidence": [
+        "hardware or simulator evidence for USB media, internal flash, semihosting, storage migration, and crash-dump persistence behavior",
+        "release-candidate resource package and storage fixture comparison artifacts",
+        "name-only credential handling for storage fixtures and config keys"
+      ],
+      "proof_scope": "retained-code-justification",
+      "secret_handling": "name-only-or-redacted",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "retained-tinyusb-usb",
+      "requirement_id": "IFCE-04",
+      "retained_surface": "TinyUSB USB device/host retained surfaces.",
+      "owner": "Phase 5 runtime boundary owner with Phase 7 storage-media evidence owner",
+      "disposition": "deferred",
+      "justification": "TinyUSB and USB host/device integration remain retained because USB device/host, removable media, direct-sector transfer, and user-visible media behavior require hardware or simulator proof.",
+      "boundary": "Rust storage and runtime contracts may name USB/media states and evidence classes, but retained TinyUSB and Buddy USB glue own runtime bus side effects until approved replacement evidence exists.",
+      "safe_facade_or_contract": "tools/bazel/manifests/foreign_code_inventory.json, tools/bazel/manifests/phase7_storage_media.json, rust/crates/domain/src/storage.rs, and rust/crates/runtime-adapter/src/task.rs",
+      "source_artifacts": [
+        "tools/bazel/manifests/foreign_code_inventory.json",
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-VERIFICATION.md",
+        ".planning/phases/07-persistence-storage-and-resource-compatibility/07-VERIFICATION.md",
+        "tools/bazel/manifests/phase7_storage_media.json",
+        "lib/AddTinyusb.cmake"
+      ],
+      "required_evidence": [
+        "hardware-smoke evidence for USB host/device behavior, removable media insertion/removal, and transfer media races",
+        "simulator-flow evidence where available for storage and transfer behavior",
+        "manual-hardware-required review before replacing retained USB stack or integration code"
+      ],
+      "proof_scope": "retained-code-justification",
+      "secret_handling": "name-only-or-redacted",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "retained-auxiliary-mmu-modbus",
+      "requirement_id": "IFCE-06",
+      "retained_surface": "MMU2, puppy, Dwarf, ModularBed, xBuddy Extension, Modbus/RS485, and toolchanger retained/protocol surfaces.",
+      "owner": "Phase 10 auxiliary-controller parity owner",
+      "disposition": "blocked",
+      "justification": "MMU2, puppy controllers, Dwarf, ModularBed, xBuddy Extension, Modbus/RS485, toolchanger, dock/tool offset, startup flashing, skip-flash/prebuilt, update, and crash-dump paths remain retained because live transport timing and physical mechanics require non-local proof.",
+      "boundary": "Rust auxiliary domain contracts encode controller kinds, runtime states, firmware source identities, Modbus request classes, MMU transport surfaces, dock/tool-offset identities, and fault classes while retained C/C++/CMake code owns live auxiliary transport and update side effects.",
+      "safe_facade_or_contract": "rust/crates/domain/src/auxiliary.rs, tools/bazel/manifests/phase10_auxiliary_controllers.json, tools/bazel/manifests/phase10_mmu_transport.json, tools/bazel/manifests/phase10_modbus_rs485.json, tools/bazel/manifests/phase10_toolchanger_dock_offsets.json, and tools/bazel/manifests/phase10_auxiliary_build_update.json",
+      "source_artifacts": [
+        "tools/bazel/manifests/foreign_code_inventory.json",
+        ".planning/phases/10-auxiliary-controllers-and-expansion-ecosystem/10-VERIFICATION.md",
+        "tools/bazel/manifests/phase10_auxiliary_controllers.json",
+        "tools/bazel/manifests/phase10_mmu_transport.json",
+        "tools/bazel/manifests/phase10_modbus_rs485.json",
+        "tools/bazel/manifests/phase10_toolchanger_dock_offsets.json"
+      ],
+      "required_evidence": [
+        "hardware or simulator evidence for RS485/Modbus timing and contention",
+        "live MMU transport evidence",
+        "physical toolchanger dock and tool-offset calibration evidence",
+        "long-running auxiliary startup flashing and update recovery evidence",
+        "release-candidate auxiliary firmware package evidence with firmware bytes excluded from checked-in manifests"
+      ],
+      "proof_scope": "retained-code-justification",
+      "secret_handling": "name-only-or-redacted",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "retained-generated-assets-tools",
+      "requirement_id": "IFCE-05",
+      "retained_surface": "retained generator scripts, generated resources, and packaging/reference tools.",
+      "owner": "Phase 3 artifact/generator owner with Phase 7 resource owner",
+      "disposition": "accepted",
+      "justification": "Generator scripts, resource packaging, fonts, translations, WUI assets, ESP blobs, language packs, package metadata, artifact comparison helpers, and guarded reference tools remain retained because generated-output and release compatibility must be compared before replacement.",
+      "boundary": "Bazel generated-drift labels and resource manifests define the review boundary; retained scripts and reference tooling remain callable only through approved check/update or guarded reference paths.",
+      "safe_facade_or_contract": "tools/bazel/generated_drift.py, tools/bazel/artifact_metadata_compare.py, tools/bazel/reference_contract.sh, tools/bazel/manifests/phase7_generated_outputs.json, and rust/crates/domain/src/resource.rs",
+      "source_artifacts": [
+        "tools/bazel/manifests/foreign_code_inventory.json",
+        ".planning/phases/03-artifact-and-generator-parity/03-VERIFICATION.md",
+        ".planning/phases/07-persistence-storage-and-resource-compatibility/07-VERIFICATION.md",
+        "tools/bazel/generated_drift.py",
+        "tools/bazel/manifests/phase7_generated_outputs.json"
+      ],
+      "required_evidence": [
+        "CI generated-output drift evidence for source-writing and byte-oriented generators",
+        "release-candidate resource package and artifact metadata evidence",
+        "signing-sensitive and firmware-package status recorded by name only",
+        "manual review before replacing retained generator, packaging, or reference comparison tools"
+      ],
+      "proof_scope": "retained-code-justification",
+      "secret_handling": "name-only-or-redacted",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    }
+  ]
+}
