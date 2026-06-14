@@ -797,63 +797,104 @@ def require_file_text(path: str | Path, required_text: list[str]) -> None:
         )
 
 
+def require_exact_lines(path: str | Path, required_lines: list[str]) -> None:
+    lines = {line.strip() for line in read_text(path).splitlines()}
+    missing = [line for line in required_lines if line not in lines]
+    if missing:
+        relative_path = Path(path)
+        raise VerificationError(
+            f"{relative_path.as_posix()} missing required lines: " + ", ".join(missing)
+        )
+
+
+def require_file_patterns(path: str | Path, required_patterns: list[tuple[str, str]]) -> None:
+    text = read_text(path)
+    missing = [
+        description
+        for pattern, description in required_patterns
+        if re.search(pattern, text, re.MULTILINE) is None
+    ]
+    if missing:
+        relative_path = Path(path)
+        raise VerificationError(
+            f"{relative_path.as_posix()} missing required wiring patterns: " + ", ".join(missing)
+        )
+
+
 def check_bazel_surface() -> None:
     errors: list[str] = []
-    checks = [
+    pattern_checks = [
         (
             Path("BUILD.bazel"),
             [
-                "phase9_network_web_services_docs",
-                "phase9_verify",
-                "phase9_verify_tests",
+                (r'name\s*=\s*"phase9_network_web_services_docs"', "phase9_network_web_services_docs"),
+                (r'name\s*=\s*"phase9_verify"', "phase9_verify"),
+                (r'actual\s*=\s*"//tools/bazel:phase9_verify"', "//tools/bazel:phase9_verify"),
+                (r'name\s*=\s*"phase9_verify_tests"', "phase9_verify_tests"),
+                (
+                    r'actual\s*=\s*"//tools/bazel:phase9_verify_tests"',
+                    "//tools/bazel:phase9_verify_tests",
+                ),
             ],
         ),
         (
             Path("tools/bazel/BUILD.bazel"),
             [
-                "phase9_verify",
-                "phase9_verify_tests",
-                "phase9_verify.py",
-                "phase9_verify_test.py",
-                "phase9_connect_contracts.json",
-                "phase9_wui_contracts.json",
-                "phase9_transfer_contracts.json",
-                "phase9_network_service_contracts.json",
-                "phase9_network_concern_dispositions.json",
-                "//:phase9_network_web_services_docs",
-                "//:rust_workspace_sources",
+                (r'name\s*=\s*"phase9_verify"', "phase9_verify"),
+                (r'name\s*=\s*"phase9_verify_tests"', "phase9_verify_tests"),
+                (r'"phase9_verify\.py"', "phase9_verify.py"),
+                (r'"phase9_verify_test\.py"', "phase9_verify_test.py"),
+                (r'"phase9_negative_fixtures\.py"', "phase9_negative_fixtures.py"),
+                (r'"phase9_negative_fixtures_test\.py"', "phase9_negative_fixtures_test.py"),
+                (r'"(?:manifests/)?phase9_connect_contracts\.json"', "phase9_connect_contracts.json"),
+                (r'"(?:manifests/)?phase9_wui_contracts\.json"', "phase9_wui_contracts.json"),
+                (r'"(?:manifests/)?phase9_transfer_contracts\.json"', "phase9_transfer_contracts.json"),
+                (
+                    r'"(?:manifests/)?phase9_network_service_contracts\.json"',
+                    "phase9_network_service_contracts.json",
+                ),
+                (
+                    r'"(?:manifests/)?phase9_network_concern_dispositions\.json"',
+                    "phase9_network_concern_dispositions.json",
+                ),
+                (r'"//:phase9_network_web_services_docs"', "//:phase9_network_web_services_docs"),
+                (r'"//:rust_workspace_sources"', "//:rust_workspace_sources"),
             ],
         ),
-        (
-            Path("tools/bazel/rust_workflow.sh"),
+    ]
+    for path, required_patterns in pattern_checks:
+        try:
+            require_file_patterns(path, required_patterns)
+        except VerificationError as error:
+            errors.append(str(error))
+    try:
+        require_exact_lines(
+            "tools/bazel/rust_workflow.sh",
             [
                 "phase9_verify)",
                 "python3 tools/bazel/phase9_verify.py --all",
                 "phase9_verify_tests)",
                 "python3 tools/bazel/phase9_verify_test.py",
+                "python3 tools/bazel/phase9_negative_fixtures_test.py",
             ],
-        ),
-    ]
-    for path, required_text in checks:
-        try:
-            require_file_text(path, required_text)
-        except VerificationError as error:
-            errors.append(str(error))
+        )
+    except VerificationError as error:
+        errors.append(str(error))
     if errors:
         raise VerificationError("\n".join(errors))
 
 
 def check_just_surface() -> None:
-    text = read_text("justfile")
-    required_text = [
+    lines = [line.strip() for line in read_text("justfile").splitlines()]
+    required_lines = [
         "phase9-verify:",
         "bazel run //tools/bazel:phase9_verify_tests",
         "bazel run //tools/bazel:phase9_verify",
     ]
-    missing = [needle for needle in required_text if needle not in text]
-    errors = [f"justfile missing required wiring text: {', '.join(missing)}"] if missing else []
-    test_index = text.find("bazel run //tools/bazel:phase9_verify_tests")
-    verify_index = text.find("bazel run //tools/bazel:phase9_verify")
+    missing = [line for line in required_lines if line not in lines]
+    errors = [f"justfile missing required lines: {', '.join(missing)}"] if missing else []
+    test_index = lines.index("bazel run //tools/bazel:phase9_verify_tests") if not missing else -1
+    verify_index = lines.index("bazel run //tools/bazel:phase9_verify") if not missing else -1
     if test_index == -1 or verify_index == -1 or test_index > verify_index:
         errors.append("justfile must run phase9_verify_tests before phase9_verify")
     if errors:

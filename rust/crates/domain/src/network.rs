@@ -25,6 +25,8 @@ pub enum NetworkEvidenceClass {
     HostTest,
     /// Rust host test evidence for pure Rust network classification.
     RustHostTest,
+    /// Existing unit-test-backed compatibility evidence.
+    UnitTestBacked,
     /// Simulator flow evidence is required.
     SimulatorFlow,
     /// Hardware smoke evidence is required.
@@ -42,6 +44,7 @@ impl NetworkEvidenceClass {
             "static-source-audit" => Ok(Self::StaticSourceAudit),
             "host-test" => Ok(Self::HostTest),
             "rust-host-test" => Ok(Self::RustHostTest),
+            "unit-test-backed" => Ok(Self::UnitTestBacked),
             "simulator-flow" => Ok(Self::SimulatorFlow),
             "hardware-smoke" => Ok(Self::HardwareSmoke),
             "manual-hardware-required" => Ok(Self::ManualHardwareRequired),
@@ -57,6 +60,7 @@ impl NetworkEvidenceClass {
             Self::StaticSourceAudit => "static-source-audit",
             Self::HostTest => "host-test",
             Self::RustHostTest => "rust-host-test",
+            Self::UnitTestBacked => "unit-test-backed",
             Self::SimulatorFlow => "simulator-flow",
             Self::HardwareSmoke => "hardware-smoke",
             Self::ManualHardwareRequired => "manual-hardware-required",
@@ -72,6 +76,7 @@ impl NetworkEvidenceClass {
                 | Self::StaticSourceAudit
                 | Self::HostTest
                 | Self::RustHostTest
+                | Self::UnitTestBacked
         )
     }
 }
@@ -159,7 +164,7 @@ impl SecretHandling {
     /// Returns whether this policy permits credential value material.
     pub fn allows_value_material(self) -> bool {
         match self {
-            Self::None => true,
+            Self::None => false,
             Self::NamedOnlyRedacted => false,
         }
     }
@@ -830,17 +835,20 @@ impl NetworkServiceContract {
     /// Creates a service contract from raw validated input.
     pub fn from_input(input: NetworkServiceContractInput) -> Result<Self, InvariantError> {
         let NetworkServiceContractInput { surface, features } = input;
-        let required_feature = match surface {
-            NetworkServiceSurface::PrusaConnect => Feature::Connect,
+        let required_features: &[Feature] = match surface {
+            NetworkServiceSurface::PrusaConnect => &[Feature::Connect, Feature::WebUi],
             NetworkServiceSurface::PrusaLinkWui
             | NetworkServiceSurface::Sntp
             | NetworkServiceSurface::Mdns
             | NetworkServiceSurface::Dns
             | NetworkServiceSurface::Metrics
-            | NetworkServiceSurface::Syslog => Feature::WebUi,
+            | NetworkServiceSurface::Syslog => &[Feature::WebUi],
         };
 
-        if !features.contains(required_feature) {
+        if required_features
+            .iter()
+            .any(|feature| !features.contains(*feature))
+        {
             return Err(InvariantError::UnsupportedNetworkService);
         }
 
@@ -954,10 +962,12 @@ mod tests {
     fn parses_network_evidence_classes() {
         // Arrange
         let local_evidence = "manifest-check";
+        let unit_test_evidence = "unit-test-backed";
         let non_local_evidence = "simulator-flow";
 
         // Act
         let local_result = NetworkEvidenceClass::parse(local_evidence);
+        let unit_test_result = NetworkEvidenceClass::parse(unit_test_evidence);
         let non_local_result = NetworkEvidenceClass::parse(non_local_evidence);
 
         // Assert
@@ -965,6 +975,12 @@ mod tests {
             local_result,
             Ok(evidence_class)
                 if evidence_class.as_str() == local_evidence && evidence_class.is_local_proof()
+        ));
+        assert!(matches!(
+            unit_test_result,
+            Ok(evidence_class)
+                if evidence_class.as_str() == unit_test_evidence
+                    && evidence_class.is_local_proof()
         ));
         assert!(matches!(
             non_local_result,
@@ -1036,12 +1052,20 @@ mod tests {
     #[test]
     fn keeps_secret_handling_named_only() {
         // Arrange
+        let raw_no_secret_handling = "none";
         let raw_secret_handling = "named-only-redacted";
 
         // Act
+        let no_secret_result = SecretHandling::parse(raw_no_secret_handling);
         let result = SecretHandling::parse(raw_secret_handling);
 
         // Assert
+        assert!(matches!(
+            no_secret_result,
+            Ok(secret_handling)
+                if secret_handling.as_str() == raw_no_secret_handling
+                    && !secret_handling.allows_value_material()
+        ));
         assert!(matches!(
             result,
             Ok(secret_handling)
@@ -1154,16 +1178,26 @@ mod tests {
     fn gates_connect_service_by_feature() {
         // Arrange
         let connect_features = FeatureSet::from_features([Feature::Connect]);
+        let connect_with_wui_features =
+            FeatureSet::from_features([Feature::Connect, Feature::WebUi]);
 
         // Act
         let missing_feature_result =
             NetworkServiceContract::new(NetworkServiceSurface::PrusaConnect, FeatureSet::empty());
-        let enabled_result =
+        let missing_wui_result =
             NetworkServiceContract::new(NetworkServiceSurface::PrusaConnect, connect_features);
+        let enabled_result = NetworkServiceContract::new(
+            NetworkServiceSurface::PrusaConnect,
+            connect_with_wui_features,
+        );
 
         // Assert
         assert_eq!(
             missing_feature_result,
+            Err(InvariantError::UnsupportedNetworkService)
+        );
+        assert_eq!(
+            missing_wui_result,
             Err(InvariantError::UnsupportedNetworkService)
         );
         assert!(matches!(

@@ -482,8 +482,8 @@ class Phase9VerifierTest(unittest.TestCase):
             "tools/bazel/BUILD.bazel",
             "\n".join(
                 [
-                    'shell_binary(name = "phase9_verify", src = "rust_workflow.sh", data = ["phase9_verify.py", "phase9_verify_test.py", "phase9_connect_contracts.json", "phase9_wui_contracts.json", "phase9_transfer_contracts.json", "phase9_network_service_contracts.json", "phase9_network_concern_dispositions.json", "//:phase9_network_web_services_docs", "//:rust_workspace_sources"])',
-                    'shell_binary(name = "phase9_verify_tests", src = "rust_workflow.sh", data = ["phase9_verify.py", "phase9_verify_test.py"])',
+                    'shell_binary(name = "phase9_verify", src = "rust_workflow.sh", data = ["phase9_verify.py", "phase9_verify_test.py", "phase9_negative_fixtures.py", "fixtures/phase9_negative_network_cases.json", "phase9_connect_contracts.json", "phase9_wui_contracts.json", "phase9_transfer_contracts.json", "phase9_network_service_contracts.json", "phase9_network_concern_dispositions.json", "//:phase9_network_web_services_docs", "//:rust_workspace_sources"])',
+                    'shell_binary(name = "phase9_verify_tests", src = "rust_workflow.sh", data = ["phase9_verify.py", "phase9_verify_test.py", "phase9_negative_fixtures.py", "phase9_negative_fixtures_test.py", "fixtures/phase9_negative_network_cases.json"])',
                 ]
             ),
         )
@@ -498,6 +498,7 @@ class Phase9VerifierTest(unittest.TestCase):
                     "    ;;",
                     "  phase9_verify_tests)",
                     "    python3 tools/bazel/phase9_verify_test.py",
+                    "    python3 tools/bazel/phase9_negative_fixtures_test.py",
                     "    ;;",
                     "esac",
                     "",
@@ -914,6 +915,25 @@ class Phase9VerifierTest(unittest.TestCase):
         self.assertIn("phase9_verify_tests", result.stdout)
         self.assertIn("rust_workflow.sh", result.stdout)
         self.assertIn("justfile", result.stdout)
+
+    def test_just_wiring_rejects_verify_tests_prefix_only(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase9_quick_surface(root)
+            self.write_file(
+                root,
+                "justfile",
+                "phase9-verify:\n    bazel run //tools/bazel:phase9_verify_tests\n",
+            )
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("bazel run //tools/bazel:phase9_verify", result.stdout)
+        self.assertIn("justfile must run phase9_verify_tests before phase9_verify", result.stdout)
 
     def test_requires_validation_lifecycle_contract(self) -> None:
         # Arrange
