@@ -71,6 +71,15 @@ filegroup(
 )
 
 filegroup(
+    name = "phase10_auxiliary_controller_docs",
+    srcs = [
+        ".planning/phases/10-auxiliary-controllers-and-expansion-ecosystem/10-CONTEXT.md",
+        ".planning/phases/10-auxiliary-controllers-and-expansion-ecosystem/10-RESEARCH.md",
+        ".planning/phases/10-auxiliary-controllers-and-expansion-ecosystem/10-VALIDATION.md",
+    ],
+)
+
+filegroup(
     name = "phase7_storage_migration_fixtures",
     srcs = ["//tools/bazel:fixtures/phase7_storage/redacted_migration_catalog.json"],
 )
@@ -178,6 +187,16 @@ alias(
 alias(
     name = "phase9_verify_tests",
     actual = "//tools/bazel:phase9_verify_tests",
+)
+
+alias(
+    name = "phase10_verify",
+    actual = "//tools/bazel:phase10_verify",
+)
+
+alias(
+    name = "phase10_verify_tests",
+    actual = "//tools/bazel:phase10_verify_tests",
 )
 
 alias(

@@ -176,6 +176,36 @@ shell_binary(
 )
 
 filegroup(
+    name = "phase10_auxiliary_build_update_manifest",
+    srcs = ["manifests/phase10_auxiliary_build_update.json"],
+)
+
+shell_binary(
+    name = "phase10_verify",
+    src = "rust_workflow.sh",
+    data = [
+        "phase10_verify.py",
+        "manifests/phase10_auxiliary_controllers.json",
+        "manifests/phase10_mmu_transport.json",
+        "manifests/phase10_modbus_rs485.json",
+        "manifests/phase10_toolchanger_dock_offsets.json",
+        "manifests/phase10_concern_dispositions.json",
+        ":phase10_auxiliary_build_update_manifest",
+        "//:phase10_auxiliary_controller_docs",
+        "//:rust_workspace_sources",
+    ],
+)
+
+shell_binary(
+    name = "phase10_verify_tests",
+    src = "rust_workflow.sh",
+    data = [
+        "phase10_verify.py",
+        "phase10_verify_test.py",
+    ],
+)
+
+filegroup(
     name = "unsafe_boundary_audit",
     srcs = ["manifests/unsafe_boundary_audit.json"],
 )

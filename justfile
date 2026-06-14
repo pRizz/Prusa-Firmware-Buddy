@@ -28,6 +28,10 @@ phase9-verify:
     bazel run //tools/bazel:phase9_verify_tests
     bazel run //tools/bazel:phase9_verify
 
+phase10-verify:
+    bazel run //tools/bazel:phase10_verify_tests
+    bazel run //tools/bazel:phase10_verify
+
 bazel-query:
     bazel query "//tools/bazel/... + //platforms/..."
 
