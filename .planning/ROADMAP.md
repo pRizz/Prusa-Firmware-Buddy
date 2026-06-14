@@ -23,7 +23,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 8: Local Interface and Workflow Parity** - Preserve local GUI workflows, display-class behavior, dialogs, warnings, setup flows, and print controls. (completed 2026-06-13)
 - [x] **Phase 9: Network, Web Services, and Transfers** - Preserve Connect, PrusaLink/WUI, TLS, telemetry, transfer, and local service behavior.
 - [x] **Phase 10: Auxiliary Controllers and Expansion Ecosystem** - Preserve puppy, Dwarf, ModularBed, xBuddy Extension, MMU2, toolchanger, and auxiliary update flows. (completed 2026-06-14)
-- [ ] **Phase 11: Parity Pyramid and Cutover Evidence** - Prove the Rust+Bazel firmware satisfies all parity gates before demoting the CMake/C++ reference path.
+- [x] **Phase 11: Parity Pyramid and Cutover Evidence** - Prove the Rust+Bazel firmware satisfies all parity gates before demoting the CMake/C++ reference path. (completed 2026-06-14)
 
 ## Phase Details
 
@@ -225,4 +225,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 8. Local Interface and Workflow Parity | 3/3 | Complete | 2026-06-13 |
 | 9. Network, Web Services, and Transfers | 0/4 | Not started | - |
 | 10. Auxiliary Controllers and Expansion Ecosystem | 4/4 | Complete    | 2026-06-14 |
-| 11. Parity Pyramid and Cutover Evidence | 4/5 | In Progress|  |
+| 11. Parity Pyramid and Cutover Evidence | 5/5 | Complete   | 2026-06-14 |
