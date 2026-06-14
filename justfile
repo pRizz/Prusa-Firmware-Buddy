@@ -24,6 +24,10 @@ phase8-verify:
     bazel run //tools/bazel:phase8_verify_tests
     bazel run //tools/bazel:phase8_verify
 
+phase9-verify:
+    bazel run //tools/bazel:phase9_verify_tests
+    bazel run //tools/bazel:phase9_verify
+
 bazel-query:
     bazel query "//tools/bazel/... + //platforms/..."
 

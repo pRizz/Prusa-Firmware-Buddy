@@ -146,6 +146,35 @@ shell_binary(
     ],
 )
 
+shell_binary(
+    name = "phase9_verify",
+    src = "rust_workflow.sh",
+    data = [
+        "phase9_verify.py",
+        "phase9_negative_fixtures.py",
+        "fixtures/phase9_negative_network_cases.json",
+        "manifests/phase9_connect_contracts.json",
+        "manifests/phase9_wui_contracts.json",
+        "manifests/phase9_transfer_contracts.json",
+        "manifests/phase9_network_service_contracts.json",
+        "manifests/phase9_network_concern_dispositions.json",
+        "//:phase9_network_web_services_docs",
+        "//:rust_workspace_sources",
+    ],
+)
+
+shell_binary(
+    name = "phase9_verify_tests",
+    src = "rust_workflow.sh",
+    data = [
+        "phase9_verify.py",
+        "phase9_verify_test.py",
+        "phase9_negative_fixtures.py",
+        "phase9_negative_fixtures_test.py",
+        "fixtures/phase9_negative_network_cases.json",
+    ],
+)
+
 filegroup(
     name = "unsafe_boundary_audit",
     srcs = ["manifests/unsafe_boundary_audit.json"],
