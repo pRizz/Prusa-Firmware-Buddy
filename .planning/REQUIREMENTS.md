@@ -50,7 +50,7 @@
 - [x] **VERF-01**: Developer can run a parity test pyramid covering pure Rust unit tests, adapter contract tests, generated drift checks, reference fixture comparisons, simulator flows, network/TLS/API tests, release artifact checks, and hardware smoke gates.
 - [x] **VERF-02**: Developer can run tests for pure firmware/domain logic with focused Arrange, Act, Assert structure and near-total coverage for state machines, parsers, policy, migrations, and protocol decisions.
 - [ ] **VERF-03**: Developer can compare Rust outputs against reference firmware for product artifacts, generated resources, storage migrations, protocol traces, G-code behavior fixtures, UI state fixtures, and release metadata.
-- [ ] **VERF-04**: Maintainer can review cutover evidence showing every v1 requirement mapped to passing tests, simulator or hardware evidence, intentional deltas, and residual retained-code justifications.
+- [x] **VERF-04**: Maintainer can review cutover evidence showing every v1 requirement mapped to passing tests, simulator or hardware evidence, intentional deltas, and residual retained-code justifications.
 - [ ] **VERF-05**: Maintainer can remove or demote the CMake/C++ reference path only after the Rust+Bazel build satisfies all parity gates and documented cutover criteria.
 
 ## v2 Requirements
@@ -110,7 +110,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VERF-01 | Phase 11 | Complete |
 | VERF-02 | Phase 4 | Completed |
 | VERF-03 | Phase 11 | Pending |
-| VERF-04 | Phase 11 | Pending |
+| VERF-04 | Phase 11 | Complete |
 | VERF-05 | Phase 11 | Pending |
 
 **Coverage:**
