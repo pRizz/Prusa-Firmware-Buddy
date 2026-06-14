@@ -390,22 +390,19 @@ All claims in this research were verified from repo files, local command probes,
 |---|-------|---------|---------------|
 | - | No assumed claims recorded. [VERIFIED: this research session] | - | - |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Which non-local artifacts, if any, should Phase 10 create instead of deferring to Phase 11?**  
    What we know: The context allows simulator or hardware-smoke evidence if concrete artifacts exist, but says full physical auxiliary-controller, RS485, toolchanger/dock, MMU, and long-run update proof remain Phase 11 unless Phase 10 adds explicit evidence. [VERIFIED: 10-CONTEXT.md]  
-   What's unclear: The current local environment does not provide hardware proof artifacts. [VERIFIED: local environment audit on 2026-06-14]  
-   Recommendation: Plan local manifests/verifiers first and leave non-local placeholders unless hardware/simulator evidence is explicitly added. [VERIFIED: 10-CONTEXT.md]
+   Resolution: Phase 10 should plan local source-backed manifests, Rust domain contracts, Bazel/`just` verification, and non-local evidence placeholders. It should not require physical hardware, live RS485/MMU/toolchanger proof, long-run update proof, or final cutover proof for local green verification unless a specific plan adds concrete simulator or hardware-smoke artifacts. [VERIFIED: 10-CONTEXT.md; VERIFIED: 10-VALIDATION.md]
 
 2. **How should the xBuddy Extension `iX` source branch be represented?**  
    What we know: `ProjectOptions.cmake` enables standard xBuddy Extension for `COREONE`, while `src/puppy/xbuddy_extension/CMakeLists.txt` contains a source branch for `iX`. [VERIFIED: ProjectOptions.cmake; VERIFIED: src/puppy/xbuddy_extension/CMakeLists.txt]  
-   What's unclear: The Phase 10 user-facing supported-combination claim does not separately state whether `iX` xBuddy Extension is active, retained, or reference-deferred. [VERIFIED: 10-CONTEXT.md]  
-   Recommendation: Add a manifest row that names the `iX` branch and marks its proof/status explicitly instead of silently treating it as supported production behavior. [VERIFIED: 10-CONTEXT.md]
+   Resolution: Phase 10 should add an explicit concern or manifest row for the `iX` branch and mark it as retained/reference-deferred unless the source-backed product gates prove it is an active supported production combination. Do not silently enable an unsupported xBuddy Extension product profile and do not collapse the branch into generic H5 support. [VERIFIED: 10-CONTEXT.md; VERIFIED: ProjectOptions.cmake; VERIFIED: src/puppy/xbuddy_extension/CMakeLists.txt]
 
 3. **Does Phase 10 fix MMU availability/reporting stubs or only model them?**  
    What we know: D-11 requires disposition of the concern, and D-14 allows intentional deltas only when named and tested. [VERIFIED: 10-CONTEXT.md]  
-   What's unclear: The context does not lock whether Phase 10 must change runtime behavior or can record a typed reference-deferred state contract. [VERIFIED: 10-CONTEXT.md]  
-   Recommendation: Plan a first task to model the states and concern dispositions; only add behavior-fix tasks if the plan includes regression evidence. [VERIFIED: 10-CONTEXT.md]
+   Resolution: Phase 10 should first model the MMU availability/reporting states and concern disposition as typed Rust/domain and manifest contracts. Runtime behavior changes are not required by default; any fix to `MMUAvailable()` or `UseMMU()` must be a named intentional delta with regression evidence. [VERIFIED: 10-CONTEXT.md; VERIFIED: .planning/codebase/CONCERNS.md]
 
 ## Environment Availability
 
