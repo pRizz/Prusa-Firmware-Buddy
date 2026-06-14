@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 from pathlib import Path
 
@@ -57,19 +58,14 @@ REQUIRED_PYRAMID_ROW_IDS = {
     "pyramid-hardware-smoke-manual-gates",
     "pyramid-retained-code-justifications",
 }
-FORBIDDEN_MARKERS = {
-    "BEGIN CERTIFICATE",
-    "BEGIN PRIVATE KEY",
-    "certificate_pem",
-    "password_value",
-    "token_value",
-    "certificate_bytes",
-    "private_key",
-    "SIGNING_KEY_VALUE",
-    "signing_key_value",
-    "raw_crash_dump",
-    "firmware_payload",
-}
+FORBIDDEN_TEXT_PATTERNS = (
+    re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----", re.IGNORECASE),
+    re.compile(r"-----BEGIN CERTIFICATE-----", re.IGNORECASE),
+    re.compile(
+        r"(certificate[_-]?pem|password[_-]?value|token[_-]?value|certificate[_-]?bytes|private[_-]?key|signing[_-]?key[_-]?value|raw[_-]?crash[_-]?dump|firmware[_-]?payload)",
+        re.IGNORECASE,
+    ),
+)
 OVERCLAIM_STRINGS = {
     "hardware verified locally",
     "local hardware proof",
@@ -305,9 +301,9 @@ def require_source_artifacts(root: Path, row: dict[str, object], row_name: str) 
 
 def reject_forbidden_text(path: Path, text: str) -> None:
     errors: list[str] = []
-    for marker in sorted(FORBIDDEN_MARKERS):
-        if marker in text:
-            errors.append(f"{path.as_posix()} contains forbidden evidence marker: {marker}")
+    for pattern in FORBIDDEN_TEXT_PATTERNS:
+        for match in pattern.finditer(text):
+            errors.append(f"{path.as_posix()} contains forbidden evidence marker: {match.group(0)}")
     lowered = text.lower()
     for phrase in sorted(OVERCLAIM_STRINGS):
         if phrase.lower() in lowered:

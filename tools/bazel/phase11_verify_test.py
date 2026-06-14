@@ -505,6 +505,51 @@ class Phase11VerifierTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("token_value", result.stdout)
 
+    def test_security_only_rejects_private_key_header_variants(self) -> None:
+        # Arrange
+        private_key_headers = [
+            "-----BEGIN RSA PRIVATE KEY-----",
+            "-----BEGIN EC PRIVATE KEY-----",
+            "-----BEGIN OPENSSH PRIVATE KEY-----",
+        ]
+
+        for private_key_header in private_key_headers:
+            with self.subTest(private_key_header=private_key_header):
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_phase11_surface(root)
+                    self.write_file(root, f"{PHASE_DIR}/11-VALIDATION.md", private_key_header)
+
+                    # Act
+                    result = self.run_verifier(["--security-only"], maybe_root=root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(private_key_header, result.stdout)
+
+    def test_security_only_rejects_mixed_case_secret_field_names(self) -> None:
+        # Arrange
+        secret_field_names = [
+            "Certificate-Pem",
+            "Password_Value",
+            "Token-Value",
+            "Private_Key",
+        ]
+
+        for secret_field_name in secret_field_names:
+            with self.subTest(secret_field_name=secret_field_name):
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_phase11_surface(root)
+                    self.write_file(root, f"{PHASE_DIR}/11-VALIDATION.md", secret_field_name)
+
+                    # Act
+                    result = self.run_verifier(["--security-only"], maybe_root=root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(secret_field_name, result.stdout)
+
     def test_security_only_rejects_cutover_overclaim(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
