@@ -205,6 +205,35 @@ shell_binary(
     ],
 )
 
+shell_binary(
+    name = "phase11_verify",
+    src = "rust_workflow.sh",
+    data = [
+        "phase11_verify.py",
+        "manifests/phase11_cutover_readiness.json",
+        "manifests/phase11_parity_pyramid.json",
+        "manifests/phase11_reference_comparisons.json",
+        "manifests/phase11_requirement_evidence.json",
+        "manifests/phase11_retained_code_justifications.json",
+        "//:phase11_cutover_evidence_docs",
+        "//:rust_workspace_sources",
+    ],
+)
+
+shell_binary(
+    name = "phase11_verify_tests",
+    src = "rust_workflow.sh",
+    data = [
+        "phase11_verify.py",
+        "phase11_verify_test.py",
+        "manifests/phase11_cutover_readiness.json",
+        "manifests/phase11_parity_pyramid.json",
+        "manifests/phase11_reference_comparisons.json",
+        "manifests/phase11_requirement_evidence.json",
+        "manifests/phase11_retained_code_justifications.json",
+    ],
+)
+
 filegroup(
     name = "unsafe_boundary_audit",
     srcs = ["manifests/unsafe_boundary_audit.json"],

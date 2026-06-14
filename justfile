@@ -32,6 +32,14 @@ phase10-verify:
     bazel run //tools/bazel:phase10_verify_tests
     bazel run //tools/bazel:phase10_verify
 
+phase11-verify:
+    bazel run //tools/bazel:phase11_verify_tests
+    bazel run //tools/bazel:phase11_verify
+    bazel run //tools/bazel:rust_format_check
+    bazel run //tools/bazel:rust_lint
+    bazel run //tools/bazel:rust_build
+    bazel run //tools/bazel:rust_unit_tests
+
 bazel-query:
     bazel query "//tools/bazel/... + //platforms/..."
 
