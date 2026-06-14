@@ -192,7 +192,7 @@ Plans:
 Plans:
 - [x] 10-01-PLAN.md — Create source-backed auxiliary-controller, MMU, Modbus/RS485, toolchanger, build/update, and concern manifests.
 - [x] 10-02-PLAN.md — Add pure Rust auxiliary-controller domain contracts and invariant tests.
-- [ ] 10-03-PLAN.md — Add Phase 10 verifier regression tests and static aggregate verifier.
+- [x] 10-03-PLAN.md — Add Phase 10 verifier regression tests and static aggregate verifier.
 - [ ] 10-04-PLAN.md — Wire Phase 10 Bazel/just verification and complete Nyquist validation sign-off.
 
 ### Phase 11: Parity Pyramid and Cutover Evidence
@@ -224,5 +224,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 7. Persistence, Storage, and Resource Compatibility | 5/5 | Complete   | 2026-06-06 |
 | 8. Local Interface and Workflow Parity | 3/3 | Complete | 2026-06-13 |
 | 9. Network, Web Services, and Transfers | 0/4 | Not started | - |
-| 10. Auxiliary Controllers and Expansion Ecosystem | 2/4 | In Progress|  |
+| 10. Auxiliary Controllers and Expansion Ecosystem | 3/4 | In Progress|  |
 | 11. Parity Pyramid and Cutover Evidence | 0/TBD | Not started | - |
