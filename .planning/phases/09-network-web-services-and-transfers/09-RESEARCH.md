@@ -393,22 +393,25 @@ The shape matches project Rust naming and constructor patterns; the exact error/
 |---|-------|---------|---------------|
 | - | No assumed claims. | All sections | All technical claims are tied to repo inspection, phase context, local command output, or cited official docs. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Will Phase 9 fix the custom DER certificate read bug?**  
+   RESOLVED: Phase 9 plans a named IFCE-02 intentional-delta fixture path for custom DER certificate handling, because Plan 09-03 now requires runnable valid, missing, and invalid DER negative fixture coverage and Plan 09-04 wires those fixtures into the Phase 9 verifier path. The implementation plan may preserve the runtime defect until a later code-changing phase, but the roadmap fixture criterion is covered by executable negative fixtures and explicit intentional-delta evidence rather than by a silent green parity claim.
    What we know: The source opens `/internal/connect/connect.der`, determines file length, allocates a buffer, and calls `mbedtls_x509_crt_parse_der_nocopy`, but the audited path lacks a data read before parse. [VERIFIED: src/connect/tls/tls.cpp]  
-   What's unclear: Whether the phase execution budget includes valid/missing/invalid DER fixtures and provisioning docs. [VERIFIED: .planning/phases/09-network-web-services-and-transfers/09-CONTEXT.md]  
-   Recommendation: Plan the fix as an IFCE-02 intentional delta only if Wave 0 adds regression fixtures; otherwise preserve and mark for cutover review. [VERIFIED: .planning/phases/09-network-web-services-and-transfers/09-CONTEXT.md]
+   Prior uncertainty: Whether the phase execution budget includes valid/missing/invalid DER fixtures and provisioning docs. [VERIFIED: .planning/phases/09-network-web-services-and-transfers/09-CONTEXT.md]
+   Resolved approach: Plan 09-03 adds valid/missing/invalid DER fixture coverage and Plan 09-04 wires it into local verification; runtime behavior remains non-local/preserved unless an implementation artifact records the intentional delta. [VERIFIED: .planning/phases/09-network-web-services-and-transfers/09-CONTEXT.md]
 
 2. **How exhaustive should WUI endpoint manifests be in this phase?**  
+   RESOLVED: Use endpoint-family rows with representative method, status, auth, and error fields, and add child fixture IDs only where behavior differs materially from the family behavior. This preserves D-08 coverage without forcing one row per endpoint when the source behavior is shared.
    What we know: WUI routing includes PrusaLink API v1, OctoPrint-compatible endpoints, USB files, previews, static assets, and unknown-request handling. [VERIFIED: lib/WUI/http_lifetime.cpp] [VERIFIED: lib/WUI/link_content/prusa_link_api_v1.cpp] [VERIFIED: lib/WUI/link_content/prusa_link_api_octo.cpp]  
-   What's unclear: Whether the planner wants one row per endpoint or one row per endpoint family. [VERIFIED: .planning/phases/09-network-web-services-and-transfers/09-CONTEXT.md]  
-   Recommendation: Use endpoint-family rows with representative method/status/auth/error fields, then add child fixture IDs only where behavior differs materially. [VERIFIED: tools/bazel/phase8_verify.py]
+   Prior uncertainty: Whether the planner wants one row per endpoint or one row per endpoint family. [VERIFIED: .planning/phases/09-network-web-services-and-transfers/09-CONTEXT.md]
+   Resolved approach: Use endpoint-family rows with representative method/status/auth/error fields, then add child fixture IDs only where behavior differs materially. [VERIFIED: tools/bazel/phase8_verify.py]
 
 3. **Is live Connect/cloud or network hardware available during execution?**  
+   RESOLVED: Local Phase 9 verification remains manifest, domain, static, and runnable fixture proof only. Live cloud, physical network, USB/media races, real TLS handshakes, long-running transfers, simulator network flows, and cutover proof remain non-local unless concrete run artifacts are recorded.
    What we know: Local environment has Bazel, just, Rust, Python, Docker, CMake, Ninja, and OpenSSL, but no live printer/cloud credentials were provided. [VERIFIED: bazel --version] [VERIFIED: just --version] [VERIFIED: cargo --version] [VERIFIED: python3 --version]  
-   What's unclear: Whether hardware, simulator network, or Connect test credentials will be available in a later verification phase. [VERIFIED: .planning/phases/09-network-web-services-and-transfers/09-CONTEXT.md]  
-   Recommendation: Keep all such proof as non-local evidence unless the executor records concrete run artifacts. [VERIFIED: .planning/phases/09-network-web-services-and-transfers/09-CONTEXT.md]
+   Prior uncertainty: Whether hardware, simulator network, or Connect test credentials will be available in a later verification phase. [VERIFIED: .planning/phases/09-network-web-services-and-transfers/09-CONTEXT.md]
+   Resolved approach: Keep all such proof as non-local evidence unless the executor records concrete run artifacts. [VERIFIED: .planning/phases/09-network-web-services-and-transfers/09-CONTEXT.md]
 
 ## Environment Availability
 
