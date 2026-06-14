@@ -415,6 +415,27 @@ class Phase11VerifierTest(unittest.TestCase):
         self.assertIn("pyramid-simulator-flows", result.stdout)
         self.assertIn("required_non_local_evidence", result.stdout)
 
+    def test_pyramid_only_rejects_stale_requires_plan_status(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase11_surface(root)
+            rows = self.manifest_rows(root, PYRAMID_MANIFEST)
+            for row in rows:
+                if row["id"] == "pyramid-reference-fixture-comparisons":
+                    row["cutover_status"] = "requires-plan-11-03-reference-comparison-rows"
+                if row["id"] == "pyramid-retained-code-justifications":
+                    row["cutover_status"] = "requires-plan-11-04-retained-code-review"
+            self.write_manifest_rows(root, PYRAMID_MANIFEST, rows)
+
+            # Act
+            result = self.run_verifier(["--pyramid-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("requires-plan-11-03-reference-comparison-rows", result.stdout)
+        self.assertIn("requires-plan-11-04-retained-code-review", result.stdout)
+
     def test_requirements_only_reports_missing_manifest(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -520,6 +541,26 @@ class Phase11VerifierTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("req-base-02", result.stdout)
         self.assertIn("required_non_local_evidence", result.stdout)
+
+    def test_requirements_only_rejects_stale_not_created_yet_blocker(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase11_surface(root)
+            rows = self.manifest_rows(root, REQUIREMENT_MANIFEST)
+            for row in rows:
+                if row["id"] == "req-rust-03":
+                    row["cutover_blocker"] = (
+                        "Plan 11-04 retained-code acceptance rows are not created yet."
+                    )
+            self.write_manifest_rows(root, REQUIREMENT_MANIFEST, rows)
+
+            # Act
+            result = self.run_verifier(["--requirements-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("not created yet", result.stdout)
 
     def test_comparison_only_rejects_byte_identity_without_fixture(self) -> None:
         # Arrange

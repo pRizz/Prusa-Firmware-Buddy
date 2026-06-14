@@ -74,7 +74,7 @@
       "proof_scope": "local",
       "evidence_class": "reference-fixture-comparison",
       "local_status": "passed-local",
-      "cutover_status": "requires-plan-11-03-reference-comparison-rows",
+      "cutover_status": "reference-comparisons-source-backed-pending-non-local-evidence",
       "source_artifacts": [
         ".planning/phases/01-reference-baseline-and-safety-envelope/01-VERIFICATION.md",
         ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md",
@@ -191,7 +191,7 @@
       "proof_scope": "retained-code-justification",
       "evidence_class": "retained-code-justification",
       "local_status": "accepted-retained-code",
-      "cutover_status": "requires-plan-11-04-retained-code-review",
+      "cutover_status": "retained-code-justifications-source-backed-pending-maintainer-acceptance",
       "source_artifacts": [
         ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-VERIFICATION.md",
         ".planning/phases/10-auxiliary-controllers-and-expansion-ecosystem/10-VERIFICATION.md",

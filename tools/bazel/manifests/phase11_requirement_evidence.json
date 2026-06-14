@@ -251,7 +251,7 @@
       "required_non_local_evidence": [
         "Plan 11-04 retained-code justifications must accept, block, or defer every residual retained island before demotion is considered."
       ],
-      "cutover_blocker": "Plan 11-04 retained-code acceptance rows are not created yet.",
+      "cutover_blocker": "Plan 11-04 retained-code justification rows are source-backed; maintainer acceptance and named non-local retained-code evidence remain required before demotion.",
       "proof_scope": "retained-code-justification",
       "phase_lifecycle_id": "11-2026-06-14T18-48-49"
     },

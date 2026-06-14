@@ -75,6 +75,12 @@ OVERCLAIM_STRINGS = {
     "reference path removed",
     "reference removal complete",
 }
+STALE_PLAN_MARKER_PATTERNS = (
+    re.compile(r"\bpending-plan-[A-Za-z0-9-]+\b"),
+    re.compile(r"\brequires-plan-11-03[A-Za-z0-9-]*\b"),
+    re.compile(r"\brequires-plan-11-04[A-Za-z0-9-]*\b"),
+    re.compile(r"not created yet", re.IGNORECASE),
+)
 
 REQUIRED_REQUIREMENT_ROWS = {
     "req-base-01": "BASE-01",
@@ -340,12 +346,46 @@ def reject_forbidden_text(path: Path, text: str) -> None:
         raise VerificationError("\n".join(errors))
 
 
+def later_phase_artifacts_exist(root: Path) -> bool:
+    return all(
+        (root / path).exists()
+        for path in [
+            REFERENCE_COMPARISONS_MANIFEST,
+            CUTOVER_READINESS_MANIFEST,
+            RETAINED_CODE_JUSTIFICATIONS_MANIFEST,
+            CUTOVER_RUST,
+        ]
+    )
+
+
+def stale_plan_markers(text: str) -> list[str]:
+    markers: set[str] = set()
+    for pattern in STALE_PLAN_MARKER_PATTERNS:
+        markers.update(match.group(0) for match in pattern.finditer(text))
+    return sorted(markers, key=str.lower)
+
+
+def require_no_stale_plan_markers_after_later_artifacts(root: Path, path: Path, text: str) -> None:
+    if not later_phase_artifacts_exist(root):
+        return
+    markers = stale_plan_markers(text)
+    if markers:
+        raise VerificationError(
+            f"{path.as_posix()} contains stale Plan 11-03/11-04 markers after Plan 11-03/11-04 artifacts exist: "
+            + ", ".join(markers)
+        )
+
+
 def check_pyramid(root: Path) -> None:
     manifest_text = read_text(root, PARITY_PYRAMID_MANIFEST)
-    reject_forbidden_text(PARITY_PYRAMID_MANIFEST, manifest_text)
+    errors: list[str] = []
+    try:
+        reject_forbidden_text(PARITY_PYRAMID_MANIFEST, manifest_text)
+        require_no_stale_plan_markers_after_later_artifacts(root, PARITY_PYRAMID_MANIFEST, manifest_text)
+    except VerificationError as error:
+        errors.append(str(error))
     rows = require_top_level(root, PARITY_PYRAMID_MANIFEST, "parity_pyramid")
     require_exact_row_ids(rows, REQUIRED_PYRAMID_ROW_IDS, PARITY_PYRAMID_MANIFEST)
-    errors: list[str] = []
     required_fields = [
         "id",
         "layer",
@@ -435,27 +475,15 @@ def check_requirements(root: Path) -> None:
         "proof_scope",
         "phase_lifecycle_id",
     ]
-    later_phase_artifacts_exist = all(
-        (root / path).exists()
-        for path in [
-            REFERENCE_COMPARISONS_MANIFEST,
-            CUTOVER_READINESS_MANIFEST,
-            RETAINED_CODE_JUSTIFICATIONS_MANIFEST,
-            CUTOVER_RUST,
-        ]
-    )
-    if later_phase_artifacts_exist and "pending-plan-" in manifest_text:
-        pending_values = sorted(
-            {
-                value
-                for value in manifest_text.replace('"', " ").replace(",", " ").split()
-                if value.startswith("pending-plan-")
-            }
+    later_artifacts_exist = later_phase_artifacts_exist(root)
+    try:
+        require_no_stale_plan_markers_after_later_artifacts(
+            root,
+            REQUIREMENT_EVIDENCE_MANIFEST,
+            manifest_text,
         )
-        errors.append(
-            f"{REQUIREMENT_EVIDENCE_MANIFEST.as_posix()} contains stale pending-plan markers after Plan 11-03/11-04 artifacts exist: "
-            + ", ".join(pending_values)
-        )
+    except VerificationError as error:
+        errors.append(str(error))
     for row in rows:
         row_name = f"{REQUIREMENT_EVIDENCE_MANIFEST.as_posix()} row {row.get('id', '<unknown>')}"
         try:
@@ -486,9 +514,9 @@ def check_requirements(root: Path) -> None:
                     raise VerificationError(
                         f"{row_name} missing pending-requirement handling for {requirement_id}"
                     )
-            if later_phase_artifacts_exist and requirement_id == "VERF-03":
+            if later_artifacts_exist and requirement_id == "VERF-03":
                 require_final_verf03_row(row, row_name)
-            if later_phase_artifacts_exist and requirement_id == "VERF-05":
+            if later_artifacts_exist and requirement_id == "VERF-05":
                 require_final_verf05_row(row, row_name)
         except VerificationError as error:
             errors.append(str(error))
