@@ -1,0 +1,212 @@
+{
+  "schema_version": "1",
+  "phase": "11-parity-pyramid-and-cutover-evidence",
+  "phase_lifecycle_id": "11-2026-06-14T18-48-49",
+  "parity_pyramid": [
+    {
+      "id": "pyramid-rust-unit-tests",
+      "layer": "rust-unit-tests",
+      "requirement_id": "VERF-01",
+      "proof_scope": "local",
+      "evidence_class": "rust-unit-test",
+      "local_status": "passed-local",
+      "cutover_status": "local-layer-defined",
+      "source_artifacts": [
+        ".planning/phases/04-rust-architecture-and-invariant-model/04-VERIFICATION.md",
+        "rust/crates/domain/src/lib.rs",
+        "tools/bazel/phase11_verify.py"
+      ],
+      "verifier_commands": [
+        "cargo test --all-features",
+        "bazel run //tools/bazel:rust_unit_tests"
+      ],
+      "required_non_local_evidence": [],
+      "secret_handling": "name-only-or-redacted",
+      "overclaim_guard": "enforced-by-phase11-verifier",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "pyramid-adapter-domain-contract-tests",
+      "layer": "adapter-domain-contract-tests",
+      "requirement_id": "VERF-01",
+      "proof_scope": "local",
+      "evidence_class": "adapter-contract-test",
+      "local_status": "passed-local",
+      "cutover_status": "local-layer-defined",
+      "source_artifacts": [
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-VERIFICATION.md",
+        ".planning/phases/10-auxiliary-controllers-and-expansion-ecosystem/10-VERIFICATION.md",
+        "tools/bazel/phase11_verify.py"
+      ],
+      "verifier_commands": [
+        "python3 tools/bazel/phase11_verify.py --rust-only"
+      ],
+      "required_non_local_evidence": [],
+      "secret_handling": "name-only-or-redacted",
+      "overclaim_guard": "enforced-by-phase11-verifier",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "pyramid-generated-drift-checks",
+      "layer": "generated-drift-checks",
+      "requirement_id": "VERF-01",
+      "proof_scope": "local",
+      "evidence_class": "generated-drift-check",
+      "local_status": "passed-local",
+      "cutover_status": "local-layer-defined",
+      "source_artifacts": [
+        ".planning/phases/03-artifact-and-generator-parity/03-VERIFICATION.md",
+        ".planning/phases/07-persistence-storage-and-resource-compatibility/07-VERIFICATION.md",
+        "tools/bazel/manifests/phase7_generated_outputs.json"
+      ],
+      "verifier_commands": [
+        "bazel run //tools/bazel:generated_check"
+      ],
+      "required_non_local_evidence": [],
+      "secret_handling": "name-only-or-redacted",
+      "overclaim_guard": "enforced-by-phase11-verifier",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "pyramid-reference-fixture-comparisons",
+      "layer": "reference-fixture-comparisons",
+      "requirement_id": "VERF-01",
+      "proof_scope": "local",
+      "evidence_class": "reference-fixture-comparison",
+      "local_status": "passed-local",
+      "cutover_status": "requires-plan-11-03-reference-comparison-rows",
+      "source_artifacts": [
+        ".planning/phases/01-reference-baseline-and-safety-envelope/01-VERIFICATION.md",
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md",
+        "tools/bazel/phase11_verify.py"
+      ],
+      "verifier_commands": [
+        "python3 tools/bazel/phase11_verify.py --comparison-only"
+      ],
+      "required_non_local_evidence": [],
+      "secret_handling": "name-only-or-redacted",
+      "overclaim_guard": "enforced-by-phase11-verifier",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "pyramid-simulator-flows",
+      "layer": "simulator-flows",
+      "requirement_id": "VERF-01",
+      "proof_scope": "simulator",
+      "evidence_class": "simulator-flow",
+      "local_status": "pending-simulator",
+      "cutover_status": "not-cutover-ready",
+      "source_artifacts": [
+        ".planning/phases/06-printing-core-safety-and-feature-gates/06-VERIFICATION.md",
+        ".planning/phases/08-local-interface-and-workflow-parity/08-VERIFICATION.md",
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-VALIDATION.md"
+      ],
+      "verifier_commands": [
+        "python3 tools/bazel/phase11_verify.py --pyramid-only"
+      ],
+      "required_non_local_evidence": [
+        "approved simulator logs for GUI, storage, protocol, network, and auxiliary flows",
+        "reference comparison rows that cite the simulator artifacts"
+      ],
+      "secret_handling": "name-only-or-redacted",
+      "overclaim_guard": "enforced-by-phase11-verifier",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "pyramid-network-tls-api-checks",
+      "layer": "network-tls-api-checks",
+      "requirement_id": "VERF-01",
+      "proof_scope": "ci",
+      "evidence_class": "network-tls-api-check",
+      "local_status": "pending-ci",
+      "cutover_status": "not-cutover-ready",
+      "source_artifacts": [
+        ".planning/phases/09-network-web-services-and-transfers/09-VERIFICATION.md",
+        "tools/bazel/manifests/phase9_connect_contracts.json",
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-VALIDATION.md"
+      ],
+      "verifier_commands": [
+        "python3 tools/bazel/phase11_verify.py --pyramid-only"
+      ],
+      "required_non_local_evidence": [
+        "CI or approved lab evidence for Connect, PrusaLink, TLS, WebSocket, transfer, proxy, metrics, and syslog behavior",
+        "redacted evidence package names only for service credentials and TLS material"
+      ],
+      "secret_handling": "name-only-or-redacted",
+      "overclaim_guard": "enforced-by-phase11-verifier",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "pyramid-release-artifact-checks",
+      "layer": "release-artifact-checks",
+      "requirement_id": "VERF-01",
+      "proof_scope": "ci",
+      "evidence_class": "release-artifact-check",
+      "local_status": "pending-ci",
+      "cutover_status": "not-cutover-ready",
+      "source_artifacts": [
+        ".planning/phases/03-artifact-and-generator-parity/03-VERIFICATION.md",
+        ".planning/phases/07-persistence-storage-and-resource-compatibility/07-VERIFICATION.md",
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-RESEARCH.md"
+      ],
+      "verifier_commands": [
+        "python3 tools/bazel/phase11_verify.py --pyramid-only"
+      ],
+      "required_non_local_evidence": [
+        "release-candidate artifact and metadata comparison evidence for .bin, .bbf, .dfu, map, provenance, resource, and auxiliary package surfaces",
+        "signing-sensitive proof stored as redacted artifact names only"
+      ],
+      "secret_handling": "name-only-or-redacted",
+      "overclaim_guard": "enforced-by-phase11-verifier",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "pyramid-hardware-smoke-manual-gates",
+      "layer": "hardware-smoke-or-manual-gates",
+      "requirement_id": "VERF-01",
+      "proof_scope": "manual-hardware-required",
+      "evidence_class": "manual-hardware-required",
+      "local_status": "manual-hardware-required",
+      "cutover_status": "not-cutover-ready",
+      "source_artifacts": [
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-VERIFICATION.md",
+        ".planning/phases/10-auxiliary-controllers-and-expansion-ecosystem/10-VERIFICATION.md",
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-VALIDATION.md"
+      ],
+      "verifier_commands": [
+        "python3 tools/bazel/phase11_verify.py --pyramid-only"
+      ],
+      "required_non_local_evidence": [
+        "physical printer smoke evidence for startup, safety, motion, thermal, storage media, USB, UI input, RS485, MMU, toolchanger, and auxiliary update gates",
+        "maintainer acceptance record before reference demotion is considered"
+      ],
+      "secret_handling": "name-only-or-redacted",
+      "overclaim_guard": "enforced-by-phase11-verifier",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    },
+    {
+      "id": "pyramid-retained-code-justifications",
+      "layer": "retained-code-justifications",
+      "requirement_id": "VERF-01",
+      "proof_scope": "retained-code-justification",
+      "evidence_class": "retained-code-justification",
+      "local_status": "accepted-retained-code",
+      "cutover_status": "requires-plan-11-04-retained-code-review",
+      "source_artifacts": [
+        ".planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-VERIFICATION.md",
+        ".planning/phases/10-auxiliary-controllers-and-expansion-ecosystem/10-VERIFICATION.md",
+        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md"
+      ],
+      "verifier_commands": [
+        "python3 tools/bazel/phase11_verify.py --cutover-only"
+      ],
+      "required_non_local_evidence": [
+        "Plan 11-04 retained-code justification rows accepted, blocked, or deferred with owners and source-backed boundaries",
+        "no anonymous retained C, C++, ASM, generated, or vendor island remains before cutover approval"
+      ],
+      "secret_handling": "name-only-or-redacted",
+      "overclaim_guard": "enforced-by-phase11-verifier",
+      "phase_lifecycle_id": "11-2026-06-14T18-48-49"
+    }
+  ]
+}
