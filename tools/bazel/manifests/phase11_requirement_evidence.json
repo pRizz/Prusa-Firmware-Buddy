@@ -294,7 +294,7 @@
       "required_non_local_evidence": [
         "Final cutover evidence must keep Rust checks wired into aggregate verification."
       ],
-      "cutover_blocker": "Plan 11-05 aggregate wiring has not completed Phase 11 final verification yet.",
+      "cutover_blocker": "Phase 11 aggregate verification passed locally; final cutover remains blocked until retained-code acceptance, maintainer approval, and non-local simulator, hardware, live network/TLS, storage-media, release-candidate, signing, MMU, RS485, and toolchanger evidence gates are accepted.",
       "proof_scope": "local",
       "phase_lifecycle_id": "11-2026-06-14T18-48-49"
     },
@@ -577,7 +577,7 @@
       "required_non_local_evidence": [
         "Final aggregate verification must keep pure-domain tests wired before cutover approval."
       ],
-      "cutover_blocker": "Plan 11-05 final aggregate verification has not completed yet.",
+      "cutover_blocker": "Phase 11 aggregate verification passed locally; final cutover remains blocked until non-local parity pyramid evidence and maintainer acceptance gates are accepted.",
       "proof_scope": "local",
       "phase_lifecycle_id": "11-2026-06-14T18-48-49"
     },

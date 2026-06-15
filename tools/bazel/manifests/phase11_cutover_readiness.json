@@ -29,8 +29,8 @@
       "id": "criteria-local-verifier-passed",
       "requirement_id": "VERF-05",
       "criterion": "The aggregate Phase 11 local verifier, security scan, Rust contract checks, Bazel labels, and just facade all pass in the final verification plan.",
-      "status": "pending-aggregate-verifier",
-      "blocking_reason": "Plan 11-05 owns aggregate verifier, Bazel, just, and validation sign-off; this plan records the readiness criterion only.",
+      "status": "source-backed-local-passed",
+      "blocking_reason": "Phase 11 aggregate verifier, Bazel wiring, just facade, and validation sign-off passed locally; final demotion remains blocked by non-local evidence and maintainer acceptance criteria.",
       "source_artifacts": [
         ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-VALIDATION.md",
         ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-05-PLAN.md",
@@ -128,8 +128,8 @@
       "id": "criteria-overclaim-scan-clean",
       "requirement_id": "VERF-05",
       "criterion": "Phase 11 manifests, validation records, and summaries avoid secret markers, local hardware/simulator proof overclaims, ungrounded byte identity wording, final demotion claims, and source path escapes.",
-      "status": "pending-aggregate-verifier",
-      "blocking_reason": "Security-only scan is available now, but aggregate Plan 11-05 must rerun the full scan after final wiring and summary metadata exist.",
+      "status": "source-backed-local-passed",
+      "blocking_reason": "Security-only and aggregate Phase 11 scans pass locally; final cutover remains blocked until non-local release, hardware, simulator, live network/TLS, storage-media, and maintainer acceptance evidence is attached.",
       "source_artifacts": [
         "tools/bazel/phase11_verify.py",
         ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-VALIDATION.md",

@@ -1,9 +1,9 @@
 ---
 phase: 05
 slug: foreign-code-unsafe-and-runtime-boundary
-status: ready
+status: complete
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-06-03
 ---
 
@@ -41,17 +41,17 @@ created: 2026-06-03
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 05-01-01 | 01 | 0 | RUST-03, RUST-04, CORE-01, CORE-02 | T-05-01-01 / T-05-01-06 | Phase 5 verifier exposes required fields, required retained component IDs, required unsafe surface IDs, and evidence-class checks. | verifier | `python3 -m py_compile tools/bazel/phase5_verify.py && python3 tools/bazel/phase5_verify.py --help` | no - Plan 01 creates it | pending |
-| 05-01-02 | 01 | 0 | RUST-03, CORE-01, CORE-02 | T-05-01-03 / T-05-01-05 / T-05-01-07 | Foreign-code inventory covers every retained Phase 5 island named by context/research, including board-clock and synchronization rows. | manifest/verifier | `python3 tools/bazel/phase5_verify.py --inventory-only` | no - Plan 01 creates it | pending |
-| 05-01-03 | 01 | 0 | RUST-04, CORE-01, CORE-02 | T-05-01-01 / T-05-01-02 / T-05-01-04 / T-05-01-07 | Unsafe-boundary audit covers FFI, MMIO, DMA, interrupt, linker/startup, clock-tree, static memory, allocator, panic, crash dump, queues, timers, mutexes, semaphores, and event groups. | manifest/verifier | `python3 tools/bazel/phase5_verify.py --quick` | no - Plan 01 creates it | pending |
-| 05-02-01 | 02 | 1 | RUST-04, CORE-01 | T-05-02-02 / T-05-02-03 / T-05-02-04 | Board adapter constructs safe host-testable MCU, board-clock, memory-region, and DMA contracts without relaxing pure-domain unsafe policy. | Rust unit tests + verifier | `cargo test --all-features -p buddy-board-adapter && python3 tools/bazel/phase5_verify.py --quick` | no - Plan 02 creates it | pending |
-| 05-02-02 | 02 | 1 | RUST-04, CORE-01 | T-05-02-01 / T-05-02-02 / T-05-02-07 | Board adapter constructs audited MMIO, interrupt, and FFI facades while preserving retained C/C++ behavior. | Rust unit tests + verifier | `cargo test --all-features -p buddy-board-adapter && python3 tools/bazel/phase5_verify.py --quick` | no - Plan 02 creates it | pending |
-| 05-03-01 | 03 | 1 | RUST-04, CORE-01 | T-05-03-01 / T-05-03-02 / T-05-03-05 | Runtime adapter models startup vectors and linker scripts for F4, G0, and H503 with non-local hardware evidence classes. | Rust unit tests + verifier | `cargo test --all-features -p buddy-runtime-adapter && python3 tools/bazel/phase5_verify.py --quick` | no - Plan 03 creates it | pending |
-| 05-03-02 | 03 | 1 | RUST-04, CORE-01 | T-05-03-03 / T-05-03-04 / T-05-03-05 | Runtime adapter models allocator, panic/assert, watchdog, and crash-dump boundaries without claiming local hardware proof. | Rust unit tests + verifier | `cargo test --all-features -p buddy-runtime-adapter && python3 tools/bazel/phase5_verify.py --quick` | no - Plan 03 creates it | pending |
-| 05-04-01 | 04 | 2 | RUST-04, CORE-02 | T-05-04-01 / T-05-04-02 | Runtime adapter models task dependencies, static task memory, queue storage, timers, and startup ordering. | Rust unit tests + verifier | `cargo test --all-features -p buddy-runtime-adapter && python3 tools/bazel/phase5_verify.py --quick` | no - Plan 04 creates it | pending |
-| 05-04-02 | 04 | 2 | RUST-04, CORE-02 | T-05-04-03 / T-05-04-04 / T-05-04-05 | Runtime adapter models mutex, binary semaphore, counting semaphore, event-group, and wait-condition boundaries with non-local scheduler timing evidence. | Rust unit tests + verifier | `cargo test --all-features -p buddy-runtime-adapter && python3 tools/bazel/phase5_verify.py --quick` | no - Plan 04 creates it | pending |
-| 05-05-01 | 05 | 3 | RUST-03, RUST-04, CORE-01, CORE-02 | T-05-05-05 | Bazel and `just` expose Phase 5 inventory, audit, retained-code, and verifier surfaces. | Bazel/query/facade | `bazel query "//tools/bazel:phase5_verify + //tools/bazel:retained_foreign_code + //tools/bazel:unsafe_boundary_audit" && just --list` | no - Plan 05 creates it | pending |
-| 05-05-02 | 05 | 3 | RUST-03, RUST-04, CORE-01, CORE-02 | T-05-05-01 / T-05-05-02 / T-05-05-03 / T-05-05-04 / T-05-05-06 | Verifier enforces adapter module presence, pure-crate unsafe-free posture, audited unsafe locality, board-clock/synchronization coverage, Bazel labels, just recipe, and no local hardware overclaiming. | verifier | `python3 -m py_compile tools/bazel/phase5_verify.py && python3 tools/bazel/phase5_verify.py --quick` | no - Plan 05 updates it | pending |
+| 05-01-01 | 01 | 0 | RUST-03, RUST-04, CORE-01, CORE-02 | T-05-01-01 / T-05-01-06 | Phase 5 verifier exposes required fields, required retained component IDs, required unsafe surface IDs, and evidence-class checks. | verifier | `python3 -m py_compile tools/bazel/phase5_verify.py && python3 tools/bazel/phase5_verify.py --help` | no - Plan 01 creates it | green |
+| 05-01-02 | 01 | 0 | RUST-03, CORE-01, CORE-02 | T-05-01-03 / T-05-01-05 / T-05-01-07 | Foreign-code inventory covers every retained Phase 5 island named by context/research, including board-clock and synchronization rows. | manifest/verifier | `python3 tools/bazel/phase5_verify.py --inventory-only` | no - Plan 01 creates it | green |
+| 05-01-03 | 01 | 0 | RUST-04, CORE-01, CORE-02 | T-05-01-01 / T-05-01-02 / T-05-01-04 / T-05-01-07 | Unsafe-boundary audit covers FFI, MMIO, DMA, interrupt, linker/startup, clock-tree, static memory, allocator, panic, crash dump, queues, timers, mutexes, semaphores, and event groups. | manifest/verifier | `python3 tools/bazel/phase5_verify.py --quick` | no - Plan 01 creates it | green |
+| 05-02-01 | 02 | 1 | RUST-04, CORE-01 | T-05-02-02 / T-05-02-03 / T-05-02-04 | Board adapter constructs safe host-testable MCU, board-clock, memory-region, and DMA contracts without relaxing pure-domain unsafe policy. | Rust unit tests + verifier | `cargo test --all-features -p buddy-board-adapter && python3 tools/bazel/phase5_verify.py --quick` | no - Plan 02 creates it | green |
+| 05-02-02 | 02 | 1 | RUST-04, CORE-01 | T-05-02-01 / T-05-02-02 / T-05-02-07 | Board adapter constructs audited MMIO, interrupt, and FFI facades while preserving retained C/C++ behavior. | Rust unit tests + verifier | `cargo test --all-features -p buddy-board-adapter && python3 tools/bazel/phase5_verify.py --quick` | no - Plan 02 creates it | green |
+| 05-03-01 | 03 | 1 | RUST-04, CORE-01 | T-05-03-01 / T-05-03-02 / T-05-03-05 | Runtime adapter models startup vectors and linker scripts for F4, G0, and H503 with non-local hardware evidence classes. | Rust unit tests + verifier | `cargo test --all-features -p buddy-runtime-adapter && python3 tools/bazel/phase5_verify.py --quick` | no - Plan 03 creates it | green |
+| 05-03-02 | 03 | 1 | RUST-04, CORE-01 | T-05-03-03 / T-05-03-04 / T-05-03-05 | Runtime adapter models allocator, panic/assert, watchdog, and crash-dump boundaries without claiming local hardware proof. | Rust unit tests + verifier | `cargo test --all-features -p buddy-runtime-adapter && python3 tools/bazel/phase5_verify.py --quick` | no - Plan 03 creates it | green |
+| 05-04-01 | 04 | 2 | RUST-04, CORE-02 | T-05-04-01 / T-05-04-02 | Runtime adapter models task dependencies, static task memory, queue storage, timers, and startup ordering. | Rust unit tests + verifier | `cargo test --all-features -p buddy-runtime-adapter && python3 tools/bazel/phase5_verify.py --quick` | no - Plan 04 creates it | green |
+| 05-04-02 | 04 | 2 | RUST-04, CORE-02 | T-05-04-03 / T-05-04-04 / T-05-04-05 | Runtime adapter models mutex, binary semaphore, counting semaphore, event-group, and wait-condition boundaries with non-local scheduler timing evidence. | Rust unit tests + verifier | `cargo test --all-features -p buddy-runtime-adapter && python3 tools/bazel/phase5_verify.py --quick` | no - Plan 04 creates it | green |
+| 05-05-01 | 05 | 3 | RUST-03, RUST-04, CORE-01, CORE-02 | T-05-05-05 | Bazel and `just` expose Phase 5 inventory, audit, retained-code, and verifier surfaces. | Bazel/query/facade | `bazel query "//tools/bazel:phase5_verify + //tools/bazel:retained_foreign_code + //tools/bazel:unsafe_boundary_audit" && just --list` | no - Plan 05 creates it | green |
+| 05-05-02 | 05 | 3 | RUST-03, RUST-04, CORE-01, CORE-02 | T-05-05-01 / T-05-05-02 / T-05-05-03 / T-05-05-04 / T-05-05-06 | Verifier enforces adapter module presence, pure-crate unsafe-free posture, audited unsafe locality, board-clock/synchronization coverage, Bazel labels, just recipe, and no local hardware overclaiming. | verifier | `python3 -m py_compile tools/bazel/phase5_verify.py && python3 tools/bazel/phase5_verify.py --quick` | no - Plan 05 updates it | green |
 
 *Status: pending, green, red, flaky*
 
@@ -59,14 +59,14 @@ created: 2026-06-03
 
 ## Wave 0 Requirements
 
-- [ ] `tools/bazel/phase5_verify.py` - verifies RUST-03, RUST-04, CORE-01, and CORE-02 manifest/static coverage.
-- [ ] `tools/bazel/manifests/foreign_code_inventory.json` - machine-readable retained-code source of truth.
-- [ ] `tools/bazel/manifests/unsafe_boundary_audit.json` - machine-readable unsafe/runtime boundary source of truth.
-- [ ] `.planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-FOREIGN-CODE-INVENTORY.md` - human-readable retained-code inventory.
-- [ ] `.planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-UNSAFE-BOUNDARY-AUDIT.md` - human-readable unsafe/runtime audit.
-- [ ] `rust/crates/board-adapter/src/{mcu,clock,memory_region,mmio,dma,interrupt,ffi}.rs` - safe board facade contracts and host tests.
-- [ ] `rust/crates/runtime-adapter/src/{startup,linker,allocator,panic_boundary,task,queue,timer,static_memory,synchronization}.rs` - safe runtime contracts and host tests.
-- [ ] `tools/bazel/BUILD.bazel`, `BUILD.bazel`, and `justfile` Phase 5 labels/recipes - developer-visible verification surface.
+- [x] `tools/bazel/phase5_verify.py` - verifies RUST-03, RUST-04, CORE-01, and CORE-02 manifest/static coverage.
+- [x] `tools/bazel/manifests/foreign_code_inventory.json` - machine-readable retained-code source of truth.
+- [x] `tools/bazel/manifests/unsafe_boundary_audit.json` - machine-readable unsafe/runtime boundary source of truth.
+- [x] `.planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-FOREIGN-CODE-INVENTORY.md` - human-readable retained-code inventory.
+- [x] `.planning/phases/05-foreign-code-unsafe-and-runtime-boundary/05-UNSAFE-BOUNDARY-AUDIT.md` - human-readable unsafe/runtime audit.
+- [x] `rust/crates/board-adapter/src/{mcu,clock,memory_region,mmio,dma,interrupt,ffi}.rs` - safe board facade contracts and host tests.
+- [x] `rust/crates/runtime-adapter/src/{startup,linker,allocator,panic_boundary,task,queue,timer,static_memory,synchronization}.rs` - safe runtime contracts and host tests.
+- [x] `tools/bazel/BUILD.bazel`, `BUILD.bazel`, and `justfile` Phase 5 labels/recipes - developer-visible verification surface.
 
 ---
 
