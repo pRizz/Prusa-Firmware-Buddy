@@ -141,11 +141,11 @@ Plans:
 1. Developer can run storage migration, resource package, and generated-output parity checks through Bazel/just.
    **Plans**: 5 plans
 Plans:
-- [x] 11-01-PLAN.md — Create source-backed parity pyramid and Phase 11 verifier foundation.
-- [x] 11-02-PLAN.md — Map all v1 requirements to source-backed evidence and cutover blockers.
-- [x] 11-03-PLAN.md — Add reference comparison contracts and Rust cutover evidence types.
-- [x] 11-04-PLAN.md — Add cutover readiness and retained-code justification manifests.
-- [x] 11-05-PLAN.md — Wire aggregate Phase 11 verification through Bazel, just, and validation sign-off.
+- [x] 07-01-PLAN.md — Create source-backed config store, migration, journal, and storage media contracts.
+- [x] 07-02-PLAN.md — Create source-backed resource, generated-output, and concern disposition contracts.
+- [x] 07-03-PLAN.md — Add storage and resource compatibility contracts to the Rust domain crate.
+- [x] 07-04-PLAN.md — Add Phase 7 verifier regression tests and static verifier.
+- [x] 07-05-PLAN.md — Wire Phase 7 Bazel/just verification and complete validation sign-off.
 
 ### Phase 8: Local Interface and Workflow Parity
 
@@ -213,9 +213,13 @@ Plans:
 1. Developer can compare Rust outputs against the reference firmware for product artifacts, generated resources, storage migrations, protocol traces, G-code behavior fixtures, display-state fixtures, and release metadata.
 1. Maintainer can review cutover evidence showing every v1 requirement mapped to passing tests, simulator or hardware evidence, intentional deltas, and residual retained-code justifications.
 1. Maintainer can remove or demote the CMake/C++ reference path only after Rust+Bazel satisfies all parity gates and documented cutover criteria.
-   **Plans**: 1 plan
+   **Plans**: 5 plans
 Plans:
-- [x] 12-01-PLAN.md — Close milestone metadata drift while preserving non-local evidence gates.
+- [x] 11-01-PLAN.md — Create source-backed parity pyramid and Phase 11 verifier foundation.
+- [x] 11-02-PLAN.md — Map all v1 requirements to source-backed evidence and cutover blockers.
+- [x] 11-03-PLAN.md — Add reference comparison contracts and Rust cutover evidence types.
+- [x] 11-04-PLAN.md — Add cutover readiness and retained-code justification manifests.
+- [x] 11-05-PLAN.md — Wire aggregate Phase 11 verification through Bazel, just, and validation sign-off.
 
 ### Phase 12: Milestone Evidence Hygiene
 
@@ -230,7 +234,9 @@ Plans:
 1. Phase 5 validation metadata and Nyquist rows match the passed Phase 5 verification state or explicitly document why older validation metadata remains historical.
 1. Phase 11 cutover/evidence wording no longer contains stale blocker text while preserving reference-demotion as intentionally blocked until non-local gates pass.
 1. A follow-up milestone audit reports no metadata-drift tech debt for v1.0 archival.
-   **Plans**: TBD
+   **Plans**: 1 plan
+Plans:
+- [x] 12-01-PLAN.md — Close milestone metadata drift while preserving non-local evidence gates.
 
 ## Progress
 
