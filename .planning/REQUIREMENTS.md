@@ -119,6 +119,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 - Mapped to phases: 30
 - Unmapped: 0
 
+## Gap Closure Traceability
+
+Tracked after `.planning/v1.0-MILESTONE-AUDIT.md` reported `status: tech_debt`.
+These rows do not represent unsatisfied product behavior; they identify metadata cleanup needed before a pristine v1.0 archive.
+
+| Audit Finding | Affected Requirements | Closure Phase | Status |
+|---------------|-----------------------|---------------|--------|
+| BAZL-03 and BAZL-05 requirement checkbox/traceability drift | BAZL-03, BAZL-05 | Phase 12 | Pending |
+| Phase 9 roadmap progress drift | IFCE-02, IFCE-03 | Phase 12 | Pending |
+| Phase 5 validation metadata drift | RUST-03, RUST-04, CORE-01, CORE-02 | Phase 12 | Pending |
+| Phase 11 cutover and requirement evidence wording drift | VERF-01, VERF-04, VERF-05 | Phase 12 | Pending |
+| Non-local evidence gates preserved for simulator, hardware, live network/TLS, release-candidate, signing, storage-media, MMU, RS485, toolchanger, and retained-code acceptance proof | BASE-02, BASE-04, BAZL-03, BAZL-05, CORE-01, CORE-02, CORE-03, CORE-04, CORE-05, IFCE-01, IFCE-02, IFCE-03, IFCE-04, IFCE-05, IFCE-06, RUST-03, RUST-04, VERF-01, VERF-03, VERF-04, VERF-05 | Phase 12 | Pending |
+
 ______________________________________________________________________
 
 *Requirements defined: 2026-06-02*

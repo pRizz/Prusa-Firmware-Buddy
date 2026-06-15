@@ -24,6 +24,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 9: Network, Web Services, and Transfers** - Preserve Connect, PrusaLink/WUI, TLS, telemetry, transfer, and local service behavior.
 - [x] **Phase 10: Auxiliary Controllers and Expansion Ecosystem** - Preserve puppy, Dwarf, ModularBed, xBuddy Extension, MMU2, toolchanger, and auxiliary update flows. (completed 2026-06-14)
 - [x] **Phase 11: Parity Pyramid and Cutover Evidence** - Prove the Rust+Bazel firmware satisfies all parity gates before demoting the CMake/C++ reference path. (completed 2026-06-14)
+- [ ] **Phase 12: Milestone Evidence Hygiene** - Close metadata drift from the v1.0 milestone audit before archival.
 
 ## Phase Details
 
@@ -208,10 +209,25 @@ Plans:
 1. Maintainer can remove or demote the CMake/C++ reference path only after Rust+Bazel satisfies all parity gates and documented cutover criteria.
    **Plans**: TBD
 
+### Phase 12: Milestone Evidence Hygiene
+
+**Goal**: Maintainers can archive v1.0 from a clean milestone record where requirements, roadmap progress, validation metadata, and cutover evidence wording match the already-passed phase verification evidence.
+**Depends on**: Phase 11
+**Requirements**: BAZL-03, BAZL-05, RUST-03, RUST-04, CORE-01, CORE-02, IFCE-02, IFCE-03, VERF-01, VERF-04, VERF-05
+**Gap Closure**: Closes metadata drift from `.planning/v1.0-MILESTONE-AUDIT.md`.
+**Success Criteria** (what must be TRUE):
+
+1. Requirements metadata for BAZL-03 and BAZL-05 matches Phase 3 verification and Phase 11 requirement evidence.
+1. ROADMAP progress metadata matches disk-complete Phase 9 artifacts and gsd-tools progress.
+1. Phase 5 validation metadata and Nyquist rows match the passed Phase 5 verification state or explicitly document why older validation metadata remains historical.
+1. Phase 11 cutover/evidence wording no longer contains stale blocker text while preserving reference-demotion as intentionally blocked until non-local gates pass.
+1. A follow-up milestone audit reports no metadata-drift tech debt for v1.0 archival.
+   **Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -226,3 +242,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 9. Network, Web Services, and Transfers | 0/4 | Not started | - |
 | 10. Auxiliary Controllers and Expansion Ecosystem | 4/4 | Complete    | 2026-06-14 |
 | 11. Parity Pyramid and Cutover Evidence | 5/5 | Complete    | 2026-06-14 |
+| 12. Milestone Evidence Hygiene | 0/0 | Not started | - |
