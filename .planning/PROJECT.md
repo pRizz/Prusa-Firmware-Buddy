@@ -10,6 +10,25 @@ The work is intentionally standards-driven: Bright Builds Rules guide architectu
 
 Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
 
+## Current State
+
+Milestone v1.0 Rust Port Evidence Foundation shipped on 2026-06-15. The project now has a clean source-backed evidence foundation for the Rust+Bazel rewrite: all 30 v1 requirements are complete, all 12 v1 phases are complete, the follow-up milestone audit passed, and the archive lives under `.planning/milestones/`.
+
+The replacement firmware is not yet cut over. Final reference demotion remains intentionally blocked until the non-local simulator, hardware, live network/TLS, release-candidate, signing, storage-media, auxiliary-controller, retained-code acceptance, and maintainer-review gates are executed and accepted.
+
+## Next Milestone Goals
+
+**v1.1 Cutover Evidence Hardening** should turn the remaining non-local approval gates into durable CI, simulator, hardware, release, and review workflows so the Rust+Bazel replacement can move from locally evidenced to release-governed and enforceable.
+
+Likely focus areas:
+
+- CI-owned aggregate verifier execution and artifact retention.
+- Simulator evidence for startup, G-code, GUI, storage, transfer, and selected failure flows.
+- Hardware and safety evidence for watchdog, thermal/motion safety, storage media, UI input, crash recovery, MMU, RS485, and toolchanger paths.
+- Live service evidence for Connect, WUI, TLS, telemetry, proxy behavior, and transfers.
+- Release-candidate evidence for signing, `.bbf`, `.dfu`, map/provenance, resources, and auxiliary packages.
+- Maintainer-review workflows for retained-code acceptance and final reference-demotion approval.
+
 ## Requirements
 
 ### Validated
@@ -31,18 +50,15 @@ Deliver a Rust+Bazel firmware replacement that preserves existing printer behavi
 - ✓ Preserve puppy, Dwarf, ModularBed, xBuddy Extension, MMU2, Modbus/RS485, toolchanger, dock/tool offset, startup flashing, skip-flash/prebuilt firmware, and auxiliary-controller update contracts through Phase 10 source-backed manifests, typed Rust auxiliary contracts, Bazel/just verifier labels, clean review closure, and explicit non-local hardware/simulator/cutover evidence boundaries
 - ✓ Review v1.0 cutover readiness through Phase 11 parity pyramid, all-requirement evidence, reference comparisons, retained-code justifications, Bazel/just aggregate verification, and explicit final-demotion blockers
 - ✓ Archive v1.0 from clean planning metadata through Phase 12 requirement, roadmap, validation, manifest wording, and follow-up audit hygiene
+- ✓ Complete all v1.0 requirements, phase summaries, verification reports, and milestone audit evidence — v1.0 Rust Port Evidence Foundation
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-- [ ] Replace the firmware implementation with Rust while preserving behavior parity for currently supported printers.
-- [ ] Make Bazel the primary build system for firmware, host tools, generated assets, tests, and release artifacts from the start of the migration.
-- [ ] Provide a `justfile` that wraps common workflows such as bootstrap, build, test, format, lint, generated-file checks, and release artifact creation.
-- [ ] Encode printer, board, feature, and artifact invariants in Rust types, constructors, and state machines instead of carrying sentinel-heavy C/C++ patterns forward.
-- [ ] Maintain parity gates against the existing firmware for build outputs, supported printer behavior, generated resources, integration tests, and release packaging.
-- [ ] Fix known issues and fragile areas surfaced by `.planning/codebase/CONCERNS.md` as their subsystems are rebuilt.
-- [ ] Preserve Bright Builds Rules as the default engineering standard for architecture, testing, verification, code shape, and Rust module layout.
+- [ ] Define v1.1 Cutover Evidence Hardening requirements through `/gsd-new-milestone`.
+- [ ] Convert the remaining non-local evidence blockers into executable or reviewable gates before reference demotion.
+- [ ] Keep the v1.0 source-backed evidence foundation stable while v1.1 adds CI, simulator, hardware, release, and maintainer-review proof.
 
 ### Out of Scope
 
@@ -58,7 +74,7 @@ Deliver a Rust+Bazel firmware replacement that preserves existing printer behavi
 
 The existing repository is a large embedded firmware codebase for Original Prusa printers. The current stack is C++23, C, ASM, CMake, Python tooling, STM32 HAL/CMSIS, FreeRTOS, Marlin, LwIP, mbedTLS, FatFs/littlefs, TinyUSB, Catch2, pytest, and a custom bootstrap flow. The codebase map in `.planning/codebase/` is the reference for current architecture, testing practices, integrations, and known concerns.
 
-Phase 1 established the reference baseline package for the rewrite: supported matrix, reference-capture catalog, intentional-delta concern ledger, safety envelope, phase-local verifier, and verification report under `.planning/phases/01-reference-baseline-and-safety-envelope/`. Phase 2 established the root Bazel module, product platform labels, registered firmware toolchain labels, Bazel workflow targets, checked `justfile`, and Phase 2 verifier under `.planning/phases/02-bazel-authority-and-developer-facade/`. Phase 3 established artifact and generator parity scaffolding. Phase 4 established the Rust workspace and invariant model. Phase 5 established explicit retained-code, unsafe, board-runtime, and FreeRTOS boundary contracts plus aggregate verification. Phase 6 established typed printing-core, safety/recovery/fatal, and ProductProfile-keyed feature-gate contracts with manifest-backed verification. Phase 7 established source-backed persistence, storage media, generated resource, concern disposition, redacted migration fixture, Rust storage/resource domain, and Bazel/just verification contracts with manual hardware/media/release proof explicitly deferred. Phase 8 established source-backed local GUI workflow, display-layout, warning/error, print-control, setup, Connect-entry, PrusaLink credential-display, localization, and concern-disposition contracts with typed Rust GUI domain invariants, verifier regression tests, Bazel/just labels, clean review closure, and physical/simulator/touch/network/auxiliary/cutover proof explicitly deferred. Phase 9 established source-backed Connect, WUI/PrusaLink, network-service, transfer, TLS/secret, proxy, telemetry, command-channel, negative-fixture, and concern-disposition contracts with typed Rust network domain invariants, verifier regression tests, Bazel/just labels, clean review closure, and live cloud/simulator/physical network/TLS/media/cutover proof explicitly deferred. Phase 10 established source-backed auxiliary-controller, MMU, Modbus/RS485, toolchanger, build/update, and concern-disposition contracts with typed Rust auxiliary invariants, verifier regression tests, Bazel/just labels, clean review closure, and physical/simulator/live-transport/cutover proof explicitly deferred. Phase 11 established the parity pyramid, all-requirement evidence, reference comparison rows, cutover readiness, retained-code justifications, aggregate verifier, and final reference-demotion blockers. Phase 12 closed the v1.0 milestone metadata drift so the milestone can be archived cleanly before v2 evidence execution and cutover hardening.
+Phase 1 established the reference baseline package for the rewrite: supported matrix, reference-capture catalog, intentional-delta concern ledger, safety envelope, phase-local verifier, and verification report under `.planning/phases/01-reference-baseline-and-safety-envelope/`. Phase 2 established the root Bazel module, product platform labels, registered firmware toolchain labels, Bazel workflow targets, checked `justfile`, and Phase 2 verifier under `.planning/phases/02-bazel-authority-and-developer-facade/`. Phase 3 established artifact and generator parity scaffolding. Phase 4 established the Rust workspace and invariant model. Phase 5 established explicit retained-code, unsafe, board-runtime, and FreeRTOS boundary contracts plus aggregate verification. Phase 6 established typed printing-core, safety/recovery/fatal, and ProductProfile-keyed feature-gate contracts with manifest-backed verification. Phase 7 established source-backed persistence, storage media, generated resource, concern disposition, redacted migration fixture, Rust storage/resource domain, and Bazel/just verification contracts with manual hardware/media/release proof explicitly deferred. Phase 8 established source-backed local GUI workflow, display-layout, warning/error, print-control, setup, Connect-entry, PrusaLink credential-display, localization, and concern-disposition contracts with typed Rust GUI domain invariants, verifier regression tests, Bazel/just labels, clean review closure, and physical/simulator/touch/network/auxiliary/cutover proof explicitly deferred. Phase 9 established source-backed Connect, WUI/PrusaLink, network-service, transfer, TLS/secret, proxy, telemetry, command-channel, negative-fixture, and concern-disposition contracts with typed Rust network domain invariants, verifier regression tests, Bazel/just labels, clean review closure, and live cloud/simulator/physical network/TLS/media/cutover proof explicitly deferred. Phase 10 established source-backed auxiliary-controller, MMU, Modbus/RS485, toolchanger, build/update, and concern-disposition contracts with typed Rust auxiliary invariants, verifier regression tests, Bazel/just labels, clean review closure, and physical/simulator/live-transport/cutover proof explicitly deferred. Phase 11 established the parity pyramid, all-requirement evidence, reference comparison rows, cutover readiness, retained-code justifications, aggregate verifier, and final reference-demotion blockers. Phase 12 closed the v1.0 milestone metadata drift, and v1.0 is now archived as the Rust port evidence foundation.
 
 The current architecture is a CMake-composed firmware target with board/printer feature gates, a FreeRTOS imperative shell, Marlin as the printing core, and application layers for GUI, Connect, WUI, transfers, persistent stores, puppies/MMU, resources, and packaging. The Rust rewrite should deliberately separate pure firmware/domain decisions from hardware, RTOS, filesystem, networking, UI, and packaging adapters where practical.
 
@@ -96,6 +112,7 @@ Known concerns to prioritize during planning include global build target couplin
 | Treat auxiliary-controller parity proof as source-backed local contracts until hardware, simulator, live transport, and cutover gates | Phase 10 can verify source-backed manifests, typed Rust auxiliary/MMU/domain invariants, verifier tests, Bazel/just wiring, and sensitive-payload boundaries locally, but physical RS485, toolchanger, live MMU, long-running update, and final cutover behavior need later evidence. | Phase 10 verifier passed with `just phase10-verify`, Rust checks, clean review closure, and explicit deferred non-local evidence boundaries. |
 | Treat cutover evidence as source-backed local proof until non-local gates are accepted | Phase 11 can aggregate requirement evidence, reference comparisons, retained-code justifications, Rust contracts, Bazel/just wiring, and security scans locally, but simulator, hardware, live network/TLS, release-candidate, signing, storage-media, MMU, RS485, toolchanger, retained-code acceptance, maintainer approval, and reference demotion remain non-local gates. | Phase 11 verifier passed while keeping `criteria-reference-demotion-blocked` not cutover ready. |
 | Treat v1.0 milestone hygiene as metadata-only cleanup | Phase 12 should reconcile stale planning/evidence records without changing firmware behavior or converting non-local gates into local pass claims. | Phase 12 audit passed with `metadata_debt: 0` and non-local evidence gates preserved. |
+| Archive v1.0 before starting v1.1 | The completed milestone needs a stable historical record and fresh requirements surface before new cutover-hardening work begins. | v1.0 archives created under `.planning/milestones/`; next milestone should start from fresh requirements. |
 
 ## Evolution
 
@@ -118,4 +135,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ______________________________________________________________________
 
-*Last updated: 2026-06-15 after Phase 12 completion*
+*Last updated: 2026-06-15 after v1.0 milestone archival*

@@ -1,10 +1,10 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.0
-milestone_name: milestone
-status: verified
-stopped_at: Completed 12-01-PLAN.md
-last_updated: "2026-06-15T18:51:29.770Z"
+milestone_name: Rust Port Evidence Foundation
+status: archived
+stopped_at: v1.0 archived; next milestone not started
+last_updated: "2026-06-15T19:01:09.830Z"
 last_activity: 2026-06-15
 progress:
   total_phases: 12
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-15)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Milestone v1.0 — Ready for archival
+**Current focus:** Planning v1.1 Cutover Evidence Hardening
 
 ## Current Position
 
-Phase: 12 (Milestone Evidence Hygiene) — VERIFIED COMPLETE
-Plan: 1 of 1
-Status: Milestone v1.0 ready for archival
+Phase: Not started (next milestone requirements pending)
+Plan: —
+Status: Milestone v1.0 archived; ready to define v1.1
 Last activity: 2026-06-15
 
 Progress: [██████████] 100%
@@ -60,7 +60,7 @@ Progress: [██████████] 100%
 **Recent Trend:**
 
 - Last 5 plans: Phase 11 / Plans 02-05 plus Phase 12 evidence hygiene
-- Trend: Phase 11 cutover evidence established; Phase 12 metadata drift closed for clean v1.0 archival
+- Trend: Phase 11 cutover evidence established; Phase 12 metadata drift closed; v1.0 archived for fresh v1.1 planning
 
 *Updated after each plan completion*
 | Phase 07 P01 | 11min | 3 tasks | 4 files |
@@ -112,6 +112,7 @@ Recent decisions affecting current work:
 - [Phase 11]: Carry known codebase and phase concern dispositions into cutover evidence instead of treating local static verification as final proof.
 - [Phase 11]: Expose Phase 11 aggregate verification through Bazel root aliases and just phase11-verify.
 - [Phase 11]: Keep local sign-off limited to deterministic source, manifest, Bazel, lifecycle, and Rust checks while non-local gates remain blocked.
+- [Milestone v1.0]: Archive source-backed local proof separately from non-local cutover approval; v1.1 should execute the remaining non-local gates rather than recasting them as already complete.
 
 ### Pending Todos
 
@@ -125,6 +126,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-15T18:47:21.352Z
-Stopped at: Completed 12-01-PLAN.md
+Last session: 2026-06-15T19:01:09.830Z
+Stopped at: v1.0 archived; next milestone not started
 Resume file: None
