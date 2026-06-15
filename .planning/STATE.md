@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
+status: verified
 stopped_at: Completed 12-01-PLAN.md
-last_updated: "2026-06-15T18:47:21.530Z"
+last_updated: "2026-06-15T18:51:29.770Z"
 last_activity: 2026-06-15
 progress:
   total_phases: 12
@@ -18,25 +18,25 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-02)
+See: .planning/PROJECT.md (updated 2026-06-15)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Phase 12 — Milestone Evidence Hygiene
+**Current focus:** Milestone v1.0 — Ready for archival
 
 ## Current Position
 
-Phase: 12 (Milestone Evidence Hygiene) — EXECUTING
+Phase: 12 (Milestone Evidence Hygiene) — VERIFIED COMPLETE
 Plan: 1 of 1
-Status: Phase complete — ready for verification
+Status: Milestone v1.0 ready for archival
 Last activity: 2026-06-15
 
-Progress: [█████████░] 97%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 37
+- Total plans completed: 38
 - Average duration: N/A
 - Total execution time: 0.0 hours
 
@@ -59,8 +59,8 @@ Progress: [█████████░] 97%
 
 **Recent Trend:**
 
-- Last 5 plans: Phase 11 / Plans 01-05 plus review fix
-- Trend: Phase 11 parity pyramid, cutover evidence, verifier/Bazel/just wiring, and clean review evidence established
+- Last 5 plans: Phase 11 / Plans 02-05 plus Phase 12 evidence hygiene
+- Trend: Phase 11 cutover evidence established; Phase 12 metadata drift closed for clean v1.0 archival
 
 *Updated after each plan completion*
 | Phase 07 P01 | 11min | 3 tasks | 4 files |
