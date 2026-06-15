@@ -21,10 +21,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6: Printing Core, Safety, and Feature Gates** - Preserve print behavior, safety-critical flows, and printer-specific feature combinations through typed Rust models and parity fixtures. (completed 2026-06-04)
 - [x] **Phase 7: Persistence, Storage, and Resource Compatibility** - Preserve config stores, migrations, filesystems, credentials, generated resources, translations, and bundled runtime assets. (completed 2026-06-06)
 - [x] **Phase 8: Local Interface and Workflow Parity** - Preserve local GUI workflows, display-class behavior, dialogs, warnings, setup flows, and print controls. (completed 2026-06-13)
-- [x] **Phase 9: Network, Web Services, and Transfers** - Preserve Connect, PrusaLink/WUI, TLS, telemetry, transfer, and local service behavior.
+- [x] **Phase 9: Network, Web Services, and Transfers** - Preserve Connect, PrusaLink/WUI, TLS, telemetry, transfer, and local service behavior. (completed 2026-06-14)
 - [x] **Phase 10: Auxiliary Controllers and Expansion Ecosystem** - Preserve puppy, Dwarf, ModularBed, xBuddy Extension, MMU2, toolchanger, and auxiliary update flows. (completed 2026-06-14)
 - [x] **Phase 11: Parity Pyramid and Cutover Evidence** - Prove the Rust+Bazel firmware satisfies all parity gates before demoting the CMake/C++ reference path. (completed 2026-06-14)
-- [ ] **Phase 12: Milestone Evidence Hygiene** - Close metadata drift from the v1.0 milestone audit before archival.
+- [x] **Phase 12: Milestone Evidence Hygiene** - Close metadata drift from the v1.0 milestone audit before archival. (completed 2026-06-15)
 
 ## Phase Details
 
@@ -139,7 +139,13 @@ Plans:
 1. Rust firmware preserves EEPROM/internal flash behavior, FatFs/littlefs mounts, USB/internal/semihosting paths, config hash behavior, and journal migration behavior.
 1. Runtime and release artifacts contain the expected translations, fonts, icons, littlefs images, bootloader resources, ESP blobs, language packs, resource hashes, and generated headers.
 1. Developer can run storage migration, resource package, and generated-output parity checks through Bazel/just.
-   **Plans**: TBD
+   **Plans**: 5 plans
+Plans:
+- [x] 11-01-PLAN.md — Create source-backed parity pyramid and Phase 11 verifier foundation.
+- [x] 11-02-PLAN.md — Map all v1 requirements to source-backed evidence and cutover blockers.
+- [x] 11-03-PLAN.md — Add reference comparison contracts and Rust cutover evidence types.
+- [x] 11-04-PLAN.md — Add cutover readiness and retained-code justification manifests.
+- [x] 11-05-PLAN.md — Wire aggregate Phase 11 verification through Bazel, just, and validation sign-off.
 
 ### Phase 8: Local Interface and Workflow Parity
 
@@ -207,7 +213,9 @@ Plans:
 1. Developer can compare Rust outputs against the reference firmware for product artifacts, generated resources, storage migrations, protocol traces, G-code behavior fixtures, display-state fixtures, and release metadata.
 1. Maintainer can review cutover evidence showing every v1 requirement mapped to passing tests, simulator or hardware evidence, intentional deltas, and residual retained-code justifications.
 1. Maintainer can remove or demote the CMake/C++ reference path only after Rust+Bazel satisfies all parity gates and documented cutover criteria.
-   **Plans**: TBD
+   **Plans**: 1 plan
+Plans:
+- [x] 12-01-PLAN.md — Close milestone metadata drift while preserving non-local evidence gates.
 
 ### Phase 12: Milestone Evidence Hygiene
 
@@ -239,7 +247,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 6. Printing Core, Safety, and Feature Gates | 5/5 | Complete    | 2026-06-04 |
 | 7. Persistence, Storage, and Resource Compatibility | 5/5 | Complete   | 2026-06-06 |
 | 8. Local Interface and Workflow Parity | 3/3 | Complete | 2026-06-13 |
-| 9. Network, Web Services, and Transfers | 0/4 | Not started | - |
+| 9. Network, Web Services, and Transfers | 4/4 | Complete | 2026-06-14 |
 | 10. Auxiliary Controllers and Expansion Ecosystem | 4/4 | Complete    | 2026-06-14 |
 | 11. Parity Pyramid and Cutover Evidence | 5/5 | Complete    | 2026-06-14 |
-| 12. Milestone Evidence Hygiene | 0/0 | Not started | - |
+| 12. Milestone Evidence Hygiene | 1/1 | Complete | 2026-06-15 |

@@ -16,9 +16,9 @@
 
 - [x] **BAZL-01**: Developer can use Bazel as the authoritative build graph through `MODULE.bazel`, `.bazelrc`, registered Rust/C/C++/ASM toolchains, and explicit product platforms.
 - [x] **BAZL-02**: Developer can build Rust firmware, retained C/ASM/vendor code, generated assets, host tools, unit tests, simulator inputs, and release packages from Bazel without invoking CMake as the source of truth.
-- [ ] **BAZL-03**: Developer can produce firmware artifacts matching the reference release surface, including `.bin`, `.bbf`, `.dfu`, map/provenance outputs, resource images, boot/noboot variants, and auxiliary firmware packages.
+- [x] **BAZL-03**: Developer can produce firmware artifacts matching the reference release surface, including `.bin`, `.bbf`, `.dfu`, map/provenance outputs, resource images, boot/noboot variants, and auxiliary firmware packages.
 - [x] **BAZL-04**: Developer can run a checked `justfile` facade for common commands including bootstrap, build, test, format, lint, generated-file drift checks, simulator/parity checks, and release packaging.
-- [ ] **BAZL-05**: Developer can run Bazel-owned generators for product profiles, option data, resources, translations, fonts, WUI assets, ESP blobs, puppy/MMU descriptors, and package metadata with deterministic drift checks.
+- [x] **BAZL-05**: Developer can run Bazel-owned generators for product profiles, option data, resources, translations, fonts, WUI assets, ESP blobs, puppy/MMU descriptors, and package metadata with deterministic drift checks.
 
 ### Rust Firmware Architecture
 
@@ -88,9 +88,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BASE-04 | Phase 1 | Completed |
 | BAZL-01 | Phase 2 | Completed |
 | BAZL-02 | Phase 2 | Completed |
-| BAZL-03 | Phase 3 | Pending |
+| BAZL-03 | Phase 3 | Complete |
 | BAZL-04 | Phase 2 | Completed |
-| BAZL-05 | Phase 3 | Pending |
+| BAZL-05 | Phase 3 | Complete |
 | RUST-01 | Phase 4 | Completed |
 | RUST-02 | Phase 4 | Completed |
 | RUST-03 | Phase 5 | Complete |
@@ -126,13 +126,13 @@ These rows do not represent unsatisfied product behavior; they identify metadata
 
 | Audit Finding | Affected Requirements | Closure Phase | Status |
 |---------------|-----------------------|---------------|--------|
-| BAZL-03 and BAZL-05 requirement checkbox/traceability drift | BAZL-03, BAZL-05 | Phase 12 | Pending |
-| Phase 9 roadmap progress drift | IFCE-02, IFCE-03 | Phase 12 | Pending |
-| Phase 5 validation metadata drift | RUST-03, RUST-04, CORE-01, CORE-02 | Phase 12 | Pending |
-| Phase 11 cutover and requirement evidence wording drift | VERF-01, VERF-04, VERF-05 | Phase 12 | Pending |
-| Non-local evidence gates preserved for simulator, hardware, live network/TLS, release-candidate, signing, storage-media, MMU, RS485, toolchanger, and retained-code acceptance proof | BASE-02, BASE-04, BAZL-03, BAZL-05, CORE-01, CORE-02, CORE-03, CORE-04, CORE-05, IFCE-01, IFCE-02, IFCE-03, IFCE-04, IFCE-05, IFCE-06, RUST-03, RUST-04, VERF-01, VERF-03, VERF-04, VERF-05 | Phase 12 | Pending |
+| BAZL-03 and BAZL-05 requirement checkbox/traceability drift | BAZL-03, BAZL-05 | Phase 12 | Complete |
+| Phase 9 roadmap progress drift | IFCE-02, IFCE-03 | Phase 12 | Complete |
+| Phase 5 validation metadata drift | RUST-03, RUST-04, CORE-01, CORE-02 | Phase 12 | Complete |
+| Phase 11 cutover and requirement evidence wording drift | VERF-01, VERF-04, VERF-05 | Phase 12 | Complete |
+| Non-local evidence gates preserved for simulator, hardware, live network/TLS, release-candidate, signing, storage-media, MMU, RS485, toolchanger, and retained-code acceptance proof | BASE-02, BASE-04, BAZL-03, BAZL-05, CORE-01, CORE-02, CORE-03, CORE-04, CORE-05, IFCE-01, IFCE-02, IFCE-03, IFCE-04, IFCE-05, IFCE-06, RUST-03, RUST-04, VERF-01, VERF-03, VERF-04, VERF-05 | Phase 12 | Preserved |
 
 ______________________________________________________________________
 
 *Requirements defined: 2026-06-02*
-*Last updated: 2026-06-02 after Phase 1 completion*
+*Last updated: 2026-06-15 after Phase 12 evidence hygiene*
