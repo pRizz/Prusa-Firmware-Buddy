@@ -40,6 +40,10 @@ phase11-verify:
     bazel run //tools/bazel:rust_build
     bazel run //tools/bazel:rust_unit_tests
 
+phase13-verify:
+    bazel run //tools/bazel:phase13_verify_tests
+    bazel run //tools/bazel:phase13_verify
+
 bazel-query:
     bazel query "//tools/bazel/... + //platforms/..."
 

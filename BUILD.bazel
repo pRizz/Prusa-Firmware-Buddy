@@ -13,7 +13,13 @@ filegroup(
 
 filegroup(
     name = "phase1_reference_baseline",
-    srcs = glob([".planning/phases/01-reference-baseline-and-safety-envelope/01-*.md"]),
+    srcs = glob(
+        [".planning/phases/01-reference-baseline-and-safety-envelope/01-*.md"],
+        allow_empty = True,
+    ) + glob(
+        [".planning/milestones/v1.0-phases/01-reference-baseline-and-safety-envelope/01-*.md"],
+        allow_empty = True,
+    ),
 )
 
 filegroup(
@@ -85,6 +91,17 @@ filegroup(
         ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md",
         ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-RESEARCH.md",
         ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-VALIDATION.md",
+    ],
+)
+
+filegroup(
+    name = "phase13_ci_evidence_docs",
+    srcs = [
+        ".planning/phases/13-ci-evidence-orchestration/13-CONTEXT.md",
+        ".planning/phases/13-ci-evidence-orchestration/13-RESEARCH.md",
+        ".planning/phases/13-ci-evidence-orchestration/13-VALIDATION.md",
+        ".planning/phases/13-ci-evidence-orchestration/13-01-PLAN.md",
+        ".github/workflows/ci-evidence.yml",
     ],
 )
 
@@ -216,6 +233,16 @@ alias(
 alias(
     name = "phase11_verify_tests",
     actual = "//tools/bazel:phase11_verify_tests",
+)
+
+alias(
+    name = "phase13_verify",
+    actual = "//tools/bazel:phase13_verify",
+)
+
+alias(
+    name = "phase13_verify_tests",
+    actual = "//tools/bazel:phase13_verify_tests",
 )
 
 alias(

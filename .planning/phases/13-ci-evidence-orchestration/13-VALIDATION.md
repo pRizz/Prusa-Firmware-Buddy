@@ -1,9 +1,9 @@
 ---
 phase: 13
 slug: ci-evidence-orchestration
-status: draft
+status: local-signoff
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-06-16
 lifecycle_mode: yolo
 phase_lifecycle_id: 13-2026-06-16T14-21-01
@@ -34,20 +34,20 @@ phase_lifecycle_id: 13-2026-06-16T14-21-01
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 13-01-01 | 01 | 0 | CIEV-02 | T-13-01-01 | Checked-in CI evidence contract validates required gate fields, status vocabulary, repo-relative paths, lifecycle ID, and failure reason semantics. | unittest/verifier | `python3 tools/bazel/phase13_ci_evidence_test.py && python3 tools/bazel/phase13_ci_evidence.py --contract-only` | no - W0 | pending |
-| 13-01-02 | 01 | 0 | CIEV-01, CIEV-03 | T-13-01-02 | Repo-owned workflow runs on PR path changes and manual dispatch, uses minimum permissions, uploads a non-hidden evidence directory with explicit retention, and leaves managed workflows untouched. | verifier | `python3 tools/bazel/phase13_ci_evidence.py --workflow-only --security-only` | no - W0 | pending |
-| 13-01-03 | 01 | 0 | CIEV-01, CIEV-02, CIEV-03 | T-13-01-03 | Phase 13 verifier writes run evidence before failing, rejects secret markers and non-local overclaims, and records actionable gate failure ownership. | unittest/verifier | `python3 tools/bazel/phase13_ci_evidence_test.py && python3 tools/bazel/phase13_ci_evidence.py --ci --output-dir build/ci-evidence/phase13` | no - W0 | pending |
-| 13-01-04 | 01 | 0 | CIEV-01, CIEV-02, CIEV-03 | T-13-01-04 | Bazel/just wiring exposes Phase 13 tests and verifier through repo-owned entrypoints without hiding substantive logic in YAML. | verifier/build | `python3 tools/bazel/phase13_ci_evidence.py --wiring-only && just phase13-verify` | no - W0 | pending |
+| 13-01-01 | 01 | 0 | CIEV-02 | T-13-01-01 | Checked-in CI evidence contract validates required gate fields, status vocabulary, repo-relative paths, lifecycle ID, and failure reason semantics. | unittest/verifier | `python3 tools/bazel/phase13_ci_evidence_test.py && python3 tools/bazel/phase13_ci_evidence.py --contract-only` | yes - W0 | green |
+| 13-01-02 | 01 | 0 | CIEV-01, CIEV-03 | T-13-01-02 | Repo-owned workflow runs on PR path changes and manual dispatch, uses minimum permissions, uploads a non-hidden evidence directory with explicit retention, and leaves managed workflows untouched. | verifier | `python3 tools/bazel/phase13_ci_evidence.py --workflow-only --security-only` | yes - W0 | green |
+| 13-01-03 | 01 | 0 | CIEV-01, CIEV-02, CIEV-03 | T-13-01-03 | Phase 13 verifier writes run evidence before failing, rejects secret markers and non-local overclaims, and records actionable gate failure ownership. | unittest/verifier | `python3 tools/bazel/phase13_ci_evidence_test.py && python3 tools/bazel/phase13_ci_evidence.py --ci --output-dir build/ci-evidence/phase13` | yes - W0 | green |
+| 13-01-04 | 01 | 0 | CIEV-01, CIEV-02, CIEV-03 | T-13-01-04 | Bazel/just wiring exposes Phase 13 tests and verifier through repo-owned entrypoints without hiding substantive logic in YAML. | verifier/build | `python3 tools/bazel/phase13_ci_evidence.py --wiring-only && just phase13-verify` | yes - W0 | green |
 
 *Status: pending, green, red, flaky*
 
 ## Wave 0 Requirements
 
-- [ ] `tools/bazel/manifests/phase13_ci_evidence_contract.json` - source-backed gate/schema contract for `CIEV-01`, `CIEV-02`, and `CIEV-03`.
-- [ ] `tools/bazel/phase13_ci_evidence.py` - contract validator, workflow validator, security scan, wiring check, and CI run evidence writer.
-- [ ] `tools/bazel/phase13_ci_evidence_test.py` - regression tests for missing fields, hidden upload paths, overclaim strings, redaction markers, path filters, and failure manifest semantics.
-- [ ] `.github/workflows/ci-evidence.yml` - repo-owned PR/manual CI evidence workflow; managed Bright Builds workflow remains untouched.
-- [ ] `tools/bazel/BUILD.bazel`, root `BUILD.bazel`, `tools/bazel/rust_workflow.sh`, and `justfile` - Phase 13 verifier/test labels and `just phase13-verify`.
+- [x] `tools/bazel/manifests/phase13_ci_evidence_contract.json` - source-backed gate/schema contract for `CIEV-01`, `CIEV-02`, and `CIEV-03`.
+- [x] `tools/bazel/phase13_ci_evidence.py` - contract validator, workflow validator, security scan, wiring check, and CI run evidence writer.
+- [x] `tools/bazel/phase13_ci_evidence_test.py` - regression tests for missing fields, hidden upload paths, overclaim strings, redaction markers, path filters, and failure manifest semantics.
+- [x] `.github/workflows/ci-evidence.yml` - repo-owned PR/manual CI evidence workflow; managed Bright Builds workflow remains untouched.
+- [x] `tools/bazel/BUILD.bazel`, root `BUILD.bazel`, `tools/bazel/rust_workflow.sh`, and `justfile` - Phase 13 verifier/test labels and `just phase13-verify`.
 
 ## Manual-Only Verifications
 
@@ -66,4 +66,4 @@ phase_lifecycle_id: 13-2026-06-16T14-21-01
 - [x] Feedback latency target documented.
 - [x] `nyquist_compliant: true` set in frontmatter.
 
-**Approval:** pending
+**Approval:** local-signoff

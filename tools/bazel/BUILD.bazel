@@ -234,6 +234,26 @@ shell_binary(
     ],
 )
 
+shell_binary(
+    name = "phase13_verify",
+    src = "rust_workflow.sh",
+    data = [
+        "phase13_ci_evidence.py",
+        "manifests/phase13_ci_evidence_contract.json",
+        "//:phase13_ci_evidence_docs",
+    ],
+)
+
+shell_binary(
+    name = "phase13_verify_tests",
+    src = "rust_workflow.sh",
+    data = [
+        "phase13_ci_evidence.py",
+        "phase13_ci_evidence_test.py",
+        "manifests/phase13_ci_evidence_contract.json",
+    ],
+)
+
 filegroup(
     name = "unsafe_boundary_audit",
     srcs = ["manifests/unsafe_boundary_audit.json"],
