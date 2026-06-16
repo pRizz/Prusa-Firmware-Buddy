@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: Rust Port Evidence Foundation
-status: archived
-stopped_at: v1.0 archived; next milestone not started
-last_updated: "2026-06-15T19:01:09.830Z"
+milestone: v1.1
+milestone_name: Cutover Evidence Hardening
+status: defining_requirements
+stopped_at: Started v1.1 milestone; defining requirements and roadmap
+last_updated: "2026-06-15T19:20:00.000Z"
 last_activity: 2026-06-15
 progress:
-  total_phases: 12
-  completed_phases: 12
-  total_plans: 38
-  completed_plans: 38
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-15)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Planning v1.1 Cutover Evidence Hardening
+**Current focus:** Milestone v1.1 — Cutover Evidence Hardening
 
 ## Current Position
 
-Phase: Not started (next milestone requirements pending)
+Phase: Not started (defining requirements)
 Plan: —
-Status: Milestone v1.0 archived; ready to define v1.1
+Status: Defining requirements
 Last activity: 2026-06-15
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 38
+- Total plans completed: 0
 - Average duration: N/A
 - Total execution time: 0.0 hours
 
@@ -59,8 +59,8 @@ Progress: [██████████] 100%
 
 **Recent Trend:**
 
-- Last 5 plans: Phase 11 / Plans 02-05 plus Phase 12 evidence hygiene
-- Trend: Phase 11 cutover evidence established; Phase 12 metadata drift closed; v1.0 archived for fresh v1.1 planning
+- Last 5 plans: None for v1.1 yet
+- Trend: v1.0 archived; v1.1 will harden non-local cutover evidence into enforceable gates
 
 *Updated after each plan completion*
 | Phase 07 P01 | 11min | 3 tasks | 4 files |
@@ -113,6 +113,7 @@ Recent decisions affecting current work:
 - [Phase 11]: Expose Phase 11 aggregate verification through Bazel root aliases and just phase11-verify.
 - [Phase 11]: Keep local sign-off limited to deterministic source, manifest, Bazel, lifecycle, and Rust checks while non-local gates remain blocked.
 - [Milestone v1.0]: Archive source-backed local proof separately from non-local cutover approval; v1.1 should execute the remaining non-local gates rather than recasting them as already complete.
+- [Milestone v1.1]: Treat CI, simulator, hardware, live-service, release-candidate, signing, retained-code acceptance, and maintainer review as first-class requirements.
 
 ### Pending Todos
 
@@ -120,12 +121,12 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 6 printing, safety, recovery, and feature-gate parity must stay tied to reference fixtures and explicit intentional-delta evidence.
-- Hardware/scheduler behavior remains non-local evidence until simulator and hardware smoke gates validate it in the later parity phase.
 - Hardware availability and failure-injection scope must be confirmed before final cutover qualification.
+- Live Connect/WUI/TLS evidence must avoid committing secrets, tokens, certificates, or production payloads.
+- Release-candidate signing evidence must preserve key hygiene and avoid putting private key material into planning artifacts.
 
 ## Session Continuity
 
-Last session: 2026-06-15T19:01:09.830Z
-Stopped at: v1.0 archived; next milestone not started
+Last session: 2026-06-15T19:20:00.000Z
+Stopped at: Started v1.1 milestone; defining requirements and roadmap
 Resume file: None

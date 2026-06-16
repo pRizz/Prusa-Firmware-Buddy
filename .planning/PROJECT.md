@@ -16,13 +16,13 @@ Milestone v1.0 Rust Port Evidence Foundation shipped on 2026-06-15. The project 
 
 The replacement firmware is not yet cut over. Final reference demotion remains intentionally blocked until the non-local simulator, hardware, live network/TLS, release-candidate, signing, storage-media, auxiliary-controller, retained-code acceptance, and maintainer-review gates are executed and accepted.
 
-## Next Milestone Goals
+## Current Milestone: v1.1 Cutover Evidence Hardening
 
-**v1.1 Cutover Evidence Hardening** should turn the remaining non-local approval gates into durable CI, simulator, hardware, release, and review workflows so the Rust+Bazel replacement can move from locally evidenced to release-governed and enforceable.
+**Goal:** Turn the remaining non-local approval gates into durable CI, simulator, hardware, release, and maintainer-review workflows so the Rust+Bazel replacement can move from locally evidenced to release-governed and enforceable.
 
-Likely focus areas:
+**Target features:**
 
-- CI-owned aggregate verifier execution and artifact retention.
+- CI-owned aggregate verifier execution, evidence manifests, and artifact retention.
 - Simulator evidence for startup, G-code, GUI, storage, transfer, and selected failure flows.
 - Hardware and safety evidence for watchdog, thermal/motion safety, storage media, UI input, crash recovery, MMU, RS485, and toolchanger paths.
 - Live service evidence for Connect, WUI, TLS, telemetry, proxy behavior, and transfers.
@@ -56,9 +56,12 @@ Likely focus areas:
 
 <!-- Current scope. Building toward these. -->
 
-- [ ] Define v1.1 Cutover Evidence Hardening requirements through `/gsd-new-milestone`.
-- [ ] Convert the remaining non-local evidence blockers into executable or reviewable gates before reference demotion.
-- [ ] Keep the v1.0 source-backed evidence foundation stable while v1.1 adds CI, simulator, hardware, release, and maintainer-review proof.
+- [ ] CI can run the aggregate cutover verifier and persist machine-readable evidence for every v1.1 gate.
+- [ ] Maintainers can review simulator evidence for startup, G-code, GUI, storage, transfer, and failure flows.
+- [ ] Maintainers can review hardware/safety/media evidence for required supported-printer smoke and fault scenarios.
+- [ ] Maintainers can review live network, TLS, telemetry, WUI, transfer, and proxy evidence without exposing secrets.
+- [ ] Release managers can produce and verify signed release-candidate artifacts, resources, maps, provenance, and auxiliary packages.
+- [ ] Maintainers can approve retained-code acceptance and reference demotion through an explicit review workflow.
 
 ### Out of Scope
 
@@ -75,6 +78,8 @@ Likely focus areas:
 The existing repository is a large embedded firmware codebase for Original Prusa printers. The current stack is C++23, C, ASM, CMake, Python tooling, STM32 HAL/CMSIS, FreeRTOS, Marlin, LwIP, mbedTLS, FatFs/littlefs, TinyUSB, Catch2, pytest, and a custom bootstrap flow. The codebase map in `.planning/codebase/` is the reference for current architecture, testing practices, integrations, and known concerns.
 
 Phase 1 established the reference baseline package for the rewrite: supported matrix, reference-capture catalog, intentional-delta concern ledger, safety envelope, phase-local verifier, and verification report under `.planning/phases/01-reference-baseline-and-safety-envelope/`. Phase 2 established the root Bazel module, product platform labels, registered firmware toolchain labels, Bazel workflow targets, checked `justfile`, and Phase 2 verifier under `.planning/phases/02-bazel-authority-and-developer-facade/`. Phase 3 established artifact and generator parity scaffolding. Phase 4 established the Rust workspace and invariant model. Phase 5 established explicit retained-code, unsafe, board-runtime, and FreeRTOS boundary contracts plus aggregate verification. Phase 6 established typed printing-core, safety/recovery/fatal, and ProductProfile-keyed feature-gate contracts with manifest-backed verification. Phase 7 established source-backed persistence, storage media, generated resource, concern disposition, redacted migration fixture, Rust storage/resource domain, and Bazel/just verification contracts with manual hardware/media/release proof explicitly deferred. Phase 8 established source-backed local GUI workflow, display-layout, warning/error, print-control, setup, Connect-entry, PrusaLink credential-display, localization, and concern-disposition contracts with typed Rust GUI domain invariants, verifier regression tests, Bazel/just labels, clean review closure, and physical/simulator/touch/network/auxiliary/cutover proof explicitly deferred. Phase 9 established source-backed Connect, WUI/PrusaLink, network-service, transfer, TLS/secret, proxy, telemetry, command-channel, negative-fixture, and concern-disposition contracts with typed Rust network domain invariants, verifier regression tests, Bazel/just labels, clean review closure, and live cloud/simulator/physical network/TLS/media/cutover proof explicitly deferred. Phase 10 established source-backed auxiliary-controller, MMU, Modbus/RS485, toolchanger, build/update, and concern-disposition contracts with typed Rust auxiliary invariants, verifier regression tests, Bazel/just labels, clean review closure, and physical/simulator/live-transport/cutover proof explicitly deferred. Phase 11 established the parity pyramid, all-requirement evidence, reference comparison rows, cutover readiness, retained-code justifications, aggregate verifier, and final reference-demotion blockers. Phase 12 closed the v1.0 milestone metadata drift, and v1.0 is now archived as the Rust port evidence foundation.
+
+v1.1 starts from the archived v1.0 source-backed evidence baseline. It should not redefine parity contracts; it should execute or formalize the external proof gates that Phase 11 and the v1.0 audit deliberately left non-local.
 
 The current architecture is a CMake-composed firmware target with board/printer feature gates, a FreeRTOS imperative shell, Marlin as the printing core, and application layers for GUI, Connect, WUI, transfers, persistent stores, puppies/MMU, resources, and packaging. The Rust rewrite should deliberately separate pure firmware/domain decisions from hardware, RTOS, filesystem, networking, UI, and packaging adapters where practical.
 
@@ -113,6 +118,7 @@ Known concerns to prioritize during planning include global build target couplin
 | Treat cutover evidence as source-backed local proof until non-local gates are accepted | Phase 11 can aggregate requirement evidence, reference comparisons, retained-code justifications, Rust contracts, Bazel/just wiring, and security scans locally, but simulator, hardware, live network/TLS, release-candidate, signing, storage-media, MMU, RS485, toolchanger, retained-code acceptance, maintainer approval, and reference demotion remain non-local gates. | Phase 11 verifier passed while keeping `criteria-reference-demotion-blocked` not cutover ready. |
 | Treat v1.0 milestone hygiene as metadata-only cleanup | Phase 12 should reconcile stale planning/evidence records without changing firmware behavior or converting non-local gates into local pass claims. | Phase 12 audit passed with `metadata_debt: 0` and non-local evidence gates preserved. |
 | Archive v1.0 before starting v1.1 | The completed milestone needs a stable historical record and fresh requirements surface before new cutover-hardening work begins. | v1.0 archives created under `.planning/milestones/`; next milestone should start from fresh requirements. |
+| Treat v1.1 as evidence hardening, not parity redesign | The v1.0 source-backed contracts already define what must be true; v1.1 should make the remaining CI, simulator, hardware, live-service, release, and maintainer gates durable and auditable. | — Pending |
 
 ## Evolution
 
@@ -135,4 +141,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ______________________________________________________________________
 
-*Last updated: 2026-06-15 after v1.0 milestone archival*
+*Last updated: 2026-06-15 after v1.1 milestone start*
