@@ -1,0 +1,130 @@
+{
+  "schema_version": "1",
+  "id": "phase13_ci_evidence_contract",
+  "phase": "13-ci-evidence-orchestration",
+  "phase_lifecycle_id": "13-2026-06-16T14-21-01",
+  "output_root": "build/ci-evidence/phase13",
+  "artifact_name": "phase13-ci-evidence",
+  "retention_days": 30,
+  "status_vocabulary": [
+    "passed",
+    "failed",
+    "skipped",
+    "pending-non-local"
+  ],
+  "required_artifact_kinds": [
+    "verifier-log",
+    "manifest-snapshot",
+    "normalized-comparison-output",
+    "redacted-evidence-summary",
+    "machine-readable-ci-manifest"
+  ],
+  "forbidden_generated_artifacts": [
+    "firmware packages",
+    "raw crash dumps",
+    "private certificates",
+    "signing keys",
+    "Connect tokens",
+    "Wi-Fi credentials",
+    "credential values"
+  ],
+  "gates": [
+    {
+      "id": "ciev-01-pr-path-trigger",
+      "requirement_id": "CIEV-01",
+      "owning_phase": "13-ci-evidence-orchestration",
+      "command": "python3 tools/bazel/phase13_ci_evidence.py --workflow-only",
+      "proof_scope": "ci-orchestration",
+      "expected_artifact_path": "build/ci-evidence/phase13/logs/phase13-workflow.log",
+      "retained_artifact_kind": "verifier-log",
+      "allowed_statuses": [
+        "passed",
+        "failed"
+      ],
+      "failure_reason_semantics": "failed row must name workflow path, missing trigger or path filter, owner phase, artifact path, and reason",
+      "source_evidence_refs": [
+        ".planning/milestones/v1.0-phases/11-parity-pyramid-and-cutover-evidence/11-VERIFICATION.md",
+        "tools/bazel/manifests/phase11_requirement_evidence.json",
+        "tools/bazel/manifests/phase11_cutover_readiness.json"
+      ]
+    },
+    {
+      "id": "ciev-01-aggregate-cutover-verifier",
+      "requirement_id": "CIEV-01",
+      "owning_phase": "13-ci-evidence-orchestration",
+      "command": "python3 tools/bazel/phase11_verify.py --quick",
+      "proof_scope": "ci-local-aggregate",
+      "expected_artifact_path": "build/ci-evidence/phase13/logs/phase11-quick.log",
+      "retained_artifact_kind": "verifier-log",
+      "allowed_statuses": [
+        "passed",
+        "failed"
+      ],
+      "failure_reason_semantics": "failed row must name Phase 11 verifier command, owner phase, requirement or evidence row, artifact path, and reason",
+      "source_evidence_refs": [
+        ".planning/milestones/v1.0-phases/11-parity-pyramid-and-cutover-evidence/11-VERIFICATION.md",
+        "tools/bazel/manifests/phase11_requirement_evidence.json",
+        "tools/bazel/manifests/phase11_cutover_readiness.json"
+      ]
+    },
+    {
+      "id": "ciev-02-run-manifest",
+      "requirement_id": "CIEV-02",
+      "owning_phase": "13-ci-evidence-orchestration",
+      "command": "python3 tools/bazel/phase13_ci_evidence.py --ci --output-dir build/ci-evidence/phase13",
+      "proof_scope": "ci-generated-manifest",
+      "expected_artifact_path": "build/ci-evidence/phase13/run-manifest.json",
+      "retained_artifact_kind": "machine-readable-ci-manifest",
+      "allowed_statuses": [
+        "passed",
+        "failed"
+      ],
+      "failure_reason_semantics": "failed or skipped row must include command, requirement_id, owning_phase, artifact_path, and failure_reason",
+      "source_evidence_refs": [
+        ".planning/milestones/v1.0-phases/11-parity-pyramid-and-cutover-evidence/11-VERIFICATION.md",
+        "tools/bazel/manifests/phase11_requirement_evidence.json",
+        "tools/bazel/manifests/phase11_cutover_readiness.json"
+      ]
+    },
+    {
+      "id": "ciev-03-manifest-and-comparison-snapshots",
+      "requirement_id": "CIEV-03",
+      "owning_phase": "13-ci-evidence-orchestration",
+      "command": "python3 tools/bazel/phase13_ci_evidence.py --ci --output-dir build/ci-evidence/phase13",
+      "proof_scope": "ci-artifact-retention",
+      "expected_artifact_path": "build/ci-evidence/phase13/manifest-snapshots/phase13_ci_evidence_contract.json",
+      "retained_artifact_kind": "manifest-snapshot",
+      "allowed_statuses": [
+        "passed",
+        "failed",
+        "pending-non-local"
+      ],
+      "failure_reason_semantics": "pending-non-local rows must name later phase evidence, source snapshot, artifact path, and reason",
+      "source_evidence_refs": [
+        ".planning/milestones/v1.0-phases/11-parity-pyramid-and-cutover-evidence/11-VERIFICATION.md",
+        "tools/bazel/manifests/phase11_requirement_evidence.json",
+        "tools/bazel/manifests/phase11_cutover_readiness.json"
+      ]
+    },
+    {
+      "id": "ciev-03-redacted-summary",
+      "requirement_id": "CIEV-03",
+      "owning_phase": "13-ci-evidence-orchestration",
+      "command": "python3 tools/bazel/phase13_ci_evidence.py --security-only",
+      "proof_scope": "ci-artifact-retention",
+      "expected_artifact_path": "build/ci-evidence/phase13/redacted-summary.json",
+      "retained_artifact_kind": "redacted-evidence-summary",
+      "allowed_statuses": [
+        "passed",
+        "failed",
+        "pending-non-local"
+      ],
+      "failure_reason_semantics": "failed row must name forbidden marker, source path, owner phase, artifact path, and reason",
+      "source_evidence_refs": [
+        ".planning/milestones/v1.0-phases/11-parity-pyramid-and-cutover-evidence/11-VERIFICATION.md",
+        "tools/bazel/manifests/phase11_requirement_evidence.json",
+        "tools/bazel/manifests/phase11_cutover_readiness.json"
+      ]
+    }
+  ]
+}
