@@ -412,22 +412,25 @@ Source pattern: Phase 11 wiring check verifies `tools/bazel/BUILD.bazel`, `tools
 | A1 | `actions/upload-artifact@v7` is the current major to use because the current official README examples show `@v7`; if repo policy intentionally pins older action majors, the planner should use that policy instead. [ASSUMED] | Standard Stack / Workflow Example | Workflow action version review churn; low behavioral risk if verifier checks artifact semantics rather than exact major. |
 | A2 | `retention-days: 30` is a reasonable default because GitHub allows 1-90 days for public repos and 1-400 for private repos, but organization policy may set a lower cap. [ASSUMED] | Architecture Patterns | CI may reject a retention value above org cap; planner can lower the contract value while keeping explicit retention. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Artifact retention policy**
    - What we know: GitHub defaults artifacts/logs to 90 days and allows public repo settings from 1 to 90 days and private repo settings from 1 to 400 days. [CITED: https://docs.github.com/en/organizations/managing-organization-settings/configuring-the-retention-period-for-github-actions-artifacts-and-logs-in-your-organization]
    - What's unclear: The Prusa GitHub organization or enterprise maximum retention cap is not visible from the repository. [ASSUMED]
    - Recommendation: Use explicit `retention-days: 30` unless the org cap requires a lower value; make the Phase 13 verifier require explicit retention but allow the chosen value to be changed in one manifest/workflow contract. [ASSUMED]
+   - RESOLVED: Plan with explicit `retention-days: 30`, and make the verifier require an explicit retention value rather than treating 30 as unchangeable project policy. If the organization cap rejects 30, lower the workflow and contract together while preserving explicit retention coverage.
 
 2. **CI runner tool availability**
    - What we know: Local probes found Bazel and just installed, but GitHub-hosted runner availability was not verified from this repo. [VERIFIED: bazel --version] [VERIFIED: just --version]
    - What's unclear: Whether this repository's GitHub Actions environment has Bazel, just, and Rust preinstalled or should install them. [ASSUMED]
    - Recommendation: Make the workflow run `python3 tools/bazel/phase13_ci_evidence.py --ci` directly and let Phase 13 verifier validate Bazel/just exposure locally; do not require Bazel/just in the GitHub workflow unless the plan adds explicit setup steps. [VERIFIED: .planning/phases/13-ci-evidence-orchestration/13-CONTEXT.md]
+   - RESOLVED: Keep the GitHub Actions workflow Python-first by running `python3 tools/bazel/phase13_ci_evidence.py --ci --output-dir build/ci-evidence/phase13` directly. Prove Bazel and `just` exposure through local verifier modes and `just phase13-verify`, not by assuming those tools exist on GitHub-hosted runners.
 
 3. **Branch protection strategy**
    - What we know: GitHub path-filtered workflows can leave required checks pending when skipped. [CITED: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax]
    - What's unclear: Which checks are required in this repository's branch protection settings. [ASSUMED]
    - Recommendation: Do not assume this path-filtered workflow can be a universal required check without a companion always-running check or branch-protection review. [CITED: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax]
+   - RESOLVED: Treat branch-protection adoption as a manual-only follow-up. Phase 13 should add the path-filtered evidence workflow and document the pending-check caveat, but it should not claim the workflow is safe as a universal required check without a separate always-running status or repository branch-protection review.
 
 ## Environment Availability
 
