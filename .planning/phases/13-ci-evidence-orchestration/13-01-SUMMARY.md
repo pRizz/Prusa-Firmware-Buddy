@@ -29,6 +29,7 @@ key-files:
     - tools/bazel/phase13_ci_evidence_test.py
     - .github/workflows/ci-evidence.yml
     - .planning/phases/13-ci-evidence-orchestration/13-01-SUMMARY.md
+    - .planning/phases/13-ci-evidence-orchestration/13-REVIEW.md
   modified:
     - tools/bazel/BUILD.bazel
     - tools/bazel/rust_workflow.sh
@@ -67,7 +68,7 @@ completed: 2026-06-16
 - **Started:** 2026-06-16T14:59:56Z
 - **Completed:** 2026-06-16T15:17:43Z
 - **Tasks:** 3
-- **Files modified:** 12
+- **Files modified:** 13
 
 ## Accomplishments
 
@@ -76,6 +77,8 @@ completed: 2026-06-16
 - Added `.github/workflows/ci-evidence.yml` with PR path filters, manual dispatch, read-only permissions, and artifact upload from `build/ci-evidence/phase13/`.
 - Wired `bazel run //tools/bazel:phase13_verify_tests`, `bazel run //tools/bazel:phase13_verify`, and `just phase13-verify`.
 - Updated validation metadata to `local-signoff` while leaving later non-local evidence classes pending.
+- Hardened generated evidence retention after code review so forbidden snapshot, log, and contract metadata cannot be retained in uploaded artifacts.
+- Recorded a clean advisory code review after the hardening fixes.
 
 ## Task Commits
 
@@ -83,6 +86,9 @@ completed: 2026-06-16
 2. **Task 0: Phase 13 contract and verifier test harness** - `23e1330` (feat)
 3. **Task 1: Repo-owned CI workflow and generated evidence writer** - `32bf674` (feat)
 4. **Task 2: Bazel, just, and validation sign-off** - `d7df0ef` (feat)
+5. **Post-review hardening: Artifact redaction ordering** - `0d0e79c` (fix)
+6. **Post-review hardening: Generated gate metadata and Phase 11 Bazel archival** - `3c5e00f` (fix)
+7. **Advisory code review artifact** - `e5d5544` (docs)
 
 ## Files Created/Modified
 
@@ -92,6 +98,7 @@ completed: 2026-06-16
 - `.github/workflows/ci-evidence.yml` - PR/manual CI evidence workflow.
 - `tools/bazel/BUILD.bazel`, `tools/bazel/rust_workflow.sh`, `BUILD.bazel`, `justfile` - Bazel and developer facade wiring.
 - `.planning/phases/13-ci-evidence-orchestration/13-VALIDATION.md` - Local Wave 0 sign-off.
+- `.planning/phases/13-ci-evidence-orchestration/13-REVIEW.md` - Clean advisory review after post-review hardening.
 - `tools/bazel/phase11_verify.py`, `tools/bazel/phase11_verify_test.py` - Archive-aware Phase 11 aggregate verifier prerequisite.
 
 ## Decisions Made
@@ -120,12 +127,29 @@ completed: 2026-06-16
 - **Verification:** `just phase13-verify`
 - **Committed in:** `d7df0ef`
 
-**Total deviations:** 2 auto-fixed (2 blocking)
-**Impact on plan:** Both fixes were required to run the planned Phase 13 aggregate CI gate after v1.0 archival. No Phase 14-18 evidence was converted into local pass evidence.
+**3. [Rule 2 - Missing Critical] Generated evidence needed pre-retention redaction**
+- **Found during:** Code review gate
+- **Issue:** Copied snapshots and command logs could be written under `build/ci-evidence/phase13/` before the security scan returned failure.
+- **Fix:** Sanitized command logs before write, rejected unsafe copied snapshots before retention, cleaned the generated output directory before each run, and marked redaction failures in the generated gate rows.
+- **Files modified:** `tools/bazel/phase13_ci_evidence.py`, `tools/bazel/phase13_ci_evidence_test.py`
+- **Verification:** `python3 tools/bazel/phase13_ci_evidence_test.py`; `python3 tools/bazel/phase13_ci_evidence.py --ci --output-dir build/ci-evidence/phase13`
+- **Committed in:** `0d0e79c`
+
+**4. [Rule 2 - Missing Critical] Generated gate metadata and archived Phase 11 evidence needed hardening**
+- **Found during:** Code review re-check
+- **Issue:** Malformed contract gate metadata could flow into generated JSON before final scan, archived `11-VERIFICATION.md` was outside the Phase 11 security scan, and the Bazel Phase 11 verifier docs filegroup still referenced removed active Phase 11 docs.
+- **Fix:** Generated artifact rows now use static gate metadata whenever contract validation or field sanitization fails; Phase 11 scans archived verification docs; root `phase11_cutover_evidence_docs` uses empty-safe active and archived globs.
+- **Files modified:** `tools/bazel/phase13_ci_evidence.py`, `tools/bazel/phase13_ci_evidence_test.py`, `tools/bazel/phase11_verify.py`, `tools/bazel/phase11_verify_test.py`, `BUILD.bazel`
+- **Verification:** `python3 tools/bazel/phase13_ci_evidence_test.py`; `python3 tools/bazel/phase11_verify_test.py`; `bazel run //tools/bazel:phase11_verify`; `just phase13-verify`
+- **Committed in:** `3c5e00f`
+
+**Total deviations:** 4 auto-fixed (2 blocking, 2 missing critical)
+**Impact on plan:** All fixes strengthen the planned CI evidence and archive-handling guarantees. No Phase 14-18 evidence was converted into local pass evidence.
 
 ## Issues Encountered
 
 - Bazel server startup took about 40 seconds on the first `just phase13-verify` run, then subsequent runs completed quickly.
+- Advisory code review initially found generated-artifact redaction gaps; both rounds were fixed and the final review status is `clean`.
 
 ## User Setup Required
 
