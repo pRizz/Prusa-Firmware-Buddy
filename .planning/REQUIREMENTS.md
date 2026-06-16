@@ -9,9 +9,9 @@ These requirements convert the non-local v1.0 cutover blockers into durable evid
 
 ### CI Evidence
 
-- [ ] **CIEV-01**: Maintainer can run the aggregate cutover verifier in CI for every pull request that changes Rust, Bazel, verifier, manifest, or release-evidence surfaces.
-- [ ] **CIEV-02**: Maintainer can inspect a machine-readable CI evidence manifest that records gate status, owning phase, command, artifact path, and failure reason for each cutover gate.
-- [ ] **CIEV-03**: Maintainer can download retained CI artifacts for verifier logs, manifest snapshots, normalized comparison outputs, and redacted evidence summaries without relying on local workspace state.
+- [x] **CIEV-01**: Maintainer can run the aggregate cutover verifier in CI for every pull request that changes Rust, Bazel, verifier, manifest, or release-evidence surfaces.
+- [x] **CIEV-02**: Maintainer can inspect a machine-readable CI evidence manifest that records gate status, owning phase, command, artifact path, and failure reason for each cutover gate.
+- [x] **CIEV-03**: Maintainer can download retained CI artifacts for verifier logs, manifest snapshots, normalized comparison outputs, and redacted evidence summaries without relying on local workspace state.
 
 ### Simulator Evidence
 
@@ -71,9 +71,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CIEV-01 | Phase 13 | Pending |
-| CIEV-02 | Phase 13 | Pending |
-| CIEV-03 | Phase 13 | Pending |
+| CIEV-01 | Phase 13 | Complete |
+| CIEV-02 | Phase 13 | Complete |
+| CIEV-03 | Phase 13 | Complete |
 | SIM-01 | Phase 14 | Pending |
 | SIM-02 | Phase 14 | Pending |
 | SIM-03 | Phase 14 | Pending |

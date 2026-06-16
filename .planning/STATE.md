@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Cutover Evidence Hardening
-status: executing
-stopped_at: Phase 13 context gathered
-last_updated: "2026-06-16T14:59:47.030Z"
-last_activity: 2026-06-16 -- Phase 13 planning complete
+status: verifying
+stopped_at: Completed 13-01-PLAN.md
+last_updated: "2026-06-16T15:19:06.423Z"
+last_activity: 2026-06-16
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 1
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 100
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-15)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Milestone v1.1 — Cutover Evidence Hardening
+**Current focus:** Phase 13 — CI Evidence Orchestration
 
 ## Current Position
 
-Phase: 13 (CI Evidence Orchestration) — NOT STARTED
-Plan: —
-Status: Ready to execute
-Last activity: 2026-06-16 -- Phase 13 planning complete
+Phase: 13 (CI Evidence Orchestration) — EXECUTING
+Plan: 1 of 1
+Status: Phase complete — ready for verification
+Last activity: 2026-06-16
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -68,6 +68,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 11 P04 | 8m01s | 2 tasks | 3 files |
 | Phase 11 P05 | 21m | 3 tasks | 9 files |
 | Phase 12 P01 | 7 min | 3 tasks | 7 files |
+| Phase 13 P01 | 18 min | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -108,6 +109,7 @@ Recent decisions affecting current work:
 - [Phase 11]: Keep local sign-off limited to deterministic source, manifest, Bazel, lifecycle, and Rust checks while non-local gates remain blocked.
 - [Milestone v1.0]: Archive source-backed local proof separately from non-local cutover approval; v1.1 should execute the remaining non-local gates rather than recasting them as already complete.
 - [Milestone v1.1]: Treat CI, simulator, hardware, live-service, release-candidate, signing, retained-code acceptance, and maintainer review as first-class requirements.
+- [Phase 13]: Phase 13 CI evidence uses a checked-in JSON contract plus a thin read-only GitHub Actions wrapper around repo-owned Python verifier modes. — This keeps evidence gate semantics reviewable in source, keeps workflow logic minimal, and preserves later non-local evidence as pending instead of local pass claims.
 
 ### Pending Todos
 
@@ -121,6 +123,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-16T14:24:02.451Z
-Stopped at: Phase 13 context gathered
-Resume file: .planning/phases/13-ci-evidence-orchestration/13-CONTEXT.md
+Last session: 2026-06-16T15:18:35.001Z
+Stopped at: Completed 13-01-PLAN.md
+Resume file: None
