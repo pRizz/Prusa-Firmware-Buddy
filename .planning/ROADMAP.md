@@ -9,6 +9,8 @@ The v1.0 milestone established the Rust+Bazel rewrite evidence foundation: sourc
 - **v1.0 Rust Port Evidence Foundation** — Phases 1-12, 38 plans, shipped 2026-06-15. Archives: [roadmap](milestones/v1.0-ROADMAP.md), [requirements](milestones/v1.0-REQUIREMENTS.md), [audit](milestones/v1.0-MILESTONE-AUDIT.md), [phase history](milestones/v1.0-phases/).
 - **v1.1 Cutover Evidence Hardening** — Phases 13-18, planned. Goal: move from locally evidenced cutover readiness to release-governed and enforceable approval workflows.
 
+## v1.1 Cutover Evidence Hardening
+
 ## Phases
 
 <details>
