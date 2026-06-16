@@ -14,6 +14,8 @@ Deliver a Rust+Bazel firmware replacement that preserves existing printer behavi
 
 Milestone v1.0 Rust Port Evidence Foundation shipped on 2026-06-15. The project now has a clean source-backed evidence foundation for the Rust+Bazel rewrite: all 30 v1 requirements are complete, all 12 v1 phases are complete, the follow-up milestone audit passed, and the archive lives under `.planning/milestones/`.
 
+Phase 13 of v1.1 is complete. CI can now run the aggregate cutover verifier, write machine-readable evidence, retain redacted artifacts, and expose the checks through Python, Bazel, and `just phase13-verify`.
+
 The replacement firmware is not yet cut over. Final reference demotion remains intentionally blocked until the non-local simulator, hardware, live network/TLS, release-candidate, signing, storage-media, auxiliary-controller, retained-code acceptance, and maintainer-review gates are executed and accepted.
 
 ## Current Milestone: v1.1 Cutover Evidence Hardening
@@ -51,12 +53,12 @@ The replacement firmware is not yet cut over. Final reference demotion remains i
 - ✓ Review v1.0 cutover readiness through Phase 11 parity pyramid, all-requirement evidence, reference comparisons, retained-code justifications, Bazel/just aggregate verification, and explicit final-demotion blockers
 - ✓ Archive v1.0 from clean planning metadata through Phase 12 requirement, roadmap, validation, manifest wording, and follow-up audit hygiene
 - ✓ Complete all v1.0 requirements, phase summaries, verification reports, and milestone audit evidence — v1.0 Rust Port Evidence Foundation
+- ✓ Run the aggregate cutover verifier in CI and persist machine-readable redacted evidence through Phase 13 workflow, contract, manifest, artifact retention, Bazel labels, and `just phase13-verify`
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-- [ ] CI can run the aggregate cutover verifier and persist machine-readable evidence for every v1.1 gate.
 - [ ] Maintainers can review simulator evidence for startup, G-code, GUI, storage, transfer, and failure flows.
 - [ ] Maintainers can review hardware/safety/media evidence for required supported-printer smoke and fault scenarios.
 - [ ] Maintainers can review live network, TLS, telemetry, WUI, transfer, and proxy evidence without exposing secrets.
@@ -118,7 +120,7 @@ Known concerns to prioritize during planning include global build target couplin
 | Treat cutover evidence as source-backed local proof until non-local gates are accepted | Phase 11 can aggregate requirement evidence, reference comparisons, retained-code justifications, Rust contracts, Bazel/just wiring, and security scans locally, but simulator, hardware, live network/TLS, release-candidate, signing, storage-media, MMU, RS485, toolchanger, retained-code acceptance, maintainer approval, and reference demotion remain non-local gates. | Phase 11 verifier passed while keeping `criteria-reference-demotion-blocked` not cutover ready. |
 | Treat v1.0 milestone hygiene as metadata-only cleanup | Phase 12 should reconcile stale planning/evidence records without changing firmware behavior or converting non-local gates into local pass claims. | Phase 12 audit passed with `metadata_debt: 0` and non-local evidence gates preserved. |
 | Archive v1.0 before starting v1.1 | The completed milestone needs a stable historical record and fresh requirements surface before new cutover-hardening work begins. | v1.0 archives created under `.planning/milestones/`; next milestone should start from fresh requirements. |
-| Treat v1.1 as evidence hardening, not parity redesign | The v1.0 source-backed contracts already define what must be true; v1.1 should make the remaining CI, simulator, hardware, live-service, release, and maintainer gates durable and auditable. | — Pending |
+| Treat v1.1 as evidence hardening, not parity redesign | The v1.0 source-backed contracts already define what must be true; v1.1 should make the remaining CI, simulator, hardware, live-service, release, and maintainer gates durable and auditable. | Phase 13 added the repo-owned CI evidence workflow, contract, generated manifest/artifact bundle, redaction hardening, and Bazel/just verification facade. |
 
 ## Evolution
 
@@ -141,4 +143,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ______________________________________________________________________
 
-*Last updated: 2026-06-15 after v1.1 milestone start*
+*Last updated: 2026-06-16 after Phase 13 completion*
