@@ -20,6 +20,7 @@ REQUIREMENT_MANIFEST = "tools/bazel/manifests/phase11_requirement_evidence.json"
 COMPARISON_MANIFEST = "tools/bazel/manifests/phase11_reference_comparisons.json"
 CUTOVER_MANIFEST = "tools/bazel/manifests/phase11_cutover_readiness.json"
 RETAINED_MANIFEST = "tools/bazel/manifests/phase11_retained_code_justifications.json"
+ARCHIVED_REQUIREMENTS = ".planning/milestones/v1.0-REQUIREMENTS.md"
 
 MANIFEST_COLLECTIONS = {
     PYRAMID_MANIFEST: "parity_pyramid",
@@ -153,7 +154,10 @@ class Phase11VerifierTest(unittest.TestCase):
         self.write_manifest_rows(root, REQUIREMENT_MANIFEST, rows)
 
     def copy_phase11_surface(self, root: Path, reconcile_requirements: bool = True) -> None:
-        self.copy_file(root, ".planning/REQUIREMENTS.md")
+        if (ROOT / ARCHIVED_REQUIREMENTS).exists():
+            self.copy_file(root, ARCHIVED_REQUIREMENTS)
+        else:
+            self.copy_file(root, ".planning/REQUIREMENTS.md")
         self.write_file(root, f"{PHASE_DIR}/11-VALIDATION.md", "local validation fixture\n")
         for path in [
             f"{PHASE_DIR}/11-01-SUMMARY.md",

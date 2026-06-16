@@ -20,6 +20,8 @@ RETAINED_CODE_JUSTIFICATIONS_MANIFEST = Path(
     "tools/bazel/manifests/phase11_retained_code_justifications.json"
 )
 REQUIREMENTS_FILE = Path(".planning/REQUIREMENTS.md")
+ARCHIVED_REQUIREMENTS_FILE = Path(".planning/milestones/v1.0-REQUIREMENTS.md")
+ARCHIVED_PHASES_ROOT = Path(".planning/milestones/v1.0-phases")
 VALIDATION_CONTRACT = Path(".planning/phases/11-parity-pyramid-and-cutover-evidence/11-VALIDATION.md")
 CUTOVER_RUST = Path("rust/crates/domain/src/cutover.rs")
 RUST_DOMAIN_LIB = Path("rust/crates/domain/src/lib.rs")
@@ -194,6 +196,26 @@ def read_text(root: Path, path: str | Path) -> str:
     return full_path.read_text(encoding="utf-8")
 
 
+def maybe_archived_phase_path(path: Path) -> Path | None:
+    parts = path.parts
+    if len(parts) < 3 or parts[0:2] != (".planning", "phases"):
+        return None
+    return ARCHIVED_PHASES_ROOT.joinpath(*parts[2:])
+
+
+def source_artifact_exists(root: Path, path: Path) -> bool:
+    if (root / path).exists():
+        return True
+    maybe_archived_path = maybe_archived_phase_path(path)
+    return maybe_archived_path is not None and (root / maybe_archived_path).exists()
+
+
+def phase11_requirements_file(root: Path) -> Path:
+    if (root / ARCHIVED_REQUIREMENTS_FILE).exists():
+        return ARCHIVED_REQUIREMENTS_FILE
+    return REQUIREMENTS_FILE
+
+
 def load_json(root: Path, path: Path) -> dict[str, object]:
     try:
         data = json.loads(read_text(root, path))
@@ -329,7 +351,7 @@ def require_source_artifacts(root: Path, row: dict[str, object], row_name: str) 
             full_path.relative_to(resolved_root)
         except ValueError as error:
             raise VerificationError(f"{row_name} source artifact escapes repo: {source_artifact}") from error
-        if not full_path.exists():
+        if not source_artifact_exists(root, relative_path):
             raise VerificationError(f"{row_name} references missing source artifact: {source_artifact}")
 
 
@@ -434,7 +456,8 @@ def check_pyramid(root: Path) -> None:
 
 
 def extract_v1_requirement_ids(root: Path) -> set[str]:
-    text = read_text(root, REQUIREMENTS_FILE)
+    requirements_file = phase11_requirements_file(root)
+    text = read_text(root, requirements_file)
     ids: set[str] = set()
     in_v1 = False
     for line in text.splitlines():
@@ -449,7 +472,7 @@ def extract_v1_requirement_ids(root: Path) -> set[str]:
         if len(parts) >= 3:
             ids.add(parts[1])
     if len(ids) != 30:
-        raise VerificationError(f"{REQUIREMENTS_FILE.as_posix()} must define 30 v1 requirements")
+        raise VerificationError(f"{requirements_file.as_posix()} must define 30 v1 requirements")
     return ids
 
 
