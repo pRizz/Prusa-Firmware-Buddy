@@ -22,6 +22,7 @@ RETAINED_CODE_JUSTIFICATIONS_MANIFEST = Path(
 REQUIREMENTS_FILE = Path(".planning/REQUIREMENTS.md")
 ARCHIVED_REQUIREMENTS_FILE = Path(".planning/milestones/v1.0-REQUIREMENTS.md")
 ARCHIVED_PHASES_ROOT = Path(".planning/milestones/v1.0-phases")
+PHASE11_DOC_DIR = Path(".planning/phases/11-parity-pyramid-and-cutover-evidence")
 VALIDATION_CONTRACT = Path(".planning/phases/11-parity-pyramid-and-cutover-evidence/11-VALIDATION.md")
 CUTOVER_RUST = Path("rust/crates/domain/src/cutover.rs")
 RUST_DOMAIN_LIB = Path("rust/crates/domain/src/lib.rs")
@@ -844,10 +845,13 @@ def existing_security_paths(root: Path) -> list[Path]:
     manifest_dir = root / "tools/bazel/manifests"
     if manifest_dir.exists():
         paths.extend(path.relative_to(root) for path in sorted(manifest_dir.glob("phase11_*.json")))
-    if (root / VALIDATION_CONTRACT).exists():
-        paths.append(VALIDATION_CONTRACT)
-    phase_dir = root / ".planning/phases/11-parity-pyramid-and-cutover-evidence"
-    if phase_dir.exists():
+    phase_dirs = [PHASE11_DOC_DIR]
+    maybe_archived_phase_dir = maybe_archived_phase_path(PHASE11_DOC_DIR)
+    if maybe_archived_phase_dir is not None:
+        phase_dirs.append(maybe_archived_phase_dir)
+    for phase_dir in phase_dirs:
+        if not (root / phase_dir).exists():
+            continue
         phase_doc_patterns = [
             "11-CONTEXT.md",
             "11-RESEARCH.md",
@@ -855,7 +859,10 @@ def existing_security_paths(root: Path) -> list[Path]:
             "11-*-SUMMARY.md",
         ]
         for pattern in phase_doc_patterns:
-            paths.extend(path.relative_to(root) for path in sorted(phase_dir.glob(pattern)))
+            paths.extend(
+                path.relative_to(root)
+                for path in sorted((root / phase_dir).glob(pattern))
+            )
     return paths
 
 

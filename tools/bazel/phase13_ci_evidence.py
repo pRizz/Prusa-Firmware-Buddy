@@ -34,6 +34,53 @@ REQUIRED_GATE_IDS = {
     "ciev-03-manifest-and-comparison-snapshots",
     "ciev-03-redacted-summary",
 }
+STATIC_GATE_DEFINITIONS = {
+    "ciev-01-pr-path-trigger": {
+        "id": "ciev-01-pr-path-trigger",
+        "requirement_id": "CIEV-01",
+        "owning_phase": PHASE,
+        "command": "python3 tools/bazel/phase13_ci_evidence.py --workflow-only",
+        "proof_scope": "ci-orchestration",
+        "expected_artifact_path": "build/ci-evidence/phase13/logs/phase13-workflow.log",
+        "retained_artifact_kind": "verifier-log",
+    },
+    "ciev-01-aggregate-cutover-verifier": {
+        "id": "ciev-01-aggregate-cutover-verifier",
+        "requirement_id": "CIEV-01",
+        "owning_phase": PHASE,
+        "command": "python3 tools/bazel/phase11_verify.py --quick",
+        "proof_scope": "ci-local-aggregate",
+        "expected_artifact_path": "build/ci-evidence/phase13/logs/phase11-quick.log",
+        "retained_artifact_kind": "verifier-log",
+    },
+    "ciev-02-run-manifest": {
+        "id": "ciev-02-run-manifest",
+        "requirement_id": "CIEV-02",
+        "owning_phase": PHASE,
+        "command": "python3 tools/bazel/phase13_ci_evidence.py --ci --output-dir build/ci-evidence/phase13",
+        "proof_scope": "ci-generated-manifest",
+        "expected_artifact_path": "build/ci-evidence/phase13/run-manifest.json",
+        "retained_artifact_kind": "machine-readable-ci-manifest",
+    },
+    "ciev-03-manifest-and-comparison-snapshots": {
+        "id": "ciev-03-manifest-and-comparison-snapshots",
+        "requirement_id": "CIEV-03",
+        "owning_phase": PHASE,
+        "command": "python3 tools/bazel/phase13_ci_evidence.py --ci --output-dir build/ci-evidence/phase13",
+        "proof_scope": "ci-artifact-retention",
+        "expected_artifact_path": "build/ci-evidence/phase13/manifest-snapshots/phase13_ci_evidence_contract.json",
+        "retained_artifact_kind": "manifest-snapshot",
+    },
+    "ciev-03-redacted-summary": {
+        "id": "ciev-03-redacted-summary",
+        "requirement_id": "CIEV-03",
+        "owning_phase": PHASE,
+        "command": "python3 tools/bazel/phase13_ci_evidence.py --security-only",
+        "proof_scope": "ci-artifact-retention",
+        "expected_artifact_path": "build/ci-evidence/phase13/redacted-summary.json",
+        "retained_artifact_kind": "redacted-evidence-summary",
+    },
+}
 REQUIRED_SOURCE_REFS = {
     ".planning/milestones/v1.0-phases/11-parity-pyramid-and-cutover-evidence/11-VERIFICATION.md",
     "tools/bazel/manifests/phase11_requirement_evidence.json",
@@ -198,6 +245,25 @@ def reject_forbidden_text(path: Path, text: str) -> None:
         raise VerificationError("\n".join(errors))
 
 
+def sanitized_for_artifact(path: Path, text: str) -> tuple[str, list[str]]:
+    errors: list[str] = []
+    sanitized = text
+    for pattern in FORBIDDEN_TEXT_PATTERNS:
+        if pattern.search(sanitized):
+            errors.append(f"{path.as_posix()} contained forbidden evidence content")
+            sanitized = pattern.sub("[REDACTED-FORBIDDEN-EVIDENCE]", sanitized)
+    for phrase in sorted(OVERCLAIM_STRINGS):
+        if phrase.lower() in sanitized.lower():
+            errors.append(f"{path.as_posix()} contained non-local evidence overclaim wording")
+            sanitized = re.sub(
+                re.escape(phrase),
+                "[REDACTED-NON-LOCAL-OVERCLAIM]",
+                sanitized,
+                flags=re.IGNORECASE,
+            )
+    return sanitized, errors
+
+
 def contract_gates(contract: dict[str, object]) -> list[dict[str, object]]:
     gates = contract.get("gates")
     if not isinstance(gates, list):
@@ -215,6 +281,13 @@ def gate_by_id(contract: dict[str, object], gate_id: str) -> dict[str, object]:
         if gate.get("id") == gate_id:
             return gate
     raise VerificationError(f"{CONTRACT_MANIFEST.as_posix()} missing gate: {gate_id}")
+
+
+def gate_by_id_or_static(contract: dict[str, object], gate_id: str) -> dict[str, object]:
+    try:
+        return gate_by_id(contract, gate_id)
+    except VerificationError:
+        return STATIC_GATE_DEFINITIONS[gate_id]
 
 
 def check_contract(root: Path) -> None:
@@ -446,7 +519,7 @@ def write_json(path: Path, data: dict[str, object]) -> None:
     path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def run_logged_command(root: Path, command: list[str], log_path: Path) -> tuple[int, str]:
+def run_logged_command(root: Path, command: list[str], log_path: Path) -> tuple[int, str, list[str]]:
     result = subprocess.run(
         command,
         cwd=root,
@@ -457,10 +530,23 @@ def run_logged_command(root: Path, command: list[str], log_path: Path) -> tuple[
     )
     log_path.parent.mkdir(parents=True, exist_ok=True)
     log_text = "$ " + " ".join(command) + "\n" + result.stdout
-    log_path.write_text(log_text, encoding="utf-8")
+    sanitized_log_text, redaction_errors = sanitized_for_artifact(log_path, log_text)
+    if redaction_errors:
+        sanitized_log_text = (
+            "$ "
+            + " ".join(command)
+            + "\n[REDACTED] command output contained forbidden evidence content.\n"
+        )
+    log_path.write_text(sanitized_log_text, encoding="utf-8")
+    if redaction_errors:
+        return (
+            result.returncode,
+            f"{' '.join(command)} produced forbidden evidence content",
+            redaction_errors,
+        )
     if result.returncode == 0:
-        return result.returncode, ""
-    return result.returncode, f"{' '.join(command)} failed with exit code {result.returncode}"
+        return result.returncode, "", []
+    return result.returncode, f"{' '.join(command)} failed with exit code {result.returncode}", []
 
 
 def gate_result(
@@ -481,17 +567,23 @@ def gate_result(
     }
 
 
-def copy_evidence_file(root: Path, source: Path, destination: Path) -> str:
+def copy_evidence_file(root: Path, source: Path, destination: Path) -> tuple[str, list[str]]:
     if not (root / source).exists():
-        return f"missing source snapshot: {source.as_posix()}"
+        return f"missing source snapshot: {source.as_posix()}", []
+    source_text = read_text(root, source)
+    sanitized_text, redaction_errors = sanitized_for_artifact(source, source_text)
+    if redaction_errors:
+        return f"{source.as_posix()} contained forbidden evidence content", redaction_errors
     destination.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(root / source, destination)
-    return ""
+    destination.write_text(sanitized_text, encoding="utf-8")
+    return "", []
 
 
 def write_ci_evidence(root: Path, output_dir: Path) -> None:
     output_relative = require_repo_relative_under(output_dir, DEFAULT_OUTPUT_DIR, "--output-dir")
     output_root = root / output_relative
+    if output_root.exists():
+        shutil.rmtree(output_root)
     logs_dir = output_root / "logs"
     snapshots_dir = output_root / "manifest-snapshots"
     comparisons_dir = output_root / "normalized-comparisons"
@@ -499,9 +591,13 @@ def write_ci_evidence(root: Path, output_dir: Path) -> None:
     snapshots_dir.mkdir(parents=True, exist_ok=True)
     comparisons_dir.mkdir(parents=True, exist_ok=True)
 
-    contract = load_json(root, CONTRACT_MANIFEST)
+    try:
+        contract = load_json(root, CONTRACT_MANIFEST)
+    except VerificationError:
+        contract = {"gates": []}
     gates: list[dict[str, object]] = []
     local_failures: list[str] = []
+    redaction_failures: list[str] = []
 
     command_plan = [
         (
@@ -521,9 +617,12 @@ def write_ci_evidence(root: Path, output_dir: Path) -> None:
         ),
     ]
     for gate_id, command, log_path in command_plan:
-        gate = gate_by_id(contract, gate_id)
-        returncode, failure_reason = run_logged_command(root, command, log_path)
+        gate = gate_by_id_or_static(contract, gate_id)
+        returncode, failure_reason, redaction_errors = run_logged_command(root, command, log_path)
         status = "passed" if returncode == 0 else "failed"
+        if redaction_errors:
+            status = "failed"
+            redaction_failures.extend(redaction_errors)
         gates.append(gate_result(gate, status, failure_reason))
         if failure_reason:
             local_failures.append(failure_reason)
@@ -534,31 +633,35 @@ def write_ci_evidence(root: Path, output_dir: Path) -> None:
         PHASE11_CUTOVER_READINESS,
         PHASE11_RETAINED_CODE_JUSTIFICATIONS,
     ]
-    snapshot_failures = [
+    copy_results = [
         copy_evidence_file(root, source, snapshots_dir / source.name)
         for source in snapshot_sources
     ]
-    comparison_failure = copy_evidence_file(
+    comparison_failure, comparison_redaction_errors = copy_evidence_file(
         root,
         PHASE11_REFERENCE_COMPARISONS,
         comparisons_dir / PHASE11_REFERENCE_COMPARISONS.name,
     )
-    snapshot_failures = [failure for failure in [*snapshot_failures, comparison_failure] if failure]
+    copy_results.append((comparison_failure, comparison_redaction_errors))
+    snapshot_failures = [failure for failure, _ in copy_results if failure]
+    for _, redaction_errors in copy_results:
+        redaction_failures.extend(redaction_errors)
     snapshot_status = "failed" if snapshot_failures else "passed"
     snapshot_reason = "; ".join(snapshot_failures)
     gates.append(
         gate_result(
-            gate_by_id(contract, "ciev-03-manifest-and-comparison-snapshots"),
+            gate_by_id_or_static(contract, "ciev-03-manifest-and-comparison-snapshots"),
             snapshot_status,
             snapshot_reason,
         )
     )
 
     generated_at_utc = utc_now()
+    redaction_reason = "; ".join(redaction_failures)
     redacted_summary_gate = gate_result(
-        gate_by_id(contract, "ciev-03-redacted-summary"),
-        "passed",
-        "",
+        gate_by_id_or_static(contract, "ciev-03-redacted-summary"),
+        "failed" if redaction_failures else "passed",
+        redaction_reason,
     )
     gates.append(redacted_summary_gate)
 
@@ -590,6 +693,8 @@ def write_ci_evidence(root: Path, output_dir: Path) -> None:
     check_security(root)
     if snapshot_failures:
         local_failures.extend(snapshot_failures)
+    if redaction_failures:
+        local_failures.append(redaction_reason)
     if local_failures:
         raise VerificationError("\n".join(local_failures))
 

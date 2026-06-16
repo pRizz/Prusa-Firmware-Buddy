@@ -15,6 +15,7 @@ VERIFIER = ROOT / "tools/bazel/phase11_verify.py"
 PHASE = "11-parity-pyramid-and-cutover-evidence"
 PHASE_LIFECYCLE_ID = "11-2026-06-14T18-48-49"
 PHASE_DIR = ".planning/phases/11-parity-pyramid-and-cutover-evidence"
+ARCHIVED_PHASE_DIR = ".planning/milestones/v1.0-phases/11-parity-pyramid-and-cutover-evidence"
 PYRAMID_MANIFEST = "tools/bazel/manifests/phase11_parity_pyramid.json"
 REQUIREMENT_MANIFEST = "tools/bazel/manifests/phase11_requirement_evidence.json"
 COMPARISON_MANIFEST = "tools/bazel/manifests/phase11_reference_comparisons.json"
@@ -777,6 +778,19 @@ class Phase11VerifierTest(unittest.TestCase):
         with temp_dir:
             self.copy_phase11_surface(root)
             self.write_file(root, f"{PHASE_DIR}/11-VALIDATION.md", "token_value\n")
+
+            # Act
+            result = self.run_verifier(["--security-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("token_value", result.stdout)
+
+    def test_security_only_rejects_secret_markers_in_archived_docs(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_file(root, f"{ARCHIVED_PHASE_DIR}/11-VALIDATION.md", "token_value\n")
 
             # Act
             result = self.run_verifier(["--security-only"], maybe_root=root)

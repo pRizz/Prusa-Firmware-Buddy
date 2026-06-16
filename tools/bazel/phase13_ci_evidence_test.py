@@ -457,6 +457,53 @@ sys.exit({returncode})
         self.assertEqual(aggregate_gate["status"], "failed")
         self.assertIn("exit code 7", aggregate_gate["failure_reason"])
 
+    def test_ci_manifest_records_missing_contract_gate_after_logs_are_written(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            contract = self.read_contract(root)
+            contract["gates"] = [
+                gate
+                for gate in contract["gates"]
+                if gate["id"] != "ciev-02-run-manifest"
+            ]
+            self.write_contract(root, contract)
+            output_dir = "build/ci-evidence/phase13"
+
+            # Act
+            result = self.run_verifier(["--ci", "--output-dir", output_dir], maybe_root=root)
+            manifest = json.loads((root / output_dir / "run-manifest.json").read_text(encoding="utf-8"))
+            contract_gate = next(gate for gate in manifest["gates"] if gate["id"] == "ciev-02-run-manifest")
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(contract_gate["status"], "failed")
+        self.assertIn("exit code", contract_gate["failure_reason"])
+
+    def test_ci_redacts_forbidden_snapshot_before_writing_artifacts(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            self.write_file(root, PHASE11_REQUIREMENTS, "token_value\n")
+            output_dir = "build/ci-evidence/phase13"
+
+            # Act
+            result = self.run_verifier(["--ci", "--output-dir", output_dir], maybe_root=root)
+            retained_text = "\n".join(
+                path.read_text(encoding="utf-8")
+                for path in (root / output_dir).rglob("*")
+                if path.is_file()
+            )
+            manifest = json.loads((root / output_dir / "run-manifest.json").read_text(encoding="utf-8"))
+            redacted_gate = next(gate for gate in manifest["gates"] if gate["id"] == "ciev-03-redacted-summary")
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn("token_value", retained_text)
+        self.assertEqual(redacted_gate["status"], "failed")
+
     def test_ci_manifest_preserves_pending_non_local_evidence(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
