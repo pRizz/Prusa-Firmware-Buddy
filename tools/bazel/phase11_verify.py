@@ -856,6 +856,7 @@ def existing_security_paths(root: Path) -> list[Path]:
             "11-CONTEXT.md",
             "11-RESEARCH.md",
             "11-VALIDATION.md",
+            "11-VERIFICATION.md",
             "11-*-SUMMARY.md",
         ]
         for pattern in phase_doc_patterns:

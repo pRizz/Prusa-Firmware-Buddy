@@ -87,11 +87,13 @@ filegroup(
 
 filegroup(
     name = "phase11_cutover_evidence_docs",
-    srcs = [
-        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-CONTEXT.md",
-        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-RESEARCH.md",
-        ".planning/phases/11-parity-pyramid-and-cutover-evidence/11-VALIDATION.md",
-    ],
+    srcs = glob(
+        [".planning/phases/11-parity-pyramid-and-cutover-evidence/11-*.md"],
+        allow_empty = True,
+    ) + glob(
+        [".planning/milestones/v1.0-phases/11-parity-pyramid-and-cutover-evidence/11-*.md"],
+        allow_empty = True,
+    ),
 )
 
 filegroup(

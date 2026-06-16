@@ -504,6 +504,34 @@ sys.exit({returncode})
         self.assertNotIn("token_value", retained_text)
         self.assertEqual(redacted_gate["status"], "failed")
 
+    def test_ci_uses_safe_gate_metadata_when_contract_field_contains_secret(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            contract = self.read_contract(root)
+            contract["gates"][0]["command"] = "python3 token_value"
+            self.write_contract(root, contract)
+            output_dir = "build/ci-evidence/phase13"
+
+            # Act
+            result = self.run_verifier(["--ci", "--output-dir", output_dir], maybe_root=root)
+            retained_text = "\n".join(
+                path.read_text(encoding="utf-8")
+                for path in (root / output_dir).rglob("*")
+                if path.is_file()
+            )
+            manifest = json.loads((root / output_dir / "run-manifest.json").read_text(encoding="utf-8"))
+            workflow_gate = next(gate for gate in manifest["gates"] if gate["id"] == "ciev-01-pr-path-trigger")
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn("token_value", retained_text)
+        self.assertEqual(
+            workflow_gate["command"],
+            "python3 tools/bazel/phase13_ci_evidence.py --workflow-only",
+        )
+
     def test_ci_manifest_preserves_pending_non_local_evidence(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()

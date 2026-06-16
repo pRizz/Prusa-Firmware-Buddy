@@ -799,6 +799,19 @@ class Phase11VerifierTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("token_value", result.stdout)
 
+    def test_security_only_rejects_secret_markers_in_archived_verification(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_file(root, f"{ARCHIVED_PHASE_DIR}/11-VERIFICATION.md", "token_value\n")
+
+            # Act
+            result = self.run_verifier(["--security-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("token_value", result.stdout)
+
     def test_security_only_rejects_context_and_research_secret_markers(self) -> None:
         # Arrange
         phase_doc_paths = [

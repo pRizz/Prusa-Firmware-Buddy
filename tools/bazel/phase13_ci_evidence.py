@@ -290,6 +290,26 @@ def gate_by_id_or_static(contract: dict[str, object], gate_id: str) -> dict[str,
         return STATIC_GATE_DEFINITIONS[gate_id]
 
 
+def safe_gate_for_artifact(contract: dict[str, object], gate_id: str) -> dict[str, object]:
+    gate = dict(gate_by_id_or_static(contract, gate_id))
+    artifact_fields = [
+        "id",
+        "requirement_id",
+        "owning_phase",
+        "command",
+        "proof_scope",
+        "expected_artifact_path",
+        "retained_artifact_kind",
+    ]
+    for field in artifact_fields:
+        value = str(gate.get(field, ""))
+        sanitized_value, errors = sanitized_for_artifact(Path(field), value)
+        if errors:
+            return STATIC_GATE_DEFINITIONS[gate_id]
+        gate[field] = sanitized_value
+    return gate
+
+
 def check_contract(root: Path) -> None:
     contract_text = read_text(root, CONTRACT_MANIFEST)
     reject_forbidden_text(CONTRACT_MANIFEST, contract_text)
@@ -592,6 +612,7 @@ def write_ci_evidence(root: Path, output_dir: Path) -> None:
     comparisons_dir.mkdir(parents=True, exist_ok=True)
 
     try:
+        check_contract(root)
         contract = load_json(root, CONTRACT_MANIFEST)
     except VerificationError:
         contract = {"gates": []}
@@ -617,7 +638,7 @@ def write_ci_evidence(root: Path, output_dir: Path) -> None:
         ),
     ]
     for gate_id, command, log_path in command_plan:
-        gate = gate_by_id_or_static(contract, gate_id)
+        gate = safe_gate_for_artifact(contract, gate_id)
         returncode, failure_reason, redaction_errors = run_logged_command(root, command, log_path)
         status = "passed" if returncode == 0 else "failed"
         if redaction_errors:
@@ -650,7 +671,7 @@ def write_ci_evidence(root: Path, output_dir: Path) -> None:
     snapshot_reason = "; ".join(snapshot_failures)
     gates.append(
         gate_result(
-            gate_by_id_or_static(contract, "ciev-03-manifest-and-comparison-snapshots"),
+            safe_gate_for_artifact(contract, "ciev-03-manifest-and-comparison-snapshots"),
             snapshot_status,
             snapshot_reason,
         )
@@ -659,7 +680,7 @@ def write_ci_evidence(root: Path, output_dir: Path) -> None:
     generated_at_utc = utc_now()
     redaction_reason = "; ".join(redaction_failures)
     redacted_summary_gate = gate_result(
-        gate_by_id_or_static(contract, "ciev-03-redacted-summary"),
+        safe_gate_for_artifact(contract, "ciev-03-redacted-summary"),
         "failed" if redaction_failures else "passed",
         redaction_reason,
     )
