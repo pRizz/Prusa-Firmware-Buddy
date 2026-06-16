@@ -1,0 +1,53 @@
+name: CI Evidence
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/ci-evidence.yml
+      - .github/workflows/**
+      - BUILD.bazel
+      - MODULE.bazel
+      - .bazelrc
+      - platforms/**
+      - tools/bazel/**
+      - tools/bazel/manifests/**
+      - Cargo.toml
+      - Cargo.lock
+      - rust/**
+      - .planning/PROJECT.md
+      - .planning/ROADMAP.md
+      - .planning/REQUIREMENTS.md
+      - .planning/STATE.md
+      - .planning/phases/**
+      - .planning/milestones/**
+      - CMakeLists.txt
+      - ProjectOptions.cmake
+      - cmake/**
+      - utils/build.py
+      - utils/pack_fw.py
+      - utils/dfu.py
+      - utils/presets/**
+      - src/resources/**
+      - src/lang/**
+      - lib/Add*.cmake
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  phase13-ci-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Write CI evidence
+        run: python3 tools/bazel/phase13_ci_evidence.py --ci --output-dir build/ci-evidence/phase13
+      - name: Upload CI evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: phase13-ci-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/ci-evidence/phase13/
+          retention-days: 30
+          if-no-files-found: error
