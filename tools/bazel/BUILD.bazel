@@ -254,12 +254,23 @@ shell_binary(
     ],
 )
 
+filegroup(
+    name = "phase14_phase11_source_ref_manifests",
+    srcs = [
+        "manifests/phase11_cutover_readiness.json",
+        "manifests/phase11_parity_pyramid.json",
+        "manifests/phase11_reference_comparisons.json",
+        "manifests/phase11_requirement_evidence.json",
+    ],
+)
+
 shell_binary(
     name = "phase14_verify",
     src = "rust_workflow.sh",
     data = [
         "phase14_simulator_evidence.py",
         "manifests/phase14_simulator_evidence_contract.json",
+        ":phase14_phase11_source_ref_manifests",
         "//:phase14_simulator_evidence_docs",
         "//:phase11_cutover_evidence_docs",
     ],
@@ -272,6 +283,7 @@ shell_binary(
         "phase14_simulator_evidence.py",
         "phase14_simulator_evidence_test.py",
         "manifests/phase14_simulator_evidence_contract.json",
+        ":phase14_phase11_source_ref_manifests",
     ],
 )
 

@@ -79,12 +79,23 @@ class Phase14SimulatorEvidenceTest(unittest.TestCase):
             maybe_build
             or """load(":shell_rules.bzl", "shell_binary")
 
+filegroup(
+    name = "phase14_phase11_source_ref_manifests",
+    srcs = [
+        "manifests/phase11_cutover_readiness.json",
+        "manifests/phase11_parity_pyramid.json",
+        "manifests/phase11_reference_comparisons.json",
+        "manifests/phase11_requirement_evidence.json",
+    ],
+)
+
 shell_binary(
     name = "phase14_verify",
     src = "rust_workflow.sh",
     data = [
         "phase14_simulator_evidence.py",
         "manifests/phase14_simulator_evidence_contract.json",
+        ":phase14_phase11_source_ref_manifests",
         "//:phase14_simulator_evidence_docs",
         "//:phase11_cutover_evidence_docs",
     ],
@@ -97,6 +108,7 @@ shell_binary(
         "phase14_simulator_evidence.py",
         "phase14_simulator_evidence_test.py",
         "manifests/phase14_simulator_evidence_contract.json",
+        ":phase14_phase11_source_ref_manifests",
     ],
 )
 """,
@@ -210,6 +222,54 @@ esac
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("missing-row", result.stdout)
+
+    def test_contract_only_rejects_empty_requirement_ids(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            contract = self.read_contract(root)
+            contract["scenarios"][0]["requirement_ids"] = []
+            self.write_contract(root, contract)
+
+            # Act
+            result = self.run_verifier(["--contract-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("SIM requirement ID", result.stdout)
+
+    def test_contract_only_rejects_empty_phase11_source_refs(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            contract = self.read_contract(root)
+            contract["scenarios"][0]["phase11_source_refs"] = []
+            self.write_contract(root, contract)
+
+            # Act
+            result = self.run_verifier(["--contract-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Phase 11 source ref", result.stdout)
+
+    def test_contract_only_rejects_active_hardware_proof_scope(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            contract = self.read_contract(root)
+            contract["scenarios"][0]["proof_scope"] = "hardware"
+            self.write_contract(root, contract)
+
+            # Act
+            result = self.run_verifier(["--contract-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("proof_scope must be 'simulator'", result.stdout)
 
     def test_contract_only_rejects_path_traversal_artifact_path(self) -> None:
         # Arrange
@@ -337,6 +397,61 @@ esac
         self.assertIn("--simulator", command)
         self.assertNotIn("bash -c", " ".join(command))
         self.assertNotIn("python -c", " ".join(command))
+
+    def test_redacted_command_for_log_uses_basenames_for_input_paths(self) -> None:
+        # Arrange
+        spec = importlib.util.spec_from_file_location("phase14_simulator_evidence", VERIFIER)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        command = [
+            "python3",
+            "-m",
+            "pytest",
+            "tests/integration/test_prusa_link.py::test_idle_version",
+            "--firmware",
+            "/tmp/token_value/firmware.bin",
+            "--simulator",
+            "/tmp/private_key/simulator",
+        ]
+
+        # Act
+        redacted = module.redacted_command_for_log(command)
+
+        # Assert
+        self.assertIn("firmware.bin", redacted)
+        self.assertIn("simulator", redacted)
+        self.assertNotIn("/tmp/token_value/firmware.bin", redacted)
+        self.assertNotIn("/tmp/private_key/simulator", redacted)
+
+    def test_real_mode_log_redacts_command_path_markers(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            firmware_dir = root / "token_value"
+            firmware_dir.mkdir()
+            firmware = firmware_dir / "firmware.bin"
+            firmware.write_bytes(b"firmware")
+            firmware.with_suffix(".bbf").write_bytes(b"bbf")
+            output_dir = "build/ci-evidence/phase14"
+
+            # Act
+            result = self.run_verifier(
+                ["--run-simulator", "--firmware", firmware.as_posix(), "--output-dir", output_dir],
+                maybe_root=root,
+            )
+            retained_text = "\n".join(
+                path.read_text(encoding="utf-8")
+                for path in (root / output_dir / "logs").rglob("*")
+                if path.is_file()
+            )
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn("token_value", retained_text)
+        self.assertIn("firmware.bin", retained_text)
 
     def test_generated_outputs_are_redacted(self) -> None:
         # Arrange

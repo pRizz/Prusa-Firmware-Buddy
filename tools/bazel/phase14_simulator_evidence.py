@@ -274,6 +274,8 @@ def check_contract(root: Path) -> dict[str, Any]:
             require_fields(scenario, scenario_fields, row_name)
             scenario_id = require_string(scenario, "id", row_name)
             requirement_ids = set(require_list_of_strings(scenario, "requirement_ids", row_name))
+            if not requirement_ids:
+                raise VerificationError(f"{row_name} must map to at least one SIM requirement ID")
             unknown_requirements = sorted(requirement_ids - REQUIRED_REQUIREMENT_IDS)
             if unknown_requirements:
                 raise VerificationError(
@@ -285,8 +287,18 @@ def check_contract(root: Path) -> dict[str, Any]:
             if not v1_ids:
                 raise VerificationError(f"{row_name} must map to at least one v1 requirement or reference ID")
             phase11_refs = require_list_of_strings(scenario, "phase11_source_refs", row_name)
+            if not phase11_refs:
+                raise VerificationError(f"{row_name} must map to at least one Phase 11 source ref")
             for source_ref in phase11_refs:
                 resolve_source_ref(root, source_ref, row_name)
+            proof_scope = require_string(scenario, "proof_scope", row_name)
+            expected_scope = (
+                "contract-boundary"
+                if scenario_id == "sim-traceability-non-simulator-boundaries"
+                else "simulator"
+            )
+            if proof_scope != expected_scope:
+                raise VerificationError(f"{row_name} proof_scope must be {expected_scope!r}")
             pytest_node_ids = set(require_list_of_strings(scenario, "pytest_node_ids", row_name))
             skipped_pytest_node_ids = set(require_list_of_strings(scenario, "skipped_pytest_node_ids", row_name))
             overlapping_nodes = sorted(pytest_node_ids & skipped_pytest_node_ids)
@@ -379,6 +391,11 @@ def check_wiring(root: Path) -> None:
                 "phase14_simulator_evidence_contract.json",
                 "//:phase14_simulator_evidence_docs",
                 "//:phase11_cutover_evidence_docs",
+                "phase14_phase11_source_ref_manifests",
+                "manifests/phase11_cutover_readiness.json",
+                "manifests/phase11_parity_pyramid.json",
+                "manifests/phase11_reference_comparisons.json",
+                "manifests/phase11_requirement_evidence.json",
             ],
         )
     )
@@ -594,6 +611,20 @@ def build_pytest_command(firmware: Path, maybe_simulator: Path | None, node_ids:
     return command
 
 
+def redacted_command_for_log(command: list[str]) -> list[str]:
+    redacted: list[str] = []
+    redact_next = False
+    for token in command:
+        if redact_next:
+            redacted.append(Path(token).name)
+            redact_next = False
+            continue
+        redacted.append(token)
+        if token in {"--firmware", "--simulator"}:
+            redact_next = True
+    return redacted
+
+
 def validate_real_inputs(root: Path, maybe_firmware: str | None, maybe_simulator: str | None) -> tuple[Path, Path | None]:
     if maybe_firmware is None:
         raise VerificationError("--run-simulator requires --firmware <firmware.bin>")
@@ -641,8 +672,9 @@ def run_simulator(root: Path, output_dir: Path, maybe_firmware: str | None, mayb
             text=True,
             check=False,
         )
-        sanitized_output, redaction_errors = sanitized_for_artifact(log_relative, result.stdout)
-        log_path.write_text("$ " + " ".join(command) + "\n" + sanitized_output, encoding="utf-8")
+        log_text = "$ " + " ".join(redacted_command_for_log(command)) + "\n" + result.stdout
+        sanitized_log_text, redaction_errors = sanitized_for_artifact(log_relative, log_text)
+        log_path.write_text(sanitized_log_text, encoding="utf-8")
         if redaction_errors:
             raise VerificationError("\n".join(redaction_errors))
         status = "passed" if result.returncode == 0 else "failed"
