@@ -108,6 +108,16 @@ filegroup(
 )
 
 filegroup(
+    name = "phase14_simulator_evidence_docs",
+    srcs = [
+        ".planning/phases/14-simulator-evidence-gates/14-CONTEXT.md",
+        ".planning/phases/14-simulator-evidence-gates/14-RESEARCH.md",
+        ".planning/phases/14-simulator-evidence-gates/14-VALIDATION.md",
+        ".planning/phases/14-simulator-evidence-gates/14-01-PLAN.md",
+    ],
+)
+
+filegroup(
     name = "phase7_storage_migration_fixtures",
     srcs = ["//tools/bazel:fixtures/phase7_storage/redacted_migration_catalog.json"],
 )
@@ -245,6 +255,16 @@ alias(
 alias(
     name = "phase13_verify_tests",
     actual = "//tools/bazel:phase13_verify_tests",
+)
+
+alias(
+    name = "phase14_verify",
+    actual = "//tools/bazel:phase14_verify",
+)
+
+alias(
+    name = "phase14_verify_tests",
+    actual = "//tools/bazel:phase14_verify_tests",
 )
 
 alias(
