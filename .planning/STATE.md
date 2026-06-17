@@ -4,8 +4,8 @@ milestone: v1.1
 milestone_name: Cutover Evidence Hardening
 status: executing
 stopped_at: Phase 14 context gathered
-last_updated: "2026-06-17T16:47:21.881Z"
-last_activity: 2026-06-17 -- Phase 14 planning complete
+last_updated: "2026-06-17T16:48:24.748Z"
+last_activity: 2026-06-17 -- Phase 14 execution started
 progress:
   total_phases: 6
   completed_phases: 1
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-15)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Phase 13 — CI Evidence Orchestration
+**Current focus:** Phase 14 — simulator-evidence-gates
 
 ## Current Position
 
-Phase: 14
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-06-17 -- Phase 14 planning complete
+Phase: 14 (simulator-evidence-gates) — EXECUTING
+Plan: 1 of 1
+Status: Executing Phase 14
+Last activity: 2026-06-17 -- Phase 14 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
