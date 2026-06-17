@@ -79,7 +79,10 @@ Full phase details are archived in `.planning/milestones/v1.0-ROADMAP.md`.
 1. Safety evidence covers watchdog, thermal/motion safety, emergency stop, safe-output, crash recovery, UI input, MMU, RS485, and toolchanger scenarios.
 1. Hardware evidence records device, firmware build, operator, timestamp, scenario, result, and residual risk.
 1. Evidence artifacts avoid secrets, private service payloads, and unsafe operational data.
-   **Plans**: Not created yet.
+   **Plans**: 1 plan
+
+Plans:
+- [ ] 15-01-PLAN.md - Hardware evidence contract, verifier/collector, operator evidence validation, and Bazel/just gate.
 
 ### Phase 16: Live Network and Transfer Qualification
 
