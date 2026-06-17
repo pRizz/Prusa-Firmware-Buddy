@@ -1,0 +1,404 @@
+{
+  "artifact_name": "phase14-simulator-evidence",
+  "external_inputs": {
+    "firmware_bbf_adjacent": "required by tests/integration/conftest.py bootstrap flow",
+    "firmware_bin": "required for --run-simulator",
+    "mini404_qemu": "from utils/bootstrap.py or --simulator",
+    "ocr_cache": "downloaded by existing OCR helpers on first real run",
+    "pytest_environment": "repo requirements active"
+  },
+  "id": "phase14_simulator_evidence_contract",
+  "output_root": "build/ci-evidence/phase14",
+  "phase": "14-simulator-evidence-gates",
+  "phase_lifecycle_id": "14-2026-06-17T16-11-34",
+  "required_artifact_kinds": [
+    "machine-readable-run-manifest",
+    "simulator-log-reference",
+    "normalized-scenario-summary",
+    "redacted-evidence-summary",
+    "contract-snapshot"
+  ],
+  "scenarios": [
+    {
+      "allowed_statuses": [
+        "passed",
+        "failed",
+        "pending-simulator-input",
+        "pending-simulator-dependency"
+      ],
+      "expected_artifact_path": "build/ci-evidence/phase14/logs/sim-startup-bootstrap-ready.log",
+      "expected_failure_semantics": "Failure row names the startup bootstrap scenario, SIM and v1 requirement IDs, pytest node IDs, artifact path, and reason.",
+      "expected_pass_semantics": "Running node reaches simulator bootstrap readiness and links logs without claiming physical startup timing or hardware safety proof.",
+      "id": "sim-startup-bootstrap-ready",
+      "phase11_source_refs": [
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-core-01",
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-core-02",
+        "tools/bazel/manifests/phase11_parity_pyramid.json#pyramid-simulator-flows"
+      ],
+      "proof_scope": "simulator",
+      "pytest_node_ids": [
+        "tests/integration/test_basic_examples.py::test_filebrowser_shows_files"
+      ],
+      "requirement_ids": [
+        "SIM-01"
+      ],
+      "residual_non_simulator_gates": [
+        "pending-hardware"
+      ],
+      "retained_artifact_kind": "simulator-log-reference",
+      "skipped_pytest_node_ids": [],
+      "title": "Startup bootstrap reaches simulator-ready surface",
+      "unsupported_claims": [
+        "physical startup timing",
+        "hardware safety proof"
+      ],
+      "v1_requirement_ids": [
+        "CORE-01",
+        "CORE-02"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "passed",
+        "failed",
+        "pending-simulator-input",
+        "pending-simulator-dependency"
+      ],
+      "expected_artifact_path": "build/ci-evidence/phase14/logs/sim-task-readiness-home-wui.log",
+      "expected_failure_semantics": "Failure row names the task readiness scenario, WUI node IDs, SIM and v1 requirement IDs, artifact path, and reason.",
+      "expected_pass_semantics": "Running nodes show home/WUI task readiness and API state without claiming live-service behavior.",
+      "id": "sim-task-readiness-home-wui",
+      "phase11_source_refs": [
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-core-02",
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-ifce-03",
+        "tools/bazel/manifests/phase11_parity_pyramid.json#pyramid-simulator-flows"
+      ],
+      "proof_scope": "simulator",
+      "pytest_node_ids": [
+        "tests/integration/test_prusa_link.py::test_idle_version",
+        "tests/integration/test_prusa_link.py::test_idle_printer_api",
+        "tests/integration/test_prusa_link.py::test_idle_job"
+      ],
+      "requirement_ids": [
+        "SIM-01"
+      ],
+      "residual_non_simulator_gates": [
+        "pending-hardware",
+        "pending-live-service"
+      ],
+      "retained_artifact_kind": "simulator-log-reference",
+      "skipped_pytest_node_ids": [],
+      "title": "Task readiness visible through home and WUI APIs",
+      "unsupported_claims": [
+        "physical task timing",
+        "live service behavior"
+      ],
+      "v1_requirement_ids": [
+        "CORE-02",
+        "IFCE-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "passed",
+        "failed",
+        "pending-simulator-input",
+        "pending-simulator-dependency"
+      ],
+      "expected_artifact_path": "build/ci-evidence/phase14/logs/sim-watchdog-visible-startup-readiness.log",
+      "expected_failure_semantics": "Failure row names the watchdog-visible startup/readiness scenario, SIM and v1 requirement IDs, artifact path, and reason.",
+      "expected_pass_semantics": "Running nodes show simulator-visible startup and readiness only; physical watchdog timing and safety proof stay residual.",
+      "id": "sim-watchdog-visible-startup-readiness",
+      "phase11_source_refs": [
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-base-04",
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-core-01",
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-core-04",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-non-local-gates-identified"
+      ],
+      "proof_scope": "simulator",
+      "pytest_node_ids": [
+        "tests/integration/test_basic_examples.py::test_filebrowser_shows_files"
+      ],
+      "requirement_ids": [
+        "SIM-01"
+      ],
+      "residual_non_simulator_gates": [
+        "pending-hardware"
+      ],
+      "retained_artifact_kind": "simulator-log-reference",
+      "skipped_pytest_node_ids": [],
+      "title": "Watchdog-visible startup and readiness boundary",
+      "unsupported_claims": [
+        "physical watchdog timing",
+        "hardware safety proof"
+      ],
+      "v1_requirement_ids": [
+        "BASE-04",
+        "CORE-01",
+        "CORE-04"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "passed",
+        "failed",
+        "pending-simulator-input",
+        "pending-simulator-dependency"
+      ],
+      "expected_artifact_path": "build/ci-evidence/phase14/logs/sim-gcode-file-print-telemetry.log",
+      "expected_failure_semantics": "Failure row names the G-code telemetry scenario, SIM and v1 requirement IDs, pytest node IDs, artifact path, and reason.",
+      "expected_pass_semantics": "Running node passes and generated summary links logs without claiming motion, thermal, or hardware print quality proof.",
+      "id": "sim-gcode-file-print-telemetry",
+      "phase11_source_refs": [
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-core-03",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-gcode-behavior-fixtures"
+      ],
+      "proof_scope": "simulator",
+      "pytest_node_ids": [
+        "tests/integration/test_prusa_link.py::test_printing_telemetry"
+      ],
+      "requirement_ids": [
+        "SIM-01"
+      ],
+      "residual_non_simulator_gates": [
+        "pending-hardware",
+        "pending-release"
+      ],
+      "retained_artifact_kind": "simulator-log-reference",
+      "skipped_pytest_node_ids": [],
+      "title": "Representative G-code file print telemetry",
+      "unsupported_claims": [
+        "physical motion safety",
+        "thermal safety",
+        "release-candidate readiness"
+      ],
+      "v1_requirement_ids": [
+        "CORE-03",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "passed",
+        "failed",
+        "pending-simulator-input",
+        "pending-simulator-dependency"
+      ],
+      "expected_artifact_path": "build/ci-evidence/phase14/logs/sim-gui-filebrowser-navigation.log",
+      "expected_failure_semantics": "Failure row names the GUI filebrowser scenario, SIM and v1 requirement IDs, pytest node IDs, artifact path, and reason.",
+      "expected_pass_semantics": "Running node reaches the simulator filebrowser and observes expected files without claiming physical UI input or display proof.",
+      "id": "sim-gui-filebrowser-navigation",
+      "phase11_source_refs": [
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-ifce-01",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-ui-display-state-fixtures"
+      ],
+      "proof_scope": "simulator",
+      "pytest_node_ids": [
+        "tests/integration/test_basic_examples.py::test_filebrowser_shows_files"
+      ],
+      "requirement_ids": [
+        "SIM-02"
+      ],
+      "residual_non_simulator_gates": [
+        "pending-hardware"
+      ],
+      "retained_artifact_kind": "simulator-log-reference",
+      "skipped_pytest_node_ids": [],
+      "title": "GUI filebrowser navigation",
+      "unsupported_claims": [
+        "physical UI input",
+        "physical display behavior"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-01",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "passed",
+        "failed",
+        "pending-simulator-input",
+        "pending-simulator-dependency"
+      ],
+      "expected_artifact_path": "build/ci-evidence/phase14/logs/sim-storage-resource-wui-list-delete.log",
+      "expected_failure_semantics": "Failure row names the storage/resource WUI list/delete scenario, SIM and v1 requirement IDs, pytest node IDs, artifact path, and reason.",
+      "expected_pass_semantics": "Running nodes cover simulator-backed list/delete behavior without claiming physical storage-media timing or failure proof.",
+      "id": "sim-storage-resource-wui-list-delete",
+      "phase11_source_refs": [
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-ifce-03",
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-ifce-04",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-storage-migrations"
+      ],
+      "proof_scope": "simulator",
+      "pytest_node_ids": [
+        "tests/integration/test_prusa_link.py::test_list_files",
+        "tests/integration/test_prusa_link.py::test_delete_project"
+      ],
+      "requirement_ids": [
+        "SIM-02"
+      ],
+      "residual_non_simulator_gates": [
+        "pending-hardware"
+      ],
+      "retained_artifact_kind": "simulator-log-reference",
+      "skipped_pytest_node_ids": [],
+      "title": "Storage and resource WUI list/delete",
+      "unsupported_claims": [
+        "physical storage-media behavior",
+        "physical media timing"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-03",
+        "IFCE-04",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "passed",
+        "failed",
+        "pending-simulator-input",
+        "pending-simulator-dependency"
+      ],
+      "expected_artifact_path": "build/ci-evidence/phase14/logs/sim-transfer-negative-and-conflict.log",
+      "expected_failure_semantics": "Failure row names transfer negative/conflict scenario, SIM and v1 requirement IDs, pytest node IDs, skipped residual nodes, artifact path, and reason.",
+      "expected_pass_semantics": "Running active negative/conflict nodes pass while skipped transfer nodes remain residual and are not counted as pass evidence.",
+      "id": "sim-transfer-negative-and-conflict",
+      "phase11_source_refs": [
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-ifce-02",
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-ifce-03",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-protocol-traces"
+      ],
+      "proof_scope": "simulator",
+      "pytest_node_ids": [
+        "tests/integration/test_prusa_link.py::test_upload_notauth",
+        "tests/integration/test_prusa_link.py::test_delete_project_printing"
+      ],
+      "requirement_ids": [
+        "SIM-02"
+      ],
+      "residual_non_simulator_gates": [
+        "pending-live-service",
+        "pending-release"
+      ],
+      "retained_artifact_kind": "simulator-log-reference",
+      "skipped_pytest_node_ids": [
+        "tests/integration/test_prusa_link.py::test_printing_job",
+        "tests/integration/test_prusa_link.py::test_download_gcode",
+        "tests/integration/test_prusa_link.py::test_thumbnails",
+        "tests/integration/test_prusa_link.py::test_caching",
+        "tests/integration/test_prusa_link.py::test_upload"
+      ],
+      "title": "Transfer negative and conflict behavior",
+      "unsupported_claims": [
+        "live service proof",
+        "long transfer proof"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-02",
+        "IFCE-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "passed",
+        "failed",
+        "pending-simulator-input",
+        "pending-simulator-dependency"
+      ],
+      "expected_artifact_path": "build/ci-evidence/phase14/logs/sim-selected-thermal-failures.log",
+      "expected_failure_semantics": "Failure row names selected thermal failure scenario, SIM and v1 requirement IDs, active and skipped node IDs, artifact path, and reason.",
+      "expected_pass_semantics": "Running active min-temp, max-temp, runaway, and preheat nodes pass while skipped nozzle max-temp remains residual and not pass evidence.",
+      "id": "sim-selected-thermal-failures",
+      "phase11_source_refs": [
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-core-04",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-non-local-gates-identified",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#concern-phase11-non-local-hardware-proof"
+      ],
+      "proof_scope": "simulator",
+      "pytest_node_ids": [
+        "tests/integration/test_safety.py::test_min_temp_error_on_nozzle",
+        "tests/integration/test_safety.py::test_max_temp_error_on_bed",
+        "tests/integration/test_safety.py::test_temp_runaway_error_on_nozzle",
+        "tests/integration/test_safety.py::test_preheat_error_on_nozzle"
+      ],
+      "requirement_ids": [
+        "SIM-02"
+      ],
+      "residual_non_simulator_gates": [
+        "pending-hardware"
+      ],
+      "retained_artifact_kind": "simulator-log-reference",
+      "skipped_pytest_node_ids": [
+        "tests/integration/test_safety.py::test_max_temp_error_on_nozzle"
+      ],
+      "title": "Selected thermal failure flows",
+      "unsupported_claims": [
+        "physical thermal safety",
+        "hardware-only safety"
+      ],
+      "v1_requirement_ids": [
+        "CORE-04",
+        "VERF-05"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "passed",
+        "failed",
+        "pending-hardware",
+        "pending-live-service",
+        "pending-release",
+        "pending-review"
+      ],
+      "expected_artifact_path": "build/ci-evidence/phase14/logs/sim-traceability-non-simulator-boundaries.log",
+      "expected_failure_semantics": "Failure row names missing traceability or unsupported boundary semantics with SIM and v1 requirement IDs, artifact path, and reason.",
+      "expected_pass_semantics": "Contract row proves traceability and non-simulator boundaries only; no real simulator node is required.",
+      "id": "sim-traceability-non-simulator-boundaries",
+      "phase11_source_refs": [
+        "tools/bazel/manifests/phase11_parity_pyramid.json#pyramid-simulator-flows",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-non-local-gates-identified",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-reference-demotion-blocked",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#concern-phase11-reference-demotion"
+      ],
+      "proof_scope": "contract-boundary",
+      "pytest_node_ids": [],
+      "requirement_ids": [
+        "SIM-03"
+      ],
+      "residual_non_simulator_gates": [
+        "pending-hardware",
+        "pending-live-service",
+        "pending-release",
+        "pending-review"
+      ],
+      "retained_artifact_kind": "simulator-log-reference",
+      "skipped_pytest_node_ids": [],
+      "title": "Traceability and non-simulator evidence boundaries",
+      "unsupported_claims": [
+        "retained-code acceptance",
+        "reference demotion",
+        "final cutover approval"
+      ],
+      "v1_requirement_ids": [
+        "VERF-01",
+        "VERF-03",
+        "VERF-05"
+      ]
+    }
+  ],
+  "schema_version": "1",
+  "status_vocabulary": [
+    "passed",
+    "failed",
+    "skipped",
+    "pending-simulator-input",
+    "pending-simulator-dependency",
+    "manual-hardware-required",
+    "pending-hardware",
+    "pending-live-service",
+    "pending-release",
+    "pending-review"
+  ]
+}
