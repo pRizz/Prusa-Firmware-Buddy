@@ -80,6 +80,35 @@ class Phase15HardwareEvidenceTest(unittest.TestCase):
         self.copy_file(root, CONTRACT)
         self.copy_source_ref_inputs(root)
 
+    def write_operator_evidence(
+        self,
+        root: Path,
+        rows: list[dict[str, str]],
+        path: str = "operator-evidence.json",
+    ) -> str:
+        self.write_file(root, path, json.dumps({"evidence_rows": rows}, indent=2, sort_keys=True) + "\n")
+        return path
+
+    def complete_operator_row(
+        self,
+        scenario_id: str = "hard-storage-usb-fatfs-removable-media",
+        result: str = "passed",
+        artifact_ref: str | None = None,
+    ) -> dict[str, str]:
+        artifact_ref = artifact_ref or f"build/ci-evidence/phase15/logs/{scenario_id}.log"
+        return {
+            "device": "bench-printer-01",
+            "printer_family": "MINI",
+            "board": "BUDDY",
+            "firmware_build": "phase15-test-build",
+            "operator": "phase15-test-operator",
+            "timestamp": "2026-06-17T23:30:00Z",
+            "scenario_id": scenario_id,
+            "result": result,
+            "artifact_ref": artifact_ref,
+            "residual_risk": "Physical coverage is limited to the named bench setup.",
+        }
+
     def test_contract_accepts_complete_contract(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -214,6 +243,151 @@ class Phase15HardwareEvidenceTest(unittest.TestCase):
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("residual risk", result.stdout)
+
+    def test_quick_writes_expected_artifacts(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+            # Assert
+            self.assertEqual(result.returncode, 0, result.stdout)
+            for path in [
+                "build/ci-evidence/phase15/run-manifest.json",
+                "build/ci-evidence/phase15/normalized-scenario-results.json",
+                "build/ci-evidence/phase15/redacted-hardware-summary.json",
+                "build/ci-evidence/phase15/source-contract-snapshots/phase15_hardware_evidence_contract.json",
+                "build/ci-evidence/phase15/logs/hard-storage-usb-fatfs-removable-media.log",
+            ]:
+                self.assertTrue((root / path).exists(), path)
+
+    def test_quick_keeps_physical_rows_pending_without_operator_evidence(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+            normalized = json.loads(
+                (root / "build/ci-evidence/phase15/normalized-scenario-results.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        rows = {row["id"]: row for row in normalized["scenarios"]}
+        self.assertEqual(rows["hard-storage-usb-fatfs-removable-media"]["status"], "pending-hardware-input")
+        self.assertEqual(
+            rows["hard-contract-traceability-and-redaction-boundary"]["status"],
+            "source-contract-passed",
+        )
+
+    def test_operator_evidence_updates_matching_scenario(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            operator_path = self.write_operator_evidence(root, [self.complete_operator_row()])
+
+            # Act
+            result = self.run_verifier(["--quick", "--operator-evidence", operator_path], maybe_root=root)
+            normalized = json.loads(
+                (root / "build/ci-evidence/phase15/normalized-scenario-results.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        rows = {row["id"]: row for row in normalized["scenarios"]}
+        scenario = rows["hard-storage-usb-fatfs-removable-media"]
+        self.assertEqual(scenario["status"], "passed")
+        self.assertEqual(scenario["operator"], "phase15-test-operator")
+        self.assertEqual(scenario["artifact_ref"], "build/ci-evidence/phase15/logs/hard-storage-usb-fatfs-removable-media.log")
+
+    def test_operator_evidence_rejects_missing_metadata(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            row = self.complete_operator_row()
+            del row["operator"]
+            operator_path = self.write_operator_evidence(root, [row])
+
+            # Act
+            result = self.run_verifier(["--quick", "--operator-evidence", operator_path], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("operator", result.stdout)
+
+    def test_operator_evidence_rejects_unknown_scenario_and_status(self) -> None:
+        cases = [
+            (self.complete_operator_row(scenario_id="missing-scenario"), "missing-scenario"),
+            (self.complete_operator_row(result="waived"), "waived"),
+        ]
+        for row, expected in cases:
+            with self.subTest(expected=expected):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_complete_surface(root)
+                    operator_path = self.write_operator_evidence(root, [row])
+
+                    # Act
+                    result = self.run_verifier(["--quick", "--operator-evidence", operator_path], maybe_root=root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(expected, result.stdout)
+
+    def test_security_rejects_forbidden_generated_artifact_text(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            self.write_file(root, "build/ci-evidence/phase15/leak.json", "password_value\n")
+
+            # Act
+            result = self.run_verifier(["--security-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("password_value", result.stdout)
+
+    def test_security_rejects_non_local_overclaim_text(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            self.write_file(root, "build/ci-evidence/phase15/overclaim.json", "hardware verified locally\n")
+
+            # Act
+            result = self.run_verifier(["--security-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("hardware verified locally", result.stdout)
+
+    def test_operator_evidence_rejects_artifact_path_traversal(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            row = self.complete_operator_row(artifact_ref="../leak.log")
+            operator_path = self.write_operator_evidence(root, [row])
+
+            # Act
+            result = self.run_verifier(["--quick", "--operator-evidence", operator_path], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("cannot traverse", result.stdout)
 
 
 if __name__ == "__main__":
