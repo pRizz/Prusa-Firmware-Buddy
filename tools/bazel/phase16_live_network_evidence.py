@@ -181,11 +181,21 @@ FORBIDDEN_TEXT_PATTERNS = (
     ("api-key-phrase", re.compile(r"\bAPI key\b", re.IGNORECASE)),
     (
         "credential-assignment",
-        re.compile(r"(?:^|[\s,{])['\"]?(api[-_]?key|token|password|secret)['\"]?\s*[:=]\s*['\"]?[^'\"\s,}]+", re.IGNORECASE),
+        re.compile(
+            r"(?:^|[\s,{])['\"]?"
+            r"(api[-_]?key|(?:[A-Za-z0-9]+[-_])+(?:token|password|secret)|(?:token|password|secret)(?:[-_][A-Za-z0-9]+)?)"
+            r"['\"]?\s*[:=]\s*['\"]?[^'\"\s,}]+",
+            re.IGNORECASE,
+        ),
     ),
     (
         "credential-header-assignment",
-        re.compile(r"(?:^|[\s,{])['\"]?(authorization|cookie|set-cookie)['\"]?\s*[:=]\s*['\"]?[^'\"\n,}]+", re.IGNORECASE),
+        re.compile(
+            r"(?:^|[\s,{])['\"]?"
+            r"((?:proxy[-_])?authorization(?:[-_]header)?|(?:set[-_])?cookie(?:[-_]header)?)"
+            r"['\"]?\s*[:=]\s*['\"]?[^'\"\n,}]+",
+            re.IGNORECASE,
+        ),
     ),
     ("api-key-header", re.compile(r"\bx-api-key\b", re.IGNORECASE)),
     ("firmware-payload-marker", re.compile(r"\.(bin|bbf|dfu) payload\b", re.IGNORECASE)),

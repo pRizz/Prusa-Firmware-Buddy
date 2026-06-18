@@ -585,12 +585,20 @@ esac
             ("password: super-secret-value", "credential-assignment"),
             ('"api-key": "super-secret-value"', "credential-assignment"),
             ('"token": "super-secret-value"', "credential-assignment"),
+            ('"access_token": "super-secret-value"', "credential-assignment"),
+            ('"refresh_token": "super-secret-value"', "credential-assignment"),
+            ('"auth_token": "super-secret-value"', "credential-assignment"),
             ('"password": "super-secret-value"', "credential-assignment"),
             ('"secret": "super-secret-value"', "credential-assignment"),
+            ('"client_secret": "super-secret-value"', "credential-assignment"),
             ("Authorization = Bearer super-secret-value", "credential-header-assignment"),
             ('"Authorization": "Bearer super-secret-value"', "credential-header-assignment"),
+            ('"Proxy-Authorization": "Bearer super-secret-value"', "credential-header-assignment"),
+            ('"proxy_authorization": "Bearer super-secret-value"', "credential-header-assignment"),
             ('"Cookie": "session=super-secret-value"', "credential-header-assignment"),
             ('"Set-Cookie": "session=super-secret-value"', "credential-header-assignment"),
+            ('"set_cookie": "session=super-secret-value"', "credential-header-assignment"),
+            ('"cookie_header": "session=super-secret-value"', "credential-header-assignment"),
         ]
         for marker, expected_label in cases:
             with self.subTest(marker=marker):
