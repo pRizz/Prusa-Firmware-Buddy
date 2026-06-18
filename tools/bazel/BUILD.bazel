@@ -288,6 +288,50 @@ shell_binary(
 )
 
 filegroup(
+    name = "phase15_source_ref_manifests",
+    srcs = [
+        "manifests/phase6_safety_gates.json",
+        "manifests/phase7_storage_media.json",
+        "manifests/phase8_gui_workflows.json",
+        "manifests/phase8_display_layouts.json",
+        "manifests/phase10_auxiliary_controllers.json",
+        "manifests/phase10_mmu_transport.json",
+        "manifests/phase10_modbus_rs485.json",
+        "manifests/phase10_toolchanger_dock_offsets.json",
+        "manifests/phase10_auxiliary_build_update.json",
+        "manifests/phase11_cutover_readiness.json",
+        "manifests/phase11_parity_pyramid.json",
+        "manifests/phase11_reference_comparisons.json",
+        "manifests/phase11_requirement_evidence.json",
+        "manifests/phase11_retained_code_justifications.json",
+        "manifests/phase13_ci_evidence_contract.json",
+        "manifests/phase14_simulator_evidence_contract.json",
+    ],
+)
+
+shell_binary(
+    name = "phase15_verify",
+    src = "rust_workflow.sh",
+    data = [
+        "phase15_hardware_evidence.py",
+        "manifests/phase15_hardware_evidence_contract.json",
+        ":phase15_source_ref_manifests",
+        "//:phase15_hardware_evidence_docs",
+    ],
+)
+
+shell_binary(
+    name = "phase15_verify_tests",
+    src = "rust_workflow.sh",
+    data = [
+        "phase15_hardware_evidence.py",
+        "phase15_hardware_evidence_test.py",
+        "manifests/phase15_hardware_evidence_contract.json",
+        ":phase15_source_ref_manifests",
+    ],
+)
+
+filegroup(
     name = "unsafe_boundary_audit",
     srcs = ["manifests/unsafe_boundary_audit.json"],
 )

@@ -103,6 +103,24 @@ REQUIRED_ARTIFACT_KINDS = {
     "hardware-log-reference",
     "operator-evidence-input",
 }
+SOURCE_REF_MANIFESTS = [
+    "tools/bazel/manifests/phase6_safety_gates.json",
+    "tools/bazel/manifests/phase7_storage_media.json",
+    "tools/bazel/manifests/phase8_gui_workflows.json",
+    "tools/bazel/manifests/phase8_display_layouts.json",
+    "tools/bazel/manifests/phase10_auxiliary_controllers.json",
+    "tools/bazel/manifests/phase10_mmu_transport.json",
+    "tools/bazel/manifests/phase10_modbus_rs485.json",
+    "tools/bazel/manifests/phase10_toolchanger_dock_offsets.json",
+    "tools/bazel/manifests/phase10_auxiliary_build_update.json",
+    "tools/bazel/manifests/phase11_cutover_readiness.json",
+    "tools/bazel/manifests/phase11_parity_pyramid.json",
+    "tools/bazel/manifests/phase11_reference_comparisons.json",
+    "tools/bazel/manifests/phase11_requirement_evidence.json",
+    "tools/bazel/manifests/phase11_retained_code_justifications.json",
+    "tools/bazel/manifests/phase13_ci_evidence_contract.json",
+    "tools/bazel/manifests/phase14_simulator_evidence_contract.json",
+]
 REQUIRED_SCENARIO_FIELDS = [
     "id",
     "title",
@@ -457,6 +475,93 @@ def check_security(root: Path, output_dir: Path = DEFAULT_OUTPUT_DIR) -> None:
         raise VerificationError("\n".join(errors))
 
 
+def require_file_contains(root: Path, path: Path, needles: list[str]) -> list[str]:
+    try:
+        text = read_text(root, path)
+    except VerificationError as error:
+        return [str(error)]
+    return [f"{path.as_posix()} missing required wiring text: {needle}" for needle in needles if needle not in text]
+
+
+def check_wiring(root: Path) -> None:
+    errors: list[str] = []
+    phase15_manifest_srcs = [
+        Path(path).relative_to("tools/bazel").as_posix()
+        for path in SOURCE_REF_MANIFESTS
+    ]
+    errors.extend(
+        require_file_contains(
+            root,
+            Path("tools/bazel/BUILD.bazel"),
+            [
+                'name = "phase15_source_ref_manifests"',
+                'name = "phase15_verify"',
+                'name = "phase15_verify_tests"',
+                "phase15_hardware_evidence.py",
+                "phase15_hardware_evidence_test.py",
+                "phase15_hardware_evidence_contract.json",
+                ":phase15_source_ref_manifests",
+                "//:phase15_hardware_evidence_docs",
+                *phase15_manifest_srcs,
+            ],
+        )
+    )
+    errors.extend(
+        require_file_contains(
+            root,
+            Path("BUILD.bazel"),
+            [
+                'name = "phase15_hardware_evidence_docs"',
+                'name = "phase15_verify"',
+                'name = "phase15_verify_tests"',
+                ".planning/phases/15-hardware-safety-and-media-qualification/15-CONTEXT.md",
+                ".planning/phases/15-hardware-safety-and-media-qualification/15-RESEARCH.md",
+                ".planning/phases/15-hardware-safety-and-media-qualification/15-VALIDATION.md",
+                ".planning/phases/15-hardware-safety-and-media-qualification/15-01-PLAN.md",
+            ],
+        )
+    )
+    errors.extend(
+        require_file_contains(
+            root,
+            Path("tools/bazel/rust_workflow.sh"),
+            [
+                "phase15_verify)",
+                "python3 tools/bazel/phase15_hardware_evidence.py --wiring-only",
+                "python3 tools/bazel/phase15_hardware_evidence.py --quick",
+                "phase15_verify_tests)",
+                "python3 tools/bazel/phase15_hardware_evidence_test.py",
+            ],
+        )
+    )
+    errors.extend(
+        require_file_contains(
+            root,
+            Path("justfile"),
+            [
+                "phase15-verify:",
+                "bazel run //tools/bazel:phase15_verify_tests",
+                "bazel run //tools/bazel:phase15_verify",
+            ],
+        )
+    )
+    try:
+        just_lines = [line.strip() for line in read_text(root, "justfile").splitlines()]
+        just_tests_line = "bazel run //tools/bazel:phase15_verify_tests"
+        just_verify_line = "bazel run //tools/bazel:phase15_verify"
+        if just_tests_line not in just_lines:
+            errors.append("justfile missing exact phase15_verify_tests recipe line")
+        if just_verify_line not in just_lines:
+            errors.append("justfile missing exact phase15_verify recipe line")
+        if just_tests_line in just_lines and just_verify_line in just_lines:
+            if just_lines.index(just_tests_line) > just_lines.index(just_verify_line):
+                errors.append("justfile phase15-verify must run tests before verifier")
+    except VerificationError as error:
+        errors.append(str(error))
+    if errors:
+        raise VerificationError("\n".join(errors))
+
+
 def load_operator_evidence_path(root: Path, path: str | None) -> tuple[Path | None, dict[str, Any] | None]:
     if not path:
         return None, None
@@ -679,7 +784,8 @@ def main() -> int:
             check_security(ROOT, output_dir)
             print(f"Phase 15 hardware evidence written to {output_dir.as_posix()}")
         else:
-            raise VerificationError("wiring mode is not implemented yet")
+            check_wiring(ROOT)
+            print("Phase 15 hardware evidence wiring passed")
     except VerificationError as error:
         print(error, file=sys.stderr)
         return 1

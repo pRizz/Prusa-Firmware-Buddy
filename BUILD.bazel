@@ -118,6 +118,16 @@ filegroup(
 )
 
 filegroup(
+    name = "phase15_hardware_evidence_docs",
+    srcs = [
+        ".planning/phases/15-hardware-safety-and-media-qualification/15-CONTEXT.md",
+        ".planning/phases/15-hardware-safety-and-media-qualification/15-RESEARCH.md",
+        ".planning/phases/15-hardware-safety-and-media-qualification/15-VALIDATION.md",
+        ".planning/phases/15-hardware-safety-and-media-qualification/15-01-PLAN.md",
+    ],
+)
+
+filegroup(
     name = "phase7_storage_migration_fixtures",
     srcs = ["//tools/bazel:fixtures/phase7_storage/redacted_migration_catalog.json"],
 )
@@ -265,6 +275,16 @@ alias(
 alias(
     name = "phase14_verify_tests",
     actual = "//tools/bazel:phase14_verify_tests",
+)
+
+alias(
+    name = "phase15_verify",
+    actual = "//tools/bazel:phase15_verify",
+)
+
+alias(
+    name = "phase15_verify_tests",
+    actual = "//tools/bazel:phase15_verify_tests",
 )
 
 alias(

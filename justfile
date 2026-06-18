@@ -48,6 +48,10 @@ phase14-verify:
     bazel run //tools/bazel:phase14_verify_tests
     bazel run //tools/bazel:phase14_verify
 
+phase15-verify:
+    bazel run //tools/bazel:phase15_verify_tests
+    bazel run //tools/bazel:phase15_verify
+
 bazel-query:
     bazel query "//tools/bazel/... + //platforms/..."
 
