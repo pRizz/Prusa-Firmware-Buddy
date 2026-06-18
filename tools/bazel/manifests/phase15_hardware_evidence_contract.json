@@ -1,0 +1,1408 @@
+{
+  "artifact_name": "phase15-hardware-evidence",
+  "id": "phase15_hardware_evidence_contract",
+  "operator_input_schema": {
+    "allowed_results": [
+      "passed",
+      "failed",
+      "blocked-hardware-unavailable"
+    ],
+    "artifact_ref_root": "build/ci-evidence/phase15",
+    "required_fields": [
+      "device",
+      "printer_family",
+      "board",
+      "firmware_build",
+      "operator",
+      "timestamp",
+      "scenario_id",
+      "result",
+      "artifact_ref",
+      "residual_risk"
+    ]
+  },
+  "output_root": "build/ci-evidence/phase15",
+  "phase": "15-hardware-safety-and-media-qualification",
+  "phase_lifecycle_id": "15-2026-06-17T22-53-45",
+  "required_artifact_kinds": [
+    "machine-readable-run-manifest",
+    "normalized-scenario-results",
+    "redacted-hardware-summary",
+    "source-contract-snapshot",
+    "hardware-log-reference",
+    "operator-evidence-input"
+  ],
+  "scenarios": [
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "xbuddy-runtime",
+      "board": "XBUDDY",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-supported-printer-smoke-coreone-xbuddy.log",
+      "expected_failure_semantics": "Failure row names COREONE, XBuddy, firmware build, operator, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows COREONE boots, reaches ready state, exercises a representative smoke path, and records remaining hardware risk for the named firmware build.",
+      "id": "hard-supported-printer-smoke-coreone-xbuddy",
+      "media_surface": "none",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "COREONE",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-01"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-core-01",
+        "tools/bazel/manifests/phase11_parity_pyramid.json#pyramid-hardware-smoke-manual-gates",
+        "tools/bazel/manifests/phase14_simulator_evidence_contract.json#sim-startup-bootstrap-ready"
+      ],
+      "title": "COREONE XBuddy supported-printer smoke qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "CORE-01",
+        "CORE-02",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "none",
+      "board": "BUDDY",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-supported-printer-smoke-mini-buddy.log",
+      "expected_failure_semantics": "Failure row names MINI, Buddy board, firmware build, operator, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows MINI boots, reaches ready state, exercises representative printer smoke behavior, and records remaining hardware risk.",
+      "id": "hard-supported-printer-smoke-mini-buddy",
+      "media_surface": "none",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "MINI",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-01"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-core-01",
+        "tools/bazel/manifests/phase11_parity_pyramid.json#pyramid-hardware-smoke-manual-gates",
+        "tools/bazel/manifests/phase14_simulator_evidence_contract.json#sim-startup-bootstrap-ready"
+      ],
+      "title": "MINI Buddy supported-printer smoke qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "CORE-01",
+        "CORE-02",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "none",
+      "board": "XBUDDY",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-board-startup-readiness-mk4-xbuddy.log",
+      "expected_failure_semantics": "Failure row names MK4, XBuddy startup readiness, firmware build, operator, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows MK4 XBuddy starts, initializes expected tasks, reaches ready UI state, and records remaining board-startup risk.",
+      "id": "hard-board-startup-readiness-mk4-xbuddy",
+      "media_surface": "none",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "MK4",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-01"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-core-02",
+        "tools/bazel/manifests/phase14_simulator_evidence_contract.json#sim-task-readiness-home-wui",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-non-local-gates-identified"
+      ],
+      "title": "MK4 XBuddy board startup readiness qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "CORE-01",
+        "CORE-02",
+        "BASE-04"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "dwarf-and-modularbed",
+      "board": "XLBUDDY",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-board-startup-readiness-xl-xlbuddy-puppies.log",
+      "expected_failure_semantics": "Failure row names XL, XLBuddy, auxiliary controllers, firmware build, operator, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows XL XLBuddy starts with expected auxiliary-controller readiness signals and records remaining startup risk.",
+      "id": "hard-board-startup-readiness-xl-xlbuddy-puppies",
+      "media_surface": "none",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "XL",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-01",
+        "HARD-02"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase10_auxiliary_controllers.json#aux-runtime-state-contract",
+        "tools/bazel/manifests/phase10_auxiliary_build_update.json#startup-flashing-bootloader-gates",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-auxiliary-controller-flows"
+      ],
+      "title": "XL XLBuddy startup readiness with auxiliary controllers",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "CORE-01",
+        "CORE-02",
+        "BASE-04"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "none",
+      "board": "XBUDDY",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-supported-printer-smoke-mk35-xbuddy.log",
+      "expected_failure_semantics": "Failure row names MK3.5, XBuddy, firmware build, operator, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows MK3.5 boots, reaches ready state, exercises representative printer smoke behavior, and records remaining hardware risk.",
+      "id": "hard-supported-printer-smoke-mk35-xbuddy",
+      "media_surface": "none",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "MK3.5",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-01"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-core-01",
+        "tools/bazel/manifests/phase11_parity_pyramid.json#pyramid-hardware-smoke-manual-gates",
+        "tools/bazel/manifests/phase14_simulator_evidence_contract.json#sim-startup-bootstrap-ready"
+      ],
+      "title": "MK3.5 XBuddy supported-printer smoke qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "CORE-01",
+        "CORE-02",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "none",
+      "board": "XBUDDY",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-supported-printer-smoke-ix-xbuddy.log",
+      "expected_failure_semantics": "Failure row names iX, XBuddy, firmware build, operator, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows iX boots, reaches ready state, exercises representative printer smoke behavior, and records remaining hardware risk.",
+      "id": "hard-supported-printer-smoke-ix-xbuddy",
+      "media_surface": "none",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "iX",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-01"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-core-01",
+        "tools/bazel/manifests/phase11_parity_pyramid.json#pyramid-hardware-smoke-manual-gates",
+        "tools/bazel/manifests/phase14_simulator_evidence_contract.json#sim-startup-bootstrap-ready"
+      ],
+      "title": "iX XBuddy supported-printer smoke qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "CORE-01",
+        "CORE-02",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "xl-dev-kit",
+      "board": "XL_DEV_KIT_XLB",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-supported-printer-smoke-xl-dev-kit-xlb.log",
+      "expected_failure_semantics": "Failure row names XL_DEV_KIT, XL_DEV_KIT_XLB, firmware build, operator, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows XL_DEV_KIT boots on XL_DEV_KIT_XLB, reaches ready state, and records remaining hardware risk.",
+      "id": "hard-supported-printer-smoke-xl-dev-kit-xlb",
+      "media_surface": "none",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "XL_DEV_KIT",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-01"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-core-01",
+        "tools/bazel/manifests/phase11_parity_pyramid.json#pyramid-hardware-smoke-manual-gates",
+        "tools/bazel/manifests/phase10_auxiliary_build_update.json#startup-flashing-bootloader-gates"
+      ],
+      "title": "XL_DEV_KIT XL_DEV_KIT_XLB supported-printer smoke qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "CORE-01",
+        "CORE-02",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "dwarf",
+      "board": "DWARF",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-board-startup-readiness-dwarf.log",
+      "expected_failure_semantics": "Failure row names DWARF, firmware build, operator, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows DWARF auxiliary controller starts, communicates expected readiness, and records remaining board risk.",
+      "id": "hard-board-startup-readiness-dwarf",
+      "media_surface": "none",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "XL",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-01",
+        "HARD-02"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase10_auxiliary_controllers.json#aux-controller-family-dwarf",
+        "tools/bazel/manifests/phase10_auxiliary_build_update.json#aux-build-dwarf-external-project",
+        "tools/bazel/manifests/phase10_auxiliary_controllers.json#dwarf-runtime-fifo-loadcell-toolhead"
+      ],
+      "title": "DWARF auxiliary board startup readiness qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "BASE-04",
+        "CORE-02",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "modularbed",
+      "board": "MODULARBED",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-board-startup-readiness-modularbed.log",
+      "expected_failure_semantics": "Failure row names MODULARBED, firmware build, operator, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows MODULARBED auxiliary controller starts, communicates expected readiness, and records remaining board risk.",
+      "id": "hard-board-startup-readiness-modularbed",
+      "media_surface": "none",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "XL",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-01",
+        "HARD-02"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase10_auxiliary_controllers.json#aux-controller-family-modular-bed",
+        "tools/bazel/manifests/phase10_auxiliary_build_update.json#aux-build-modularbed-external-project",
+        "tools/bazel/manifests/phase10_auxiliary_controllers.json#modular-bed-runtime-bedlet-faults"
+      ],
+      "title": "MODULARBED auxiliary board startup readiness qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "BASE-04",
+        "CORE-02",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "xl-dev-kit",
+      "board": "XL_DEV_KIT_XLB",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-board-startup-readiness-xl-dev-kit-xlb.log",
+      "expected_failure_semantics": "Failure row names XL_DEV_KIT_XLB startup readiness, firmware build, operator, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows XL_DEV_KIT_XLB board startup reaches expected readiness signals and records remaining board risk.",
+      "id": "hard-board-startup-readiness-xl-dev-kit-xlb",
+      "media_surface": "none",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "XL_DEV_KIT",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-01"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase10_auxiliary_build_update.json#startup-flashing-bootloader-gates",
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-core-02",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-non-local-gates-identified"
+      ],
+      "title": "XL_DEV_KIT_XLB board startup readiness qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "CORE-01",
+        "CORE-02",
+        "BASE-04"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "none",
+      "board": "BUDDY",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-storage-usb-fatfs-removable-media.log",
+      "expected_failure_semantics": "Failure row names USB FatFs scenario, requirement IDs, device, board, firmware build, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows insert, mount, list, read, write/delete, safe removal, and residual media risk for the named firmware build.",
+      "id": "hard-storage-usb-fatfs-removable-media",
+      "media_surface": "usb-fatfs-removable-media",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "MINI",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-01",
+        "HARD-03"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase7_storage_media.json#filesystem-usb-fatfs",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-storage-migrations",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-non-local-gates-identified"
+      ],
+      "title": "USB FatFs removable-media physical qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-04",
+        "VERF-03",
+        "VERF-05"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "none",
+      "board": "XBUDDY",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-storage-internal-flash-littlefs.log",
+      "expected_failure_semantics": "Failure row names internal LittleFS scenario, requirement IDs, device, board, firmware build, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows internal LittleFS resource access, update behavior, recovery observation, and residual media risk for the named firmware build.",
+      "id": "hard-storage-internal-flash-littlefs",
+      "media_surface": "internal-littlefs",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "COREONE",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-03"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase7_storage_media.json#filesystem-internal-littlefs",
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-fatfs-littlefs",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-storage-migrations"
+      ],
+      "title": "Internal flash LittleFS physical qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-04",
+        "VERF-03",
+        "VERF-05"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "none",
+      "board": "XBUDDY",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-storage-bbf-littlefs-resource-image.log",
+      "expected_failure_semantics": "Failure row names BBF LittleFS scenario, requirement IDs, device, board, firmware build, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows BBF-adjacent LittleFS resource image behavior on target hardware and records remaining media risk.",
+      "id": "hard-storage-bbf-littlefs-resource-image",
+      "media_surface": "bbf-littlefs",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "MK4",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-03"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase7_storage_media.json#filesystem-bbf-littlefs",
+        "tools/bazel/manifests/phase14_simulator_evidence_contract.json#sim-storage-resource-wui-list-delete",
+        "tools/bazel/manifests/phase13_ci_evidence_contract.json#ciev-03-manifest-and-comparison-snapshots"
+      ],
+      "title": "BBF LittleFS resource image hardware qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-04",
+        "VERF-03",
+        "VERF-05"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "none",
+      "board": "XBUDDY",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-storage-eeprom-config-store.log",
+      "expected_failure_semantics": "Failure row names EEPROM config-store scenario, requirement IDs, device, board, firmware build, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows config-store write, reboot persistence, reset behavior, and remaining EEPROM media risk for the named firmware build.",
+      "id": "hard-storage-eeprom-config-store",
+      "media_surface": "eeprom-config-store",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "COREONE",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-03"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase7_storage_media.json#storage-driver-eeprom",
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-ifce-04",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-storage-migrations"
+      ],
+      "title": "EEPROM config-store persistence qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-04",
+        "BASE-03",
+        "VERF-05"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "debug",
+      "board": "XBUDDY",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-storage-semihosting.log",
+      "expected_failure_semantics": "Failure row names semihosting scenario, requirement IDs, device, board, firmware build, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows semihosting storage behavior in the approved debug setup and records remaining debug-media risk.",
+      "id": "hard-storage-semihosting",
+      "media_surface": "semihosting",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "MK4",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-03"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase7_storage_media.json#filesystem-semihosting",
+        "tools/bazel/manifests/phase7_storage_media.json#block-device-test-randomness",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-non-local-gates-identified"
+      ],
+      "title": "Semihosting storage qualification boundary",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-04",
+        "VERF-03",
+        "VERF-05"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "none",
+      "board": "XBUDDY",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-storage-root-libsysbase-dispatch.log",
+      "expected_failure_semantics": "Failure row names root/libsysbase dispatch scenario, requirement IDs, device, board, firmware build, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows root listing dispatches to expected mounted media surfaces and records remaining dispatch risk.",
+      "id": "hard-storage-root-libsysbase-dispatch",
+      "media_surface": "root-libsysbase-dispatch",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "COREONE",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-03"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase7_storage_media.json#filesystem-root-listing",
+        "tools/bazel/manifests/phase7_storage_media.json#libsysbase-devoptab-dispatch",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-storage-migrations"
+      ],
+      "title": "Root filesystem libsysbase dispatch qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-04",
+        "VERF-03",
+        "VERF-05"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "touch-and-encoder",
+      "board": "XBUDDY",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-ui-physical-input-encoder-touch.log",
+      "expected_failure_semantics": "Failure row names physical UI input scenario, requirement IDs, device, board, firmware build, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows encoder, button, and touch input reach expected UI states on physical display hardware and records remaining input risk.",
+      "id": "hard-ui-physical-input-encoder-touch",
+      "media_surface": "none",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "COREONE",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-01",
+        "HARD-02"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase8_gui_workflows.json#menu-settings-and-home-entry",
+        "tools/bazel/manifests/phase8_display_layouts.json#large-480x320-gui-defaults",
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-ifce-01"
+      ],
+      "title": "Physical encoder and touch UI input qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-01",
+        "IFCE-02",
+        "CORE-02"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "none",
+      "board": "XBUDDY",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-safety-watchdog-crash-recovery.log",
+      "expected_failure_semantics": "Failure row names watchdog/crash scenario, requirement IDs, device, board, firmware build, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows watchdog and crash-recovery behavior using redacted summaries and records remaining safety risk.",
+      "id": "hard-safety-watchdog-crash-recovery",
+      "media_surface": "none",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "COREONE",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-02"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase6_safety_gates.json#watchdog-and-crash-dump-boundary",
+        "tools/bazel/manifests/phase6_safety_gates.json#power-panic-recovery",
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-base-04"
+      ],
+      "title": "Watchdog and crash-recovery hardware qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "BASE-04",
+        "CORE-04",
+        "VERF-05"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "none",
+      "board": "XBUDDY",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-safety-thermal-motion-emergency-stop.log",
+      "expected_failure_semantics": "Failure row names thermal/motion emergency-stop scenario, requirement IDs, device, board, firmware build, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows thermal safety transitions, motion safe output, emergency-stop behavior, and remaining safety risk.",
+      "id": "hard-safety-thermal-motion-emergency-stop",
+      "media_surface": "none",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "COREONE",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-02"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase6_safety_gates.json#thermal-safety-transitions",
+        "tools/bazel/manifests/phase6_safety_gates.json#motion-safe-output-and-emergency-stop",
+        "tools/bazel/manifests/phase11_requirement_evidence.json#req-core-04"
+      ],
+      "title": "Thermal, motion, and emergency-stop hardware qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "CORE-04",
+        "BASE-04",
+        "VERF-05"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "none",
+      "board": "XBUDDY",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-safe-output-fatal-redscreen-bsod.log",
+      "expected_failure_semantics": "Failure row names fatal safe-output scenario, requirement IDs, device, board, firmware build, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows fatal error presentation, safe-output behavior, and remaining safety risk using redacted summaries only.",
+      "id": "hard-safe-output-fatal-redscreen-bsod",
+      "media_surface": "none",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "COREONE",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-02"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase6_safety_gates.json#fatal-redscreen-bsod-assert",
+        "tools/bazel/manifests/phase8_gui_workflows.json#warning-redscreen-error-surfaces",
+        "tools/bazel/manifests/phase8_display_layouts.json#redscreen-bsod-error-layout"
+      ],
+      "title": "Fatal redscreen and safe-output hardware qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "CORE-04",
+        "BASE-04",
+        "IFCE-01"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "mmu",
+      "board": "XBUDDY",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-mmu-fault-handling.log",
+      "expected_failure_semantics": "Failure row names MMU fault scenario, requirement IDs, device, board, firmware build, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows MMU transport fault handling, availability state, recovery observation, and remaining MMU risk.",
+      "id": "hard-mmu-fault-handling",
+      "media_surface": "none",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "MK4",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-02"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase10_mmu_transport.json#mmu2-uart-transport",
+        "tools/bazel/manifests/phase10_mmu_transport.json#mmu2-puppy-modbus-bridge",
+        "tools/bazel/manifests/phase10_mmu_transport.json#mmu2-usemmu-config-runtime-state"
+      ],
+      "title": "MMU transport and fault-handling qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "CORE-04",
+        "IFCE-05",
+        "VERF-05"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "rs485-modbus",
+      "board": "XLBUDDY",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-rs485-modbus-fault-handling.log",
+      "expected_failure_semantics": "Failure row names RS485/Modbus fault scenario, requirement IDs, device, board, firmware build, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows retry, timeout, and fault handling behavior across the RS485/Modbus path and records remaining bus risk.",
+      "id": "hard-rs485-modbus-fault-handling",
+      "media_surface": "none",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "XL",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-02"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase10_modbus_rs485.json#puppy-modbus-master-request-retry-timeout",
+        "tools/bazel/manifests/phase10_modbus_rs485.json#puppy-rs485-flow-control",
+        "tools/bazel/manifests/phase10_modbus_rs485.json#puppy-modbus-register-block-limits"
+      ],
+      "title": "RS485 and Modbus fault-handling qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "CORE-04",
+        "IFCE-05",
+        "VERF-05"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "toolchanger",
+      "board": "XLBUDDY",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-toolchanger-dock-offset-calibration.log",
+      "expected_failure_semantics": "Failure row names toolchanger dock/offset scenario, requirement IDs, device, board, firmware build, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows dock identity, offset calibration path, recovery observation, and remaining toolchanger risk.",
+      "id": "hard-toolchanger-dock-offset-calibration",
+      "media_surface": "none",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "XL",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-02"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase10_toolchanger_dock_offsets.json#toolchanger-dock-identity-dwarf1-6",
+        "tools/bazel/manifests/phase10_toolchanger_dock_offsets.json#tool-offset-selftest-flow",
+        "tools/bazel/manifests/phase10_toolchanger_dock_offsets.json#tool-offset-nozzle-settings-ui"
+      ],
+      "title": "Toolchanger dock identity and offset calibration qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "CORE-04",
+        "IFCE-02",
+        "VERF-05"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "xbuddy-extension",
+      "board": "XBUDDY_EXTENSION",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-auxiliary-controller-combination-coreone-xbe.log",
+      "expected_failure_semantics": "Failure row names COREONE/XBuddy Extension combination, firmware build, operator, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows COREONE with XBuddy Extension reaches expected auxiliary-controller state and records remaining combination risk.",
+      "id": "hard-auxiliary-controller-combination-coreone-xbe",
+      "media_surface": "none",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "COREONE",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-01",
+        "HARD-02"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase10_auxiliary_controllers.json#aux-controller-family-xbuddy-extension",
+        "tools/bazel/manifests/phase10_auxiliary_controllers.json#xbuddy-extension-runtime-h503-special",
+        "tools/bazel/manifests/phase10_auxiliary_build_update.json#aux-build-xbuddy-extension-external-project"
+      ],
+      "title": "COREONE with XBuddy Extension auxiliary-controller qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "CORE-02",
+        "CORE-04",
+        "IFCE-05"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-hardware-input",
+        "manual-hardware-required",
+        "blocked-hardware-unavailable",
+        "not-applicable",
+        "passed",
+        "failed"
+      ],
+      "auxiliary_surface": "dwarf-and-modularbed",
+      "board": "XLBUDDY",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-auxiliary-controller-combination-xl-dwarf-modularbed.log",
+      "expected_failure_semantics": "Failure row names XL/DWARF/MODULARBED combination, firmware build, operator, artifact ref, result, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows XL with DWARF and MODULARBED controllers reaches expected combined state and records remaining combination risk.",
+      "id": "hard-auxiliary-controller-combination-xl-dwarf-modularbed",
+      "media_surface": "none",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "XL",
+      "proof_scope": "hardware-observation",
+      "requirement_ids": [
+        "HARD-01",
+        "HARD-02"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "hardware-log-reference",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase10_auxiliary_controllers.json#aux-controller-family-dwarf",
+        "tools/bazel/manifests/phase10_auxiliary_controllers.json#aux-controller-family-modular-bed",
+        "tools/bazel/manifests/phase10_auxiliary_controllers.json#aux-runtime-state-contract"
+      ],
+      "title": "XL with DWARF and MODULARBED auxiliary-controller qualification",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "CORE-02",
+        "CORE-04",
+        "IFCE-05"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "source-contract-passed",
+        "failed",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "auxiliary_surface": "evidence-boundary",
+      "board": "XBUDDY",
+      "expected_artifact_path": "build/ci-evidence/phase15/logs/hard-contract-traceability-and-redaction-boundary.log",
+      "expected_failure_semantics": "Failure row names source-contract boundary, missing traceability, redaction rejection, overclaim rejection, artifact ref, and residual risk.",
+      "expected_pass_semantics": "Verifier evidence shows Phase 15 source refs resolve, generated summaries are redacted, and non-local conclusions remain outside local checks.",
+      "id": "hard-contract-traceability-and-redaction-boundary",
+      "media_surface": "none",
+      "operator_metadata_required": [
+        "device",
+        "printer_family",
+        "board",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "artifact_ref",
+        "residual_risk"
+      ],
+      "printer_family": "COREONE",
+      "proof_scope": "source-contract",
+      "requirement_ids": [
+        "HARD-01",
+        "HARD-02",
+        "HARD-03"
+      ],
+      "residual_risk_required": true,
+      "retained_artifact_kind": "source-contract-snapshot",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase11_cutover_readiness.json#concern-phase11-secret-redaction",
+        "tools/bazel/manifests/phase13_ci_evidence_contract.json#ciev-03-redacted-summary",
+        "tools/bazel/manifests/phase14_simulator_evidence_contract.json#sim-traceability-non-simulator-boundaries"
+      ],
+      "title": "Source-contract traceability and redaction boundary",
+      "unsupported_claims": [
+        "claim-hardware-proof-from-local-checks",
+        "claim-release-readiness",
+        "claim-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "VERF-03",
+        "VERF-05",
+        "BASE-04"
+      ]
+    }
+  ],
+  "schema_version": "1",
+  "status_vocabulary": [
+    "passed",
+    "failed",
+    "pending-hardware-input",
+    "manual-hardware-required",
+    "blocked-hardware-unavailable",
+    "not-applicable",
+    "source-contract-passed",
+    "rejected-redaction",
+    "rejected-overclaim"
+  ]
+}
