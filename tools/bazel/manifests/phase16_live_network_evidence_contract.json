@@ -1,0 +1,1295 @@
+{
+  "artifact_name": "phase16-live-network-evidence",
+  "id": "phase16_live_network_evidence_contract",
+  "operator_input_schema": {
+    "allowed_results": [
+      "passed",
+      "failed",
+      "manual-live-service-required",
+      "controlled-service-required",
+      "blocked-credentials-unavailable",
+      "blocked-endpoint-unavailable",
+      "not-applicable-with-justification"
+    ],
+    "artifact_ref_root": "build/ci-evidence/phase16",
+    "required_fields": [
+      "device",
+      "firmware_build",
+      "operator",
+      "timestamp",
+      "scenario_id",
+      "result",
+      "evidence_type",
+      "service_surface",
+      "mode",
+      "artifact_refs",
+      "redaction_summary",
+      "residual_risk"
+    ]
+  },
+  "output_root": "build/ci-evidence/phase16",
+  "phase": "16-live-network-and-transfer-qualification",
+  "phase_lifecycle_id": "16-2026-06-18T01-09-34",
+  "required_artifact_kinds": [
+    "machine-readable-run-manifest",
+    "normalized-scenario-results",
+    "redacted-network-summary",
+    "source-contract-snapshot",
+    "live-log-reference",
+    "operator-evidence-input",
+    "external-artifact-reference"
+  ],
+  "scenarios": [
+    {
+      "allowed_statuses": [
+        "pending-live-input",
+        "manual-live-service-required",
+        "controlled-service-required",
+        "blocked-credentials-unavailable",
+        "blocked-endpoint-unavailable",
+        "not-applicable-with-justification",
+        "passed",
+        "failed"
+      ],
+      "credential_boundary": "connect-token-fingerprint-registration-code-redacted",
+      "expected_artifact_path": "build/ci-evidence/phase16/logs/live-connect-registration-token-fingerprint.log",
+      "expected_failure_semantics": "Failure row names scenario, requirement IDs, service surface, mode, device/build, artifact refs, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows registration flow reaches service-accepted state with token/fingerprint behavior summarized through redacted metadata only.",
+      "id": "live-connect-registration-token-fingerprint",
+      "mode": "live-or-controlled-service",
+      "operator_metadata_required": [
+        "device",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "evidence_type",
+        "service_surface",
+        "mode",
+        "artifact_refs",
+        "redaction_summary",
+        "residual_risk"
+      ],
+      "proof_scope": "live-service-observation",
+      "redaction_required": true,
+      "required_input_kind": "approved-connect-service-or-controlled-compatible-service",
+      "requirement_ids": [
+        "LIVE-01",
+        "LIVE-03"
+      ],
+      "residual_non_live_gates": [
+        "release-candidate-artifact-and-signing",
+        "retained-code-acceptance",
+        "final-reference-demotion-review"
+      ],
+      "retained_artifact_kind": "live-log-reference",
+      "service_surface": "connect-registration",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase9_connect_contracts.json#connect-registration-token-fingerprint",
+        "tools/bazel/manifests/phase11_parity_pyramid.json#pyramid-network-tls-api-checks",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-non-local-gates-identified"
+      ],
+      "source_doc_refs": [],
+      "title": "Connect registration, token, and fingerprint live qualification",
+      "unsupported_claims": [
+        "claim-live-proof-from-dry-run",
+        "claim-production-connect-validated-without-operator-evidence",
+        "claim-final-cutover-or-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-02",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-live-input",
+        "manual-live-service-required",
+        "controlled-service-required",
+        "blocked-credentials-unavailable",
+        "blocked-endpoint-unavailable",
+        "not-applicable-with-justification",
+        "passed",
+        "failed"
+      ],
+      "credential_boundary": "connect-telemetry-payloads-redacted",
+      "expected_artifact_path": "build/ci-evidence/phase16/logs/live-connect-telemetry-events.log",
+      "expected_failure_semantics": "Failure row identifies telemetry event class, device/build, service mode, artifact refs, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence summarizes telemetry/event acceptance through redacted counters and event classes only.",
+      "id": "live-connect-telemetry-events",
+      "mode": "live-or-controlled-service",
+      "operator_metadata_required": [
+        "device",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "evidence_type",
+        "service_surface",
+        "mode",
+        "artifact_refs",
+        "redaction_summary",
+        "residual_risk"
+      ],
+      "proof_scope": "live-service-observation",
+      "redaction_required": true,
+      "required_input_kind": "approved-connect-service-or-controlled-compatible-service",
+      "requirement_ids": [
+        "LIVE-01"
+      ],
+      "residual_non_live_gates": [
+        "release-candidate-artifact-and-signing",
+        "retained-code-acceptance",
+        "final-reference-demotion-review"
+      ],
+      "retained_artifact_kind": "live-log-reference",
+      "service_surface": "connect-telemetry-events",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase9_connect_contracts.json#connect-telemetry-events",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-network-tls-api-behavior",
+        "tools/bazel/manifests/phase14_simulator_evidence_contract.json#sim-gcode-file-print-telemetry"
+      ],
+      "source_doc_refs": [],
+      "title": "Connect telemetry and event live qualification",
+      "unsupported_claims": [
+        "claim-live-proof-from-dry-run",
+        "claim-telemetry-payload-retention",
+        "claim-final-cutover-or-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-02",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-live-input",
+        "manual-live-service-required",
+        "controlled-service-required",
+        "blocked-credentials-unavailable",
+        "blocked-endpoint-unavailable",
+        "not-applicable-with-justification",
+        "passed",
+        "failed"
+      ],
+      "credential_boundary": "connect-command-channel-payloads-redacted",
+      "expected_artifact_path": "build/ci-evidence/phase16/logs/live-connect-websocket-command-channel.log",
+      "expected_failure_semantics": "Failure row names command channel path, response class, device/build, artifact refs, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence summarizes WebSocket command-channel acceptance and rejection classes without retaining command payloads.",
+      "id": "live-connect-websocket-command-channel",
+      "mode": "live-or-controlled-service",
+      "operator_metadata_required": [
+        "device",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "evidence_type",
+        "service_surface",
+        "mode",
+        "artifact_refs",
+        "redaction_summary",
+        "residual_risk"
+      ],
+      "proof_scope": "live-service-observation",
+      "redaction_required": true,
+      "required_input_kind": "approved-connect-service-or-controlled-compatible-service",
+      "requirement_ids": [
+        "LIVE-01"
+      ],
+      "residual_non_live_gates": [
+        "release-candidate-artifact-and-signing",
+        "retained-code-acceptance",
+        "final-reference-demotion-review"
+      ],
+      "retained_artifact_kind": "live-log-reference",
+      "service_surface": "connect-command-channel",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase9_connect_contracts.json#connect-command-polling-websocket",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-network-tls-api-behavior",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-non-local-gates-identified"
+      ],
+      "source_doc_refs": [],
+      "title": "Connect WebSocket command-channel live qualification",
+      "unsupported_claims": [
+        "claim-live-proof-from-dry-run",
+        "claim-command-payload-retention",
+        "claim-final-cutover-or-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-02",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-live-input",
+        "manual-live-service-required",
+        "controlled-service-required",
+        "blocked-credentials-unavailable",
+        "blocked-endpoint-unavailable",
+        "not-applicable-with-justification",
+        "passed",
+        "failed"
+      ],
+      "credential_boundary": "connect-proxy-endpoint-and-auth-limits-redacted",
+      "expected_artifact_path": "build/ci-evidence/phase16/logs/live-connect-proxy-limitation-tunnel.log",
+      "expected_failure_semantics": "Failure row names proxy fixture, TLS mode, documented limitation, artifact refs, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence shows the documented proxy boundary using redacted endpoint metadata and names unsupported proxy behaviors explicitly.",
+      "id": "live-connect-proxy-limitation-tunnel",
+      "mode": "live-or-controlled-service",
+      "operator_metadata_required": [
+        "device",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "evidence_type",
+        "service_surface",
+        "mode",
+        "artifact_refs",
+        "redaction_summary",
+        "residual_risk"
+      ],
+      "proof_scope": "live-service-observation",
+      "redaction_required": true,
+      "required_input_kind": "proxy-fixture-with-approved-connect-or-controlled-service",
+      "requirement_ids": [
+        "LIVE-01",
+        "LIVE-03"
+      ],
+      "residual_non_live_gates": [
+        "release-candidate-artifact-and-signing",
+        "retained-code-acceptance",
+        "final-reference-demotion-review"
+      ],
+      "retained_artifact_kind": "live-log-reference",
+      "service_surface": "connect-proxy",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase9_connect_contracts.json#connect-proxy-minimal-limitations",
+        "tools/bazel/manifests/phase9_network_concern_dispositions.json#concern-phase9-proxy-limitations"
+      ],
+      "source_doc_refs": [
+        "doc/proxy_support.md#Minimal proxy support"
+      ],
+      "title": "Connect proxy limitation and tunnel boundary qualification",
+      "unsupported_claims": [
+        "claim-live-proof-from-dry-run",
+        "claim-proxy-full-support",
+        "claim-proxy-authentication-support",
+        "claim-final-cutover-or-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-02",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-live-input",
+        "manual-live-service-required",
+        "controlled-service-required",
+        "blocked-credentials-unavailable",
+        "blocked-endpoint-unavailable",
+        "not-applicable-with-justification",
+        "passed",
+        "failed"
+      ],
+      "credential_boundary": "connect-transfer-url-and-payload-redacted",
+      "expected_artifact_path": "build/ci-evidence/phase16/logs/live-connect-transfer-download-command.log",
+      "expected_failure_semantics": "Failure row names transfer command source, range/resume class, artifact refs, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence summarizes Connect-initiated transfer acceptance, byte counts, and range behavior using redacted references only.",
+      "id": "live-connect-transfer-download-command",
+      "mode": "live-or-controlled-service",
+      "operator_metadata_required": [
+        "device",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "evidence_type",
+        "service_surface",
+        "mode",
+        "artifact_refs",
+        "redaction_summary",
+        "residual_risk"
+      ],
+      "proof_scope": "live-service-observation",
+      "redaction_required": true,
+      "required_input_kind": "approved-connect-service-transfer-command",
+      "requirement_ids": [
+        "LIVE-01",
+        "LIVE-03"
+      ],
+      "residual_non_live_gates": [
+        "release-candidate-artifact-and-signing",
+        "storage-media-hardware-evidence",
+        "retained-code-acceptance"
+      ],
+      "retained_artifact_kind": "live-log-reference",
+      "service_surface": "connect-transfer-download",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase9_connect_contracts.json#connect-transfer-download-integration",
+        "tools/bazel/manifests/phase9_transfer_contracts.json#transfer-connect-command-initiation",
+        "tools/bazel/manifests/phase9_transfer_contracts.json#transfer-range-request"
+      ],
+      "source_doc_refs": [],
+      "title": "Connect transfer download-command live qualification",
+      "unsupported_claims": [
+        "claim-live-proof-from-dry-run",
+        "claim-transfer-payload-retention",
+        "claim-release-artifact-or-signing-proof"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-02",
+        "IFCE-05",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-live-input",
+        "manual-live-service-required",
+        "controlled-service-required",
+        "blocked-credentials-unavailable",
+        "blocked-endpoint-unavailable",
+        "not-applicable-with-justification",
+        "passed",
+        "failed"
+      ],
+      "credential_boundary": "wui-api-request-response-metadata-redacted",
+      "expected_artifact_path": "build/ci-evidence/phase16/logs/live-wui-prusalink-api-v1.log",
+      "expected_failure_semantics": "Failure row names API route family, auth mode, device/build, artifact refs, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence summarizes PrusaLink API v1 route outcomes through redacted status classes and fixture names.",
+      "id": "live-wui-prusalink-api-v1",
+      "mode": "live-or-controlled-service",
+      "operator_metadata_required": [
+        "device",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "evidence_type",
+        "service_surface",
+        "mode",
+        "artifact_refs",
+        "redaction_summary",
+        "residual_risk"
+      ],
+      "proof_scope": "live-service-observation",
+      "redaction_required": true,
+      "required_input_kind": "wui-capable-printer-or-controlled-service",
+      "requirement_ids": [
+        "LIVE-02"
+      ],
+      "residual_non_live_gates": [
+        "release-candidate-artifact-and-signing",
+        "storage-media-hardware-evidence",
+        "retained-code-acceptance"
+      ],
+      "retained_artifact_kind": "live-log-reference",
+      "service_surface": "prusalink-api-v1",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase9_wui_contracts.json#prusalink-api-v1-status-job-files-transfer",
+        "tools/bazel/manifests/phase14_simulator_evidence_contract.json#sim-storage-resource-wui-list-delete",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-network-tls-api-behavior"
+      ],
+      "source_doc_refs": [],
+      "title": "PrusaLink WUI API v1 live qualification",
+      "unsupported_claims": [
+        "claim-live-proof-from-dry-run",
+        "claim-auth-secret-retention",
+        "claim-final-cutover-or-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-02",
+        "IFCE-05",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-live-input",
+        "manual-live-service-required",
+        "controlled-service-required",
+        "blocked-credentials-unavailable",
+        "blocked-endpoint-unavailable",
+        "not-applicable-with-justification",
+        "passed",
+        "failed"
+      ],
+      "credential_boundary": "wui-digest-credentials-and-nonce-redacted",
+      "expected_artifact_path": "build/ci-evidence/phase16/logs/live-wui-digest-auth.log",
+      "expected_failure_semantics": "Failure row names digest challenge class, device/build, artifact refs, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence summarizes digest authentication success, stale nonce, and rejection classes without credential material.",
+      "id": "live-wui-digest-auth",
+      "mode": "live-or-controlled-service",
+      "operator_metadata_required": [
+        "device",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "evidence_type",
+        "service_surface",
+        "mode",
+        "artifact_refs",
+        "redaction_summary",
+        "residual_risk"
+      ],
+      "proof_scope": "live-service-observation",
+      "redaction_required": true,
+      "required_input_kind": "wui-auth-fixture-with-redacted-credentials",
+      "requirement_ids": [
+        "LIVE-02",
+        "LIVE-03"
+      ],
+      "residual_non_live_gates": [
+        "release-candidate-artifact-and-signing",
+        "retained-code-acceptance",
+        "final-reference-demotion-review"
+      ],
+      "retained_artifact_kind": "live-log-reference",
+      "service_surface": "wui-digest-auth",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase9_wui_contracts.json#wui-digest-auth-nonce-stale",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#concern-phase11-secret-redaction"
+      ],
+      "source_doc_refs": [],
+      "title": "WUI digest authentication live qualification",
+      "unsupported_claims": [
+        "claim-live-proof-from-dry-run",
+        "claim-auth-secret-retention",
+        "claim-final-cutover-or-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-02",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-live-input",
+        "manual-live-service-required",
+        "controlled-service-required",
+        "blocked-credentials-unavailable",
+        "blocked-endpoint-unavailable",
+        "not-applicable-with-justification",
+        "passed",
+        "failed"
+      ],
+      "credential_boundary": "wui-api-key-header-redacted",
+      "expected_artifact_path": "build/ci-evidence/phase16/logs/live-wui-api-key-auth.log",
+      "expected_failure_semantics": "Failure row names API-key route class, auth result, artifact refs, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence summarizes API-key authentication success and rejection classes with redacted header metadata.",
+      "id": "live-wui-api-key-auth",
+      "mode": "live-or-controlled-service",
+      "operator_metadata_required": [
+        "device",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "evidence_type",
+        "service_surface",
+        "mode",
+        "artifact_refs",
+        "redaction_summary",
+        "residual_risk"
+      ],
+      "proof_scope": "live-service-observation",
+      "redaction_required": true,
+      "required_input_kind": "wui-auth-fixture-with-redacted-api-key",
+      "requirement_ids": [
+        "LIVE-02",
+        "LIVE-03"
+      ],
+      "residual_non_live_gates": [
+        "release-candidate-artifact-and-signing",
+        "retained-code-acceptance",
+        "final-reference-demotion-review"
+      ],
+      "retained_artifact_kind": "live-log-reference",
+      "service_surface": "wui-api-key-auth",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase9_wui_contracts.json#wui-api-key-auth",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#concern-phase11-secret-redaction"
+      ],
+      "source_doc_refs": [],
+      "title": "WUI API-key authentication live qualification",
+      "unsupported_claims": [
+        "claim-live-proof-from-dry-run",
+        "claim-auth-secret-retention",
+        "claim-final-cutover-or-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-02",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-live-input",
+        "manual-live-service-required",
+        "controlled-service-required",
+        "blocked-credentials-unavailable",
+        "blocked-endpoint-unavailable",
+        "not-applicable-with-justification",
+        "passed",
+        "failed"
+      ],
+      "credential_boundary": "sntp-server-and-time-sample-redacted",
+      "expected_artifact_path": "build/ci-evidence/phase16/logs/live-network-sntp-client.log",
+      "expected_failure_semantics": "Failure row names SNTP server fixture, time result class, artifact refs, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence summarizes SNTP synchronization behavior with redacted server fixture metadata.",
+      "id": "live-network-sntp-client",
+      "mode": "live-or-controlled-service",
+      "operator_metadata_required": [
+        "device",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "evidence_type",
+        "service_surface",
+        "mode",
+        "artifact_refs",
+        "redaction_summary",
+        "residual_risk"
+      ],
+      "proof_scope": "live-service-observation",
+      "redaction_required": true,
+      "required_input_kind": "network-lab-sntp-fixture",
+      "requirement_ids": [
+        "LIVE-02"
+      ],
+      "residual_non_live_gates": [
+        "release-candidate-artifact-and-signing",
+        "hardware-network-fixture-coverage",
+        "retained-code-acceptance"
+      ],
+      "retained_artifact_kind": "live-log-reference",
+      "service_surface": "sntp-client",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase9_network_service_contracts.json#sntp-client-default-server",
+        "tools/bazel/manifests/phase14_simulator_evidence_contract.json#sim-task-readiness-home-wui"
+      ],
+      "source_doc_refs": [],
+      "title": "SNTP client live network qualification",
+      "unsupported_claims": [
+        "claim-live-proof-from-dry-run",
+        "claim-time-service-production-proof",
+        "claim-final-cutover-or-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-02",
+        "BASE-04",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-live-input",
+        "manual-live-service-required",
+        "controlled-service-required",
+        "blocked-credentials-unavailable",
+        "blocked-endpoint-unavailable",
+        "not-applicable-with-justification",
+        "passed",
+        "failed"
+      ],
+      "credential_boundary": "mdns-hostname-and-network-metadata-redacted",
+      "expected_artifact_path": "build/ci-evidence/phase16/logs/live-network-mdns-announcement.log",
+      "expected_failure_semantics": "Failure row names mDNS fixture, announcement result, artifact refs, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence summarizes mDNS announcement visibility through redacted network metadata and fixture names.",
+      "id": "live-network-mdns-announcement",
+      "mode": "live-or-controlled-service",
+      "operator_metadata_required": [
+        "device",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "evidence_type",
+        "service_surface",
+        "mode",
+        "artifact_refs",
+        "redaction_summary",
+        "residual_risk"
+      ],
+      "proof_scope": "live-service-observation",
+      "redaction_required": true,
+      "required_input_kind": "network-lab-mdns-fixture",
+      "requirement_ids": [
+        "LIVE-02"
+      ],
+      "residual_non_live_gates": [
+        "release-candidate-artifact-and-signing",
+        "hardware-network-fixture-coverage",
+        "retained-code-acceptance"
+      ],
+      "retained_artifact_kind": "live-log-reference",
+      "service_surface": "mdns-responder",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase9_network_service_contracts.json#mdns-optional-announcement",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-non-local-gates-identified"
+      ],
+      "source_doc_refs": [],
+      "title": "mDNS announcement live network qualification",
+      "unsupported_claims": [
+        "claim-live-proof-from-dry-run",
+        "claim-production-lan-discovery-proof",
+        "claim-final-cutover-or-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-02",
+        "BASE-04",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-live-input",
+        "manual-live-service-required",
+        "controlled-service-required",
+        "blocked-credentials-unavailable",
+        "blocked-endpoint-unavailable",
+        "not-applicable-with-justification",
+        "passed",
+        "failed"
+      ],
+      "credential_boundary": "syslog-metrics-destination-and-payloads-redacted",
+      "expected_artifact_path": "build/ci-evidence/phase16/logs/live-network-syslog-metrics-udp.log",
+      "expected_failure_semantics": "Failure row names collector fixture, UDP delivery class, artifact refs, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence summarizes syslog and metrics UDP delivery with redacted collector and sample-class metadata.",
+      "id": "live-network-syslog-metrics-udp",
+      "mode": "live-or-controlled-service",
+      "operator_metadata_required": [
+        "device",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "evidence_type",
+        "service_surface",
+        "mode",
+        "artifact_refs",
+        "redaction_summary",
+        "residual_risk"
+      ],
+      "proof_scope": "live-service-observation",
+      "redaction_required": true,
+      "required_input_kind": "network-lab-syslog-metrics-collector",
+      "requirement_ids": [
+        "LIVE-02"
+      ],
+      "residual_non_live_gates": [
+        "release-candidate-artifact-and-signing",
+        "hardware-network-fixture-coverage",
+        "retained-code-acceptance"
+      ],
+      "retained_artifact_kind": "live-log-reference",
+      "service_surface": "syslog-and-metrics",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase9_network_service_contracts.json#metrics-runtime-config-udp",
+        "tools/bazel/manifests/phase9_network_service_contracts.json#metrics-line-protocol-throttling",
+        "tools/bazel/manifests/phase9_network_service_contracts.json#syslog-udp-destination"
+      ],
+      "source_doc_refs": [
+        "doc/metrics.md#Metrics"
+      ],
+      "title": "Syslog and metrics UDP live network qualification",
+      "unsupported_claims": [
+        "claim-live-proof-from-dry-run",
+        "claim-metrics-payload-retention",
+        "claim-final-cutover-or-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-02",
+        "BASE-04",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-live-input",
+        "manual-live-service-required",
+        "controlled-service-required",
+        "blocked-credentials-unavailable",
+        "blocked-endpoint-unavailable",
+        "not-applicable-with-justification",
+        "passed",
+        "failed"
+      ],
+      "credential_boundary": "wui-upload-filename-and-payload-redacted",
+      "expected_artifact_path": "build/ci-evidence/phase16/logs/live-wui-upload-transfer.log",
+      "expected_failure_semantics": "Failure row names upload fixture, conflict class, artifact refs, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence summarizes WUI upload transfer acceptance, rejection, and conflict classes without retaining payloads.",
+      "id": "live-wui-upload-transfer",
+      "mode": "live-or-controlled-service",
+      "operator_metadata_required": [
+        "device",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "evidence_type",
+        "service_surface",
+        "mode",
+        "artifact_refs",
+        "redaction_summary",
+        "residual_risk"
+      ],
+      "proof_scope": "live-service-observation",
+      "redaction_required": true,
+      "required_input_kind": "wui-upload-transfer-fixture",
+      "requirement_ids": [
+        "LIVE-02",
+        "LIVE-03"
+      ],
+      "residual_non_live_gates": [
+        "release-candidate-artifact-and-signing",
+        "storage-media-hardware-evidence",
+        "retained-code-acceptance"
+      ],
+      "retained_artifact_kind": "live-log-reference",
+      "service_surface": "wui-upload-transfer",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase9_wui_contracts.json#wui-upload-transfer-renderer",
+        "tools/bazel/manifests/phase9_transfer_contracts.json#transfer-wui-upload-api-integration",
+        "tools/bazel/manifests/phase14_simulator_evidence_contract.json#sim-transfer-negative-and-conflict"
+      ],
+      "source_doc_refs": [],
+      "title": "WUI upload transfer live qualification",
+      "unsupported_claims": [
+        "claim-live-proof-from-dry-run",
+        "claim-transfer-payload-retention",
+        "claim-release-artifact-or-signing-proof"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-02",
+        "IFCE-05",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-live-input",
+        "manual-live-service-required",
+        "controlled-service-required",
+        "blocked-credentials-unavailable",
+        "blocked-endpoint-unavailable",
+        "not-applicable-with-justification",
+        "passed",
+        "failed"
+      ],
+      "credential_boundary": "tls-session-certificate-and-endpoint-metadata-redacted",
+      "expected_artifact_path": "build/ci-evidence/phase16/logs/live-tls-certificate-verification.log",
+      "expected_failure_semantics": "Failure row names TLS policy fixture, certificate class, artifact refs, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence summarizes TLS verification behavior and certificate policy outcomes through redacted metadata.",
+      "id": "live-tls-certificate-verification",
+      "mode": "live-or-controlled-service",
+      "operator_metadata_required": [
+        "device",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "evidence_type",
+        "service_surface",
+        "mode",
+        "artifact_refs",
+        "redaction_summary",
+        "residual_risk"
+      ],
+      "proof_scope": "live-service-observation",
+      "redaction_required": true,
+      "required_input_kind": "tls-service-or-controlled-certificate-fixture",
+      "requirement_ids": [
+        "LIVE-01",
+        "LIVE-03"
+      ],
+      "residual_non_live_gates": [
+        "release-candidate-artifact-and-signing",
+        "retained-code-acceptance",
+        "final-reference-demotion-review"
+      ],
+      "retained_artifact_kind": "live-log-reference",
+      "service_surface": "connect-tls-policy",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase9_connect_contracts.json#connect-tls-required-verification-policy",
+        "tools/bazel/manifests/phase9_network_concern_dispositions.json#concern-phase9-weak-digest-modules",
+        "tools/bazel/manifests/phase11_parity_pyramid.json#pyramid-network-tls-api-checks"
+      ],
+      "source_doc_refs": [],
+      "title": "TLS certificate verification live qualification",
+      "unsupported_claims": [
+        "claim-live-proof-from-dry-run",
+        "claim-tls-proof-without-operator-evidence",
+        "claim-final-cutover-or-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-02",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-live-input",
+        "manual-live-service-required",
+        "controlled-service-required",
+        "blocked-credentials-unavailable",
+        "blocked-endpoint-unavailable",
+        "not-applicable-with-justification",
+        "passed",
+        "failed"
+      ],
+      "credential_boundary": "custom-ca-fixture-reference-redacted",
+      "expected_artifact_path": "build/ci-evidence/phase16/logs/live-custom-ca-certificate-boundary.log",
+      "expected_failure_semantics": "Failure row names custom CA fixture, load/verify class, artifact refs, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence summarizes custom CA fixture behavior and residual risk without retaining certificate material.",
+      "id": "live-custom-ca-certificate-boundary",
+      "mode": "live-or-controlled-service",
+      "operator_metadata_required": [
+        "device",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "evidence_type",
+        "service_surface",
+        "mode",
+        "artifact_refs",
+        "redaction_summary",
+        "residual_risk"
+      ],
+      "proof_scope": "live-service-observation",
+      "redaction_required": true,
+      "required_input_kind": "custom-ca-fixture-reference-only",
+      "requirement_ids": [
+        "LIVE-03"
+      ],
+      "residual_non_live_gates": [
+        "release-candidate-artifact-and-signing",
+        "retained-code-acceptance",
+        "custom-ca-code-review"
+      ],
+      "retained_artifact_kind": "live-log-reference",
+      "service_surface": "custom-connect-ca",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase9_connect_contracts.json#connect-config-host-token-proxy-tls",
+        "tools/bazel/manifests/phase9_network_concern_dispositions.json#concern-phase9-custom-der-cert-read",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#concern-phase11-secret-redaction"
+      ],
+      "source_doc_refs": [],
+      "title": "Custom Connect CA certificate boundary qualification",
+      "unsupported_claims": [
+        "claim-live-proof-from-dry-run",
+        "claim-private-certificate-retention",
+        "claim-final-cutover-or-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-02",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-live-input",
+        "manual-live-service-required",
+        "controlled-service-required",
+        "blocked-credentials-unavailable",
+        "blocked-endpoint-unavailable",
+        "not-applicable-with-justification",
+        "passed",
+        "failed"
+      ],
+      "credential_boundary": "wui-negative-request-metadata-redacted",
+      "expected_artifact_path": "build/ci-evidence/phase16/logs/live-negative-protocol-wui-http.log",
+      "expected_failure_semantics": "Failure row names negative WUI case, parser/result class, artifact refs, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence summarizes malformed or unsupported WUI HTTP/API behavior with redacted request classes only.",
+      "id": "live-negative-protocol-wui-http",
+      "mode": "live-or-controlled-service",
+      "operator_metadata_required": [
+        "device",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "evidence_type",
+        "service_surface",
+        "mode",
+        "artifact_refs",
+        "redaction_summary",
+        "residual_risk"
+      ],
+      "proof_scope": "live-service-observation",
+      "redaction_required": true,
+      "required_input_kind": "controlled-negative-wui-protocol-fixture",
+      "requirement_ids": [
+        "LIVE-02",
+        "LIVE-03"
+      ],
+      "residual_non_live_gates": [
+        "release-candidate-artifact-and-signing",
+        "retained-code-acceptance",
+        "final-reference-demotion-review"
+      ],
+      "retained_artifact_kind": "live-log-reference",
+      "service_surface": "wui-negative-protocol",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase9_wui_contracts.json#wui-unknown-request-error",
+        "tools/bazel/manifests/phase9_wui_contracts.json#wui-server-resource-model",
+        "tools/bazel/manifests/phase14_simulator_evidence_contract.json#sim-transfer-negative-and-conflict"
+      ],
+      "source_doc_refs": [],
+      "title": "WUI negative protocol live qualification",
+      "unsupported_claims": [
+        "claim-live-proof-from-dry-run",
+        "claim-negative-payload-retention",
+        "claim-final-cutover-or-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-02",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-live-input",
+        "manual-live-service-required",
+        "controlled-service-required",
+        "blocked-credentials-unavailable",
+        "blocked-endpoint-unavailable",
+        "not-applicable-with-justification",
+        "passed",
+        "failed"
+      ],
+      "credential_boundary": "connect-negative-command-payload-redacted",
+      "expected_artifact_path": "build/ci-evidence/phase16/logs/live-negative-protocol-connect-command.log",
+      "expected_failure_semantics": "Failure row names negative Connect command case, command-channel state, artifact refs, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence summarizes malformed or unsupported Connect command handling without retaining command payloads.",
+      "id": "live-negative-protocol-connect-command",
+      "mode": "live-or-controlled-service",
+      "operator_metadata_required": [
+        "device",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "evidence_type",
+        "service_surface",
+        "mode",
+        "artifact_refs",
+        "redaction_summary",
+        "residual_risk"
+      ],
+      "proof_scope": "live-service-observation",
+      "redaction_required": true,
+      "required_input_kind": "controlled-negative-connect-command-fixture",
+      "requirement_ids": [
+        "LIVE-01",
+        "LIVE-03"
+      ],
+      "residual_non_live_gates": [
+        "release-candidate-artifact-and-signing",
+        "retained-code-acceptance",
+        "final-reference-demotion-review"
+      ],
+      "retained_artifact_kind": "live-log-reference",
+      "service_surface": "connect-negative-command",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase9_connect_contracts.json#connect-command-polling-websocket",
+        "tools/bazel/manifests/phase9_network_concern_dispositions.json#concern-phase9-whole-response-shared-buffers",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-network-tls-api-behavior"
+      ],
+      "source_doc_refs": [],
+      "title": "Connect negative command protocol live qualification",
+      "unsupported_claims": [
+        "claim-live-proof-from-dry-run",
+        "claim-negative-command-payload-retention",
+        "claim-final-cutover-or-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-02",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-live-input",
+        "manual-live-service-required",
+        "controlled-service-required",
+        "blocked-credentials-unavailable",
+        "blocked-endpoint-unavailable",
+        "not-applicable-with-justification",
+        "passed",
+        "failed"
+      ],
+      "credential_boundary": "connect-long-transfer-url-and-payload-redacted",
+      "expected_artifact_path": "build/ci-evidence/phase16/logs/live-long-transfer-connect-download.log",
+      "expected_failure_semantics": "Failure row names long-transfer fixture, resume/range class, artifact refs, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence summarizes long Connect download behavior, range/resume class, and result metadata without payload retention.",
+      "id": "live-long-transfer-connect-download",
+      "mode": "live-or-controlled-service",
+      "operator_metadata_required": [
+        "device",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "evidence_type",
+        "service_surface",
+        "mode",
+        "artifact_refs",
+        "redaction_summary",
+        "residual_risk"
+      ],
+      "proof_scope": "live-service-observation",
+      "redaction_required": true,
+      "required_input_kind": "long-connect-transfer-operator-run",
+      "requirement_ids": [
+        "LIVE-01",
+        "LIVE-03"
+      ],
+      "residual_non_live_gates": [
+        "release-candidate-artifact-and-signing",
+        "storage-media-hardware-evidence",
+        "retained-code-acceptance"
+      ],
+      "retained_artifact_kind": "live-log-reference",
+      "service_surface": "connect-long-transfer",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase9_transfer_contracts.json#transfer-single-active-slot",
+        "tools/bazel/manifests/phase9_transfer_contracts.json#transfer-range-request",
+        "tools/bazel/manifests/phase9_transfer_contracts.json#transfer-recovery-and-changed-path"
+      ],
+      "source_doc_refs": [],
+      "title": "Long Connect transfer download live qualification",
+      "unsupported_claims": [
+        "claim-live-proof-from-dry-run",
+        "claim-transfer-payload-retention",
+        "claim-release-artifact-or-signing-proof"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-02",
+        "IFCE-05",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-live-input",
+        "manual-live-service-required",
+        "controlled-service-required",
+        "blocked-credentials-unavailable",
+        "blocked-endpoint-unavailable",
+        "not-applicable-with-justification",
+        "passed",
+        "failed"
+      ],
+      "credential_boundary": "wui-long-transfer-filename-and-payload-redacted",
+      "expected_artifact_path": "build/ci-evidence/phase16/logs/live-long-transfer-wui-upload.log",
+      "expected_failure_semantics": "Failure row names WUI long-upload fixture, media interaction class, artifact refs, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence summarizes long WUI upload behavior and media interaction class without retaining payloads.",
+      "id": "live-long-transfer-wui-upload",
+      "mode": "live-or-controlled-service",
+      "operator_metadata_required": [
+        "device",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "evidence_type",
+        "service_surface",
+        "mode",
+        "artifact_refs",
+        "redaction_summary",
+        "residual_risk"
+      ],
+      "proof_scope": "live-service-observation",
+      "redaction_required": true,
+      "required_input_kind": "long-wui-upload-transfer-operator-run",
+      "requirement_ids": [
+        "LIVE-02",
+        "LIVE-03"
+      ],
+      "residual_non_live_gates": [
+        "release-candidate-artifact-and-signing",
+        "storage-media-hardware-evidence",
+        "retained-code-acceptance"
+      ],
+      "retained_artifact_kind": "live-log-reference",
+      "service_surface": "wui-long-transfer",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase9_transfer_contracts.json#transfer-wui-upload-api-integration",
+        "tools/bazel/manifests/phase9_transfer_contracts.json#transfer-partial-file-direct-sector",
+        "tools/bazel/manifests/phase9_network_concern_dispositions.json#concern-phase9-transfer-media-races"
+      ],
+      "source_doc_refs": [],
+      "title": "Long WUI upload transfer live qualification",
+      "unsupported_claims": [
+        "claim-live-proof-from-dry-run",
+        "claim-transfer-payload-retention",
+        "claim-release-artifact-or-signing-proof"
+      ],
+      "v1_requirement_ids": [
+        "IFCE-02",
+        "IFCE-05",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-live-input",
+        "manual-live-service-required",
+        "controlled-service-required",
+        "blocked-credentials-unavailable",
+        "blocked-endpoint-unavailable",
+        "not-applicable-with-justification",
+        "passed",
+        "failed"
+      ],
+      "credential_boundary": "crash-dump-summary-hash-and-consent-redacted",
+      "expected_artifact_path": "build/ci-evidence/phase16/logs/live-crash-dump-upload-redaction.log",
+      "expected_failure_semantics": "Failure row names crash-dump upload fixture, consent/redaction class, artifact refs, reason, and residual risk.",
+      "expected_pass_semantics": "Operator evidence summarizes crash-dump upload boundary, hash/consent metadata, and redaction status without retaining dump contents.",
+      "id": "live-crash-dump-upload-redaction",
+      "mode": "live-or-controlled-service",
+      "operator_metadata_required": [
+        "device",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "evidence_type",
+        "service_surface",
+        "mode",
+        "artifact_refs",
+        "redaction_summary",
+        "residual_risk"
+      ],
+      "proof_scope": "live-service-observation",
+      "redaction_required": true,
+      "required_input_kind": "redacted-crash-dump-upload-fixture",
+      "requirement_ids": [
+        "LIVE-03"
+      ],
+      "residual_non_live_gates": [
+        "release-candidate-artifact-and-signing",
+        "hardware-crash-recovery-evidence",
+        "retained-code-acceptance"
+      ],
+      "retained_artifact_kind": "live-log-reference",
+      "service_surface": "crash-dump-upload",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase9_network_concern_dispositions.json#concern-phase9-crash-dump-upload-boundary",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#concern-phase11-secret-redaction",
+        "tools/bazel/manifests/phase15_hardware_evidence_contract.json#hard-safety-watchdog-crash-recovery"
+      ],
+      "source_doc_refs": [],
+      "title": "Crash-dump upload redaction live qualification",
+      "unsupported_claims": [
+        "claim-live-proof-from-dry-run",
+        "claim-crash-dump-content-retention",
+        "claim-final-cutover-or-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "BASE-04",
+        "VERF-03"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "source-contract-passed",
+        "failed",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "credential_boundary": "contract-source-refs-and-redaction-rules-only",
+      "expected_artifact_path": "build/ci-evidence/phase16/logs/live-contract-traceability-redaction-boundary.log",
+      "expected_failure_semantics": "Failure row names missing source refs, row coverage gaps, redaction scanner issues, or unsupported claim drift.",
+      "expected_pass_semantics": "Local contract validation proves row traceability, redaction requirements, and no-overclaim guard wiring without live-service proof.",
+      "id": "live-contract-traceability-redaction-boundary",
+      "mode": "local-contract-validation",
+      "operator_metadata_required": [
+        "device",
+        "firmware_build",
+        "operator",
+        "timestamp",
+        "scenario_id",
+        "result",
+        "evidence_type",
+        "service_surface",
+        "mode",
+        "artifact_refs",
+        "redaction_summary",
+        "residual_risk"
+      ],
+      "proof_scope": "source-contract",
+      "redaction_required": true,
+      "required_input_kind": "checked-in-contract-and-source-ref-validation",
+      "requirement_ids": [
+        "LIVE-01",
+        "LIVE-02",
+        "LIVE-03"
+      ],
+      "residual_non_live_gates": [
+        "live-service-operator-evidence",
+        "release-candidate-artifact-and-signing",
+        "retained-code-acceptance"
+      ],
+      "retained_artifact_kind": "source-contract-snapshot",
+      "service_surface": "contract-traceability-redaction",
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase13_ci_evidence_contract.json#ciev-03-redacted-summary",
+        "tools/bazel/manifests/phase14_simulator_evidence_contract.json#sim-traceability-non-simulator-boundaries",
+        "tools/bazel/manifests/phase15_hardware_evidence_contract.json#hard-contract-traceability-and-redaction-boundary",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-overclaim-scan-clean"
+      ],
+      "source_doc_refs": [],
+      "title": "Contract traceability and redaction boundary validation",
+      "unsupported_claims": [
+        "claim-live-proof-from-dry-run",
+        "claim-source-contract-satisfies-live-service",
+        "claim-final-cutover-or-reference-demotion"
+      ],
+      "v1_requirement_ids": [
+        "VERF-03"
+      ]
+    }
+  ],
+  "schema_version": "1",
+  "status_vocabulary": [
+    "passed",
+    "failed",
+    "pending-live-input",
+    "manual-live-service-required",
+    "controlled-service-required",
+    "blocked-credentials-unavailable",
+    "blocked-endpoint-unavailable",
+    "not-applicable-with-justification",
+    "source-contract-passed",
+    "rejected-redaction",
+    "rejected-overclaim"
+  ]
+}
