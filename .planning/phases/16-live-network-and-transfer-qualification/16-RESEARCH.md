@@ -533,27 +533,31 @@ All claims in this research were verified or cited in this session; no `[ASSUMED
 |---|-------|---------|---------------|
 | — | No assumed claims recorded. | — | — |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Which approved Connect endpoint or controlled Connect-compatible service will maintainers use?**  
    What we know: Phase 16 requires Connect registration, telemetry, WebSocket, token/fingerprint, proxy, TLS, and transfer evidence. [VERIFIED: .planning/REQUIREMENTS.md; VERIFIED: .planning/phases/16-live-network-and-transfer-qualification/16-CONTEXT.md]  
    What's unclear: No endpoint, credential source, or registration fixture is present in the repo or phase context. [VERIFIED: .planning/phases/16-live-network-and-transfer-qualification/16-CONTEXT.md]  
    Recommendation: Keep rows pending by default and require operator evidence with redacted external artifact refs for `passed`. [VERIFIED: .planning/phases/16-live-network-and-transfer-qualification/16-CONTEXT.md]
+   **RESOLVED:** The Phase 16 plan keeps Connect rows in `pending-live-input`, `manual-live-service-required`, `controlled-service-required`, `blocked-credentials-unavailable`, or `blocked-endpoint-unavailable` until maintainers supply operator evidence. No live endpoint or credential is required for local verification.
 
 2. **Will custom DER certificate behavior be fixed before live qualification or recorded as current behavior?**  
    What we know: Phase 9 flagged TLS/custom cert evidence as non-local, and the TLS source has a custom DER certificate load/parse path. [VERIFIED: .planning/milestones/v1.0-phases/09-network-web-services-and-transfers/09-VERIFICATION.md; VERIFIED: src/connect/tls/tls.cpp]
    What's unclear: Phase 16 scope asks for evidence, not necessarily a firmware fix. [VERIFIED: .planning/phases/16-live-network-and-transfer-qualification/16-CONTEXT.md]  
    Recommendation: Plan a row that captures current behavior and residual risk; only plan code changes if the implementation phase explicitly accepts firmware fixes. [VERIFIED: .planning/phases/16-live-network-and-transfer-qualification/16-CONTEXT.md]
+   **RESOLVED:** The Phase 16 plan records custom DER certificate behavior as evidence-only current behavior and residual risk. It does not require or plan a firmware fix before live qualification.
 
 3. **Where should external live artifacts be stored?**  
    What we know: Raw credentials, certs, HTTP/TLS logs, crash dumps, and production payloads must not be committed. [VERIFIED: .planning/phases/16-live-network-and-transfer-qualification/16-CONTEXT.md]  
    What's unclear: The repo does not define a private artifact store or retention location for Phase 16 live logs. [VERIFIED: .planning/phases/16-live-network-and-transfer-qualification/16-CONTEXT.md]  
    Recommendation: Make the contract require external artifact references plus redacted summaries, leaving storage policy to maintainers. [VERIFIED: .planning/phases/16-live-network-and-transfer-qualification/16-CONTEXT.md]
+   **RESOLVED:** The Phase 16 contract requires redacted summaries plus external artifact references such as `external://` or `artifact://` handles for live logs and crash-dump proof. Repository artifacts remain contract/verifier-only.
 
 4. **Which metrics/syslog collector setup is approved for live evidence?**  
    What we know: Metrics docs describe G-code configuration and a local collector stack, and source sends metrics through syslog transport. [VERIFIED: doc/metrics.md; VERIFIED: src/common/metric_handlers.cpp; VERIFIED: src/syslog/syslog_transport.cpp]  
    What's unclear: No active collector or operator fixture is supplied in Phase 16 context. [VERIFIED: .planning/phases/16-live-network-and-transfer-qualification/16-CONTEXT.md]  
    Recommendation: Let operator evidence name the collector fixture and redact payload samples; keep local verifier network-free. [VERIFIED: .planning/phases/16-live-network-and-transfer-qualification/16-CONTEXT.md]
+   **RESOLVED:** The Phase 16 plan requires operator evidence to name the metrics/syslog collector fixture and redact payload samples. Local verification stays network-free and keeps collector-backed rows pending when no operator evidence is supplied.
 
 ## Environment Availability
 
