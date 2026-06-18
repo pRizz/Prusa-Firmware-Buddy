@@ -21,9 +21,9 @@ These requirements convert the non-local v1.0 cutover blockers into durable evid
 
 ### Hardware and Safety Evidence
 
-- [ ] **HARD-01**: Maintainer can execute a hardware smoke matrix for supported printer families, boards, storage media, and auxiliary-controller combinations required for cutover readiness.
-- [ ] **HARD-02**: Maintainer can record hardware safety evidence for watchdog, thermal/motion safety, emergency stop, safe-output, crash recovery, UI input, MMU, RS485, and toolchanger scenarios.
-- [ ] **HARD-03**: Maintainer can review hardware evidence artifacts that identify device, firmware build, operator, timestamp, scenario, result, and residual risk without exposing secrets or unsafe operational data.
+- [x] **HARD-01**: Maintainer can execute a hardware smoke matrix for supported printer families, boards, storage media, and auxiliary-controller combinations required for cutover readiness.
+- [x] **HARD-02**: Maintainer can record hardware safety evidence for watchdog, thermal/motion safety, emergency stop, safe-output, crash recovery, UI input, MMU, RS485, and toolchanger scenarios.
+- [x] **HARD-03**: Maintainer can review hardware evidence artifacts that identify device, firmware build, operator, timestamp, scenario, result, and residual risk without exposing secrets or unsafe operational data.
 
 ### Live Network Evidence
 
@@ -77,9 +77,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SIM-01 | Phase 14 | Pending |
 | SIM-02 | Phase 14 | Pending |
 | SIM-03 | Phase 14 | Pending |
-| HARD-01 | Phase 15 | Pending |
-| HARD-02 | Phase 15 | Pending |
-| HARD-03 | Phase 15 | Pending |
+| HARD-01 | Phase 15 | Complete |
+| HARD-02 | Phase 15 | Complete |
+| HARD-03 | Phase 15 | Complete |
 | LIVE-01 | Phase 16 | Pending |
 | LIVE-02 | Phase 16 | Pending |
 | LIVE-03 | Phase 16 | Pending |
