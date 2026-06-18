@@ -132,7 +132,7 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17 -> 18
 |-------|-----------|----------------|--------|-----------|
 | 13. CI Evidence Orchestration | v1.1 | 1/1 | Complete    | 2026-06-16 |
 | 14. Simulator Evidence Gates | v1.1 | 1/1 | Complete    | 2026-06-17 |
-| 15. Hardware Safety and Media Qualification | v1.1 | 1/1 | Complete   | 2026-06-18 |
+| 15. Hardware Safety and Media Qualification | v1.1 | 1/1 | Complete    | 2026-06-18 |
 | 16. Live Network and Transfer Qualification | v1.1 | 0/1 | Not started | - |
 | 17. Release Candidate Artifact and Signing Gates | v1.1 | 0/1 | Not started | - |
 | 18. Retained-Code Acceptance and Cutover Review | v1.1 | 0/1 | Not started | - |
