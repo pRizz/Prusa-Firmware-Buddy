@@ -128,6 +128,16 @@ filegroup(
 )
 
 filegroup(
+    name = "phase16_live_network_evidence_docs",
+    srcs = [
+        ".planning/phases/16-live-network-and-transfer-qualification/16-CONTEXT.md",
+        ".planning/phases/16-live-network-and-transfer-qualification/16-RESEARCH.md",
+        ".planning/phases/16-live-network-and-transfer-qualification/16-VALIDATION.md",
+        ".planning/phases/16-live-network-and-transfer-qualification/16-01-PLAN.md",
+    ],
+)
+
+filegroup(
     name = "phase7_storage_migration_fixtures",
     srcs = ["//tools/bazel:fixtures/phase7_storage/redacted_migration_catalog.json"],
 )
@@ -285,6 +295,16 @@ alias(
 alias(
     name = "phase15_verify_tests",
     actual = "//tools/bazel:phase15_verify_tests",
+)
+
+alias(
+    name = "phase16_verify",
+    actual = "//tools/bazel:phase16_verify",
+)
+
+alias(
+    name = "phase16_verify_tests",
+    actual = "//tools/bazel:phase16_verify_tests",
 )
 
 alias(

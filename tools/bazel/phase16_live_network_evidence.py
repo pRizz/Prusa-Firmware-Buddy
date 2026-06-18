@@ -122,6 +122,21 @@ REQUIRED_ARTIFACT_KINDS = {
     "operator-evidence-input",
     "external-artifact-reference",
 }
+SOURCE_REF_MANIFESTS = [
+    "tools/bazel/manifests/phase9_connect_contracts.json",
+    "tools/bazel/manifests/phase9_wui_contracts.json",
+    "tools/bazel/manifests/phase9_network_service_contracts.json",
+    "tools/bazel/manifests/phase9_transfer_contracts.json",
+    "tools/bazel/manifests/phase9_network_concern_dispositions.json",
+    "tools/bazel/manifests/phase11_cutover_readiness.json",
+    "tools/bazel/manifests/phase11_parity_pyramid.json",
+    "tools/bazel/manifests/phase11_reference_comparisons.json",
+    "tools/bazel/manifests/phase11_requirement_evidence.json",
+    "tools/bazel/manifests/phase11_retained_code_justifications.json",
+    "tools/bazel/manifests/phase13_ci_evidence_contract.json",
+    "tools/bazel/manifests/phase14_simulator_evidence_contract.json",
+    "tools/bazel/manifests/phase15_hardware_evidence_contract.json",
+]
 REQUIRED_SCENARIO_FIELDS = [
     "id",
     "title",
@@ -496,8 +511,92 @@ def check_security(root: Path, output_dir: Path = DEFAULT_OUTPUT_DIR) -> None:
         raise VerificationError("\n".join(errors))
 
 
+def require_file_contains(root: Path, path: Path, needles: list[str]) -> list[str]:
+    try:
+        text = read_text(root, path)
+    except VerificationError as error:
+        return [str(error)]
+    return [f"{path.as_posix()} missing required wiring text: {needle}" for needle in needles if needle not in text]
+
+
 def check_wiring(root: Path) -> None:
-    raise VerificationError("Phase 16 Bazel and just wiring is not configured")
+    errors: list[str] = []
+    phase16_manifest_srcs = [
+        Path(path).relative_to("tools/bazel").as_posix()
+        for path in SOURCE_REF_MANIFESTS
+    ]
+    errors.extend(
+        require_file_contains(
+            root,
+            Path("tools/bazel/BUILD.bazel"),
+            [
+                'name = "phase16_source_ref_manifests"',
+                'name = "phase16_verify"',
+                'name = "phase16_verify_tests"',
+                "phase16_live_network_evidence.py",
+                "phase16_live_network_evidence_test.py",
+                "phase16_live_network_evidence_contract.json",
+                ":phase16_source_ref_manifests",
+                "//:phase16_live_network_evidence_docs",
+                "//:phase11_cutover_evidence_docs",
+                *phase16_manifest_srcs,
+            ],
+        )
+    )
+    errors.extend(
+        require_file_contains(
+            root,
+            Path("BUILD.bazel"),
+            [
+                'name = "phase16_live_network_evidence_docs"',
+                'name = "phase16_verify"',
+                'name = "phase16_verify_tests"',
+                ".planning/phases/16-live-network-and-transfer-qualification/16-CONTEXT.md",
+                ".planning/phases/16-live-network-and-transfer-qualification/16-RESEARCH.md",
+                ".planning/phases/16-live-network-and-transfer-qualification/16-VALIDATION.md",
+                ".planning/phases/16-live-network-and-transfer-qualification/16-01-PLAN.md",
+            ],
+        )
+    )
+    errors.extend(
+        require_file_contains(
+            root,
+            Path("tools/bazel/rust_workflow.sh"),
+            [
+                "phase16_verify)",
+                "python3 tools/bazel/phase16_live_network_evidence.py --wiring-only",
+                "python3 tools/bazel/phase16_live_network_evidence.py --quick",
+                "phase16_verify_tests)",
+                "python3 tools/bazel/phase16_live_network_evidence_test.py",
+            ],
+        )
+    )
+    errors.extend(
+        require_file_contains(
+            root,
+            Path("justfile"),
+            [
+                "phase16-verify:",
+                "bazel run //tools/bazel:phase16_verify_tests",
+                "bazel run //tools/bazel:phase16_verify",
+            ],
+        )
+    )
+    try:
+        just_lines = [line.strip() for line in read_text(root, "justfile").splitlines()]
+        just_tests_line = "bazel run //tools/bazel:phase16_verify_tests"
+        just_verify_line = "bazel run //tools/bazel:phase16_verify"
+        if just_tests_line not in just_lines:
+            errors.append("justfile missing exact phase16_verify_tests recipe line")
+        if just_verify_line not in just_lines:
+            errors.append("justfile missing exact phase16_verify recipe line")
+        if just_tests_line in just_lines and just_verify_line in just_lines:
+            if just_lines.index(just_tests_line) > just_lines.index(just_verify_line):
+                errors.append("justfile phase16-verify must run tests before verifier")
+    except VerificationError as error:
+        errors.append(str(error))
+    if errors:
+        raise VerificationError("\n".join(errors))
 
 
 def load_operator_evidence_path(root: Path, path: str | None) -> tuple[Path | None, list[Any] | None]:

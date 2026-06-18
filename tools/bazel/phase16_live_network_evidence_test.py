@@ -21,6 +21,8 @@ SOURCE_REF_FILES = [
     "tools/bazel/manifests/phase11_cutover_readiness.json",
     "tools/bazel/manifests/phase11_parity_pyramid.json",
     "tools/bazel/manifests/phase11_reference_comparisons.json",
+    "tools/bazel/manifests/phase11_requirement_evidence.json",
+    "tools/bazel/manifests/phase11_retained_code_justifications.json",
     "tools/bazel/manifests/phase13_ci_evidence_contract.json",
     "tools/bazel/manifests/phase14_simulator_evidence_contract.json",
     "tools/bazel/manifests/phase15_hardware_evidence_contract.json",
@@ -113,6 +115,87 @@ class Phase16LiveNetworkEvidenceTest(unittest.TestCase):
             "service_surface": "connect-registration",
             "timestamp": "2026-06-18T02:00:00Z",
         }
+
+    def write_wiring(
+        self,
+        root: Path,
+        maybe_tools_build: str | None = None,
+        maybe_root_build: str | None = None,
+        maybe_workflow: str | None = None,
+        maybe_justfile: str | None = None,
+    ) -> None:
+        manifest_srcs = "\n".join(
+            f'        "{Path(path).relative_to("tools/bazel").as_posix()}",'
+            for path in SOURCE_REF_FILES
+        )
+        tools_build = maybe_tools_build or f"""filegroup(
+    name = "phase16_source_ref_manifests",
+    srcs = [
+{manifest_srcs}
+    ],
+)
+
+shell_binary(
+    name = "phase16_verify",
+    src = "rust_workflow.sh",
+    data = [
+        "phase16_live_network_evidence.py",
+        "manifests/phase16_live_network_evidence_contract.json",
+        ":phase16_source_ref_manifests",
+        "//:phase16_live_network_evidence_docs",
+        "//:phase11_cutover_evidence_docs",
+    ],
+)
+
+shell_binary(
+    name = "phase16_verify_tests",
+    src = "rust_workflow.sh",
+    data = [
+        "phase16_live_network_evidence.py",
+        "phase16_live_network_evidence_test.py",
+        "manifests/phase16_live_network_evidence_contract.json",
+        ":phase16_source_ref_manifests",
+    ],
+)
+"""
+        root_build = maybe_root_build or """filegroup(
+    name = "phase16_live_network_evidence_docs",
+    srcs = [
+        ".planning/phases/16-live-network-and-transfer-qualification/16-CONTEXT.md",
+        ".planning/phases/16-live-network-and-transfer-qualification/16-RESEARCH.md",
+        ".planning/phases/16-live-network-and-transfer-qualification/16-VALIDATION.md",
+        ".planning/phases/16-live-network-and-transfer-qualification/16-01-PLAN.md",
+    ],
+)
+
+alias(
+    name = "phase16_verify",
+    actual = "//tools/bazel:phase16_verify",
+)
+
+alias(
+    name = "phase16_verify_tests",
+    actual = "//tools/bazel:phase16_verify_tests",
+)
+"""
+        workflow = maybe_workflow or """case "$command_name" in
+  phase16_verify)
+    python3 tools/bazel/phase16_live_network_evidence.py --wiring-only
+    python3 tools/bazel/phase16_live_network_evidence.py --quick
+    ;;
+  phase16_verify_tests)
+    python3 tools/bazel/phase16_live_network_evidence_test.py
+    ;;
+esac
+"""
+        justfile = maybe_justfile or """phase16-verify:
+    bazel run //tools/bazel:phase16_verify_tests
+    bazel run //tools/bazel:phase16_verify
+"""
+        self.write_file(root, "tools/bazel/BUILD.bazel", tools_build)
+        self.write_file(root, "BUILD.bazel", root_build)
+        self.write_file(root, "tools/bazel/rust_workflow.sh", workflow)
+        self.write_file(root, "justfile", justfile)
 
     def test_contract_accepts_complete_contract(self) -> None:
         # Arrange
@@ -511,6 +594,77 @@ class Phase16LiveNetworkEvidenceTest(unittest.TestCase):
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("cannot traverse", result.stdout)
+
+    def test_wiring_accepts_phase16_surface(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            self.write_wiring(root)
+
+            # Act
+            result = self.run_verifier(["--wiring-only"], maybe_root=root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_wiring_rejects_missing_bazel_label(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            self.write_wiring(root)
+            tools_build = (root / "tools/bazel/BUILD.bazel").read_text(encoding="utf-8").replace(
+                'name = "phase16_verify_tests"',
+                'name = "phase16_missing_tests"',
+            )
+            self.write_wiring(root, maybe_tools_build=tools_build)
+
+            # Act
+            result = self.run_verifier(["--wiring-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("phase16_verify_tests", result.stdout)
+
+    def test_wiring_rejects_missing_source_ref_manifest(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            self.write_wiring(root)
+            tools_build = (root / "tools/bazel/BUILD.bazel").read_text(encoding="utf-8").replace(
+                '        "manifests/phase11_retained_code_justifications.json",\n',
+                "",
+            )
+            self.write_wiring(root, maybe_tools_build=tools_build)
+
+            # Act
+            result = self.run_verifier(["--wiring-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("phase11_retained_code_justifications.json", result.stdout)
+
+    def test_wiring_rejects_verifier_before_tests(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            self.write_wiring(
+                root,
+                maybe_justfile="""phase16-verify:
+    bazel run //tools/bazel:phase16_verify
+    bazel run //tools/bazel:phase16_verify_tests
+""",
+            )
+
+            # Act
+            result = self.run_verifier(["--wiring-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("tests before verifier", result.stdout)
 
 
 if __name__ == "__main__":

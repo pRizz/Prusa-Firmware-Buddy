@@ -52,6 +52,10 @@ phase15-verify:
     bazel run //tools/bazel:phase15_verify_tests
     bazel run //tools/bazel:phase15_verify
 
+phase16-verify:
+    bazel run //tools/bazel:phase16_verify_tests
+    bazel run //tools/bazel:phase16_verify
+
 bazel-query:
     bazel query "//tools/bazel/... + //platforms/..."
 

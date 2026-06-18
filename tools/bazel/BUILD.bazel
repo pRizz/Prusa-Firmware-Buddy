@@ -333,6 +333,48 @@ shell_binary(
 )
 
 filegroup(
+    name = "phase16_source_ref_manifests",
+    srcs = [
+        "manifests/phase9_connect_contracts.json",
+        "manifests/phase9_wui_contracts.json",
+        "manifests/phase9_network_service_contracts.json",
+        "manifests/phase9_transfer_contracts.json",
+        "manifests/phase9_network_concern_dispositions.json",
+        "manifests/phase11_cutover_readiness.json",
+        "manifests/phase11_parity_pyramid.json",
+        "manifests/phase11_reference_comparisons.json",
+        "manifests/phase11_requirement_evidence.json",
+        "manifests/phase11_retained_code_justifications.json",
+        "manifests/phase13_ci_evidence_contract.json",
+        "manifests/phase14_simulator_evidence_contract.json",
+        "manifests/phase15_hardware_evidence_contract.json",
+    ],
+)
+
+shell_binary(
+    name = "phase16_verify",
+    src = "rust_workflow.sh",
+    data = [
+        "phase16_live_network_evidence.py",
+        "manifests/phase16_live_network_evidence_contract.json",
+        ":phase16_source_ref_manifests",
+        "//:phase16_live_network_evidence_docs",
+        "//:phase11_cutover_evidence_docs",
+    ],
+)
+
+shell_binary(
+    name = "phase16_verify_tests",
+    src = "rust_workflow.sh",
+    data = [
+        "phase16_live_network_evidence.py",
+        "phase16_live_network_evidence_test.py",
+        "manifests/phase16_live_network_evidence_contract.json",
+        ":phase16_source_ref_manifests",
+    ],
+)
+
+filegroup(
     name = "unsafe_boundary_audit",
     srcs = ["manifests/unsafe_boundary_audit.json"],
 )
