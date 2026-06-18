@@ -95,7 +95,10 @@ Plans:
 1. Evidence covers PrusaLink/WUI HTTP API, digest/API-key auth, SNTP, mDNS, syslog, metrics, and transfer behavior.
 1. TLS, certificate, credential-redaction, negative protocol, long-transfer, and crash-dump upload evidence is captured.
 1. No secrets, tokens, or private certificates are committed to the repository or planning artifacts.
-   **Plans**: Not created yet.
+   **Plans**: 1 plan
+
+Plans:
+- [ ] 16-01-PLAN.md - Live network evidence contract, verifier/collector, operator evidence validation, and Bazel/just gate.
 
 ### Phase 17: Release Candidate Artifact and Signing Gates
 
