@@ -80,6 +80,40 @@ class Phase16LiveNetworkEvidenceTest(unittest.TestCase):
         self.copy_file(root, CONTRACT)
         self.copy_source_ref_inputs(root)
 
+    def write_operator_evidence(
+        self,
+        root: Path,
+        rows: list[dict[str, object]],
+        path: str = "operator-evidence.json",
+    ) -> str:
+        self.write_file(root, path, json.dumps({"evidence_rows": rows}, indent=2, sort_keys=True) + "\n")
+        return path
+
+    def complete_operator_row(
+        self,
+        scenario_id: str = "live-connect-registration-token-fingerprint",
+        result: str = "passed",
+        artifact_refs: list[str] | None = None,
+    ) -> dict[str, object]:
+        maybe_artifact_refs = artifact_refs or [
+            f"build/ci-evidence/phase16/logs/{scenario_id}.log",
+            f"external://phase16/{scenario_id}",
+        ]
+        return {
+            "artifact_refs": maybe_artifact_refs,
+            "device": "network-bench-printer-01",
+            "evidence_type": "controlled-service-observation",
+            "firmware_build": "phase16-test-build",
+            "mode": "live-or-controlled-service",
+            "operator": "phase16-test-operator",
+            "redaction_summary": "Credential and payload fields were replaced by redacted metadata classes.",
+            "residual_risk": "Coverage is limited to the named controlled-service fixture.",
+            "result": result,
+            "scenario_id": scenario_id,
+            "service_surface": "connect-registration",
+            "timestamp": "2026-06-18T02:00:00Z",
+        }
+
     def test_contract_accepts_complete_contract(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -224,6 +258,259 @@ class Phase16LiveNetworkEvidenceTest(unittest.TestCase):
         self.assertIn("credential_boundary", result.stdout)
         self.assertIn("residual_non_live_gates", result.stdout)
         self.assertIn("unsupported_claims", result.stdout)
+
+    def test_quick_writes_phase16_artifacts(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+            # Assert
+            self.assertEqual(result.returncode, 0, result.stdout)
+            for path in [
+                "build/ci-evidence/phase16/run-manifest.json",
+                "build/ci-evidence/phase16/normalized-scenario-results.json",
+                "build/ci-evidence/phase16/redacted-network-summary.json",
+                "build/ci-evidence/phase16/source-contract-snapshots/phase16_live_network_evidence_contract.json",
+                "build/ci-evidence/phase16/operator-evidence-input.json",
+                "build/ci-evidence/phase16/logs/live-connect-registration-token-fingerprint.log",
+            ]:
+                self.assertTrue((root / path).exists(), path)
+
+    def test_quick_keeps_live_rows_pending(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+            manifest = json.loads(
+                (root / "build/ci-evidence/phase16/run-manifest.json").read_text(encoding="utf-8")
+            )
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertFalse(manifest["live_inputs_supplied"])
+        live_statuses = {
+            row["status"]
+            for row in manifest["scenarios"]
+            if row["proof_scope"] == "live-service-observation"
+        }
+        source_statuses = {
+            row["status"]
+            for row in manifest["scenarios"]
+            if row["proof_scope"] == "source-contract"
+        }
+        self.assertEqual(live_statuses, {"pending-live-input"})
+        self.assertEqual(source_statuses, {"source-contract-passed"})
+
+    def test_operator_evidence_accepts_complete_pass(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            operator_path = self.write_operator_evidence(root, [self.complete_operator_row()])
+
+            # Act
+            result = self.run_verifier(["--quick", "--operator-evidence", operator_path], maybe_root=root)
+            normalized = json.loads(
+                (root / "build/ci-evidence/phase16/normalized-scenario-results.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        rows = {row["id"]: row for row in normalized["scenarios"]}
+        scenario = rows["live-connect-registration-token-fingerprint"]
+        self.assertEqual(scenario["status"], "passed")
+        self.assertTrue(scenario["operator_metadata_present"])
+        self.assertEqual(scenario["operator"], "phase16-test-operator")
+
+    def test_operator_evidence_accepts_top_level_list(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            operator_path = "operator-evidence-list.json"
+            self.write_file(
+                root,
+                operator_path,
+                json.dumps([self.complete_operator_row()], indent=2, sort_keys=True) + "\n",
+            )
+
+            # Act
+            result = self.run_verifier(["--quick", "--operator-evidence", operator_path], maybe_root=root)
+            normalized = json.loads(
+                (root / "build/ci-evidence/phase16/normalized-scenario-results.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        rows = {row["id"]: row for row in normalized["scenarios"]}
+        self.assertEqual(rows["live-connect-registration-token-fingerprint"]["status"], "passed")
+
+    def test_operator_evidence_rejects_missing_metadata(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            row = self.complete_operator_row()
+            del row["operator"]
+            operator_path = self.write_operator_evidence(root, [row])
+
+            # Act
+            result = self.run_verifier(["--quick", "--operator-evidence", operator_path], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("operator", result.stdout)
+
+    def test_operator_evidence_rejects_unknown_scenario_or_status(self) -> None:
+        cases = [
+            (self.complete_operator_row(scenario_id="missing-scenario"), "missing-scenario"),
+            (self.complete_operator_row(result="waived"), "waived"),
+        ]
+        for row, expected in cases:
+            with self.subTest(expected=expected):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_complete_surface(root)
+                    operator_path = self.write_operator_evidence(root, [row])
+
+                    # Act
+                    result = self.run_verifier(["--quick", "--operator-evidence", operator_path], maybe_root=root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(expected, result.stdout)
+
+    def test_operator_evidence_rejects_artifact_path_traversal(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            row = self.complete_operator_row(artifact_refs=["../leak.log"])
+            operator_path = self.write_operator_evidence(root, [row])
+
+            # Act
+            result = self.run_verifier(["--quick", "--operator-evidence", operator_path], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("cannot traverse", result.stdout)
+
+    def test_security_rejects_secret_markers(self) -> None:
+        cases = [
+            "-----BEGIN PRIVATE KEY-----",
+            "-----BEGIN CERTIFICATE-----",
+            "certificate_pem",
+            "certificate_bytes",
+            "private_key",
+            "signing_key",
+            "token_value",
+            "connect_token",
+            "Connect token",
+            "registration_code",
+            "registration code",
+            "Fingerprint: 123456",
+            "fingerprint_value",
+            "wifi_password",
+            "Wi-Fi credential",
+            "PrusaLink password",
+            "api_key",
+            "x-api-key",
+            "API key",
+            "Authorization: Bearer redacted",
+            "Cookie: session=redacted",
+            "Set-Cookie: session=redacted",
+            "raw_http_log",
+            "raw_tls_log",
+            "tls_keylog",
+            "SSLKEYLOGFILE",
+            "raw_crash_dump",
+            "raw_ram_dump",
+            "memory_dump",
+            "raw_production_payload",
+            "firmware_payload",
+            "bbf_payload",
+            "dfu_payload",
+            ".bin payload",
+            ".bbf payload",
+            ".dfu payload",
+        ]
+        for marker in cases:
+            with self.subTest(marker=marker):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_complete_surface(root)
+                    self.write_file(root, "build/ci-evidence/phase16/leak.json", marker + "\n")
+
+                    # Act
+                    result = self.run_verifier(["--security-only"], maybe_root=root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                expected_marker = marker.split()[0] if ":" in marker else marker
+                self.assertIn(expected_marker, result.stdout)
+
+    def test_security_rejects_overclaim_wording(self) -> None:
+        cases = [
+            "live service passed locally",
+            "live network verified locally",
+            "production Connect validated",
+            "production PrusaLink validated",
+            "tls proof complete without operator evidence",
+            "proxy fully supported",
+            "proxy authentication supported",
+            "crash dump upload safe",
+            "raw crash dump retained",
+            "final cutover complete",
+            "cutover complete",
+            "release readiness proven",
+            "release-candidate passed locally",
+            "signing proof complete",
+            "retained-code accepted by maintainer",
+            "reference demotion approved",
+            "reference removal complete",
+        ]
+        for phrase in cases:
+            with self.subTest(phrase=phrase):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_complete_surface(root)
+                    baseline = self.run_verifier(["--security-only"], maybe_root=root)
+                    self.write_file(root, "build/ci-evidence/phase16/overclaim.json", phrase + "\n")
+
+                    # Act
+                    result = self.run_verifier(["--security-only"], maybe_root=root)
+
+                # Assert
+                self.assertEqual(baseline.returncode, 0, baseline.stdout)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(phrase.lower(), result.stdout.lower())
+
+    def test_output_dir_rejects_traversal(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+
+            # Act
+            result = self.run_verifier(["--quick", "--output-dir", "../escape"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("cannot traverse", result.stdout)
 
 
 if __name__ == "__main__":
