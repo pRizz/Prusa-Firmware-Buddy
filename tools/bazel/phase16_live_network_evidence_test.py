@@ -576,17 +576,23 @@ esac
 
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
-                expected_marker = marker.split()[0] if ":" in marker else marker
-                self.assertIn(expected_marker, result.stdout)
+                self.assertIn("contains forbidden evidence marker", result.stdout)
 
     def test_security_rejects_secret_assignment_forms(self) -> None:
         cases = [
-            ("api-key: super-secret-value", "api-key: super-secret-value"),
-            ("token=super-secret-value", "token=super-secret-value"),
-            ("password: super-secret-value", "password: super-secret-value"),
-            ("Authorization = Bearer super-secret-value", "Authorization = Bearer"),
+            ("api-key: super-secret-value", "credential-assignment"),
+            ("token=super-secret-value", "credential-assignment"),
+            ("password: super-secret-value", "credential-assignment"),
+            ('"api-key": "super-secret-value"', "credential-assignment"),
+            ('"token": "super-secret-value"', "credential-assignment"),
+            ('"password": "super-secret-value"', "credential-assignment"),
+            ('"secret": "super-secret-value"', "credential-assignment"),
+            ("Authorization = Bearer super-secret-value", "credential-header-assignment"),
+            ('"Authorization": "Bearer super-secret-value"', "credential-header-assignment"),
+            ('"Cookie": "session=super-secret-value"', "credential-header-assignment"),
+            ('"Set-Cookie": "session=super-secret-value"', "credential-header-assignment"),
         ]
-        for marker, expected in cases:
+        for marker, expected_label in cases:
             with self.subTest(marker=marker):
                 # Arrange
                 temp_dir, root = self.make_temp_root()
@@ -599,7 +605,8 @@ esac
 
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
-                self.assertIn(expected, result.stdout)
+                self.assertIn(expected_label, result.stdout)
+                self.assertNotIn("super-secret-value", result.stdout)
 
     def test_security_rejects_overclaim_wording(self) -> None:
         cases = [

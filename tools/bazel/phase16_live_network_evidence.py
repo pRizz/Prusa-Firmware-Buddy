@@ -164,25 +164,31 @@ REQUIRED_SCENARIO_FIELDS = [
     "unsupported_claims",
 ]
 FORBIDDEN_TEXT_PATTERNS = (
-    re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----", re.IGNORECASE),
-    re.compile(r"-----BEGIN CERTIFICATE-----", re.IGNORECASE),
-    re.compile(r"\bFingerprint:\s*\S+", re.IGNORECASE),
-    re.compile(
-        r"\b(certificate_pem|certificate_bytes|private_key|signing_key|token_value|connect_token|registration_code|fingerprint_value|wifi_password|prusalink_password|api_key|raw_http_log|raw_tls_log|tls_keylog|SSLKEYLOGFILE|raw_crash_dump|raw_ram_dump|memory_dump|raw_production_payload|firmware_payload|bbf_payload|dfu_payload)\b",
-        re.IGNORECASE,
+    ("private-key-block", re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----", re.IGNORECASE)),
+    ("certificate-block", re.compile(r"-----BEGIN CERTIFICATE-----", re.IGNORECASE)),
+    ("fingerprint-line", re.compile(r"\bFingerprint:\s*\S+", re.IGNORECASE)),
+    (
+        "forbidden-raw-field-name",
+        re.compile(
+            r"\b(certificate_pem|certificate_bytes|private_key|signing_key|token_value|connect_token|registration_code|fingerprint_value|wifi_password|prusalink_password|api_key|raw_http_log|raw_tls_log|tls_keylog|SSLKEYLOGFILE|raw_crash_dump|raw_ram_dump|memory_dump|raw_production_payload|firmware_payload|bbf_payload|dfu_payload)\b",
+            re.IGNORECASE,
+        ),
     ),
-    re.compile(r"\bConnect token\b", re.IGNORECASE),
-    re.compile(r"\bregistration code\b", re.IGNORECASE),
-    re.compile(r"\bWi-Fi credential\b", re.IGNORECASE),
-    re.compile(r"\bPrusaLink password\b", re.IGNORECASE),
-    re.compile(r"\bAPI key\b", re.IGNORECASE),
-    re.compile(r"\b(api[-_]?key|token|password|secret)\b\s*[:=]\s*['\"]?[^'\"\s,}]+", re.IGNORECASE),
-    re.compile(r"\bAuthorization\s*[:=]\s*\S+", re.IGNORECASE),
-    re.compile(r"\bAuthorization:", re.IGNORECASE),
-    re.compile(r"\bCookie:", re.IGNORECASE),
-    re.compile(r"\bSet-Cookie:", re.IGNORECASE),
-    re.compile(r"\bx-api-key\b", re.IGNORECASE),
-    re.compile(r"\.(bin|bbf|dfu) payload\b", re.IGNORECASE),
+    ("connect-token-phrase", re.compile(r"\bConnect token\b", re.IGNORECASE)),
+    ("registration-code-phrase", re.compile(r"\bregistration code\b", re.IGNORECASE)),
+    ("wifi-credential-phrase", re.compile(r"\bWi-Fi credential\b", re.IGNORECASE)),
+    ("prusalink-password-phrase", re.compile(r"\bPrusaLink password\b", re.IGNORECASE)),
+    ("api-key-phrase", re.compile(r"\bAPI key\b", re.IGNORECASE)),
+    (
+        "credential-assignment",
+        re.compile(r"(?:^|[\s,{])['\"]?(api[-_]?key|token|password|secret)['\"]?\s*[:=]\s*['\"]?[^'\"\s,}]+", re.IGNORECASE),
+    ),
+    (
+        "credential-header-assignment",
+        re.compile(r"(?:^|[\s,{])['\"]?(authorization|cookie|set-cookie)['\"]?\s*[:=]\s*['\"]?[^'\"\n,}]+", re.IGNORECASE),
+    ),
+    ("api-key-header", re.compile(r"\bx-api-key\b", re.IGNORECASE)),
+    ("firmware-payload-marker", re.compile(r"\.(bin|bbf|dfu) payload\b", re.IGNORECASE)),
 )
 OVERCLAIM_STRINGS = {
     "live service passed locally",
@@ -302,9 +308,9 @@ def contained_output_dir(root: Path, output_dir: str | Path) -> Path:
 
 def reject_forbidden_text(path: Path, text: str) -> None:
     errors: list[str] = []
-    for pattern in FORBIDDEN_TEXT_PATTERNS:
-        for match in pattern.finditer(text):
-            errors.append(f"{path.as_posix()} contains forbidden evidence marker: {match.group(0)}")
+    for label, pattern in FORBIDDEN_TEXT_PATTERNS:
+        if pattern.search(text):
+            errors.append(f"{path.as_posix()} contains forbidden evidence marker: {label}")
     lowered = text.lower()
     for phrase in sorted(OVERCLAIM_STRINGS):
         if phrase in lowered:
