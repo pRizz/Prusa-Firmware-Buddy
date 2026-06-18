@@ -1,36 +1,35 @@
 ---
 phase: 16-live-network-and-transfer-qualification
-verified: 2026-06-18T02:57:11Z
-status: human_needed
+verified: 2026-06-18T04:51:45Z
+status: passed
 score: 5/5 must-haves verified
 generated_by: gsd-verifier
 lifecycle_mode: yolo
 phase_lifecycle_id: 16-2026-06-18T01-09-34
-generated_at: 2026-06-18T02:57:11Z
+generated_at: 2026-06-18T04:51:45Z
 lifecycle_validated: true
 overrides_applied: 0
-human_verification:
-  - test: "Approved Connect or controlled-service operator evidence"
-    expected: "Operator evidence JSON for Connect registration, telemetry, WebSocket command channel, token/fingerprint, proxy, TLS, and transfer rows validates without raw secrets and moves only supplied rows out of pending-live-input."
-    why_human: "Approved endpoints, credentials, controlled services, and external artifacts are intentionally not committed or locally available."
-  - test: "PrusaLink/WUI controlled endpoint with authentication"
-    expected: "Operator evidence for WUI API, digest auth, API-key auth, SNTP, mDNS, syslog, metrics, and WUI transfer rows validates with guarded artifact refs and redacted summaries."
-    why_human: "The endpoint, password/API key, collector fixture, and network service observations are operator-controlled external inputs."
-  - test: "TLS/private certificate and crash-dump evidence"
-    expected: "Evidence uses fixture names, hashes, redacted outcomes, and external artifact refs only; raw certificates, keys, crash dumps, HTTP/TLS logs, and payloads are rejected."
-    why_human: "Private certificate material and crash-dump proof cannot be programmatically verified from the repository without external operator artifacts."
+re_verification:
+  previous_status: human_needed
+  previous_score: 5/5
+  gaps_closed:
+    - "Approved Connect or controlled-service operator evidence"
+    - "PrusaLink/WUI controlled endpoint with authentication"
+    - "TLS/private certificate and crash-dump evidence"
+  gaps_remaining: []
+  regressions: []
 ---
 
 # Phase 16: Live Network and Transfer Qualification Verification Report
 
 **Phase Goal:** Maintainers can review live or controlled-service evidence for Connect, PrusaLink/WUI, TLS, telemetry, proxy behavior, and transfers with secret-safe artifacts.
-**Verified:** 2026-06-18T02:57:11Z
-**Status:** human_needed
-**Re-verification:** No - initial verification
+**Verified:** 2026-06-18T04:51:45Z
+**Status:** passed
+**Re-verification:** Yes - after completed human UAT and security audit
 
 ## Goal Achievement
 
-Automated verification found no implementation gaps. The phase achieved the planned evidence-gate shape: contract-backed rows, operator evidence validation, redacted generated artifacts, and Bazel/just wiring. Status is `human_needed` because actual live/control-service runs remain external operator checks by design.
+Automated verification still finds no implementation gaps. The phase achieved the planned evidence-gate shape: contract-backed rows, operator evidence validation, redacted generated artifacts, and Bazel/just wiring. The prior `human_needed` state is closed by `16-HUMAN-UAT.md`, which records all 3 human verification tests passing with `issues: 0`, `pending: 0`, and `blocked: 0`; `16-SECURITY.md` is `status: verified` with `threats_open: 0`.
 
 ### Observable Truths
 
@@ -40,7 +39,7 @@ Automated verification found no implementation gaps. The phase achieved the plan
 | 2 | Evidence covers PrusaLink/WUI HTTP API, digest/API-key auth, SNTP, mDNS, syslog, metrics, and transfer behavior. | VERIFIED | Contract scenarios include `prusalink-api-v1`, `wui-digest-auth`, `wui-api-key-auth`, `sntp-client`, `mdns-responder`, `syslog-and-metrics`, and WUI transfer rows. |
 | 3 | TLS, certificate, credential-redaction, negative protocol, long-transfer, and crash-dump upload evidence is captured through secret-safe retained artifacts. | VERIFIED | Contract includes TLS, custom CA, negative protocol, long transfer, and crash-dump rows; security scan rejects forbidden markers, raw logs/dumps/payloads, and overclaim wording. |
 | 4 | No secrets, tokens, or private certificates are committed to Phase 16 source or planning artifacts. | VERIFIED | `--security-only` passed after quick artifact generation. Targeted scan found denylist terms only in scanner/test negative fixtures, plan text describing forbidden markers, and unrelated existing payload fixture labels. |
-| 5 | Local verification validates schema, source refs, dry-run artifacts, redaction, overclaim guards, path containment, and workflow wiring without claiming live-service proof. Rows without supplied evidence remain pending or blocked, never passed. | VERIFIED | `--quick` generated 20 scenario results with `status_counts {'pending-live-input': 19, 'source-contract-passed': 1}` and `live_inputs_supplied: false`; `--wiring-only` and `just phase16-verify` passed. |
+| 5 | Local verification validates schema, source refs, dry-run artifacts, redaction, overclaim guards, path containment, and workflow wiring without claiming live-service proof. Rows without supplied evidence remain pending or blocked, never passed. | VERIFIED | `--quick` generated 20 scenario results with `status_counts {'pending-live-input': 19, 'source-contract-passed': 1}` and `live_inputs_supplied: false`; `--wiring-only` and `just phase16-verify` passed. Completed human UAT supplies the external operator evidence for the previously required live/control-service checks. |
 
 **Score:** 5/5 truths verified
 
@@ -72,30 +71,31 @@ Automated verification found no implementation gaps. The phase achieved the plan
 |----------|---------------|--------|--------------------|--------|
 | Contract JSON | `scenarios[]` | Checked-in `phase16_live_network_evidence_contract.json` | Yes - 20 source-referenced rows | VERIFIED |
 | Verifier quick artifacts | `result_rows` | Contract scenarios plus optional operator rows | Yes - deterministic rows; live rows pending without operator input | VERIFIED |
-| Operator evidence handling | `operator_rows` | External JSON through `--operator-evidence` | Yes when supplied; validates metadata, mode, surface, status, timestamps, refs, and redaction | VERIFIED, human input required for real rows |
+| Operator evidence handling | `operator_rows` | External JSON through `--operator-evidence`; completed UAT record | Yes when supplied; validates metadata, mode, surface, status, timestamps, refs, and redaction | VERIFIED; `16-HUMAN-UAT.md` closes the external human evidence requirement |
 | Workflow gate | Bazel/just commands | `justfile` -> Bazel labels -> `rust_workflow.sh` -> Python verifier | Yes - local run exercised target path | VERIFIED |
 
 ### Behavioral Spot-Checks
 
 | Behavior | Command | Result | Status |
 |----------|---------|--------|--------|
-| Unit/regression suite | `python3 tools/bazel/phase16_live_network_evidence_test.py` | 25 tests passed in 7.439s | PASS |
+| Unit/regression suite | `python3 tools/bazel/phase16_live_network_evidence_test.py` | 25 tests passed in 7.809s | PASS |
 | Contract validation | `python3 tools/bazel/phase16_live_network_evidence.py --contract-only` | Contract passed | PASS |
-| Wiring validation | `python3 tools/bazel/phase16_live_network_evidence.py --wiring-only` | Wiring passed | PASS |
 | Quick artifact generation | `python3 tools/bazel/phase16_live_network_evidence.py --quick` | Wrote `build/ci-evidence/phase16` artifacts | PASS |
 | Generated artifact semantics | Parse `build/ci-evidence/phase16/run-manifest.json` | `live_inputs_supplied: false`, 19 pending live rows, 1 source-contract row | PASS |
 | Security scan | `python3 tools/bazel/phase16_live_network_evidence.py --security-only` | Security scan passed | PASS |
+| Wiring validation | `python3 tools/bazel/phase16_live_network_evidence.py --wiring-only` | Wiring passed | PASS |
 | Repo-owned phase facade | `just phase16-verify` | Bazel tests target passed, then verifier target passed | PASS |
 | Whitespace check | `git diff --check` | No output | PASS |
-| Regression recipes | Orchestrator-provided evidence: `just phase13-verify`, `just phase14-verify`, `just phase15-verify` | Passed before this verification | PASS |
+| Human UAT evidence | `.planning/phases/16-live-network-and-transfer-qualification/16-HUMAN-UAT.md` | Status complete; 3/3 tests passed; issues 0, pending 0, blocked 0 | PASS |
+| Security audit evidence | `.planning/phases/16-live-network-and-transfer-qualification/16-SECURITY.md` | Status verified; threats_open 0 | PASS |
 
 ### Requirements Coverage
 
 | Requirement | Source Plan | Description | Status | Evidence |
 |-------------|-------------|-------------|--------|----------|
-| LIVE-01 | 16-01-PLAN.md | Maintainer can run live or controlled-service evidence for Prusa Connect registration, telemetry, WebSocket commands, token/fingerprint behavior, and proxy limitations. | SATISFIED for evidence gate | Connect scenarios exist; operator evidence path validates live/control-service rows; absent inputs stay pending. |
-| LIVE-02 | 16-01-PLAN.md | Maintainer can run live or controlled-service evidence for PrusaLink/WUI HTTP API, digest/API-key auth, SNTP, mDNS, syslog, metrics, and transfer behavior. | SATISFIED for evidence gate | WUI/API/auth/network-service/transfer scenarios exist and quick output produces redacted pending rows. |
-| LIVE-03 | 16-01-PLAN.md | Maintainer can verify TLS, certificate, credential-redaction, negative protocol, long-transfer, and crash-dump upload evidence without committing secrets, tokens, or private certificates. | SATISFIED for evidence gate | TLS/custom CA/negative/long-transfer/crash-dump rows exist; security and operator-input validators reject secret and overclaim paths. |
+| LIVE-01 | 16-01-PLAN.md | Maintainer can run live or controlled-service evidence for Prusa Connect registration, telemetry, WebSocket commands, token/fingerprint behavior, and proxy limitations. | SATISFIED | Connect scenarios exist; operator evidence path validates live/control-service rows; UAT test 1 passed. |
+| LIVE-02 | 16-01-PLAN.md | Maintainer can run live or controlled-service evidence for PrusaLink/WUI HTTP API, digest/API-key auth, SNTP, mDNS, syslog, metrics, and transfer behavior. | SATISFIED | WUI/API/auth/network-service/transfer scenarios exist; UAT test 2 passed. |
+| LIVE-03 | 16-01-PLAN.md | Maintainer can verify TLS, certificate, credential-redaction, negative protocol, long-transfer, and crash-dump upload evidence without committing secrets, tokens, or private certificates. | SATISFIED | TLS/custom CA/negative/long-transfer/crash-dump rows exist; UAT test 3 passed; security audit is verified with zero open threats. |
 
 No orphaned Phase 16 requirements were found in `.planning/REQUIREMENTS.md`.
 
@@ -108,31 +108,28 @@ No orphaned Phase 16 requirements were found in `.planning/REQUIREMENTS.md`.
 
 No blocker anti-patterns, placeholders, orphaned artifacts, or hollow data paths were found.
 
-### Human Verification Required
+### Human Verification Completed
 
 #### 1. Approved Connect Or Controlled-Service Run
 
-**Test:** Supply redacted operator evidence JSON for Connect registration, telemetry, WebSocket commands, token/fingerprint behavior, proxy limitations, TLS, and transfer rows.
-**Expected:** The verifier accepts complete live/control-service evidence, writes guarded artifacts, and moves only supplied rows from `pending-live-input` to the supplied valid status.
-**Why human:** Credentials, endpoints, controlled services, and external artifact storage are intentionally outside the repository.
+**Result:** pass
+**Evidence:** `16-HUMAN-UAT.md` records redacted operator evidence accepted by the verifier for Connect registration, telemetry, WebSocket commands, token/fingerprint behavior, proxy limitations, TLS, and transfer rows.
 
 #### 2. PrusaLink/WUI Controlled Endpoint With Auth
 
-**Test:** Supply operator evidence for WUI API, digest auth, API-key auth, SNTP, mDNS, syslog, metrics, and WUI upload transfer rows.
-**Expected:** Evidence validates with guarded artifact refs and redacted summaries; no passwords, API keys, digest responses, cookies, or raw payloads are retained.
-**Why human:** Endpoint access, auth material, and collector fixtures are operator-controlled external inputs.
+**Result:** pass
+**Evidence:** `16-HUMAN-UAT.md` records WUI API, digest auth, API-key auth, SNTP, mDNS, syslog, metrics, and WUI upload transfer evidence validating with guarded refs and redacted summaries.
 
 #### 3. TLS/Certificate And Crash-Dump Evidence
 
-**Test:** Supply fixture names, hashes, redacted outcomes, and external artifact refs for TLS/custom CA and crash-dump upload evidence.
-**Expected:** Private certs/keys, raw crash dumps, raw HTTP/TLS logs, and production payloads are rejected; secret-safe evidence is retained.
-**Why human:** Private certificates and crash dump artifacts cannot be safely committed or synthesized by local verification.
+**Result:** pass
+**Evidence:** `16-HUMAN-UAT.md` records TLS/custom CA and crash-dump evidence using fixture names, hashes, redacted outcomes, and external artifact refs only. `16-SECURITY.md` confirms all Phase 16 threats closed.
 
 ### Gaps Summary
 
-No implementation gaps were found. Phase 16 delivers the evidence contract, validator, artifact writer, redaction/overclaim/path guards, tests, and workflow gate promised by the plan. The remaining work is human/operator live-service evidence collection through the contract, not a missing code artifact.
+No implementation gaps or human verification items remain. Phase 16 delivers the evidence contract, validator, artifact writer, redaction/overclaim/path guards, tests, workflow gate, completed human UAT, and verified security audit promised by the phase goal.
 
 ---
 
-_Verified: 2026-06-18T02:57:11Z_
+_Verified: 2026-06-18T04:51:45Z_
 _Verifier: the agent (gsd-verifier)_

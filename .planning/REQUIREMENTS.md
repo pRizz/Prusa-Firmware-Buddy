@@ -27,9 +27,9 @@ These requirements convert the non-local v1.0 cutover blockers into durable evid
 
 ### Live Network Evidence
 
-- [ ] **LIVE-01**: Maintainer can run live or controlled-service evidence for Prusa Connect registration, telemetry, WebSocket commands, token/fingerprint behavior, and proxy limitations.
-- [ ] **LIVE-02**: Maintainer can run live or controlled-service evidence for PrusaLink/WUI HTTP API, digest/API-key auth, SNTP, mDNS, syslog, metrics, and transfer behavior.
-- [ ] **LIVE-03**: Maintainer can verify TLS, certificate, credential-redaction, negative protocol, long-transfer, and crash-dump upload evidence without committing secrets, tokens, or private certificates.
+- [x] **LIVE-01**: Maintainer can run live or controlled-service evidence for Prusa Connect registration, telemetry, WebSocket commands, token/fingerprint behavior, and proxy limitations.
+- [x] **LIVE-02**: Maintainer can run live or controlled-service evidence for PrusaLink/WUI HTTP API, digest/API-key auth, SNTP, mDNS, syslog, metrics, and transfer behavior.
+- [x] **LIVE-03**: Maintainer can verify TLS, certificate, credential-redaction, negative protocol, long-transfer, and crash-dump upload evidence without committing secrets, tokens, or private certificates.
 
 ### Release Candidate Evidence
 
@@ -80,9 +80,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HARD-01 | Phase 15 | Complete |
 | HARD-02 | Phase 15 | Complete |
 | HARD-03 | Phase 15 | Complete |
-| LIVE-01 | Phase 16 | Pending |
-| LIVE-02 | Phase 16 | Pending |
-| LIVE-03 | Phase 16 | Pending |
+| LIVE-01 | Phase 16 | Complete |
+| LIVE-02 | Phase 16 | Complete |
+| LIVE-03 | Phase 16 | Complete |
 | REL-01 | Phase 17 | Pending |
 | REL-02 | Phase 17 | Pending |
 | REL-03 | Phase 17 | Pending |
@@ -99,4 +99,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 ______________________________________________________________________
 
 *Requirements defined: 2026-06-15*
-*Last updated: 2026-06-15 after v1.1 requirements definition*
+*Last updated: 2026-06-18 after Phase 16 completion*

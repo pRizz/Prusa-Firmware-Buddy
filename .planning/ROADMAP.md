@@ -36,7 +36,7 @@ Full phase details are archived in `.planning/milestones/v1.0-ROADMAP.md`.
 - [x] **Phase 13: CI Evidence Orchestration** - Make aggregate cutover evidence run in CI with retained machine-readable artifacts and clear failure ownership. (completed 2026-06-16)
 - [x] **Phase 14: Simulator Evidence Gates** - Convert simulator-only cutover blockers into runnable simulator evidence flows with requirement traceability. (completed 2026-06-17)
 - [x] **Phase 15: Hardware Safety and Media Qualification** - Define and capture hardware, safety, storage-media, UI-input, MMU, RS485, and toolchanger cutover evidence. (completed 2026-06-18)
-- [ ] **Phase 16: Live Network and Transfer Qualification** - Capture live or controlled-service evidence for Connect, WUI, TLS, telemetry, proxy behavior, and transfers.
+- [x] **Phase 16: Live Network and Transfer Qualification** - Capture live or controlled-service evidence for Connect, WUI, TLS, telemetry, proxy behavior, and transfers. (completed 2026-06-18)
 - [ ] **Phase 17: Release Candidate Artifact and Signing Gates** - Prove release-candidate artifacts, signing, provenance, resources, and auxiliary packages through Bazel-owned workflows.
 - [ ] **Phase 18: Retained-Code Acceptance and Cutover Review** - Make retained-code acceptance, final reference-demotion criteria, and maintainer approval explicit and auditable.
 
@@ -98,7 +98,7 @@ Plans:
    **Plans**: 1 plan
 
 Plans:
-- [ ] 16-01-PLAN.md - Live network evidence contract, verifier/collector, operator evidence validation, and Bazel/just gate.
+- [x] 16-01-PLAN.md - Live network evidence contract, verifier/collector, operator evidence validation, and Bazel/just gate.
 
 ### Phase 17: Release Candidate Artifact and Signing Gates
 
@@ -136,6 +136,6 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17 -> 18
 | 13. CI Evidence Orchestration | v1.1 | 1/1 | Complete    | 2026-06-16 |
 | 14. Simulator Evidence Gates | v1.1 | 1/1 | Complete    | 2026-06-17 |
 | 15. Hardware Safety and Media Qualification | v1.1 | 1/1 | Complete    | 2026-06-18 |
-| 16. Live Network and Transfer Qualification | v1.1 | 0/1 | Not started | - |
+| 16. Live Network and Transfer Qualification | v1.1 | 1/1 | Complete    | 2026-06-18 |
 | 17. Release Candidate Artifact and Signing Gates | v1.1 | 0/1 | Not started | - |
 | 18. Retained-Code Acceptance and Cutover Review | v1.1 | 0/1 | Not started | - |
