@@ -145,9 +145,10 @@ FORBIDDEN_TEXT_PATTERNS = (
     re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----", re.IGNORECASE),
     re.compile(r"-----BEGIN CERTIFICATE-----", re.IGNORECASE),
     re.compile(
-        r"\b(certificate[_-]?pem|password[_-]?value|token[_-]?value|certificate[_-]?bytes|private[_-]?key|signing[_-]?key[_-]?value|raw[_-]?crash[_-]?dump|firmware[_-]?payload)\b",
+        r"\b(certificate[_-]?pem|password[_-]?value|token[_-]?value|wifi[_-]?password|certificate[_-]?bytes|private[_-]?key|signing[_-]?key(?:[_-]?value)?|raw[_-]?crash[_-]?dump|raw[_-]?ram[_-]?dump|memory[_-]?dump|firmware[_-]?payload|bbf[_-]?payload|dfu[_-]?payload)\b",
         re.IGNORECASE,
     ),
+    re.compile(r"\.(bin|bbf|dfu) payload\b", re.IGNORECASE),
     re.compile(r"\bConnect token\b", re.IGNORECASE),
     re.compile(r"\bWi-Fi credential\b", re.IGNORECASE),
     re.compile(r"\bcredential value\b", re.IGNORECASE),
@@ -155,9 +156,13 @@ FORBIDDEN_TEXT_PATTERNS = (
 OVERCLAIM_STRINGS = {
     "hardware verified locally",
     "local hardware proof",
+    "hardware qualification passed locally",
+    "final cutover complete",
     "simulator passed locally",
     "live service passed locally",
+    "release readiness proven",
     "release-candidate passed locally",
+    "signing proof complete",
     "signing verified locally",
     "retained-code accepted by maintainer",
     "reference demotion approved",
@@ -502,6 +507,7 @@ def check_wiring(root: Path) -> None:
                 "phase15_hardware_evidence_contract.json",
                 ":phase15_source_ref_manifests",
                 "//:phase15_hardware_evidence_docs",
+                "//:phase11_cutover_evidence_docs",
                 *phase15_manifest_srcs,
             ],
         )
@@ -648,6 +654,7 @@ def scenario_result_row(scenario: dict[str, Any], maybe_operator_row: dict[str, 
         firmware_build = maybe_operator_row["firmware_build"]
         device = maybe_operator_row["device"]
     return {
+        "artifact_refs": [artifact_ref],
         "artifact_ref": artifact_ref,
         "auxiliary_surface": scenario["auxiliary_surface"],
         "board": scenario["board"],
@@ -656,10 +663,13 @@ def scenario_result_row(scenario: dict[str, Any], maybe_operator_row: dict[str, 
         "id": scenario_id,
         "media_surface": scenario["media_surface"],
         "operator": operator,
+        "operator_metadata_present": maybe_operator_row is not None,
         "printer_family": scenario["printer_family"],
         "proof_scope": scenario["proof_scope"],
         "requirement_ids": scenario["requirement_ids"],
         "residual_risk": residual_risk,
+        "scenario_id": scenario_id,
+        "source_contract_refs": scenario["source_contract_refs"],
         "status": status,
         "timestamp": timestamp,
         "title": scenario["title"],
@@ -711,10 +721,12 @@ def write_quick_artifacts(
     generated_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     run_manifest = {
         "artifact_name": contract["artifact_name"],
+        "command_mode": "quick",
         "generated_at": generated_at,
         "output_root": output_dir.as_posix(),
         "phase": PHASE,
         "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
+        "requirement_coverage": sorted(REQUIRED_REQUIREMENT_IDS),
         "scenarios": [
             {
                 "artifact_ref": row["artifact_ref"],
@@ -724,6 +736,9 @@ def write_quick_artifacts(
             }
             for row in result_rows
         ],
+        "source_contract_snapshot": (
+            output_dir / "source-contract-snapshots" / CONTRACT_MANIFEST.name
+        ).as_posix(),
         "status_counts": status_counts,
     }
     normalized_results = {

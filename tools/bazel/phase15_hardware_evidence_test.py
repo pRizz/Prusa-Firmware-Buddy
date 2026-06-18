@@ -136,6 +136,7 @@ shell_binary(
         "manifests/phase15_hardware_evidence_contract.json",
         ":phase15_source_ref_manifests",
         "//:phase15_hardware_evidence_docs",
+        "//:phase11_cutover_evidence_docs",
     ],
 )
 
@@ -426,33 +427,72 @@ esac
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(expected, result.stdout)
 
-    def test_security_rejects_forbidden_generated_artifact_text(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.copy_complete_surface(root)
-            self.write_file(root, "build/ci-evidence/phase15/leak.json", "password_value\n")
+    def test_security_rejects_secret_markers(self) -> None:
+        cases = [
+            "-----BEGIN PRIVATE KEY-----",
+            "-----BEGIN CERTIFICATE-----",
+            "token_value",
+            "password_value",
+            "wifi_password",
+            "Wi-Fi credential",
+            "Connect token",
+            "certificate_bytes",
+            "private_key",
+            "signing_key",
+            "raw_crash_dump",
+            "raw_ram_dump",
+            "memory_dump",
+            "firmware_payload",
+            "bbf_payload",
+            "dfu_payload",
+            ".bin payload",
+            ".bbf payload",
+            ".dfu payload",
+        ]
+        for marker in cases:
+            with self.subTest(marker=marker):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_complete_surface(root)
+                    self.write_file(root, "build/ci-evidence/phase15/leak.json", marker + "\n")
 
-            # Act
-            result = self.run_verifier(["--security-only"], maybe_root=root)
+                    # Act
+                    result = self.run_verifier(["--security-only"], maybe_root=root)
 
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("password_value", result.stdout)
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(marker, result.stdout)
 
-    def test_security_rejects_non_local_overclaim_text(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.copy_complete_surface(root)
-            self.write_file(root, "build/ci-evidence/phase15/overclaim.json", "hardware verified locally\n")
+    def test_security_rejects_overclaim_wording(self) -> None:
+        cases = [
+            "hardware verified locally",
+            "local hardware proof",
+            "hardware qualification passed locally",
+            "final cutover complete",
+            "cutover complete",
+            "release readiness proven",
+            "release-candidate passed locally",
+            "signing proof complete",
+            "signing verified locally",
+            "retained-code accepted by maintainer",
+            "reference demotion approved",
+            "reference removal complete",
+        ]
+        for phrase in cases:
+            with self.subTest(phrase=phrase):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_complete_surface(root)
+                    self.write_file(root, "build/ci-evidence/phase15/overclaim.json", phrase + "\n")
 
-            # Act
-            result = self.run_verifier(["--security-only"], maybe_root=root)
+                    # Act
+                    result = self.run_verifier(["--security-only"], maybe_root=root)
 
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("hardware verified locally", result.stdout)
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(phrase, result.stdout)
 
     def test_operator_evidence_rejects_artifact_path_traversal(self) -> None:
         # Arrange
