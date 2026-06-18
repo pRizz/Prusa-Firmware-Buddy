@@ -391,6 +391,31 @@ esac
         self.assertEqual(scenario["operator"], "phase15-test-operator")
         self.assertEqual(scenario["artifact_ref"], "build/ci-evidence/phase15/logs/hard-storage-usb-fatfs-removable-media.log")
 
+    def test_operator_evidence_accepts_top_level_list(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            operator_path = "operator-evidence-list.json"
+            self.write_file(
+                root,
+                operator_path,
+                json.dumps([self.complete_operator_row()], indent=2, sort_keys=True) + "\n",
+            )
+
+            # Act
+            result = self.run_verifier(["--quick", "--operator-evidence", operator_path], maybe_root=root)
+            normalized = json.loads(
+                (root / "build/ci-evidence/phase15/normalized-scenario-results.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        rows = {row["id"]: row for row in normalized["scenarios"]}
+        self.assertEqual(rows["hard-storage-usb-fatfs-removable-media"]["status"], "passed")
+
     def test_operator_evidence_rejects_missing_metadata(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -419,6 +444,39 @@ esac
                 with temp_dir:
                     self.copy_complete_surface(root)
                     operator_path = self.write_operator_evidence(root, [row])
+
+                    # Act
+                    result = self.run_verifier(["--quick", "--operator-evidence", operator_path], maybe_root=root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(expected, result.stdout)
+
+    def test_operator_evidence_rejects_forbidden_full_document_markers(self) -> None:
+        cases = [
+            (
+                {
+                    "evidence_rows": [self.complete_operator_row()],
+                    "raw_crash_dump": "redacted test value",
+                },
+                "raw_crash_dump",
+            ),
+            (
+                {
+                    "evidence_rows": [self.complete_operator_row()],
+                    "metadata": {"note": "local hardware proof"},
+                },
+                "local hardware proof",
+            ),
+        ]
+        for payload, expected in cases:
+            with self.subTest(expected=expected):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_complete_surface(root)
+                    operator_path = "operator-evidence-extra.json"
+                    self.write_file(root, operator_path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
 
                     # Act
                     result = self.run_verifier(["--quick", "--operator-evidence", operator_path], maybe_root=root)

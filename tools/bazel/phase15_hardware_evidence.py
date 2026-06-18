@@ -568,30 +568,33 @@ def check_wiring(root: Path) -> None:
         raise VerificationError("\n".join(errors))
 
 
-def load_operator_evidence_path(root: Path, path: str | None) -> tuple[Path | None, dict[str, Any] | None]:
+def load_operator_evidence_path(root: Path, path: str | None) -> tuple[Path | None, list[Any] | None]:
     if not path:
         return None, None
     evidence_path = Path(path)
     full_path = evidence_path if evidence_path.is_absolute() else root / evidence_path
     if not full_path.exists():
         raise VerificationError(f"operator evidence file does not exist: {path}")
+    raw_text = full_path.read_text(encoding="utf-8")
+    reject_forbidden_text(evidence_path, raw_text)
     try:
-        data = json.loads(full_path.read_text(encoding="utf-8"))
+        data = json.loads(raw_text)
     except json.JSONDecodeError as error:
         raise VerificationError(f"operator evidence is not valid JSON: {error}") from error
-    if not isinstance(data, dict):
-        raise VerificationError("operator evidence must contain a top-level object")
-    return evidence_path, data
+    if isinstance(data, list):
+        return evidence_path, data
+    if isinstance(data, dict):
+        rows = data.get("evidence_rows")
+        if isinstance(rows, list):
+            return evidence_path, rows
+    raise VerificationError("operator evidence must contain an evidence_rows list or be a top-level list")
 
 
 def validated_operator_rows(root: Path, contract: dict[str, Any], path: str | None) -> dict[str, dict[str, str]]:
-    evidence_path, data = load_operator_evidence_path(root, path)
-    if data is None:
+    evidence_path, rows = load_operator_evidence_path(root, path)
+    if rows is None:
         return {}
     scenarios_by_id = {scenario["id"]: scenario for scenario in contract_scenarios(contract)}
-    rows = data.get("evidence_rows")
-    if not isinstance(rows, list):
-        raise VerificationError("operator evidence must contain an evidence_rows list")
     parsed_rows: dict[str, dict[str, str]] = {}
     errors: list[str] = []
     for index, row in enumerate(rows):
