@@ -90,6 +90,10 @@ SOURCE_CONTRACT_ALLOWED_STATUSES = {
     "rejected-redaction",
     "rejected-overclaim",
 }
+LIVE_PASS_EVIDENCE_TYPES = {
+    "live-service-observation",
+    "controlled-service-observation",
+}
 REQUIRED_OPERATOR_FIELDS = [
     "device",
     "firmware_build",
@@ -229,6 +233,17 @@ def require_string(row: dict[str, Any], field: str, row_name: str) -> str:
     if not isinstance(value, str) or not value:
         raise VerificationError(f"{row_name} {field} must be a non-empty string")
     return value
+
+
+def require_iso_8601_utc_timestamp(row: dict[str, Any], field: str, row_name: str) -> str:
+    timestamp_text = require_string(row, field, row_name)
+    try:
+        parsed_timestamp = datetime.fromisoformat(timestamp_text.replace("Z", "+00:00"))
+    except ValueError as error:
+        raise VerificationError(f"{row_name} {field} must be ISO-8601 UTC") from error
+    if parsed_timestamp.tzinfo is None or parsed_timestamp.utcoffset() != timezone.utc.utcoffset(parsed_timestamp):
+        raise VerificationError(f"{row_name} {field} must be ISO-8601 UTC")
+    return timestamp_text
 
 
 def require_list_of_strings(row: dict[str, Any], field: str, row_name: str) -> list[str]:
@@ -672,6 +687,8 @@ def validated_operator_rows(root: Path, contract: dict[str, Any], path: str | No
             reject_forbidden_text(evidence_path or Path("operator-evidence"), row_text)
             scenario_id = require_string(row, "scenario_id", row_name)
             result = require_string(row, "result", row_name)
+            require_iso_8601_utc_timestamp(row, "timestamp", row_name)
+            evidence_type = require_string(row, "evidence_type", row_name)
             service_surface = require_string(row, "service_surface", row_name)
             mode = require_string(row, "mode", row_name)
             if scenario_id not in scenarios_by_id:
@@ -688,6 +705,9 @@ def validated_operator_rows(root: Path, contract: dict[str, Any], path: str | No
                 raise VerificationError(f"{row_name} service_surface does not match {scenario_id}")
             if mode != scenario["mode"]:
                 raise VerificationError(f"{row_name} mode does not match {scenario_id}")
+            if scenario["proof_scope"] == "live-service-observation" and result == "passed":
+                if evidence_type not in LIVE_PASS_EVIDENCE_TYPES:
+                    raise VerificationError(f"{row_name} passed live evidence must be live or controlled-service evidence")
             artifact_refs = validate_artifact_refs(row["artifact_refs"], row_name)
         except VerificationError as error:
             errors.append(str(error))

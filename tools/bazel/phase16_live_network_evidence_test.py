@@ -490,6 +490,40 @@ esac
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("cannot traverse", result.stdout)
 
+    def test_operator_evidence_rejects_non_live_pass_evidence_type_before_writing(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            row = self.complete_operator_row()
+            row["evidence_type"] = "local-dry-run"
+            operator_path = self.write_operator_evidence(root, [row])
+
+            # Act
+            result = self.run_verifier(["--quick", "--operator-evidence", operator_path], maybe_root=root)
+
+            # Assert
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("passed live evidence", result.stdout)
+            self.assertFalse((root / "build/ci-evidence/phase16/run-manifest.json").exists())
+
+    def test_operator_evidence_rejects_malformed_timestamp_before_writing(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            row = self.complete_operator_row()
+            row["timestamp"] = "not-a-timestamp"
+            operator_path = self.write_operator_evidence(root, [row])
+
+            # Act
+            result = self.run_verifier(["--quick", "--operator-evidence", operator_path], maybe_root=root)
+
+            # Assert
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("timestamp must be ISO-8601 UTC", result.stdout)
+            self.assertFalse((root / "build/ci-evidence/phase16/run-manifest.json").exists())
+
     def test_security_rejects_secret_markers(self) -> None:
         cases = [
             "-----BEGIN PRIVATE KEY-----",
