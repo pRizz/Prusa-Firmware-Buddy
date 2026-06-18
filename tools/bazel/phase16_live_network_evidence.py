@@ -172,6 +172,8 @@ FORBIDDEN_TEXT_PATTERNS = (
     re.compile(r"\bWi-Fi credential\b", re.IGNORECASE),
     re.compile(r"\bPrusaLink password\b", re.IGNORECASE),
     re.compile(r"\bAPI key\b", re.IGNORECASE),
+    re.compile(r"\b(api[-_]?key|token|password|secret)\b\s*[:=]\s*['\"]?[^'\"\s,}]+", re.IGNORECASE),
+    re.compile(r"\bAuthorization\s*[:=]\s*\S+", re.IGNORECASE),
     re.compile(r"\bAuthorization:", re.IGNORECASE),
     re.compile(r"\bCookie:", re.IGNORECASE),
     re.compile(r"\bSet-Cookie:", re.IGNORECASE),

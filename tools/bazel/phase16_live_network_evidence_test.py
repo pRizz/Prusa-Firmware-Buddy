@@ -545,6 +545,28 @@ esac
                 expected_marker = marker.split()[0] if ":" in marker else marker
                 self.assertIn(expected_marker, result.stdout)
 
+    def test_security_rejects_secret_assignment_forms(self) -> None:
+        cases = [
+            ("api-key: super-secret-value", "api-key: super-secret-value"),
+            ("token=super-secret-value", "token=super-secret-value"),
+            ("password: super-secret-value", "password: super-secret-value"),
+            ("Authorization = Bearer super-secret-value", "Authorization = Bearer"),
+        ]
+        for marker, expected in cases:
+            with self.subTest(marker=marker):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_complete_surface(root)
+                    self.write_file(root, "build/ci-evidence/phase16/leak.json", marker + "\n")
+
+                    # Act
+                    result = self.run_verifier(["--security-only"], maybe_root=root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(expected, result.stdout)
+
     def test_security_rejects_overclaim_wording(self) -> None:
         cases = [
             "live service passed locally",
