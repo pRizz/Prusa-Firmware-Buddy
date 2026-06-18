@@ -595,6 +595,26 @@ esac
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("cannot traverse", result.stdout)
 
+    def test_quick_rejects_symlinked_output_parent(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        outside_dir = tempfile.TemporaryDirectory()
+        with temp_dir, outside_dir:
+            outside_root = Path(outside_dir.name)
+            self.copy_complete_surface(root)
+            (root / "build").mkdir()
+            (root / "build/ci-evidence").symlink_to(outside_root, target_is_directory=True)
+            (outside_root / "sentinel.txt").write_text("keep\n", encoding="utf-8")
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+            # Assert
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("resolves outside", result.stdout)
+            self.assertFalse((outside_root / "phase16/run-manifest.json").exists())
+            self.assertEqual((outside_root / "sentinel.txt").read_text(encoding="utf-8"), "keep\n")
+
     def test_wiring_accepts_phase16_surface(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()

@@ -270,6 +270,19 @@ def require_repo_relative_under(path_value: str | Path, output_root: str | Path,
     return relative_path
 
 
+def contained_output_dir(root: Path, output_dir: str | Path) -> Path:
+    relative_path = require_repo_relative_under(output_dir, DEFAULT_OUTPUT_DIR, "--output-dir")
+    expected_root = root.resolve() / DEFAULT_OUTPUT_DIR
+    full_output_dir = (root / relative_path).resolve(strict=False)
+    try:
+        full_output_dir.relative_to(expected_root)
+    except ValueError as error:
+        raise VerificationError(
+            f"--output-dir resolves outside {DEFAULT_OUTPUT_DIR.as_posix()}: {relative_path.as_posix()}"
+        ) from error
+    return full_output_dir
+
+
 def reject_forbidden_text(path: Path, text: str) -> None:
     errors: list[str] = []
     for pattern in FORBIDDEN_TEXT_PATTERNS:
@@ -482,9 +495,9 @@ def check_contract(root: Path) -> dict[str, Any]:
 
 
 def iter_security_files(root: Path, output_dir: Path) -> list[Path]:
-    require_repo_relative_under(output_dir, DEFAULT_OUTPUT_DIR, "--output-dir")
+    relative_output_dir = require_repo_relative_under(output_dir, DEFAULT_OUTPUT_DIR, "--output-dir")
+    full_output_dir = contained_output_dir(root, relative_output_dir)
     files = [CONTRACT_MANIFEST]
-    full_output_dir = root / output_dir
     if full_output_dir.exists():
         files.extend(
             sorted(
@@ -776,8 +789,8 @@ def write_quick_artifacts(
     output_dir: Path,
     operator_rows: dict[str, dict[str, Any]],
 ) -> None:
-    require_repo_relative_under(output_dir, DEFAULT_OUTPUT_DIR, "--output-dir")
-    full_output_dir = root / output_dir
+    relative_output_dir = require_repo_relative_under(output_dir, DEFAULT_OUTPUT_DIR, "--output-dir")
+    full_output_dir = contained_output_dir(root, relative_output_dir)
     if full_output_dir.exists():
         shutil.rmtree(full_output_dir)
     (full_output_dir / "logs").mkdir(parents=True)
@@ -789,20 +802,20 @@ def write_quick_artifacts(
         for scenario in scenarios
     ]
     for row in result_rows:
-        write_log(root, output_dir, row)
+        write_log(root, full_output_dir, row)
 
     status_counts: dict[str, int] = {}
     for row in result_rows:
         status = str(row["status"])
         status_counts[status] = status_counts.get(status, 0) + 1
     generated_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-    snapshot_path = output_dir / "source-contract-snapshots" / CONTRACT_MANIFEST.name
+    snapshot_path = relative_output_dir / "source-contract-snapshots" / CONTRACT_MANIFEST.name
     run_manifest = {
         "artifact_name": contract["artifact_name"],
         "command_mode": "quick",
         "generated_at": generated_at,
         "live_inputs_supplied": bool(operator_rows),
-        "output_root": output_dir.as_posix(),
+        "output_root": relative_output_dir.as_posix(),
         "phase": PHASE,
         "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
         "requirement_coverage": sorted(REQUIRED_REQUIREMENT_IDS),
@@ -850,15 +863,15 @@ def write_quick_artifacts(
             for row in result_rows
         },
     }
-    write_json(root, output_dir / "run-manifest.json", run_manifest)
-    write_json(root, output_dir / "normalized-scenario-results.json", normalized_results)
-    write_json(root, output_dir / "redacted-network-summary.json", redacted_summary)
+    write_json(root, full_output_dir / "run-manifest.json", run_manifest)
+    write_json(root, full_output_dir / "normalized-scenario-results.json", normalized_results)
+    write_json(root, full_output_dir / "redacted-network-summary.json", redacted_summary)
     write_json(
         root,
-        output_dir / "operator-evidence-input.json",
+        full_output_dir / "operator-evidence-input.json",
         {"evidence_rows": list(operator_rows.values())},
     )
-    shutil.copy2(root / CONTRACT_MANIFEST, root / snapshot_path)
+    shutil.copy2(root / CONTRACT_MANIFEST, full_output_dir / "source-contract-snapshots" / CONTRACT_MANIFEST.name)
 
 
 def main() -> int:
