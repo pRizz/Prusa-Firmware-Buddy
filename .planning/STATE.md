@@ -4,8 +4,8 @@ milestone: v1.1
 milestone_name: Cutover Evidence Hardening
 status: executing
 stopped_at: Phase 17 context gathered
-last_updated: "2026-06-19T14:35:25.953Z"
-last_activity: 2026-06-19 -- Phase 17 planning complete
+last_updated: "2026-06-19T14:36:17.307Z"
+last_activity: 2026-06-19 -- Phase 17 execution started
 progress:
   total_phases: 6
   completed_phases: 4
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-06-15)
 
 ## Current Position
 
-Phase: 17
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-06-19 -- Phase 17 planning complete
+Phase: 17 (Release Candidate Artifact and Signing Gates) — EXECUTING
+Plan: 1 of 1
+Status: Executing Phase 17
+Last activity: 2026-06-19 -- Phase 17 execution started
 
 Progress: [██████████] 100%
 
