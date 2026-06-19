@@ -323,6 +323,51 @@ phase17-release-artifacts-smoke:
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(requirement_id, result.stdout)
 
+    def test_contract_rejects_source_refs_outside_approved_manifests(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            self.write_file(
+                root,
+                "tools/bazel/manifests/unapproved.json",
+                json.dumps({"entries": [{"id": "mini_boot"}]}, indent=2, sort_keys=True) + "\n",
+            )
+            contract = self.read_contract(root)
+            contract["rows"][0]["source_contract_refs"] = [
+                "tools/bazel/manifests/unapproved.json#mini_boot",
+            ]
+            self.write_contract(root, contract)
+
+            # Act
+            result = self.run_verifier(["--contract-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("not an approved Phase 17 source manifest", result.stdout)
+
+    def test_contract_rejects_nested_source_ref_ids_outside_row_collections(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            representative_manifest = root / "tools/bazel/manifests/representative_products.json"
+            data = json.loads(representative_manifest.read_text(encoding="utf-8"))
+            data["metadata"] = {"id": "nested-only"}
+            representative_manifest.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            contract = self.read_contract(root)
+            contract["rows"][0]["source_contract_refs"] = [
+                "tools/bazel/manifests/representative_products.json#nested-only",
+            ]
+            self.write_contract(root, contract)
+
+            # Act
+            result = self.run_verifier(["--contract-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("row not found in approved row collections", result.stdout)
+
     def test_contract_rejects_invalid_mismatch_class_and_passed_defaults(self) -> None:
         cases = [
             ("mismatch_class", "unclassified"),

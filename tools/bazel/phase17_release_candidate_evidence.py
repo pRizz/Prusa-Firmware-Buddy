@@ -122,6 +122,22 @@ SOURCE_REF_MANIFESTS = [
     "tools/bazel/manifests/phase15_hardware_evidence_contract.json",
     "tools/bazel/manifests/phase16_live_network_evidence_contract.json",
 ]
+SOURCE_REF_MANIFEST_PATHS = {Path(path) for path in SOURCE_REF_MANIFESTS}
+SOURCE_REF_ROW_COLLECTIONS = {
+    "tools/bazel/manifests/representative_products.json": ["entries"],
+    "tools/bazel/manifests/phase7_generated_outputs.json": ["generated_surfaces"],
+    "tools/bazel/manifests/phase7_storage_media.json": ["storage_surfaces"],
+    "tools/bazel/manifests/phase10_auxiliary_build_update.json": ["auxiliary_build_update_contracts"],
+    "tools/bazel/manifests/phase10_auxiliary_controllers.json": ["auxiliary_controller_contracts"],
+    "tools/bazel/manifests/phase11_cutover_readiness.json": ["cutover_criteria", "known_concern_dispositions"],
+    "tools/bazel/manifests/phase11_parity_pyramid.json": ["parity_pyramid"],
+    "tools/bazel/manifests/phase11_reference_comparisons.json": ["reference_comparisons"],
+    "tools/bazel/manifests/phase11_requirement_evidence.json": ["requirement_evidence"],
+    "tools/bazel/manifests/phase11_retained_code_justifications.json": ["retained_code_justifications"],
+    "tools/bazel/manifests/phase13_ci_evidence_contract.json": ["gates"],
+    "tools/bazel/manifests/phase15_hardware_evidence_contract.json": ["scenarios"],
+    "tools/bazel/manifests/phase16_live_network_evidence_contract.json": ["scenarios"],
+}
 REQUIRED_ROW_FIELDS = [
     "id",
     "title",
@@ -330,14 +346,18 @@ def contract_rows(contract: dict[str, Any]) -> list[dict[str, Any]]:
     return parsed
 
 
-def row_id_exists(data: Any, row_id: str) -> bool:
-    if isinstance(data, dict):
-        if data.get("id") == row_id:
-            return True
-        return any(row_id_exists(value, row_id) for value in data.values())
-    if isinstance(data, list):
-        return any(row_id_exists(value, row_id) for value in data)
-    return False
+def source_ref_row_matches(data: Any, collection_names: list[str], row_id: str) -> list[str]:
+    if not isinstance(data, dict):
+        return []
+    matches: list[str] = []
+    for collection_name in collection_names:
+        rows = data.get(collection_name)
+        if not isinstance(rows, list):
+            continue
+        for index, row in enumerate(rows):
+            if isinstance(row, dict) and row.get("id") == row_id:
+                matches.append(f"{collection_name}[{index}]")
+    return matches
 
 
 def resolve_source_ref(root: Path, source_ref: str, row_name: str) -> None:
@@ -349,9 +369,17 @@ def resolve_source_ref(root: Path, source_ref: str, row_name: str) -> None:
     relative_path = Path(path_text)
     if relative_path.is_absolute() or ".." in relative_path.parts:
         raise VerificationError(f"{row_name} source ref must be repo-relative: {source_ref}")
+    if relative_path not in SOURCE_REF_MANIFEST_PATHS:
+        raise VerificationError(f"{row_name} source ref path is not an approved Phase 17 source manifest: {source_ref}")
     data = load_json(root, relative_path)
-    if not row_id_exists(data, row_id):
-        raise VerificationError(f"{row_name} source ref row not found: {source_ref}")
+    collection_names = SOURCE_REF_ROW_COLLECTIONS.get(relative_path.as_posix(), [])
+    if not collection_names:
+        raise VerificationError(f"{row_name} source ref path has no approved row collections: {source_ref}")
+    matches = source_ref_row_matches(data, collection_names, row_id)
+    if not matches:
+        raise VerificationError(f"{row_name} source ref row not found in approved row collections: {source_ref}")
+    if len(matches) > 1:
+        raise VerificationError(f"{row_name} source ref row matches multiple approved rows: {source_ref}")
 
 
 def validate_doc_ref(root: Path, source_doc_ref: str, row_name: str) -> None:
