@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Cutover Evidence Hardening
-status: executing
-stopped_at: Phase 16 complete; Phase 17 ready for planning
-last_updated: "2026-06-18T04:54:59.715Z"
+status: planning
+stopped_at: Phase 17 context gathered
+last_updated: "2026-06-19T13:59:34.463Z"
 last_activity: 2026-06-18
 progress:
   total_phases: 6
@@ -128,6 +128,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-18T04:54:59.711Z
-Stopped at: Phase 16 complete; Phase 17 ready for planning
-Resume file: .planning/ROADMAP.md
+Last session: 2026-06-19T13:59:34.457Z
+Stopped at: Phase 17 context gathered
+Resume file: .planning/phases/17-release-candidate-artifact-and-signing-gates/17-CONTEXT.md
