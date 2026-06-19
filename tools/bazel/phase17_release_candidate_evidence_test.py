@@ -327,6 +327,8 @@ phase17-release-artifacts-smoke:
         cases = [
             ("mismatch_class", "unclassified"),
             ("default_status", "passed"),
+            ("default_status", "unsupported-status"),
+            ("default_status", "source-contract-passed"),
         ]
         for field, value in cases:
             with self.subTest(field=field):
@@ -443,6 +445,29 @@ phase17-release-artifacts-smoke:
         rows = {row["id"]: row for row in normalized["results"]}
         self.assertEqual(rows["rel-bin-firmware-image"]["status"], "passed")
         self.assertEqual(rows["rel-bin-firmware-image"]["key_identity_ref"], "release-key-fingerprint:sha256:phase17-test")
+
+    def test_release_evidence_rejects_results_outside_contract_statuses(self) -> None:
+        cases = [
+            ("source-contract-passed", "is not allowed"),
+            ("almost-passed", "unsupported result"),
+        ]
+        for result_status, expected in cases:
+            with self.subTest(result_status=result_status):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_complete_surface(root)
+                    evidence_path = self.write_release_evidence(
+                        root,
+                        [self.complete_release_row(result=result_status)],
+                    )
+
+                    # Act
+                    result = self.run_verifier(["--quick", "--release-evidence", evidence_path], maybe_root=root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(expected, result.stdout)
 
     def test_release_evidence_rejects_bad_paths_workflow_and_local_smoke_pass(self) -> None:
         cases = [

@@ -477,6 +477,8 @@ def validate_row_shape(root: Path, row: dict[str, Any], row_name: str, artifact_
         source_refs = require_list_of_strings(row, "source_contract_refs", row_name)
         source_doc_refs = require_list_of_strings(row, "source_doc_refs", row_name)
         allowed_statuses = set(require_list_of_strings(row, "allowed_statuses", row_name))
+        fallback_status = "source-contract-passed" if row.get("proof_scope") == "source-contract" else "pending-release-input"
+        default_status = str(row.get("default_status", fallback_status))
         artifact_outputs = require_list_of_strings(row, "artifact_outputs", row_name)
         retained_artifact_kind = require_string(row, "retained_artifact_kind", row_name)
         artifact_path = require_string(row, "expected_artifact_path", row_name)
@@ -504,9 +506,13 @@ def validate_row_shape(root: Path, row: dict[str, Any], row_name: str, artifact_
         errors.append(f"{row_name} retained_artifact_kind is not declared: {retained_artifact_kind}")
     if not allowed_statuses <= set(STATUS_VOCABULARY):
         errors.append(f"{row_name} allowed_statuses contains unknown statuses")
+    if default_status not in STATUS_VOCABULARY:
+        errors.append(f"{row_name} default_status is invalid: {default_status}")
+    elif default_status not in allowed_statuses:
+        errors.append(f"{row_name} default_status {default_status} is not allowed by allowed_statuses")
     if mismatch_class not in MISMATCH_CLASS_VOCABULARY:
         errors.append(f"{row_name} mismatch_class is invalid: {mismatch_class}")
-    if row.get("default_status") == "passed" and row.get("proof_scope") != "source-contract":
+    if default_status == "passed" and row.get("proof_scope") != "source-contract":
         errors.append(f"{row_name} default_status cannot be passed without approved release evidence")
     if row.get("release_run_required") is True:
         expected = RELEASE_WORKFLOW_IDENTITIES["phase17_release_candidate_artifacts"]
@@ -635,6 +641,13 @@ def validate_release_row_against_contract(row: dict[str, Any], contract_row: dic
         if row.get(field) != contract_row.get(field):
             errors.append(f"{row_name} {field} {row.get(field)!r} does not match contract row {contract_row['id']}")
     result = require_string(row, "result", row_name)
+    allowed_statuses = set(
+        require_list_of_strings(contract_row, "allowed_statuses", str(contract_row["id"]))
+    )
+    if result not in STATUS_VOCABULARY:
+        errors.append(f"{row_name} uses unsupported result: {result}")
+    elif result not in allowed_statuses:
+        errors.append(f"{row_name} result {result} is not allowed for {contract_row['id']}")
     evidence_type = require_string(row, "evidence_type", row_name)
     digest = require_string(row, "artifact_digest_sha256", row_name)
     if digest and not re.fullmatch(r"[0-9a-f]{64}", digest):
