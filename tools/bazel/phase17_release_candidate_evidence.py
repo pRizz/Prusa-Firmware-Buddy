@@ -854,14 +854,6 @@ def check_security(root: Path, output_dir: Path = DEFAULT_OUTPUT_DIR) -> None:
         raise VerificationError("\n".join(errors))
 
 
-def require_file_contains(root: Path, path: Path, needles: list[str]) -> list[str]:
-    try:
-        text = read_text(root, path)
-    except VerificationError as error:
-        return [str(error)]
-    return [f"{path.as_posix()} missing required wiring text: {needle}" for needle in needles if needle not in text]
-
-
 def iter_bazel_call_blocks(text: str, call_name: str) -> list[str]:
     blocks: list[str] = []
     for match in re.finditer(rf"(?m)^\s*{re.escape(call_name)}\(", text):
@@ -922,11 +914,27 @@ def bazel_rule_block(text: str, rule_kind: str, name: str) -> str | None:
     return None
 
 
-def check_release_candidate_artifact_target(root: Path) -> list[str]:
-    try:
-        text = read_text(root, Path("tools/bazel/BUILD.bazel"))
-    except VerificationError as error:
-        return [str(error)]
+def missing_required_items(location: str, actual: list[str], expected: list[str]) -> list[str]:
+    actual_values = set(actual)
+    return [f"{location} missing required wiring item: {item}" for item in expected if item not in actual_values]
+
+
+def check_bazel_list_attr(block: str | None, location: str, attr: str, expected: list[str]) -> list[str]:
+    if block is None:
+        return [f"{location} missing required Bazel rule"]
+    return missing_required_items(f"{location} {attr}", bazel_list_attr(block, attr), expected)
+
+
+def check_bazel_string_attr(block: str | None, location: str, attr: str, expected: str) -> list[str]:
+    if block is None:
+        return [f"{location} missing required Bazel rule"]
+    actual = bazel_string_attr(block, attr)
+    if actual == expected:
+        return []
+    return [f"{location} {attr} must be {expected!r}, not {actual!r}"]
+
+
+def check_release_candidate_artifact_target(text: str) -> list[str]:
     block = bazel_rule_block(text, "filegroup", "phase17_release_candidate_artifacts")
     if block is None:
         return ["tools/bazel/BUILD.bazel missing phase17_release_candidate_artifacts filegroup"]
@@ -946,54 +954,193 @@ def check_release_candidate_artifact_target(root: Path) -> list[str]:
     ]
 
 
+def shell_case_commands(text: str, case_name: str) -> list[str] | None:
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if line.strip() != f"{case_name})":
+            continue
+        commands: list[str] = []
+        for body_line in lines[index + 1:]:
+            stripped = body_line.strip()
+            if stripped == ";;":
+                return commands
+            if stripped and not stripped.startswith("#"):
+                commands.append(stripped)
+        return commands
+    return None
+
+
+def just_recipe_commands(text: str, recipe_name: str) -> list[str] | None:
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if line.strip() != f"{recipe_name}:":
+            continue
+        commands: list[str] = []
+        for body_line in lines[index + 1:]:
+            if body_line and not body_line[0].isspace():
+                break
+            stripped = body_line.strip()
+            if stripped and not stripped.startswith("#"):
+                commands.append(stripped)
+        return commands
+    return None
+
+
+def check_command_order(location: str, commands: list[str], first: str, second: str) -> list[str]:
+    if first not in commands or second not in commands:
+        return []
+    if commands.index(first) <= commands.index(second):
+        return []
+    return [f"{location} must run tests before verifier"]
+
+
+def check_tools_build_wiring(root: Path, manifest_srcs: list[str]) -> list[str]:
+    path = Path("tools/bazel/BUILD.bazel")
+    try:
+        text = read_text(root, path)
+    except VerificationError as error:
+        return [str(error)]
+    errors = check_release_candidate_artifact_target(text)
+    smoke_block = bazel_rule_block(text, "filegroup", "phase17_representative_release_smoke")
+    source_ref_block = bazel_rule_block(text, "filegroup", "phase17_source_ref_manifests")
+    verify_block = bazel_rule_block(text, "shell_binary", "phase17_verify")
+    verify_tests_block = bazel_rule_block(text, "shell_binary", "phase17_verify_tests")
+    errors.extend(check_bazel_list_attr(
+        smoke_block,
+        "tools/bazel/BUILD.bazel filegroup phase17_representative_release_smoke",
+        "srcs",
+        [":representative_release_artifacts"],
+    ))
+    errors.extend(check_bazel_list_attr(
+        source_ref_block,
+        "tools/bazel/BUILD.bazel filegroup phase17_source_ref_manifests",
+        "srcs",
+        manifest_srcs,
+    ))
+    errors.extend(check_bazel_list_attr(
+        verify_block,
+        "tools/bazel/BUILD.bazel shell_binary phase17_verify",
+        "data",
+        [
+            "phase17_release_candidate_evidence.py",
+            "manifests/phase17_release_candidate_evidence_contract.json",
+            ":phase17_release_candidate_artifacts",
+            ":phase17_representative_release_smoke",
+            ":phase17_source_ref_manifests",
+            "//:phase17_release_candidate_evidence_docs",
+            "//:phase11_cutover_evidence_docs",
+        ],
+    ))
+    errors.extend(check_bazel_list_attr(
+        verify_tests_block,
+        "tools/bazel/BUILD.bazel shell_binary phase17_verify_tests",
+        "data",
+        [
+            "phase17_release_candidate_evidence.py",
+            "phase17_release_candidate_evidence_test.py",
+            "manifests/phase17_release_candidate_evidence_contract.json",
+            ":phase17_release_candidate_artifacts",
+            ":phase17_representative_release_smoke",
+            ":phase17_source_ref_manifests",
+        ],
+    ))
+    return errors
+
+
+def check_root_build_wiring(root: Path) -> list[str]:
+    path = Path("BUILD.bazel")
+    try:
+        text = read_text(root, path)
+    except VerificationError as error:
+        return [str(error)]
+    errors: list[str] = []
+    docs_block = bazel_rule_block(text, "filegroup", "phase17_release_candidate_evidence_docs")
+    if docs_block is None:
+        errors.append("BUILD.bazel filegroup phase17_release_candidate_evidence_docs missing required Bazel rule")
+    aliases = {
+        "phase17_release_candidate_artifacts": "//tools/bazel:phase17_release_candidate_artifacts",
+        "phase17_verify": "//tools/bazel:phase17_verify",
+        "phase17_verify_tests": "//tools/bazel:phase17_verify_tests",
+    }
+    for name, actual in aliases.items():
+        errors.extend(check_bazel_string_attr(
+            bazel_rule_block(text, "alias", name),
+            f"BUILD.bazel alias {name}",
+            "actual",
+            actual,
+        ))
+    return errors
+
+
+def check_rust_workflow_wiring(root: Path) -> list[str]:
+    path = Path("tools/bazel/rust_workflow.sh")
+    try:
+        text = read_text(root, path)
+    except VerificationError as error:
+        return [str(error)]
+    errors: list[str] = []
+    verify_commands = shell_case_commands(text, "phase17_verify")
+    verify_tests_commands = shell_case_commands(text, "phase17_verify_tests")
+    if verify_commands is None:
+        errors.append("tools/bazel/rust_workflow.sh phase17_verify case arm missing")
+    else:
+        errors.extend(missing_required_items(
+            "tools/bazel/rust_workflow.sh phase17_verify case arm",
+            verify_commands,
+            [
+                "python3 tools/bazel/phase17_release_candidate_evidence.py --wiring-only",
+                "python3 tools/bazel/phase17_release_candidate_evidence.py --quick",
+            ],
+        ))
+    if verify_tests_commands is None:
+        errors.append("tools/bazel/rust_workflow.sh phase17_verify_tests case arm missing")
+    else:
+        errors.extend(missing_required_items(
+            "tools/bazel/rust_workflow.sh phase17_verify_tests case arm",
+            verify_tests_commands,
+            ["python3 tools/bazel/phase17_release_candidate_evidence_test.py"],
+        ))
+    return errors
+
+
+def check_just_wiring(root: Path) -> list[str]:
+    path = Path("justfile")
+    try:
+        text = read_text(root, path)
+    except VerificationError as error:
+        return [str(error)]
+    errors: list[str] = []
+    verify_commands = just_recipe_commands(text, "phase17-verify")
+    smoke_commands = just_recipe_commands(text, "phase17-release-artifacts-smoke")
+    tests_line = "bazel run //tools/bazel:phase17_verify_tests"
+    verify_line = "bazel run //tools/bazel:phase17_verify"
+    if verify_commands is None:
+        errors.append("justfile phase17-verify recipe missing")
+    else:
+        errors.extend(missing_required_items(
+            "justfile phase17-verify recipe",
+            verify_commands,
+            [tests_line, verify_line],
+        ))
+        errors.extend(check_command_order("justfile phase17-verify recipe", verify_commands, tests_line, verify_line))
+    if smoke_commands is None:
+        errors.append("justfile phase17-release-artifacts-smoke recipe missing")
+    else:
+        errors.extend(missing_required_items(
+            "justfile phase17-release-artifacts-smoke recipe",
+            smoke_commands,
+            ["bazel build //tools/bazel:phase17_representative_release_smoke"],
+        ))
+    return errors
+
+
 def check_wiring(root: Path) -> None:
     errors: list[str] = []
     manifest_srcs = [Path(path).relative_to("tools/bazel").as_posix() for path in SOURCE_REF_MANIFESTS]
-    errors.extend(check_release_candidate_artifact_target(root))
-    errors.extend(require_file_contains(root, Path("tools/bazel/BUILD.bazel"), [
-        'name = "phase17_release_candidate_artifacts"',
-        'name = "phase17_representative_release_smoke"',
-        'name = "phase17_source_ref_manifests"',
-        'name = "phase17_verify"',
-        'name = "phase17_verify_tests"',
-        "phase17_release_candidate_evidence.py",
-        "phase17_release_candidate_evidence_test.py",
-        "phase17_release_candidate_evidence_contract.json",
-        ":phase17_release_candidate_artifacts",
-        ":phase17_representative_release_smoke",
-        ":phase17_source_ref_manifests",
-        "//:phase17_release_candidate_evidence_docs",
-        "//:phase11_cutover_evidence_docs",
-        *manifest_srcs,
-    ]))
-    errors.extend(require_file_contains(root, Path("BUILD.bazel"), [
-        'name = "phase17_release_candidate_evidence_docs"',
-        'name = "phase17_release_candidate_artifacts"',
-        'name = "phase17_verify"',
-        'name = "phase17_verify_tests"',
-    ]))
-    errors.extend(require_file_contains(root, Path("tools/bazel/rust_workflow.sh"), [
-        "phase17_verify)",
-        "python3 tools/bazel/phase17_release_candidate_evidence.py --wiring-only",
-        "python3 tools/bazel/phase17_release_candidate_evidence.py --quick",
-        "phase17_verify_tests)",
-        "python3 tools/bazel/phase17_release_candidate_evidence_test.py",
-    ]))
-    errors.extend(require_file_contains(root, Path("justfile"), [
-        "phase17-verify:",
-        "bazel run //tools/bazel:phase17_verify_tests",
-        "bazel run //tools/bazel:phase17_verify",
-        "phase17-release-artifacts-smoke:",
-        "bazel build //tools/bazel:phase17_representative_release_smoke",
-    ]))
-    try:
-        just_lines = [line.strip() for line in read_text(root, "justfile").splitlines()]
-        tests_line = "bazel run //tools/bazel:phase17_verify_tests"
-        verify_line = "bazel run //tools/bazel:phase17_verify"
-        if tests_line in just_lines and verify_line in just_lines and just_lines.index(tests_line) > just_lines.index(verify_line):
-            errors.append("justfile phase17-verify must run tests before verifier")
-    except VerificationError as error:
-        errors.append(str(error))
+    errors.extend(check_tools_build_wiring(root, manifest_srcs))
+    errors.extend(check_root_build_wiring(root))
+    errors.extend(check_rust_workflow_wiring(root))
+    errors.extend(check_just_wiring(root))
     if errors:
         raise VerificationError("\n".join(errors))
 

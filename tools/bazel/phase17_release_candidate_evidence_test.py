@@ -558,6 +558,7 @@ phase17-release-artifacts-smoke:
                 'name = "phase17_missing_release_candidate_artifacts"',
                 1,
             )
+            tools_build = '# name = "phase17_release_candidate_artifacts"\n' + tools_build
             self.write_wiring(root, maybe_tools_build=tools_build)
 
             # Act
@@ -566,6 +567,61 @@ phase17-release-artifacts-smoke:
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("phase17_release_candidate_artifacts", result.stdout)
+
+    def test_wiring_rejects_workflow_commands_outside_phase17_case_arms(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            bad_workflow = """case "$command_name" in
+  phase17_verify)
+    python3 tools/bazel/phase17_release_candidate_evidence.py --quick
+    ;;
+  unrelated_verify)
+    python3 tools/bazel/phase17_release_candidate_evidence.py --wiring-only
+    python3 tools/bazel/phase17_release_candidate_evidence_test.py
+    ;;
+  phase17_verify_tests)
+    # python3 tools/bazel/phase17_release_candidate_evidence_test.py
+    ;;
+esac
+"""
+            self.write_wiring(root, maybe_workflow=bad_workflow)
+
+            # Act
+            result = self.run_verifier(["--wiring-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("phase17_verify case arm missing required wiring item", result.stdout)
+        self.assertIn("phase17_verify_tests case arm missing required wiring item", result.stdout)
+
+    def test_wiring_rejects_just_commands_outside_phase17_recipes(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            bad_justfile = """unrelated:
+    bazel run //tools/bazel:phase17_verify_tests
+    bazel run //tools/bazel:phase17_verify
+    bazel build //tools/bazel:phase17_representative_release_smoke
+
+phase17-verify:
+    # bazel run //tools/bazel:phase17_verify_tests
+    bazel run //tools/bazel:phase17_verify
+
+phase17-release-artifacts-smoke:
+    # bazel build //tools/bazel:phase17_representative_release_smoke
+"""
+            self.write_wiring(root, maybe_justfile=bad_justfile)
+
+            # Act
+            result = self.run_verifier(["--wiring-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("phase17-verify recipe missing required wiring item", result.stdout)
+        self.assertIn("phase17-release-artifacts-smoke recipe missing required wiring item", result.stdout)
 
     def test_wiring_rejects_release_candidate_target_wrapping_smoke_artifacts(self) -> None:
         # Arrange
