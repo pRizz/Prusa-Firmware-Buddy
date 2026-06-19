@@ -1,0 +1,1612 @@
+{
+  "artifact_name": "phase17-release-candidate-evidence",
+  "id": "phase17_release_candidate_evidence_contract",
+  "local_smoke_workflow_identities": {
+    "//tools/bazel:phase3_verify": {
+      "local_smoke_only": true,
+      "release_run_required": false
+    },
+    "//tools/bazel:representative_package_surface_smoke": {
+      "local_smoke_only": true,
+      "release_run_required": false
+    },
+    "//tools/bazel:representative_reference_format_artifacts": {
+      "local_smoke_only": true,
+      "release_run_required": false
+    },
+    "//tools/bazel:representative_release_artifacts": {
+      "local_smoke_only": true,
+      "release_run_required": false
+    }
+  },
+  "mismatch_class_vocabulary": [
+    "pass",
+    "intentional-delta",
+    "blocker",
+    "deferred-retained-code-issue"
+  ],
+  "output_root": "build/ci-evidence/phase17",
+  "phase": "17-release-candidate-artifact-and-signing-gates",
+  "phase_lifecycle_id": "17-2026-06-19T13-57-17",
+  "release_input_schema": {
+    "artifact_ref_root": "build/ci-evidence/phase17",
+    "required_fields": [
+      "release_run_id",
+      "artifact_surface",
+      "product_profile",
+      "build_input_identity",
+      "operator",
+      "timestamp",
+      "result",
+      "evidence_type",
+      "bazel_label",
+      "release_command",
+      "artifact_outputs",
+      "release_run_required",
+      "signing_mode",
+      "key_identity_ref",
+      "artifact_digest_sha256",
+      "artifact_refs",
+      "provenance_refs",
+      "comparison_refs",
+      "retention_path",
+      "verification_outcome",
+      "mismatch_class",
+      "mismatch_reason",
+      "owner_phase",
+      "residual_risk",
+      "redaction_summary"
+    ]
+  },
+  "release_workflow_identities": {
+    "phase17_release_candidate_artifacts": {
+      "artifact_outputs": [
+        ".bin",
+        ".bbf",
+        ".dfu",
+        ".map",
+        ".provenance.json",
+        "resource-image",
+        "resource-package",
+        "language-bundle",
+        "wui-assets",
+        "esp-package",
+        "mmu-package",
+        "dwarf-firmware",
+        "modularbed-firmware",
+        "xbuddy-extension-firmware",
+        "package-manifest",
+        "signing-summary",
+        "provenance-summary",
+        "retention-manifest",
+        "comparison-report"
+      ],
+      "bazel_label": "//tools/bazel:phase17_release_candidate_artifacts",
+      "release_command": "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+      "release_run_required": true
+    }
+  },
+  "required_artifact_kinds": [
+    "machine-readable-run-manifest",
+    "normalized-release-results",
+    "redacted-signing-provenance-summary",
+    "comparison-classification-report",
+    "source-contract-snapshot",
+    "release-operator-evidence-input",
+    "release-log-reference",
+    "external-artifact-reference"
+  ],
+  "rows": [
+    {
+      "allowed_statuses": [
+        "pending-release-input",
+        "release-run-required",
+        "passed",
+        "failed",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "artifact_outputs": [
+        ".bin",
+        ".bbf",
+        ".dfu",
+        ".map",
+        ".provenance.json",
+        "resource-image",
+        "resource-package",
+        "language-bundle",
+        "wui-assets",
+        "esp-package",
+        "mmu-package",
+        "dwarf-firmware",
+        "modularbed-firmware",
+        "xbuddy-extension-firmware",
+        "package-manifest",
+        "signing-summary",
+        "provenance-summary",
+        "retention-manifest",
+        "comparison-report"
+      ],
+      "artifact_surface": ".bin",
+      "bazel_label": "//tools/bazel:phase17_release_candidate_artifacts",
+      "comparison_metadata_required": [],
+      "default_status": "pending-release-input",
+      "expected_artifact_path": "build/ci-evidence/phase17/logs/rel-bin-firmware-image.log",
+      "id": "rel-bin-firmware-image",
+      "mismatch_class": "blocker",
+      "mismatch_reason_required": true,
+      "owner_phase": "17-release-candidate-artifact-and-signing-gates",
+      "product_profile": "all-supported-release-products",
+      "proof_scope": "release-run-artifact",
+      "provenance_metadata_required": [
+        "build_input_identity",
+        "artifact_digest_sha256",
+        "provenance_refs"
+      ],
+      "redaction_required": true,
+      "release_command": "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+      "release_metadata_required": [
+        "release_run_id",
+        "operator",
+        "timestamp",
+        "artifact_refs",
+        "retention_path"
+      ],
+      "release_run_required": true,
+      "required_input_kind": "approved-release-run-metadata",
+      "requirement_ids": [
+        "REL-01",
+        "REL-03"
+      ],
+      "residual_cutover_gates": [
+        "external-release-run-evidence",
+        "artifact-comparison-classification",
+        "maintainer-cutover-review"
+      ],
+      "retained_artifact_kind": "release-log-reference",
+      "signing_metadata_required": [],
+      "source_contract_refs": [
+        "tools/bazel/manifests/representative_products.json#mini_boot",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-product-artifacts",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-non-local-gates-identified"
+      ],
+      "source_doc_refs": [],
+      "title": "Release candidate firmware image outputs",
+      "unsupported_claims": [
+        "claim-local-smoke-is-production-release",
+        "claim-binary-payload-retained",
+        "claim-reference-demotion-without-review"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-release-input",
+        "release-run-required",
+        "passed",
+        "failed",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "artifact_outputs": [
+        ".bin",
+        ".bbf",
+        ".dfu",
+        ".map",
+        ".provenance.json",
+        "resource-image",
+        "resource-package",
+        "language-bundle",
+        "wui-assets",
+        "esp-package",
+        "mmu-package",
+        "dwarf-firmware",
+        "modularbed-firmware",
+        "xbuddy-extension-firmware",
+        "package-manifest",
+        "signing-summary",
+        "provenance-summary",
+        "retention-manifest",
+        "comparison-report"
+      ],
+      "artifact_surface": ".bbf",
+      "bazel_label": "//tools/bazel:phase17_release_candidate_artifacts",
+      "comparison_metadata_required": [],
+      "default_status": "pending-release-input",
+      "expected_artifact_path": "build/ci-evidence/phase17/logs/rel-bbf-firmware-package.log",
+      "id": "rel-bbf-firmware-package",
+      "mismatch_class": "blocker",
+      "mismatch_reason_required": true,
+      "owner_phase": "17-release-candidate-artifact-and-signing-gates",
+      "product_profile": "all-supported-release-products",
+      "proof_scope": "release-run-artifact",
+      "provenance_metadata_required": [
+        "build_input_identity",
+        "artifact_digest_sha256",
+        "provenance_refs"
+      ],
+      "redaction_required": true,
+      "release_command": "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+      "release_metadata_required": [
+        "release_run_id",
+        "operator",
+        "timestamp",
+        "artifact_refs",
+        "retention_path"
+      ],
+      "release_run_required": true,
+      "required_input_kind": "approved-release-run-metadata",
+      "requirement_ids": [
+        "REL-01",
+        "REL-02",
+        "REL-03"
+      ],
+      "residual_cutover_gates": [
+        "external-signing-evidence",
+        "artifact-comparison-classification",
+        "maintainer-cutover-review"
+      ],
+      "retained_artifact_kind": "release-log-reference",
+      "signing_metadata_required": [
+        "signing_mode",
+        "key_identity_ref",
+        "verification_outcome"
+      ],
+      "source_contract_refs": [
+        "tools/bazel/manifests/representative_products.json#mini_boot",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-release-metadata",
+        "tools/bazel/manifests/phase13_ci_evidence_contract.json#ciev-03-redacted-summary"
+      ],
+      "source_doc_refs": [],
+      "title": "Release candidate BBF package outputs",
+      "unsupported_claims": [
+        "claim-unsigned-fixture-is-release-package",
+        "claim-signing-sensitive-bytes-retained",
+        "claim-maintainer-acceptance-without-review"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-release-input",
+        "release-run-required",
+        "passed",
+        "failed",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "artifact_outputs": [
+        ".bin",
+        ".bbf",
+        ".dfu",
+        ".map",
+        ".provenance.json",
+        "resource-image",
+        "resource-package",
+        "language-bundle",
+        "wui-assets",
+        "esp-package",
+        "mmu-package",
+        "dwarf-firmware",
+        "modularbed-firmware",
+        "xbuddy-extension-firmware",
+        "package-manifest",
+        "signing-summary",
+        "provenance-summary",
+        "retention-manifest",
+        "comparison-report"
+      ],
+      "artifact_surface": ".dfu",
+      "bazel_label": "//tools/bazel:phase17_release_candidate_artifacts",
+      "comparison_metadata_required": [],
+      "default_status": "pending-release-input",
+      "expected_artifact_path": "build/ci-evidence/phase17/logs/rel-dfu-update-package.log",
+      "id": "rel-dfu-update-package",
+      "mismatch_class": "blocker",
+      "mismatch_reason_required": true,
+      "owner_phase": "17-release-candidate-artifact-and-signing-gates",
+      "product_profile": "all-supported-release-products",
+      "proof_scope": "release-run-artifact",
+      "provenance_metadata_required": [
+        "build_input_identity",
+        "artifact_digest_sha256",
+        "provenance_refs"
+      ],
+      "redaction_required": true,
+      "release_command": "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+      "release_metadata_required": [
+        "release_run_id",
+        "operator",
+        "timestamp",
+        "artifact_refs",
+        "retention_path"
+      ],
+      "release_run_required": true,
+      "required_input_kind": "approved-release-run-metadata",
+      "requirement_ids": [
+        "REL-01",
+        "REL-03"
+      ],
+      "residual_cutover_gates": [
+        "external-release-run-evidence",
+        "artifact-comparison-classification",
+        "maintainer-cutover-review"
+      ],
+      "retained_artifact_kind": "release-log-reference",
+      "signing_metadata_required": [],
+      "source_contract_refs": [
+        "tools/bazel/manifests/representative_products.json#mini_boot",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-product-artifacts",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-non-local-gates-identified"
+      ],
+      "source_doc_refs": [],
+      "title": "Release candidate DFU update package outputs",
+      "unsupported_claims": [
+        "claim-local-dfu-smoke-is-production-release",
+        "claim-update-payload-retained",
+        "claim-final-demotion-without-approval"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-release-input",
+        "release-run-required",
+        "passed",
+        "failed",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "artifact_outputs": [
+        ".bin",
+        ".bbf",
+        ".dfu",
+        ".map",
+        ".provenance.json",
+        "resource-image",
+        "resource-package",
+        "language-bundle",
+        "wui-assets",
+        "esp-package",
+        "mmu-package",
+        "dwarf-firmware",
+        "modularbed-firmware",
+        "xbuddy-extension-firmware",
+        "package-manifest",
+        "signing-summary",
+        "provenance-summary",
+        "retention-manifest",
+        "comparison-report"
+      ],
+      "artifact_surface": "map/provenance",
+      "bazel_label": "//tools/bazel:phase17_release_candidate_artifacts",
+      "comparison_metadata_required": [],
+      "default_status": "pending-release-input",
+      "expected_artifact_path": "build/ci-evidence/phase17/logs/rel-map-and-provenance.log",
+      "id": "rel-map-and-provenance",
+      "mismatch_class": "blocker",
+      "mismatch_reason_required": true,
+      "owner_phase": "17-release-candidate-artifact-and-signing-gates",
+      "product_profile": "all-supported-release-products",
+      "proof_scope": "release-run-provenance",
+      "provenance_metadata_required": [
+        "build_input_identity",
+        "artifact_digest_sha256",
+        "provenance_refs"
+      ],
+      "redaction_required": true,
+      "release_command": "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+      "release_metadata_required": [
+        "release_run_id",
+        "operator",
+        "timestamp",
+        "artifact_refs",
+        "retention_path"
+      ],
+      "release_run_required": true,
+      "required_input_kind": "approved-release-run-provenance",
+      "requirement_ids": [
+        "REL-01",
+        "REL-02",
+        "REL-03"
+      ],
+      "residual_cutover_gates": [
+        "external-provenance-evidence",
+        "reference-comparison-classification",
+        "maintainer-cutover-review"
+      ],
+      "retained_artifact_kind": "release-log-reference",
+      "signing_metadata_required": [],
+      "source_contract_refs": [
+        "tools/bazel/manifests/representative_products.json#mini_boot",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-release-metadata",
+        "tools/bazel/manifests/phase13_ci_evidence_contract.json#ciev-03-manifest-and-comparison-snapshots"
+      ],
+      "source_doc_refs": [],
+      "title": "Release candidate map and provenance outputs",
+      "unsupported_claims": [
+        "claim-provenance-without-release-run",
+        "claim-byte-identity-without-release-comparison",
+        "claim-release-approval-from-local-metadata"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-release-input",
+        "release-run-required",
+        "passed",
+        "failed",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "artifact_outputs": [
+        ".bin",
+        ".bbf",
+        ".dfu",
+        ".map",
+        ".provenance.json",
+        "resource-image",
+        "resource-package",
+        "language-bundle",
+        "wui-assets",
+        "esp-package",
+        "mmu-package",
+        "dwarf-firmware",
+        "modularbed-firmware",
+        "xbuddy-extension-firmware",
+        "package-manifest",
+        "signing-summary",
+        "provenance-summary",
+        "retention-manifest",
+        "comparison-report"
+      ],
+      "artifact_surface": "resource",
+      "bazel_label": "//tools/bazel:phase17_release_candidate_artifacts",
+      "comparison_metadata_required": [],
+      "default_status": "pending-release-input",
+      "expected_artifact_path": "build/ci-evidence/phase17/logs/rel-resource-image-package.log",
+      "id": "rel-resource-image-package",
+      "mismatch_class": "blocker",
+      "mismatch_reason_required": true,
+      "owner_phase": "17-release-candidate-artifact-and-signing-gates",
+      "product_profile": "resources:MINI,MK4,MK3.5,XL,iX,COREONE",
+      "proof_scope": "release-run-artifact",
+      "provenance_metadata_required": [
+        "build_input_identity",
+        "artifact_digest_sha256",
+        "provenance_refs"
+      ],
+      "redaction_required": true,
+      "release_command": "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+      "release_metadata_required": [
+        "release_run_id",
+        "operator",
+        "timestamp",
+        "artifact_refs",
+        "retention_path"
+      ],
+      "release_run_required": true,
+      "required_input_kind": "approved-resource-release-artifact-metadata",
+      "requirement_ids": [
+        "REL-01",
+        "REL-03"
+      ],
+      "residual_cutover_gates": [
+        "resource-release-artifact-evidence",
+        "reference-comparison-classification",
+        "maintainer-cutover-review"
+      ],
+      "retained_artifact_kind": "release-log-reference",
+      "signing_metadata_required": [],
+      "source_contract_refs": [
+        "tools/bazel/manifests/representative_products.json#mini_resource_package",
+        "tools/bazel/manifests/phase7_generated_outputs.json#resource-assets",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-generated-resources"
+      ],
+      "source_doc_refs": [],
+      "title": "Release candidate resource image and package outputs",
+      "unsupported_claims": [
+        "claim-resource-fixture-is-release-resource",
+        "claim-generated-byte-parity-without-release-evidence",
+        "claim-resource-payload-retained"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-release-input",
+        "release-run-required",
+        "passed",
+        "failed",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "artifact_outputs": [
+        ".bin",
+        ".bbf",
+        ".dfu",
+        ".map",
+        ".provenance.json",
+        "resource-image",
+        "resource-package",
+        "language-bundle",
+        "wui-assets",
+        "esp-package",
+        "mmu-package",
+        "dwarf-firmware",
+        "modularbed-firmware",
+        "xbuddy-extension-firmware",
+        "package-manifest",
+        "signing-summary",
+        "provenance-summary",
+        "retention-manifest",
+        "comparison-report"
+      ],
+      "artifact_surface": "language",
+      "bazel_label": "//tools/bazel:phase17_release_candidate_artifacts",
+      "comparison_metadata_required": [],
+      "default_status": "pending-release-input",
+      "expected_artifact_path": "build/ci-evidence/phase17/logs/rel-language-bundles.log",
+      "id": "rel-language-bundles",
+      "mismatch_class": "blocker",
+      "mismatch_reason_required": true,
+      "owner_phase": "17-release-candidate-artifact-and-signing-gates",
+      "product_profile": "translations:COREONE,MK4,MK3.5,XL,MINI",
+      "proof_scope": "release-run-artifact",
+      "provenance_metadata_required": [
+        "build_input_identity",
+        "artifact_digest_sha256",
+        "provenance_refs"
+      ],
+      "redaction_required": true,
+      "release_command": "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+      "release_metadata_required": [
+        "release_run_id",
+        "operator",
+        "timestamp",
+        "artifact_refs",
+        "retention_path"
+      ],
+      "release_run_required": true,
+      "required_input_kind": "approved-language-release-artifact-metadata",
+      "requirement_ids": [
+        "REL-01",
+        "REL-03"
+      ],
+      "residual_cutover_gates": [
+        "language-release-artifact-evidence",
+        "reference-comparison-classification",
+        "maintainer-cutover-review"
+      ],
+      "retained_artifact_kind": "release-log-reference",
+      "signing_metadata_required": [],
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase7_generated_outputs.json#translation-pot",
+        "tools/bazel/manifests/phase7_generated_outputs.json#font-assets",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-generated-resources"
+      ],
+      "source_doc_refs": [],
+      "title": "Release candidate language bundle outputs",
+      "unsupported_claims": [
+        "claim-local-translation-check-is-release-proof",
+        "claim-language-byte-comparison-without-release-artifact",
+        "claim-final-language-approval"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-release-input",
+        "release-run-required",
+        "passed",
+        "failed",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "artifact_outputs": [
+        ".bin",
+        ".bbf",
+        ".dfu",
+        ".map",
+        ".provenance.json",
+        "resource-image",
+        "resource-package",
+        "language-bundle",
+        "wui-assets",
+        "esp-package",
+        "mmu-package",
+        "dwarf-firmware",
+        "modularbed-firmware",
+        "xbuddy-extension-firmware",
+        "package-manifest",
+        "signing-summary",
+        "provenance-summary",
+        "retention-manifest",
+        "comparison-report"
+      ],
+      "artifact_surface": "wui",
+      "bazel_label": "//tools/bazel:phase17_release_candidate_artifacts",
+      "comparison_metadata_required": [],
+      "default_status": "pending-release-input",
+      "expected_artifact_path": "build/ci-evidence/phase17/logs/rel-wui-assets.log",
+      "id": "rel-wui-assets",
+      "mismatch_class": "blocker",
+      "mismatch_reason_required": true,
+      "owner_phase": "17-release-candidate-artifact-and-signing-gates",
+      "product_profile": "wui-capable-master-firmware",
+      "proof_scope": "release-run-artifact",
+      "provenance_metadata_required": [
+        "build_input_identity",
+        "artifact_digest_sha256",
+        "provenance_refs"
+      ],
+      "redaction_required": true,
+      "release_command": "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+      "release_metadata_required": [
+        "release_run_id",
+        "operator",
+        "timestamp",
+        "artifact_refs",
+        "retention_path"
+      ],
+      "release_run_required": true,
+      "required_input_kind": "approved-wui-release-artifact-metadata",
+      "requirement_ids": [
+        "REL-01",
+        "REL-03"
+      ],
+      "residual_cutover_gates": [
+        "wui-release-artifact-evidence",
+        "live-service-evidence",
+        "maintainer-cutover-review"
+      ],
+      "retained_artifact_kind": "release-log-reference",
+      "signing_metadata_required": [],
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase7_generated_outputs.json#wui-assets",
+        "tools/bazel/manifests/phase16_live_network_evidence_contract.json#live-wui-prusalink-api-v1",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-generated-resources"
+      ],
+      "source_doc_refs": [],
+      "title": "Release candidate WUI asset outputs",
+      "unsupported_claims": [
+        "claim-wui-source-assets-are-release-proof",
+        "claim-live-service-proof-from-package",
+        "claim-unreviewed-reference-demotion"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-release-input",
+        "release-run-required",
+        "passed",
+        "failed",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "artifact_outputs": [
+        ".bin",
+        ".bbf",
+        ".dfu",
+        ".map",
+        ".provenance.json",
+        "resource-image",
+        "resource-package",
+        "language-bundle",
+        "wui-assets",
+        "esp-package",
+        "mmu-package",
+        "dwarf-firmware",
+        "modularbed-firmware",
+        "xbuddy-extension-firmware",
+        "package-manifest",
+        "signing-summary",
+        "provenance-summary",
+        "retention-manifest",
+        "comparison-report"
+      ],
+      "artifact_surface": "esp",
+      "bazel_label": "//tools/bazel:phase17_release_candidate_artifacts",
+      "comparison_metadata_required": [],
+      "default_status": "pending-release-input",
+      "expected_artifact_path": "build/ci-evidence/phase17/logs/rel-esp-packages.log",
+      "id": "rel-esp-packages",
+      "mismatch_class": "blocker",
+      "mismatch_reason_required": true,
+      "owner_phase": "17-release-candidate-artifact-and-signing-gates",
+      "product_profile": "esp-package-supported-products",
+      "proof_scope": "release-run-artifact",
+      "provenance_metadata_required": [
+        "build_input_identity",
+        "artifact_digest_sha256",
+        "provenance_refs"
+      ],
+      "redaction_required": true,
+      "release_command": "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+      "release_metadata_required": [
+        "release_run_id",
+        "operator",
+        "timestamp",
+        "artifact_refs",
+        "retention_path"
+      ],
+      "release_run_required": true,
+      "required_input_kind": "approved-esp-release-artifact-metadata",
+      "requirement_ids": [
+        "REL-01",
+        "REL-03"
+      ],
+      "residual_cutover_gates": [
+        "esp-release-artifact-evidence",
+        "hardware-network-module-evidence",
+        "maintainer-cutover-review"
+      ],
+      "retained_artifact_kind": "release-log-reference",
+      "signing_metadata_required": [],
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase7_generated_outputs.json#esp-blobs",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-generated-resources",
+        "tools/bazel/manifests/phase16_live_network_evidence_contract.json#live-network-mdns-announcement"
+      ],
+      "source_doc_refs": [],
+      "title": "Release candidate ESP package outputs",
+      "unsupported_claims": [
+        "claim-esp-source-blob-is-release-package",
+        "claim-network-proof-from-package-only",
+        "claim-firmware-payload-retention"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-release-input",
+        "release-run-required",
+        "passed",
+        "failed",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "artifact_outputs": [
+        ".bin",
+        ".bbf",
+        ".dfu",
+        ".map",
+        ".provenance.json",
+        "resource-image",
+        "resource-package",
+        "language-bundle",
+        "wui-assets",
+        "esp-package",
+        "mmu-package",
+        "dwarf-firmware",
+        "modularbed-firmware",
+        "xbuddy-extension-firmware",
+        "package-manifest",
+        "signing-summary",
+        "provenance-summary",
+        "retention-manifest",
+        "comparison-report"
+      ],
+      "artifact_surface": "mmu",
+      "bazel_label": "//tools/bazel:phase17_release_candidate_artifacts",
+      "comparison_metadata_required": [],
+      "default_status": "pending-release-input",
+      "expected_artifact_path": "build/ci-evidence/phase17/logs/rel-mmu-package.log",
+      "id": "rel-mmu-package",
+      "mismatch_class": "blocker",
+      "mismatch_reason_required": true,
+      "owner_phase": "17-release-candidate-artifact-and-signing-gates",
+      "product_profile": "mmu:MK4,MK3.5,COREONE",
+      "proof_scope": "release-run-artifact",
+      "provenance_metadata_required": [
+        "build_input_identity",
+        "artifact_digest_sha256",
+        "provenance_refs"
+      ],
+      "redaction_required": true,
+      "release_command": "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+      "release_metadata_required": [
+        "release_run_id",
+        "operator",
+        "timestamp",
+        "artifact_refs",
+        "retention_path"
+      ],
+      "release_run_required": true,
+      "required_input_kind": "approved-mmu-release-artifact-metadata",
+      "requirement_ids": [
+        "REL-01",
+        "REL-03"
+      ],
+      "residual_cutover_gates": [
+        "mmu-release-artifact-evidence",
+        "hardware-mmu-evidence",
+        "maintainer-cutover-review"
+      ],
+      "retained_artifact_kind": "release-log-reference",
+      "signing_metadata_required": [],
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase7_generated_outputs.json#mmu-descriptors",
+        "tools/bazel/manifests/phase10_auxiliary_build_update.json#mmu-firmware-resource-conversion",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-auxiliary-controller-flows"
+      ],
+      "source_doc_refs": [],
+      "title": "Release candidate MMU package outputs",
+      "unsupported_claims": [
+        "claim-mmu-descriptor-is-release-firmware",
+        "claim-live-mmu-proof-from-package",
+        "claim-mmu-payload-retained"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-release-input",
+        "release-run-required",
+        "passed",
+        "failed",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "artifact_outputs": [
+        ".bin",
+        ".bbf",
+        ".dfu",
+        ".map",
+        ".provenance.json",
+        "resource-image",
+        "resource-package",
+        "language-bundle",
+        "wui-assets",
+        "esp-package",
+        "mmu-package",
+        "dwarf-firmware",
+        "modularbed-firmware",
+        "xbuddy-extension-firmware",
+        "package-manifest",
+        "signing-summary",
+        "provenance-summary",
+        "retention-manifest",
+        "comparison-report"
+      ],
+      "artifact_surface": "dwarf",
+      "bazel_label": "//tools/bazel:phase17_release_candidate_artifacts",
+      "comparison_metadata_required": [],
+      "default_status": "pending-release-input",
+      "expected_artifact_path": "build/ci-evidence/phase17/logs/rel-auxiliary-dwarf-firmware.log",
+      "id": "rel-auxiliary-dwarf-firmware",
+      "mismatch_class": "blocker",
+      "mismatch_reason_required": true,
+      "owner_phase": "17-release-candidate-artifact-and-signing-gates",
+      "product_profile": "auxiliary:XL,XL_DEV_KIT",
+      "proof_scope": "release-run-artifact",
+      "provenance_metadata_required": [
+        "build_input_identity",
+        "artifact_digest_sha256",
+        "provenance_refs"
+      ],
+      "redaction_required": true,
+      "release_command": "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+      "release_metadata_required": [
+        "release_run_id",
+        "operator",
+        "timestamp",
+        "artifact_refs",
+        "retention_path"
+      ],
+      "release_run_required": true,
+      "required_input_kind": "approved-auxiliary-release-artifact-metadata",
+      "requirement_ids": [
+        "REL-01",
+        "REL-03"
+      ],
+      "residual_cutover_gates": [
+        "dwarf-release-artifact-evidence",
+        "hardware-rs485-evidence",
+        "maintainer-cutover-review"
+      ],
+      "retained_artifact_kind": "release-log-reference",
+      "signing_metadata_required": [],
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase10_auxiliary_build_update.json#aux-build-dwarf-external-project",
+        "tools/bazel/manifests/phase10_auxiliary_controllers.json#aux-controller-family-dwarf",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-auxiliary-controller-flows"
+      ],
+      "source_doc_refs": [],
+      "title": "Release candidate Dwarf auxiliary firmware outputs",
+      "unsupported_claims": [
+        "claim-dwarf-contract-is-release-firmware",
+        "claim-physical-rs485-proof-from-package",
+        "claim-auxiliary-payload-retained"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-release-input",
+        "release-run-required",
+        "passed",
+        "failed",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "artifact_outputs": [
+        ".bin",
+        ".bbf",
+        ".dfu",
+        ".map",
+        ".provenance.json",
+        "resource-image",
+        "resource-package",
+        "language-bundle",
+        "wui-assets",
+        "esp-package",
+        "mmu-package",
+        "dwarf-firmware",
+        "modularbed-firmware",
+        "xbuddy-extension-firmware",
+        "package-manifest",
+        "signing-summary",
+        "provenance-summary",
+        "retention-manifest",
+        "comparison-report"
+      ],
+      "artifact_surface": "modularbed",
+      "bazel_label": "//tools/bazel:phase17_release_candidate_artifacts",
+      "comparison_metadata_required": [],
+      "default_status": "pending-release-input",
+      "expected_artifact_path": "build/ci-evidence/phase17/logs/rel-auxiliary-modularbed-firmware.log",
+      "id": "rel-auxiliary-modularbed-firmware",
+      "mismatch_class": "blocker",
+      "mismatch_reason_required": true,
+      "owner_phase": "17-release-candidate-artifact-and-signing-gates",
+      "product_profile": "auxiliary:XL,iX,XL_DEV_KIT",
+      "proof_scope": "release-run-artifact",
+      "provenance_metadata_required": [
+        "build_input_identity",
+        "artifact_digest_sha256",
+        "provenance_refs"
+      ],
+      "redaction_required": true,
+      "release_command": "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+      "release_metadata_required": [
+        "release_run_id",
+        "operator",
+        "timestamp",
+        "artifact_refs",
+        "retention_path"
+      ],
+      "release_run_required": true,
+      "required_input_kind": "approved-auxiliary-release-artifact-metadata",
+      "requirement_ids": [
+        "REL-01",
+        "REL-03"
+      ],
+      "residual_cutover_gates": [
+        "modularbed-release-artifact-evidence",
+        "hardware-remote-bed-evidence",
+        "maintainer-cutover-review"
+      ],
+      "retained_artifact_kind": "release-log-reference",
+      "signing_metadata_required": [],
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase10_auxiliary_build_update.json#aux-build-modularbed-external-project",
+        "tools/bazel/manifests/phase10_auxiliary_controllers.json#aux-controller-family-modular-bed",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-auxiliary-controller-flows"
+      ],
+      "source_doc_refs": [],
+      "title": "Release candidate ModularBed auxiliary firmware outputs",
+      "unsupported_claims": [
+        "claim-modularbed-contract-is-release-firmware",
+        "claim-physical-bed-proof-from-package",
+        "claim-auxiliary-payload-retained"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-release-input",
+        "release-run-required",
+        "passed",
+        "failed",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "artifact_outputs": [
+        ".bin",
+        ".bbf",
+        ".dfu",
+        ".map",
+        ".provenance.json",
+        "resource-image",
+        "resource-package",
+        "language-bundle",
+        "wui-assets",
+        "esp-package",
+        "mmu-package",
+        "dwarf-firmware",
+        "modularbed-firmware",
+        "xbuddy-extension-firmware",
+        "package-manifest",
+        "signing-summary",
+        "provenance-summary",
+        "retention-manifest",
+        "comparison-report"
+      ],
+      "artifact_surface": "xbuddy-extension",
+      "bazel_label": "//tools/bazel:phase17_release_candidate_artifacts",
+      "comparison_metadata_required": [],
+      "default_status": "pending-release-input",
+      "expected_artifact_path": "build/ci-evidence/phase17/logs/rel-auxiliary-xbuddy-extension-firmware.log",
+      "id": "rel-auxiliary-xbuddy-extension-firmware",
+      "mismatch_class": "blocker",
+      "mismatch_reason_required": true,
+      "owner_phase": "17-release-candidate-artifact-and-signing-gates",
+      "product_profile": "auxiliary:COREONE",
+      "proof_scope": "release-run-artifact",
+      "provenance_metadata_required": [
+        "build_input_identity",
+        "artifact_digest_sha256",
+        "provenance_refs"
+      ],
+      "redaction_required": true,
+      "release_command": "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+      "release_metadata_required": [
+        "release_run_id",
+        "operator",
+        "timestamp",
+        "artifact_refs",
+        "retention_path"
+      ],
+      "release_run_required": true,
+      "required_input_kind": "approved-auxiliary-release-artifact-metadata",
+      "requirement_ids": [
+        "REL-01",
+        "REL-03"
+      ],
+      "residual_cutover_gates": [
+        "xbuddy-extension-release-artifact-evidence",
+        "hardware-extension-evidence",
+        "maintainer-cutover-review"
+      ],
+      "retained_artifact_kind": "release-log-reference",
+      "signing_metadata_required": [],
+      "source_contract_refs": [
+        "tools/bazel/manifests/representative_products.json#xbuddy_extension_auxiliary_manifest",
+        "tools/bazel/manifests/phase10_auxiliary_build_update.json#aux-build-xbuddy-extension-external-project",
+        "tools/bazel/manifests/phase10_auxiliary_controllers.json#aux-controller-family-xbuddy-extension"
+      ],
+      "source_doc_refs": [],
+      "title": "Release candidate xBuddy Extension auxiliary firmware outputs",
+      "unsupported_claims": [
+        "claim-xbuddy-extension-manifest-is-release-firmware",
+        "claim-extension-hardware-proof-from-package",
+        "claim-auxiliary-payload-retained"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-release-input",
+        "release-run-required",
+        "passed",
+        "failed",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "artifact_outputs": [
+        ".bin",
+        ".bbf",
+        ".dfu",
+        ".map",
+        ".provenance.json",
+        "resource-image",
+        "resource-package",
+        "language-bundle",
+        "wui-assets",
+        "esp-package",
+        "mmu-package",
+        "dwarf-firmware",
+        "modularbed-firmware",
+        "xbuddy-extension-firmware",
+        "package-manifest",
+        "signing-summary",
+        "provenance-summary",
+        "retention-manifest",
+        "comparison-report"
+      ],
+      "artifact_surface": "package-manifest",
+      "bazel_label": "//tools/bazel:phase17_release_candidate_artifacts",
+      "comparison_metadata_required": [],
+      "default_status": "pending-release-input",
+      "expected_artifact_path": "build/ci-evidence/phase17/logs/rel-package-manifests.log",
+      "id": "rel-package-manifests",
+      "mismatch_class": "blocker",
+      "mismatch_reason_required": true,
+      "owner_phase": "17-release-candidate-artifact-and-signing-gates",
+      "product_profile": "all-supported-release-products",
+      "proof_scope": "release-run-manifest",
+      "provenance_metadata_required": [
+        "build_input_identity",
+        "artifact_digest_sha256",
+        "provenance_refs"
+      ],
+      "redaction_required": true,
+      "release_command": "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+      "release_metadata_required": [
+        "release_run_id",
+        "operator",
+        "timestamp",
+        "artifact_refs",
+        "retention_path"
+      ],
+      "release_run_required": true,
+      "required_input_kind": "approved-release-package-manifest",
+      "requirement_ids": [
+        "REL-01",
+        "REL-02",
+        "REL-03"
+      ],
+      "residual_cutover_gates": [
+        "release-package-manifest-evidence",
+        "artifact-retention-evidence",
+        "maintainer-cutover-review"
+      ],
+      "retained_artifact_kind": "release-log-reference",
+      "signing_metadata_required": [],
+      "source_contract_refs": [
+        "tools/bazel/manifests/representative_products.json#mini_boot",
+        "tools/bazel/manifests/phase7_generated_outputs.json#package-metadata",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-release-metadata"
+      ],
+      "source_doc_refs": [],
+      "title": "Release candidate package manifests",
+      "unsupported_claims": [
+        "claim-manifest-alone-is-release-approval",
+        "claim-package-bytes-retained",
+        "claim-unclassified-delta-accepted"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "external-signing-required",
+        "blocked-signing-key-unavailable",
+        "passed",
+        "failed",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "artifact_outputs": [
+        ".bin",
+        ".bbf",
+        ".dfu",
+        ".map",
+        ".provenance.json",
+        "resource-image",
+        "resource-package",
+        "language-bundle",
+        "wui-assets",
+        "esp-package",
+        "mmu-package",
+        "dwarf-firmware",
+        "modularbed-firmware",
+        "xbuddy-extension-firmware",
+        "package-manifest",
+        "signing-summary",
+        "provenance-summary",
+        "retention-manifest",
+        "comparison-report"
+      ],
+      "artifact_surface": "signing-key-identity",
+      "bazel_label": "//tools/bazel:phase17_release_candidate_artifacts",
+      "comparison_metadata_required": [],
+      "default_status": "external-signing-required",
+      "expected_artifact_path": "build/ci-evidence/phase17/logs/rel-signing-key-identity.log",
+      "id": "rel-signing-key-identity",
+      "mismatch_class": "blocker",
+      "mismatch_reason_required": true,
+      "owner_phase": "17-release-candidate-artifact-and-signing-gates",
+      "product_profile": "all-supported-release-products",
+      "proof_scope": "external-release-signing-evidence",
+      "provenance_metadata_required": [
+        "build_input_identity",
+        "artifact_digest_sha256",
+        "provenance_refs"
+      ],
+      "redaction_required": true,
+      "release_command": "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+      "release_metadata_required": [
+        "release_run_id",
+        "operator",
+        "timestamp",
+        "retention_path"
+      ],
+      "release_run_required": true,
+      "required_input_kind": "approved-external-release-key-identity",
+      "requirement_ids": [
+        "REL-02"
+      ],
+      "residual_cutover_gates": [
+        "external-signing-key-evidence",
+        "release-manager-approval",
+        "maintainer-cutover-review"
+      ],
+      "retained_artifact_kind": "release-log-reference",
+      "signing_metadata_required": [
+        "signing_mode",
+        "key_identity_ref",
+        "verification_outcome"
+      ],
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-release-metadata",
+        "tools/bazel/manifests/phase13_ci_evidence_contract.json#ciev-03-redacted-summary",
+        "tools/bazel/manifests/phase15_hardware_evidence_contract.json#hard-contract-traceability-and-redaction-boundary"
+      ],
+      "source_doc_refs": [],
+      "title": "Release signing key identity evidence",
+      "unsupported_claims": [
+        "claim-local-fixture-key-is-release-key",
+        "claim-key-material-retained",
+        "claim-signing-approval-without-release-evidence"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-release-input",
+        "passed",
+        "failed",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "artifact_outputs": [
+        ".bin",
+        ".bbf",
+        ".dfu",
+        ".map",
+        ".provenance.json",
+        "resource-image",
+        "resource-package",
+        "language-bundle",
+        "wui-assets",
+        "esp-package",
+        "mmu-package",
+        "dwarf-firmware",
+        "modularbed-firmware",
+        "xbuddy-extension-firmware",
+        "package-manifest",
+        "signing-summary",
+        "provenance-summary",
+        "retention-manifest",
+        "comparison-report"
+      ],
+      "artifact_surface": "build-input-identity",
+      "bazel_label": "//tools/bazel:phase17_release_candidate_artifacts",
+      "comparison_metadata_required": [],
+      "default_status": "pending-release-input",
+      "expected_artifact_path": "build/ci-evidence/phase17/logs/rel-build-input-identity.log",
+      "id": "rel-build-input-identity",
+      "mismatch_class": "blocker",
+      "mismatch_reason_required": true,
+      "owner_phase": "17-release-candidate-artifact-and-signing-gates",
+      "product_profile": "all-supported-release-products",
+      "proof_scope": "release-run-provenance",
+      "provenance_metadata_required": [
+        "build_input_identity",
+        "artifact_digest_sha256",
+        "provenance_refs"
+      ],
+      "redaction_required": true,
+      "release_command": "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+      "release_metadata_required": [
+        "release_run_id",
+        "operator",
+        "timestamp",
+        "retention_path"
+      ],
+      "release_run_required": true,
+      "required_input_kind": "approved-build-input-identity",
+      "requirement_ids": [
+        "REL-02"
+      ],
+      "residual_cutover_gates": [
+        "release-build-input-evidence",
+        "artifact-retention-evidence",
+        "maintainer-cutover-review"
+      ],
+      "retained_artifact_kind": "release-log-reference",
+      "signing_metadata_required": [],
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-release-metadata",
+        "tools/bazel/manifests/phase13_ci_evidence_contract.json#ciev-02-run-manifest",
+        "tools/bazel/manifests/phase16_live_network_evidence_contract.json#live-contract-traceability-redaction-boundary"
+      ],
+      "source_doc_refs": [],
+      "title": "Release build input identity evidence",
+      "unsupported_claims": [
+        "claim-local-source-contract-is-release-build",
+        "claim-untracked-build-inputs-accepted",
+        "claim-release-approval-from-build-name-only"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-release-input",
+        "passed",
+        "failed",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "artifact_outputs": [
+        ".bin",
+        ".bbf",
+        ".dfu",
+        ".map",
+        ".provenance.json",
+        "resource-image",
+        "resource-package",
+        "language-bundle",
+        "wui-assets",
+        "esp-package",
+        "mmu-package",
+        "dwarf-firmware",
+        "modularbed-firmware",
+        "xbuddy-extension-firmware",
+        "package-manifest",
+        "signing-summary",
+        "provenance-summary",
+        "retention-manifest",
+        "comparison-report"
+      ],
+      "artifact_surface": "artifact-retention",
+      "bazel_label": "//tools/bazel:phase17_release_candidate_artifacts",
+      "comparison_metadata_required": [],
+      "default_status": "pending-release-input",
+      "expected_artifact_path": "build/ci-evidence/phase17/logs/rel-artifact-retention.log",
+      "id": "rel-artifact-retention",
+      "mismatch_class": "blocker",
+      "mismatch_reason_required": true,
+      "owner_phase": "17-release-candidate-artifact-and-signing-gates",
+      "product_profile": "all-supported-release-products",
+      "proof_scope": "release-retention",
+      "provenance_metadata_required": [
+        "build_input_identity",
+        "artifact_digest_sha256",
+        "provenance_refs"
+      ],
+      "redaction_required": true,
+      "release_command": "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+      "release_metadata_required": [
+        "release_run_id",
+        "operator",
+        "timestamp",
+        "artifact_refs",
+        "retention_path"
+      ],
+      "release_run_required": true,
+      "required_input_kind": "approved-artifact-retention-manifest",
+      "requirement_ids": [
+        "REL-02"
+      ],
+      "residual_cutover_gates": [
+        "ci-retention-evidence",
+        "release-manager-retention-review",
+        "maintainer-cutover-review"
+      ],
+      "retained_artifact_kind": "external-artifact-reference",
+      "signing_metadata_required": [],
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase13_ci_evidence_contract.json#ciev-03-redacted-summary",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-non-local-gates-identified",
+        "tools/bazel/manifests/phase16_live_network_evidence_contract.json#live-contract-traceability-redaction-boundary"
+      ],
+      "source_doc_refs": [],
+      "title": "Release artifact retention evidence",
+      "unsupported_claims": [
+        "claim-ci-retention-is-release-approval",
+        "claim-payload-retained-in-source",
+        "claim-unreviewed-retention-accepted"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "pending-release-input",
+        "passed",
+        "failed",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "artifact_outputs": [
+        ".bin",
+        ".bbf",
+        ".dfu",
+        ".map",
+        ".provenance.json",
+        "resource-image",
+        "resource-package",
+        "language-bundle",
+        "wui-assets",
+        "esp-package",
+        "mmu-package",
+        "dwarf-firmware",
+        "modularbed-firmware",
+        "xbuddy-extension-firmware",
+        "package-manifest",
+        "signing-summary",
+        "provenance-summary",
+        "retention-manifest",
+        "comparison-report"
+      ],
+      "artifact_surface": "reference-comparison",
+      "bazel_label": "//tools/bazel:phase17_release_candidate_artifacts",
+      "comparison_metadata_required": [
+        "comparison_refs",
+        "mismatch_class",
+        "mismatch_reason",
+        "owner_phase",
+        "residual_risk"
+      ],
+      "default_status": "pending-release-input",
+      "expected_artifact_path": "build/ci-evidence/phase17/logs/rel-reference-comparison-report.log",
+      "id": "rel-reference-comparison-report",
+      "mismatch_class": "deferred-retained-code-issue",
+      "mismatch_reason_required": true,
+      "owner_phase": "17-release-candidate-artifact-and-signing-gates",
+      "product_profile": "all-supported-release-products",
+      "proof_scope": "approved-release-comparison",
+      "provenance_metadata_required": [
+        "build_input_identity",
+        "artifact_digest_sha256",
+        "provenance_refs"
+      ],
+      "redaction_required": true,
+      "release_command": "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+      "release_metadata_required": [
+        "release_run_id",
+        "operator",
+        "timestamp",
+        "artifact_refs",
+        "retention_path"
+      ],
+      "release_run_required": true,
+      "required_input_kind": "approved-reference-comparison-report",
+      "requirement_ids": [
+        "REL-03"
+      ],
+      "residual_cutover_gates": [
+        "release-comparison-evidence",
+        "retained-code-review",
+        "maintainer-cutover-review"
+      ],
+      "retained_artifact_kind": "release-log-reference",
+      "signing_metadata_required": [],
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-product-artifacts",
+        "tools/bazel/manifests/phase11_reference_comparisons.json#ref-release-metadata",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-reference-demotion-blocked"
+      ],
+      "source_doc_refs": [],
+      "title": "Release candidate archived reference comparison report",
+      "unsupported_claims": [
+        "claim-unclassified-mismatch-accepted",
+        "claim-reference-demotion-from-local-check",
+        "claim-retained-code-review-complete"
+      ]
+    },
+    {
+      "allowed_statuses": [
+        "source-contract-passed",
+        "failed",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "artifact_outputs": [
+        "source-contract-snapshot",
+        "release-log-reference"
+      ],
+      "artifact_surface": "contract-traceability-redaction",
+      "bazel_label": "//tools/bazel:phase3_verify",
+      "comparison_metadata_required": [
+        "mismatch_class_vocabulary",
+        "source_ref_resolution"
+      ],
+      "default_status": "source-contract-passed",
+      "expected_artifact_path": "build/ci-evidence/phase17/logs/rel-contract-traceability-redaction-boundary.log",
+      "id": "rel-contract-traceability-redaction-boundary",
+      "mismatch_class": "pass",
+      "mismatch_reason_required": false,
+      "owner_phase": "17-release-candidate-artifact-and-signing-gates",
+      "product_profile": "source-contract",
+      "proof_scope": "source-contract",
+      "provenance_metadata_required": [
+        "source_contract_snapshot"
+      ],
+      "redaction_required": true,
+      "release_command": "bazel run //tools/bazel:phase3_verify",
+      "release_metadata_required": [
+        "contract_validation",
+        "redaction_scan",
+        "source_ref_resolution"
+      ],
+      "release_run_required": false,
+      "required_input_kind": "checked-in-contract-and-source-ref-validation",
+      "requirement_ids": [
+        "REL-01",
+        "REL-02",
+        "REL-03"
+      ],
+      "residual_cutover_gates": [
+        "approved-release-run-evidence",
+        "external-signing-evidence",
+        "maintainer-cutover-review"
+      ],
+      "retained_artifact_kind": "source-contract-snapshot",
+      "signing_metadata_required": [
+        "redaction_scan"
+      ],
+      "source_contract_refs": [
+        "tools/bazel/manifests/phase13_ci_evidence_contract.json#ciev-03-redacted-summary",
+        "tools/bazel/manifests/phase15_hardware_evidence_contract.json#hard-contract-traceability-and-redaction-boundary",
+        "tools/bazel/manifests/phase16_live_network_evidence_contract.json#live-contract-traceability-redaction-boundary",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-overclaim-scan-clean"
+      ],
+      "source_doc_refs": [],
+      "title": "Contract traceability and redaction boundary",
+      "unsupported_claims": [
+        "claim-source-contract-satisfies-release-run",
+        "claim-local-check-satisfies-signing-evidence",
+        "claim-unreviewed-reference-demotion"
+      ]
+    }
+  ],
+  "schema_version": "1",
+  "status_vocabulary": [
+    "pending-release-input",
+    "release-run-required",
+    "external-signing-required",
+    "blocked-signing-key-unavailable",
+    "source-contract-passed",
+    "passed",
+    "failed",
+    "rejected-redaction",
+    "rejected-overclaim"
+  ],
+  "supported_release_boards": [
+    "BUDDY",
+    "XBUDDY",
+    "XLBUDDY",
+    "XL_DEV_KIT_XLB",
+    "DWARF",
+    "MODULARBED",
+    "XBUDDY_EXTENSION"
+  ],
+  "supported_release_products": [
+    "COREONE",
+    "MINI",
+    "MK4",
+    "MK3.5",
+    "XL",
+    "iX",
+    "XL_DEV_KIT"
+  ],
+  "surface_metadata": {
+    "mmu": [
+      "MK4",
+      "MK3.5",
+      "COREONE"
+    ],
+    "puppy_auxiliary_firmware": [
+      "XL",
+      "iX",
+      "XL_DEV_KIT",
+      "COREONE"
+    ],
+    "resources": [
+      "MINI",
+      "MK4",
+      "MK3.5",
+      "XL",
+      "iX",
+      "COREONE"
+    ],
+    "translations": [
+      "COREONE",
+      "MK4",
+      "MK3.5",
+      "XL",
+      "MINI"
+    ],
+    "xbuddy_extension": [
+      "COREONE"
+    ]
+  }
+}
