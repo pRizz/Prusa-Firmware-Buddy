@@ -111,7 +111,10 @@ Plans:
 1. Signing evidence verifies key identity, build input identity, artifact retention, and provenance while keeping private keys outside the repository.
 1. Release-candidate artifact surfaces compare against archived v1.0 reference evidence.
 1. Every artifact mismatch is classified as pass, intentional delta, blocker, or deferred retained-code issue.
-   **Plans**: Not created yet.
+   **Plans**: 1 plan
+
+Plans:
+- [ ] 17-01-PLAN.md - Release candidate evidence contract, verifier, redaction/path guards, comparison classification, and Bazel/just gate.
 
 ### Phase 18: Retained-Code Acceptance and Cutover Review
 
