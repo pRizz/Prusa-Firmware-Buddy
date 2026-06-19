@@ -37,7 +37,7 @@ Full phase details are archived in `.planning/milestones/v1.0-ROADMAP.md`.
 - [x] **Phase 14: Simulator Evidence Gates** - Convert simulator-only cutover blockers into runnable simulator evidence flows with requirement traceability. (completed 2026-06-17)
 - [x] **Phase 15: Hardware Safety and Media Qualification** - Define and capture hardware, safety, storage-media, UI-input, MMU, RS485, and toolchanger cutover evidence. (completed 2026-06-18)
 - [x] **Phase 16: Live Network and Transfer Qualification** - Capture live or controlled-service evidence for Connect, WUI, TLS, telemetry, proxy behavior, and transfers. (completed 2026-06-18)
-- [ ] **Phase 17: Release Candidate Artifact and Signing Gates** - Prove release-candidate artifacts, signing, provenance, resources, and auxiliary packages through Bazel-owned workflows.
+- [x] **Phase 17: Release Candidate Artifact and Signing Gates** - Prove release-candidate artifacts, signing, provenance, resources, and auxiliary packages through Bazel-owned workflows. (completed 2026-06-19)
 - [ ] **Phase 18: Retained-Code Acceptance and Cutover Review** - Make retained-code acceptance, final reference-demotion criteria, and maintainer approval explicit and auditable.
 
 ## Phase Details
@@ -114,7 +114,7 @@ Plans:
    **Plans**: 1 plan
 
 Plans:
-- [ ] 17-01-PLAN.md - Release candidate evidence contract, verifier, redaction/path guards, comparison classification, and Bazel/just gate.
+- [x] 17-01-PLAN.md - Release candidate evidence contract, verifier, redaction/path guards, comparison classification, and Bazel/just gate.
 
 ### Phase 18: Retained-Code Acceptance and Cutover Review
 
@@ -140,5 +140,5 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17 -> 18
 | 14. Simulator Evidence Gates | v1.1 | 1/1 | Complete    | 2026-06-17 |
 | 15. Hardware Safety and Media Qualification | v1.1 | 1/1 | Complete    | 2026-06-18 |
 | 16. Live Network and Transfer Qualification | v1.1 | 1/1 | Complete    | 2026-06-18 |
-| 17. Release Candidate Artifact and Signing Gates | v1.1 | 0/1 | Not started | - |
+| 17. Release Candidate Artifact and Signing Gates | v1.1 | 1/1 | Complete    | 2026-06-19 |
 | 18. Retained-Code Acceptance and Cutover Review | v1.1 | 0/1 | Not started | - |
