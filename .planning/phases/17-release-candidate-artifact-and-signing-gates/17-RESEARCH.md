@@ -316,22 +316,22 @@ All claims in this research were verified or cited in this session; no `[ASSUMED
 |---|-------|---------|---------------|
 | N/A | No assumed claims recorded. | N/A | N/A |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Which approved release environment will supply production signing evidence?**
-   - What we know: Local checks must not require private signing keys and production pass rows require supplied release-run evidence. [VERIFIED: .planning/phases/17-release-candidate-artifact-and-signing-gates/17-CONTEXT.md]
-   - What's unclear: The repo does not name the release signing environment, operator approval path, or exact key identity registry. [VERIFIED: ProjectOptions.cmake; .planning/codebase/INTEGRATIONS.md]
-   - Recommendation: Planner should add an operator/release input template with safe fields and keep production rows pending until maintainers provide the source of truth. [VERIFIED: tools/bazel/phase16_live_network_evidence.py; .planning/phases/17-release-candidate-artifact-and-signing-gates/17-CONTEXT.md]
+   - Resolution: Approved production signing and release proof will be supplied through Phase 17 release evidence JSON and `external://phase17/...` artifact references by release managers. [VERIFIED: .planning/phases/17-release-candidate-artifact-and-signing-gates/17-CONTEXT.md]
+   - Implementation decision: The repo-owned local verifier validates metadata, Bazel workflow identity, release command identity, key identity/name or fingerprint, artifact digests, retention paths, timestamps, comparison classifications, and redaction boundaries. It does not own private signing keys, raw key bytes, certificates with private material, or release signing payloads. [VERIFIED: ProjectOptions.cmake; tools/bazel/phase16_live_network_evidence.py; utils/pack_fw.py]
+   - Planning consequence: Production rows remain pending until release managers supply approved release evidence; local fixture or dry-run evidence can validate schema and redaction only. [VERIFIED: .planning/phases/17-release-candidate-artifact-and-signing-gates/17-CONTEXT.md]
 
 2. **Should Phase 17 run any full firmware build locally?**
-   - What we know: Local environment has Bazel, Python, and just, but active Python lacks `ecdsa` and the ARM toolchain is missing from PATH and `.dependencies`. [VERIFIED: environment probe]
-   - What's unclear: Whether the actual implementation environment will have bootstrap dependencies installed when Phase 17 executes. [VERIFIED: environment probe]
-   - Recommendation: Planner should keep `just phase17-verify` deterministic without full firmware builds and treat full builds as release-run evidence inputs. [VERIFIED: .planning/phases/17-release-candidate-artifact-and-signing-gates/17-CONTEXT.md]
+   - Resolution: Phase 17 local verification must not require full firmware builds or private signing. Local `just phase17-verify` remains deterministic and private-key-free. [VERIFIED: .planning/phases/17-release-candidate-artifact-and-signing-gates/17-CONTEXT.md; environment probe]
+   - Implementation decision: Full release builds are represented by Bazel-owned release command identities and supplied release-run evidence. Existing representative labels such as `//tools/bazel:representative_release_artifacts` and Phase 3 helper outputs remain local smoke only, never production release proof. [VERIFIED: tools/bazel/BUILD.bazel; tools/bazel/artifact_rules.bzl; tools/bazel/manifests/representative_products.json]
+   - Planning consequence: The contract and verifier must record and validate `bazel_label`, `release_command`, `artifact_outputs`, and `release_run_required` per artifact family, while rejecting local dry-runs that claim production pass status. [VERIFIED: .planning/REQUIREMENTS.md; .planning/phases/17-release-candidate-artifact-and-signing-gates/17-CONTEXT.md]
 
 3. **How many product/profile rows are required for release-candidate proof?**
-   - What we know: Context requires row coverage for all listed artifact families, and representative products currently include MINI boot/noboot, MK4 boot, MINI resource package, and an auxiliary manifest-only row. [VERIFIED: .planning/phases/17-release-candidate-artifact-and-signing-gates/17-CONTEXT.md; tools/bazel/manifests/representative_products.json]
-   - What's unclear: The exact release matrix for every supported product/profile in the approved release environment is not encoded in a Phase 17 contract yet. [VERIFIED: .planning/ROADMAP.md; tools/bazel/manifests/representative_products.json]
-   - Recommendation: Planner should require explicit contract rows for every required surface and allow exact scenario IDs/schema order to follow implementation discretion. [VERIFIED: .planning/phases/17-release-candidate-artifact-and-signing-gates/17-CONTEXT.md]
+   - Resolution: The Phase 17 contract must enumerate the full supported release artifact surface from `ProjectOptions.cmake` and Phase 17 context: `COREONE`, `MINI`, `MK4`, `MK3.5`, `XL`, `iX`, and `XL_DEV_KIT`, plus the relevant boards and auxiliary surfaces `BUDDY`, `XBUDDY`, `XLBUDDY`, `XL_DEV_KIT_XLB`, `DWARF`, `MODULARBED`, and `XBUDDY_EXTENSION`. [VERIFIED: ProjectOptions.cmake; .planning/phases/17-release-candidate-artifact-and-signing-gates/17-CONTEXT.md]
+   - Implementation decision: Contract rows must cover `.bin`, `.bbf`, `.dfu`, map/provenance, resource packages, language bundles, WUI assets, ESP packages, MMU packages, Dwarf firmware, ModularBed firmware, xBuddy Extension firmware, package manifests, signing/provenance, retention, and comparison reports across that supported surface. [VERIFIED: .planning/REQUIREMENTS.md; ProjectOptions.cmake]
+   - Planning consequence: Local representative labels cover smoke rows only; release-candidate proof for the full product/profile matrix requires supplied release-run evidence tied to the approved Bazel-owned workflow identities. [VERIFIED: tools/bazel/manifests/representative_products.json; tools/bazel/BUILD.bazel]
 
 ## Environment Availability
 
