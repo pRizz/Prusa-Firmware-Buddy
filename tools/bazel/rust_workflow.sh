@@ -96,6 +96,13 @@ case "$command_name" in
   phase16_verify_tests)
     python3 tools/bazel/phase16_live_network_evidence_test.py
     ;;
+  phase17_verify)
+    python3 tools/bazel/phase17_release_candidate_evidence.py --wiring-only
+    python3 tools/bazel/phase17_release_candidate_evidence.py --quick
+    ;;
+  phase17_verify_tests)
+    python3 tools/bazel/phase17_release_candidate_evidence_test.py
+    ;;
   *)
     printf 'Unknown Rust workflow target: %s\n' "$command_name" >&2
     exit 2

@@ -138,6 +138,16 @@ filegroup(
 )
 
 filegroup(
+    name = "phase17_release_candidate_evidence_docs",
+    srcs = [
+        ".planning/phases/17-release-candidate-artifact-and-signing-gates/17-CONTEXT.md",
+        ".planning/phases/17-release-candidate-artifact-and-signing-gates/17-RESEARCH.md",
+        ".planning/phases/17-release-candidate-artifact-and-signing-gates/17-VALIDATION.md",
+        ".planning/phases/17-release-candidate-artifact-and-signing-gates/17-01-PLAN.md",
+    ],
+)
+
+filegroup(
     name = "phase7_storage_migration_fixtures",
     srcs = ["//tools/bazel:fixtures/phase7_storage/redacted_migration_catalog.json"],
 )
@@ -305,6 +315,21 @@ alias(
 alias(
     name = "phase16_verify_tests",
     actual = "//tools/bazel:phase16_verify_tests",
+)
+
+alias(
+    name = "phase17_release_candidate_artifacts",
+    actual = "//tools/bazel:phase17_release_candidate_artifacts",
+)
+
+alias(
+    name = "phase17_verify",
+    actual = "//tools/bazel:phase17_verify",
+)
+
+alias(
+    name = "phase17_verify_tests",
+    actual = "//tools/bazel:phase17_verify_tests",
 )
 
 alias(

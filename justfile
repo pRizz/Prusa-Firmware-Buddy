@@ -56,6 +56,13 @@ phase16-verify:
     bazel run //tools/bazel:phase16_verify_tests
     bazel run //tools/bazel:phase16_verify
 
+phase17-verify:
+    bazel run //tools/bazel:phase17_verify_tests
+    bazel run //tools/bazel:phase17_verify
+
+phase17-release-artifacts-smoke:
+    bazel build //tools/bazel:phase17_release_candidate_artifacts
+
 bazel-query:
     bazel query "//tools/bazel/... + //platforms/..."
 
