@@ -849,9 +849,94 @@ def require_file_contains(root: Path, path: Path, needles: list[str]) -> list[st
     return [f"{path.as_posix()} missing required wiring text: {needle}" for needle in needles if needle not in text]
 
 
+def iter_bazel_call_blocks(text: str, call_name: str) -> list[str]:
+    blocks: list[str] = []
+    for match in re.finditer(rf"(?m)^\s*{re.escape(call_name)}\(", text):
+        depth = 0
+        in_comment = False
+        maybe_string_quote: str | None = None
+        escaped = False
+        for index in range(match.start(), len(text)):
+            char = text[index]
+            if in_comment:
+                if char == "\n":
+                    in_comment = False
+                continue
+            if maybe_string_quote is not None:
+                if escaped:
+                    escaped = False
+                elif char == "\\":
+                    escaped = True
+                elif char == maybe_string_quote:
+                    maybe_string_quote = None
+                continue
+            if char == "#":
+                in_comment = True
+                continue
+            if char in {'"', "'"}:
+                maybe_string_quote = char
+                continue
+            if char == "(":
+                depth += 1
+                continue
+            if char != ")":
+                continue
+            depth -= 1
+            if depth == 0:
+                blocks.append(text[match.start():index + 1])
+                break
+    return blocks
+
+
+def bazel_string_attr(block: str, attr: str) -> str | None:
+    match = re.search(rf'(?m)^\s*{re.escape(attr)}\s*=\s*"([^"]*)"', block)
+    if match is None:
+        return None
+    return match.group(1)
+
+
+def bazel_list_attr(block: str, attr: str) -> list[str]:
+    match = re.search(rf"(?ms)^\s*{re.escape(attr)}\s*=\s*\[(.*?)\]", block)
+    if match is None:
+        return []
+    return re.findall(r'"([^"]+)"', match.group(1))
+
+
+def bazel_rule_block(text: str, rule_kind: str, name: str) -> str | None:
+    for block in iter_bazel_call_blocks(text, rule_kind):
+        if bazel_string_attr(block, "name") == name:
+            return block
+    return None
+
+
+def check_release_candidate_artifact_target(root: Path) -> list[str]:
+    try:
+        text = read_text(root, Path("tools/bazel/BUILD.bazel"))
+    except VerificationError as error:
+        return [str(error)]
+    block = bazel_rule_block(text, "filegroup", "phase17_release_candidate_artifacts")
+    if block is None:
+        return ["tools/bazel/BUILD.bazel missing phase17_release_candidate_artifacts filegroup"]
+    srcs = set(bazel_list_attr(block, "srcs"))
+    forbidden_smoke_deps = {
+        ":phase17_representative_release_smoke",
+        ":representative_release_artifacts",
+        "//tools/bazel:phase17_representative_release_smoke",
+        "//tools/bazel:representative_release_artifacts",
+    }
+    wrapped_smoke = sorted(srcs & forbidden_smoke_deps)
+    if not wrapped_smoke:
+        return []
+    return [
+        "tools/bazel/BUILD.bazel phase17_release_candidate_artifacts cannot wrap local smoke dependencies: "
+        + ", ".join(wrapped_smoke)
+    ]
+
+
 def check_wiring(root: Path) -> None:
     errors: list[str] = []
     manifest_srcs = [Path(path).relative_to("tools/bazel").as_posix() for path in SOURCE_REF_MANIFESTS]
+    errors.extend(check_release_candidate_artifact_target(root))
     errors.extend(require_file_contains(root, Path("tools/bazel/BUILD.bazel"), [
         'name = "phase17_release_candidate_artifacts"',
         'name = "phase17_representative_release_smoke"',
@@ -886,7 +971,7 @@ def check_wiring(root: Path) -> None:
         "bazel run //tools/bazel:phase17_verify_tests",
         "bazel run //tools/bazel:phase17_verify",
         "phase17-release-artifacts-smoke:",
-        "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+        "bazel build //tools/bazel:phase17_representative_release_smoke",
     ]))
     try:
         just_lines = [line.strip() for line in read_text(root, "justfile").splitlines()]

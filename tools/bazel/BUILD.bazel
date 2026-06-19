@@ -376,7 +376,8 @@ shell_binary(
 
 filegroup(
     name = "phase17_release_candidate_artifacts",
-    srcs = [":representative_release_artifacts"],
+    # Wire only real release-candidate outputs here; keep local smoke fixtures separate.
+    srcs = [],
 )
 
 filegroup(

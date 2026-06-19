@@ -183,7 +183,7 @@ class Phase17ReleaseCandidateEvidenceTest(unittest.TestCase):
         )
         tools_build = maybe_tools_build or f"""filegroup(
     name = "phase17_release_candidate_artifacts",
-    srcs = [":representative_release_artifacts"],
+    srcs = [],
 )
 
 filegroup(
@@ -265,7 +265,7 @@ esac
     bazel run //tools/bazel:phase17_verify
 
 phase17-release-artifacts-smoke:
-    bazel build //tools/bazel:phase17_release_candidate_artifacts
+    bazel build //tools/bazel:phase17_representative_release_smoke
 """
         self.write_file(root, "tools/bazel/BUILD.bazel", tools_build)
         self.write_file(root, "BUILD.bazel", root_build)
@@ -541,6 +541,30 @@ phase17-release-artifacts-smoke:
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("phase17_release_candidate_artifacts", result.stdout)
+
+    def test_wiring_rejects_release_candidate_target_wrapping_smoke_artifacts(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            bad_tools_build = """filegroup(
+    name = "phase17_release_candidate_artifacts",
+    srcs = [":representative_release_artifacts"],
+)
+
+filegroup(
+    name = "phase17_representative_release_smoke",
+    srcs = [":representative_release_artifacts"],
+)
+"""
+            self.write_wiring(root, maybe_tools_build=bad_tools_build)
+
+            # Act
+            result = self.run_verifier(["--wiring-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("cannot wrap local smoke dependencies", result.stdout)
 
 
 if __name__ == "__main__":

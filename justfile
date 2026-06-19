@@ -61,7 +61,7 @@ phase17-verify:
     bazel run //tools/bazel:phase17_verify
 
 phase17-release-artifacts-smoke:
-    bazel build //tools/bazel:phase17_release_candidate_artifacts
+    bazel build //tools/bazel:phase17_representative_release_smoke
 
 bazel-query:
     bazel query "//tools/bazel/... + //platforms/..."
