@@ -589,6 +589,25 @@ class Phase18CutoverReviewTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("supplied_evidence_result_refs", result.stdout)
 
+    def test_deferred_approved_exception_retained_review_requires_supplied_evidence(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            decision_input = self.complete_decision_input(root)
+            decision_input["retained_code_reviews"][0]["status"] = "deferred-approved-exception"
+            decision_input["retained_code_reviews"][0]["supplied_evidence_result_refs"] = []
+            decision_input["retained_code_reviews"][0]["exception_ref"] = "phase18-retained-exception"
+            decision_input["retained_code_reviews"][0]["blocker_or_deferred_action"] = "Review exception before demotion."
+            self.write_json(root, "decision-input.json", decision_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("supplied_evidence_result_refs must include at least one Phase 18 evidence ref", result.stdout)
+
     def test_decision_input_rejects_paths_outside_phase18_output_or_external_refs(self) -> None:
         cases = ["/tmp/phase18-evidence.json", "../phase18-evidence.json", "build/ci-evidence/phase17/result.json"]
         for evidence_ref in cases:

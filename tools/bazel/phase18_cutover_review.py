@@ -842,8 +842,8 @@ def validate_retained_review(row: Any, packet_ids: set[str], row_index: int) -> 
     require_string(row, "blocker_or_deferred_action", row_name)
     require_string(row, "exception_ref", row_name)
     require_string(row, "redaction_summary", row_name)
-    if status == "accepted" and not supplied_refs:
-        raise VerificationError(f"{row_name} accepted requires supplied_evidence_result_refs")
+    if status in {"accepted", "deferred-approved-exception"}:
+        require_non_empty_refs(supplied_refs, row_name, "supplied_evidence_result_refs")
     if status == "deferred-approved-exception":
         if row["exception_ref"] == "none" or row["blocker_or_deferred_action"] == "none":
             raise VerificationError(f"{row_name} deferred-approved-exception requires exception_ref and blocker action")
