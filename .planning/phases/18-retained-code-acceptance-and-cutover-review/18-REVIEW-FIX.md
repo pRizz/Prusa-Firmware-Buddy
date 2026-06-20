@@ -1,8 +1,8 @@
 ---
 phase: 18-retained-code-acceptance-and-cutover-review
-fixed_at: "2026-06-20T16:42:09Z"
+fixed_at: "2026-06-20T16:49:04Z"
 review_path: .planning/phases/18-retained-code-acceptance-and-cutover-review/18-REVIEW.md
-iteration: 6
+iteration: 7
 findings_in_scope: 1
 fixed: 1
 skipped: 0
@@ -11,9 +11,9 @@ status: all_fixed
 
 # Phase 18: Code Review Fix Report
 
-**Fixed at:** 2026-06-20T16:42:09Z
+**Fixed at:** 2026-06-20T16:49:04Z
 **Source review:** .planning/phases/18-retained-code-acceptance-and-cutover-review/18-REVIEW.md
-**Iteration:** 6
+**Iteration:** 7
 
 **Summary:**
 - Findings in scope: 1
@@ -21,6 +21,13 @@ status: all_fixed
 - Skipped: 0
 
 ## Fixed Issues
+
+### CR-01: Security-only demotion check ignores retained-packet review status
+
+**Status:** fixed: requires human verification
+**Files modified:** `tools/bazel/phase18_cutover_review.py`, `tools/bazel/phase18_cutover_review_test.py`
+**Commit:** 8ae5d32e4
+**Applied fix:** Retained-code acceptance consistency is now enforced through a shared helper used by both quick artifact generation and security-only decision-input validation. Added a regression test proving `--security-only --decision-input` rejects generated demotion claims when final criteria pass but retained packet reviews are blocked.
 
 ### CR-01: Security-only accepts tampered demotion claims with any validated decision packet
 
@@ -87,7 +94,7 @@ status: all_fixed
 
 ## Verification
 
-- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 40 tests.
+- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 41 tests.
 - `python3 tools/bazel/phase18_cutover_review.py --contract-only` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --quick` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --security-only` passed.
@@ -95,6 +102,6 @@ status: all_fixed
 
 ---
 
-_Fixed: 2026-06-20T16:42:09Z_
+_Fixed: 2026-06-20T16:49:04Z_
 _Fixer: the agent (gsd-code-fixer)_
-_Iteration: 6_
+_Iteration: 7_
