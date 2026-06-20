@@ -772,6 +772,24 @@ class Phase18CutoverReviewTest(unittest.TestCase):
         self.assertNotEqual(generated_result.returncode, 0)
         self.assertIn("raw crash dump", generated_result.stdout)
 
+    def test_security_only_rejects_common_api_key_fields(self) -> None:
+        for field in ["api_key", "access_token"]:
+            with self.subTest(field=field):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_complete_surface(root)
+                    decision_input = self.complete_decision_input(root)
+                    decision_input[field] = "redacted-test-value"
+                    self.write_json(root, "decision-input.json", decision_input)
+
+                    # Act
+                    result = self.run_verifier(["--security-only", "--decision-input", "decision-input.json"], maybe_root=root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(field, result.stdout)
+
     def test_generated_report_names_review_material_boundary(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -942,6 +960,37 @@ class Phase18CutoverReviewTest(unittest.TestCase):
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("final-retained-code-acceptance has non-accepted retained reviews", result.stdout)
+
+    def test_security_only_rejects_retained_row_status_mismatch_with_decision_input(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            quick_result = self.run_verifier(["--quick"], maybe_root=root)
+            self.assertEqual(quick_result.returncode, 0, quick_result.stdout)
+            run_manifest = self.read_json(root, "build/ci-evidence/phase18/run-manifest.json")
+            run_manifest["decision_inputs_supplied"] = True
+            run_manifest["demotion_allowed"] = False
+            self.write_json(root, "build/ci-evidence/phase18/run-manifest.json", run_manifest)
+            summary = self.read_json(root, "build/ci-evidence/phase18/retained-code-acceptance-summary.json")
+            summary["packets"][0]["status"] = "accepted"
+            self.write_json(root, "build/ci-evidence/phase18/retained-code-acceptance-summary.json", summary)
+            decision_input = self.complete_decision_input(root)
+            for retained_review in decision_input["retained_code_reviews"]:
+                retained_review["status"] = "blocked"
+                retained_review["rationale"] = "Retained review remains blocked."
+            for final_decision in decision_input["final_criterion_decisions"]:
+                if final_decision["criterion_id"] == "final-retained-code-acceptance":
+                    final_decision["status"] = "blocked"
+                    final_decision["rationale"] = "Retained-code acceptance remains blocked."
+            self.write_json(root, "decision-input.json", decision_input)
+
+            # Act
+            result = self.run_verifier(["--security-only", "--decision-input", "decision-input.json"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("generated retained-code packet status mismatch", result.stdout)
 
     def test_security_only_rejects_normalized_top_level_demotion_overclaim(self) -> None:
         # Arrange

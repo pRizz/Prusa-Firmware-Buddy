@@ -163,6 +163,11 @@ REQUIRED_RETAINED_REVIEW_FIELDS = [
     "redaction_summary",
 ]
 FORBIDDEN_FIELD_NAMES = {
+    "access_token",
+    "api-key",
+    "api_key",
+    "apikey",
+    "bearer_token",
     "private_key",
     "signing_key_value",
     "certificate_private_material",
@@ -1226,12 +1231,16 @@ def write_quick_artifacts(
         redacted_report_text(run_manifest, final_results, retained_rows),
         encoding="utf-8",
     )
+    expected_final_statuses = {row["id"]: row["status"] for row in final_results}
+    expected_retained_statuses = {row["id"]: row["status"] for row in retained_rows}
     run_security_scan(
         root,
         None,
         output_dir,
         decision_input_validated=decision_input is not None,
         expected_demotion_allowed=allowed,
+        expected_final_statuses=expected_final_statuses,
+        expected_retained_statuses=expected_retained_statuses,
     )
     return run_manifest
 
@@ -1252,6 +1261,8 @@ def run_security_scan(
     output_dir: Path | None = None,
     decision_input_validated: bool = False,
     expected_demotion_allowed: bool | None = None,
+    expected_final_statuses: dict[str, str] | None = None,
+    expected_retained_statuses: dict[str, str] | None = None,
     contract: dict[str, Any] | None = None,
 ) -> None:
     errors: list[str] = []
@@ -1272,7 +1283,10 @@ def run_security_scan(
                 retained_reviews, final_decisions = validated_decision_maps(decision_input, packets, criteria)
                 validate_retained_acceptance_consistency(packets, retained_reviews, final_decisions)
                 expected_results = normalize_final_results(criteria, final_decisions)
+                expected_retained_rows = normalize_retained_reviews(packets, retained_reviews)
                 expected_demotion_allowed = demotion_allowed(True, expected_results)
+                expected_final_statuses = {row["id"]: row["status"] for row in expected_results}
+                expected_retained_statuses = {row["id"]: row["status"] for row in expected_retained_rows}
         except VerificationError as error:
             errors.append(str(error))
     for full_path in generated_artifacts_to_scan(root, output_dir):
@@ -1290,6 +1304,8 @@ def run_security_scan(
         output_dir,
         decision_input_validated,
         expected_demotion_allowed,
+        expected_final_statuses,
+        expected_retained_statuses,
     )
     if errors:
         raise VerificationError("\n".join(errors))
@@ -1301,6 +1317,8 @@ def validate_generated_overclaim_guards(
     output_dir: Path | None = None,
     decision_input_validated: bool = False,
     expected_demotion_allowed: bool | None = None,
+    expected_final_statuses: dict[str, str] | None = None,
+    expected_retained_statuses: dict[str, str] | None = None,
 ) -> None:
     output_dir = output_dir or root / DEFAULT_OUTPUT_DIR
     run_manifest_path = output_dir / "run-manifest.json"
@@ -1332,8 +1350,32 @@ def validate_generated_overclaim_guards(
                     errors.append(
                         "generated normalized-final-demotion-results.json demotion_allowed true requires complete approving decision input"
                     )
+                results = normalized.get("results") if isinstance(normalized, dict) else None
+                if expected_final_statuses is not None and isinstance(results, list):
+                    for row in results:
+                        if not isinstance(row, dict):
+                            continue
+                        row_id = str(row.get("id", "unknown"))
+                        expected_status = expected_final_statuses.get(row_id)
+                        if expected_status is not None and row.get("status") != expected_status:
+                            errors.append(f"generated final criterion status mismatch: {row_id}")
             except json.JSONDecodeError as error:
                 errors.append(f"{normalized_path.relative_to(root).as_posix()} is not valid JSON: {error}")
+        retained_path = output_dir / "retained-code-acceptance-summary.json"
+        if retained_path.exists():
+            try:
+                retained = json.loads(retained_path.read_text(encoding="utf-8"))
+                packets = retained.get("packets") if isinstance(retained, dict) else None
+                if expected_retained_statuses is not None and isinstance(packets, list):
+                    for row in packets:
+                        if not isinstance(row, dict):
+                            continue
+                        row_id = str(row.get("id", "unknown"))
+                        expected_status = expected_retained_statuses.get(row_id)
+                        if expected_status is not None and row.get("status") != expected_status:
+                            errors.append(f"generated retained-code packet status mismatch: {row_id}")
+            except json.JSONDecodeError as error:
+                errors.append(f"{retained_path.relative_to(root).as_posix()} is not valid JSON: {error}")
         return
     if run_manifest.get("demotion_allowed") is True:
         errors.append("generated no-decision run-manifest.json cannot set demotion_allowed true")
