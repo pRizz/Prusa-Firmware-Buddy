@@ -23,6 +23,12 @@ SOURCE_REF_FILES = [
     "tools/bazel/manifests/phase16_live_network_evidence_contract.json",
     "tools/bazel/manifests/phase17_release_candidate_evidence_contract.json",
 ]
+WIRING_FILES = [
+    "tools/bazel/BUILD.bazel",
+    "BUILD.bazel",
+    "tools/bazel/rust_workflow.sh",
+    "justfile",
+]
 REQUIRED_RETAINED_PACKET_IDS = [
     "packet-hal-cmsis-startup-asm",
     "packet-freertos-runtime",
@@ -101,6 +107,10 @@ class Phase18CutoverReviewTest(unittest.TestCase):
     def copy_complete_surface(self, root: Path) -> None:
         self.copy_file(root, CONTRACT)
         self.copy_source_ref_inputs(root)
+
+    def copy_wiring_files(self, root: Path) -> None:
+        for path in WIRING_FILES:
+            self.copy_file(root, path)
 
     def read_contract(self, root: Path) -> dict[str, object]:
         return json.loads((root / CONTRACT).read_text(encoding="utf-8"))
@@ -596,6 +606,62 @@ class Phase18CutoverReviewTest(unittest.TestCase):
         for forbidden in ["shell=True", "bash -c", "python -c", "node -e"]:
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, source)
+
+    def test_wiring_only_accepts_complete_phase18_wiring(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            self.copy_wiring_files(root)
+
+            # Act
+            result = self.run_verifier(["--wiring-only"], maybe_root=root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_wiring_only_rejects_missing_phase18_entries(self) -> None:
+        cases = [
+            ("tools/bazel/BUILD.bazel", 'name = "phase18_source_ref_manifests"'),
+            ("tools/bazel/BUILD.bazel", "manifests/phase18_cutover_review_contract.json"),
+            ("BUILD.bazel", 'name = "phase18_cutover_review_docs"'),
+            ("BUILD.bazel", 'name = "phase18_verify_tests"'),
+            ("tools/bazel/rust_workflow.sh", "phase18_verify)"),
+            ("tools/bazel/rust_workflow.sh", "python3 tools/bazel/phase18_cutover_review.py --quick"),
+            ("justfile", "phase18-verify:"),
+            ("justfile", "bazel run //tools/bazel:phase18_verify_tests"),
+        ]
+        for path, required_text in cases:
+            with self.subTest(path=path, required_text=required_text):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_complete_surface(root)
+                    self.copy_wiring_files(root)
+                    target = root / path
+                    target.write_text(target.read_text(encoding="utf-8").replace(required_text, ""), encoding="utf-8")
+
+                    # Act
+                    result = self.run_verifier(["--wiring-only"], maybe_root=root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(required_text, result.stdout)
+
+    def test_just_phase18_verify_runs_tests_before_verifier(self) -> None:
+        # Arrange
+        justfile = (ROOT / "justfile").read_text(encoding="utf-8")
+
+        # Act
+        recipe_index = justfile.find("phase18-verify:")
+        tests_index = justfile.find("bazel run //tools/bazel:phase18_verify_tests", recipe_index)
+        verify_index = justfile.find("bazel run //tools/bazel:phase18_verify", recipe_index)
+
+        # Assert
+        self.assertNotEqual(recipe_index, -1)
+        self.assertNotEqual(tests_index, -1)
+        self.assertNotEqual(verify_index, -1)
+        self.assertLess(tests_index, verify_index)
 
 
 if __name__ == "__main__":
