@@ -944,6 +944,33 @@ def demotion_allowed(decision_inputs_supplied: bool, normalized_results: list[di
     return all(bool(row["demotion_status_allows_cutover"]) for row in normalized_results)
 
 
+def validate_retained_acceptance_consistency(
+    packets: list[dict[str, Any]],
+    retained_reviews: dict[str, dict[str, Any]],
+    final_decisions: dict[str, dict[str, Any]],
+) -> None:
+    retained_acceptance_decision = final_decisions.get("final-retained-code-acceptance")
+    if not retained_acceptance_decision or not final_status_allows_demotion(
+        str(retained_acceptance_decision["status"]),
+        retained_acceptance_decision,
+    ):
+        return
+    packet_ids = {str(packet["id"]) for packet in packets}
+    missing_reviews = packet_ids - set(retained_reviews)
+    if missing_reviews:
+        raise VerificationError(
+            "final-retained-code-acceptance cannot pass without retained reviews: "
+            + ", ".join(sorted(missing_reviews))
+        )
+    bad_statuses = [
+        f"{packet_id}:{review['status']}"
+        for packet_id, review in sorted(retained_reviews.items())
+        if review["status"] not in {"accepted", "deferred-approved-exception"}
+    ]
+    if bad_statuses:
+        raise VerificationError("final-retained-code-acceptance has non-accepted retained reviews: " + ", ".join(bad_statuses))
+
+
 def generated_artifact_paths(output_dir: Path) -> dict[str, Path]:
     return {artifact: output_dir / artifact for artifact in sorted(REQUIRED_GENERATED_ARTIFACTS)}
 
@@ -1158,25 +1185,7 @@ def write_quick_artifacts(
     packets = contract_packets(contract)
     criteria = contract_final_criteria(contract)
     retained_reviews, final_decisions = validated_decision_maps(decision_input, packets, criteria)
-    retained_acceptance_decision = final_decisions.get("final-retained-code-acceptance")
-    if retained_acceptance_decision and final_status_allows_demotion(
-        str(retained_acceptance_decision["status"]),
-        retained_acceptance_decision,
-    ):
-        packet_ids = {str(packet["id"]) for packet in packets}
-        missing_reviews = packet_ids - set(retained_reviews)
-        if missing_reviews:
-            raise VerificationError(
-                "final-retained-code-acceptance cannot pass without retained reviews: "
-                + ", ".join(sorted(missing_reviews))
-            )
-        bad_statuses = [
-            f"{packet_id}:{review['status']}"
-            for packet_id, review in sorted(retained_reviews.items())
-            if review["status"] not in {"accepted", "deferred-approved-exception"}
-        ]
-        if bad_statuses:
-            raise VerificationError("final-retained-code-acceptance has non-accepted retained reviews: " + ", ".join(bad_statuses))
+    validate_retained_acceptance_consistency(packets, retained_reviews, final_decisions)
     final_results = normalize_final_results(criteria, final_decisions)
     retained_rows = normalize_retained_reviews(packets, retained_reviews)
     decision_inputs_supplied = decision_input is not None
@@ -1260,7 +1269,8 @@ def run_security_scan(
             if contract is not None and decision_input is not None:
                 packets = contract_packets(contract)
                 criteria = contract_final_criteria(contract)
-                _, final_decisions = validated_decision_maps(decision_input, packets, criteria)
+                retained_reviews, final_decisions = validated_decision_maps(decision_input, packets, criteria)
+                validate_retained_acceptance_consistency(packets, retained_reviews, final_decisions)
                 expected_results = normalize_final_results(criteria, final_decisions)
                 expected_demotion_allowed = demotion_allowed(True, expected_results)
         except VerificationError as error:

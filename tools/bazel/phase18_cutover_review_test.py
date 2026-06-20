@@ -916,6 +916,33 @@ class Phase18CutoverReviewTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("demotion_allowed true requires complete approving decision input", result.stdout)
 
+    def test_security_only_rejects_generated_demotion_when_retained_reviews_block(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            quick_result = self.run_verifier(["--quick"], maybe_root=root)
+            self.assertEqual(quick_result.returncode, 0, quick_result.stdout)
+            run_manifest = self.read_json(root, "build/ci-evidence/phase18/run-manifest.json")
+            run_manifest["decision_inputs_supplied"] = True
+            run_manifest["demotion_allowed"] = True
+            self.write_json(root, "build/ci-evidence/phase18/run-manifest.json", run_manifest)
+            normalized = self.read_json(root, "build/ci-evidence/phase18/normalized-final-demotion-results.json")
+            normalized["demotion_allowed"] = True
+            self.write_json(root, "build/ci-evidence/phase18/normalized-final-demotion-results.json", normalized)
+            decision_input = self.complete_decision_input(root)
+            for retained_review in decision_input["retained_code_reviews"]:
+                retained_review["status"] = "blocked"
+                retained_review["rationale"] = "Retained review remains blocked."
+            self.write_json(root, "decision-input.json", decision_input)
+
+            # Act
+            result = self.run_verifier(["--security-only", "--decision-input", "decision-input.json"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("final-retained-code-acceptance has non-accepted retained reviews", result.stdout)
+
     def test_security_only_rejects_normalized_top_level_demotion_overclaim(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
