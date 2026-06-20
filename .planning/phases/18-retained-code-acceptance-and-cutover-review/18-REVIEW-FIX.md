@@ -1,26 +1,33 @@
 ---
 phase: 18-retained-code-acceptance-and-cutover-review
-fixed_at: "2026-06-20T16:19:40Z"
+fixed_at: "2026-06-20T16:27:30Z"
 review_path: .planning/phases/18-retained-code-acceptance-and-cutover-review/18-REVIEW.md
-iteration: 3
-findings_in_scope: 3
-fixed: 3
+iteration: 4
+findings_in_scope: 1
+fixed: 1
 skipped: 0
 status: all_fixed
 ---
 
 # Phase 18: Code Review Fix Report
 
-**Fixed at:** 2026-06-20T16:19:40Z
+**Fixed at:** 2026-06-20T16:27:30Z
 **Source review:** .planning/phases/18-retained-code-acceptance-and-cutover-review/18-REVIEW.md
-**Iteration:** 3
+**Iteration:** 4
 
 **Summary:**
-- Findings in scope: 3
-- Fixed: 3
+- Findings in scope: 1
+- Fixed: 1
 - Skipped: 0
 
 ## Fixed Issues
+
+### WR-01: No-decision overclaim guard can be bypassed with a non-boolean manifest flag
+
+**Status:** fixed: requires human verification
+**Files modified:** `tools/bazel/phase18_cutover_review.py`, `tools/bazel/phase18_cutover_review_test.py`
+**Commit:** 39c351cdb
+**Applied fix:** Generated overclaim validation now rejects missing or non-boolean `decision_inputs_supplied` before skipping no-decision checks. Added a regression test for string and missing generated flags combined with `demotion_allowed: true`.
 
 ### CR-01: Retained packet approvals do not enforce the contract approver role
 
@@ -59,7 +66,7 @@ status: all_fixed
 
 ## Verification
 
-- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 36 tests.
+- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 37 tests.
 - `python3 tools/bazel/phase18_cutover_review.py --contract-only` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --quick` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --security-only` passed.
@@ -67,6 +74,6 @@ status: all_fixed
 
 ---
 
-_Fixed: 2026-06-20T16:19:40Z_
+_Fixed: 2026-06-20T16:27:30Z_
 _Fixer: the agent (gsd-code-fixer)_
-_Iteration: 3_
+_Iteration: 4_
