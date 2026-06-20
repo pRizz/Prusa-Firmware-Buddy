@@ -1,26 +1,33 @@
 ---
 phase: 18-retained-code-acceptance-and-cutover-review
-fixed_at: "2026-06-20T17:25:05Z"
+fixed_at: "2026-06-20T17:33:34Z"
 review_path: .planning/phases/18-retained-code-acceptance-and-cutover-review/18-REVIEW.md
-iteration: 11
-findings_in_scope: 3
-fixed: 3
+iteration: 12
+findings_in_scope: 1
+fixed: 1
 skipped: 0
 status: all_fixed
 ---
 
 # Phase 18: Code Review Fix Report
 
-**Fixed at:** 2026-06-20T17:25:05Z
+**Fixed at:** 2026-06-20T17:33:34Z
 **Source review:** .planning/phases/18-retained-code-acceptance-and-cutover-review/18-REVIEW.md
-**Iteration:** 11
+**Iteration:** 12
 
 **Summary:**
-- Findings in scope: 3
-- Fixed: 3
+- Findings in scope: 1
+- Fixed: 1
 - Skipped: 0
 
 ## Fixed Issues
+
+### CR-01: API-Key Narrative Markers Pass Redaction And Are Written To Artifacts
+
+**Status:** fixed: requires human verification
+**Files modified:** `tools/bazel/phase18_cutover_review.py`, `tools/bazel/phase18_cutover_review_test.py`
+**Commit:** 2af07b6a8
+**Applied fix:** Narrative assignment redaction now derives colon/equal assignment patterns from the forbidden field vocabulary, with authorization aliases included. Added regression coverage for `api_key:`, `api-key:`, `api key:`, `access_token:`, `credential value:`, and `wifi_password:` markers, and moved the generated-artifact assertion before temp-root cleanup.
 
 ### CR-01: Narrative Secret Markers Can Pass Redaction And Be Written To Artifacts
 
@@ -161,6 +168,6 @@ status: all_fixed
 
 ---
 
-_Fixed: 2026-06-20T17:25:05Z_
+_Fixed: 2026-06-20T17:33:34Z_
 _Fixer: the agent (gsd-code-fixer)_
-_Iteration: 11_
+_Iteration: 12_
