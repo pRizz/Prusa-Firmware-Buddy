@@ -127,7 +127,10 @@ Plans:
 1. Final reference-demotion checklist links CI, simulator, hardware, live-service, release, retained-code, and residual-risk evidence.
 1. Maintainers can approve, reject, or exception each final-demotion criterion with an auditable rationale.
 1. Final cutover readiness allows reference demotion only when all required gates pass or have maintainer-approved exceptions.
-   **Plans**: Not created yet.
+   **Plans**: 1 plan
+
+Plans:
+- [ ] 18-01-PLAN.md - Retained-code acceptance packets, final-demotion decision gate, verifier, Bazel labels, and just facade.
 
 ## Progress
 
