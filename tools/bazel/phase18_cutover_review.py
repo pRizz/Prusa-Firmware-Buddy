@@ -771,6 +771,10 @@ def validate_exception_metadata(exception: Any, row_name: str) -> dict[str, Any]
     if not isinstance(exception, dict):
         raise VerificationError(f"{row_name} exception must be an object")
     require_fields(exception, EXCEPTION_REQUIRED_FIELDS, f"{row_name} exception")
+    for field in EXCEPTION_REQUIRED_FIELDS:
+        if field == "evidence_refs":
+            continue
+        require_string(exception, field, f"{row_name} exception")
     evidence_refs = require_list_of_strings(exception, "evidence_refs", f"{row_name} exception")
     require_non_empty_refs(evidence_refs, f"{row_name} exception", "evidence_refs")
     for ref in evidence_refs:
