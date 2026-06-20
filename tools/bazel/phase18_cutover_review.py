@@ -772,9 +772,15 @@ def validate_exception_metadata(exception: Any, row_name: str) -> dict[str, Any]
         raise VerificationError(f"{row_name} exception must be an object")
     require_fields(exception, EXCEPTION_REQUIRED_FIELDS, f"{row_name} exception")
     evidence_refs = require_list_of_strings(exception, "evidence_refs", f"{row_name} exception")
+    require_non_empty_refs(evidence_refs, f"{row_name} exception", "evidence_refs")
     for ref in evidence_refs:
         require_phase18_artifact_ref(ref, f"{row_name} exception evidence_refs")
     return exception
+
+
+def require_non_empty_refs(refs: list[str], row_name: str, field: str) -> None:
+    if not refs:
+        raise VerificationError(f"{row_name} {field} must include at least one Phase 18 evidence ref")
 
 
 def validate_final_decision(row: Any, criterion_ids: set[str], row_index: int) -> dict[str, Any]:
@@ -800,9 +806,14 @@ def validate_final_decision(row: Any, criterion_ids: set[str], row_index: int) -
         require_phase18_artifact_ref(ref, f"{row_name} evidence_refs")
     require_string(row, "residual_risk", row_name)
     require_string(row, "redaction_summary", row_name)
-    if status in {"exception-approved", "not-applicable"}:
+    if status == "passed":
+        if decision != "approve":
+            raise VerificationError(f"{row_name} status passed requires decision approve")
+        require_non_empty_refs(evidence_refs, row_name, "evidence_refs")
+    elif status in {"exception-approved", "not-applicable"}:
         if decision != "exception":
             raise VerificationError(f"{row_name} status {status} requires decision exception")
+        require_non_empty_refs(evidence_refs, row_name, "evidence_refs")
         validate_exception_metadata(row["exception"], row_name)
     elif not isinstance(row.get("exception"), dict):
         raise VerificationError(f"{row_name} exception must be an object")
@@ -874,13 +885,12 @@ def validated_decision_maps(
     return retained_reviews, final_decisions
 
 
-def valid_not_applicable(decision: dict[str, Any]) -> bool:
-    if decision.get("status") != "not-applicable":
-        return False
-    if decision.get("decision") != "exception":
-        return False
-    if not decision.get("rationale") or not decision.get("evidence_refs"):
-        return False
+def has_non_empty_evidence_refs(decision: dict[str, Any]) -> bool:
+    refs = decision.get("evidence_refs")
+    return isinstance(refs, list) and bool(refs) and all(isinstance(ref, str) and ref for ref in refs)
+
+
+def has_complete_exception_metadata(decision: dict[str, Any]) -> bool:
     try:
         validate_exception_metadata(decision.get("exception"), str(decision.get("criterion_id", "criterion")))
     except VerificationError:
@@ -888,10 +898,28 @@ def valid_not_applicable(decision: dict[str, Any]) -> bool:
     return True
 
 
+def valid_not_applicable(decision: dict[str, Any]) -> bool:
+    if decision.get("status") != "not-applicable":
+        return False
+    if decision.get("decision") != "exception":
+        return False
+    if not decision.get("rationale") or not has_non_empty_evidence_refs(decision):
+        return False
+    return has_complete_exception_metadata(decision)
+
+
 def final_status_allows_demotion(status: str, maybe_decision: dict[str, Any] | None) -> bool:
-    if status in {"passed", "exception-approved"}:
-        return True
-    if status == "not-applicable" and maybe_decision is not None:
+    if maybe_decision is None or maybe_decision.get("status") != status:
+        return False
+    if status == "passed":
+        return maybe_decision.get("decision") == "approve" and has_non_empty_evidence_refs(maybe_decision)
+    if status == "exception-approved":
+        return (
+            maybe_decision.get("decision") == "exception"
+            and has_non_empty_evidence_refs(maybe_decision)
+            and has_complete_exception_metadata(maybe_decision)
+        )
+    if status == "not-applicable":
         return valid_not_applicable(maybe_decision)
     return False
 

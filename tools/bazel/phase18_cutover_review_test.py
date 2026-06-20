@@ -447,6 +447,88 @@ class Phase18CutoverReviewTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("scope", result.stdout)
 
+    def test_passed_final_decision_rejects_reject_decision_with_empty_evidence(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            decision_input = self.complete_decision_input(root)
+            decision_input["final_criterion_decisions"][0]["decision"] = "reject"
+            decision_input["final_criterion_decisions"][0]["status"] = "passed"
+            decision_input["final_criterion_decisions"][0]["evidence_refs"] = []
+            self.write_json(root, "decision-input.json", decision_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("status passed requires decision approve", result.stdout)
+
+    def test_passed_final_decision_requires_evidence_refs(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            decision_input = self.complete_decision_input(root)
+            decision_input["final_criterion_decisions"][0]["evidence_refs"] = []
+            self.write_json(root, "decision-input.json", decision_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("evidence_refs must include at least one Phase 18 evidence ref", result.stdout)
+
+    def test_exception_approved_final_decision_requires_evidence_refs(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            decision_input = self.complete_decision_input(root, status="exception-approved", decision="exception")
+            decision_input["final_criterion_decisions"][0]["evidence_refs"] = []
+            self.write_json(root, "decision-input.json", decision_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("evidence_refs must include at least one Phase 18 evidence ref", result.stdout)
+
+    def test_not_applicable_final_decision_requires_evidence_refs(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            decision_input = self.complete_decision_input(root, status="not-applicable", decision="exception")
+            decision_input["final_criterion_decisions"][0]["evidence_refs"] = []
+            self.write_json(root, "decision-input.json", decision_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("evidence_refs must include at least one Phase 18 evidence ref", result.stdout)
+
+    def test_exception_metadata_requires_evidence_refs(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            decision_input = self.complete_decision_input(root, status="exception-approved", decision="exception")
+            decision_input["final_criterion_decisions"][0]["exception"]["evidence_refs"] = []
+            self.write_json(root, "decision-input.json", decision_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("exception evidence_refs must include at least one Phase 18 evidence ref", result.stdout)
+
     def test_demotion_allowed_only_when_all_final_criteria_have_allowed_statuses(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
