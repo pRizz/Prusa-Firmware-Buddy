@@ -1,26 +1,40 @@
 ---
 phase: 18-retained-code-acceptance-and-cutover-review
-fixed_at: "2026-06-20T16:49:04Z"
+fixed_at: "2026-06-20T16:57:29Z"
 review_path: .planning/phases/18-retained-code-acceptance-and-cutover-review/18-REVIEW.md
-iteration: 7
-findings_in_scope: 1
-fixed: 1
+iteration: 8
+findings_in_scope: 2
+fixed: 2
 skipped: 0
 status: all_fixed
 ---
 
 # Phase 18: Code Review Fix Report
 
-**Fixed at:** 2026-06-20T16:49:04Z
+**Fixed at:** 2026-06-20T16:57:29Z
 **Source review:** .planning/phases/18-retained-code-acceptance-and-cutover-review/18-REVIEW.md
-**Iteration:** 7
+**Iteration:** 8
 
 **Summary:**
-- Findings in scope: 1
-- Fixed: 1
+- Findings in scope: 2
+- Fixed: 2
 - Skipped: 0
 
 ## Fixed Issues
+
+### WR-01: Security scan misses row-level retained acceptance overclaims
+
+**Status:** fixed: requires human verification
+**Files modified:** `tools/bazel/phase18_cutover_review.py`, `tools/bazel/phase18_cutover_review_test.py`
+**Commit:** c480970c4
+**Applied fix:** Generated final criterion and retained packet row statuses are now compared against statuses recomputed from validated decision input. Added a regression test proving `--security-only --decision-input` rejects retained-code summary rows tampered from blocked to accepted.
+
+### WR-02: Redaction scan allows common API-key field names
+
+**Status:** fixed: requires human verification
+**Files modified:** `tools/bazel/phase18_cutover_review.py`, `tools/bazel/phase18_cutover_review_test.py`
+**Commit:** c480970c4
+**Applied fix:** The forbidden field vocabulary now includes common credential variants such as `api_key`, `apikey`, `api-key`, `access_token`, and `bearer_token`. Added regression coverage for `api_key` and `access_token`.
 
 ### CR-01: Security-only demotion check ignores retained-packet review status
 
@@ -94,7 +108,7 @@ status: all_fixed
 
 ## Verification
 
-- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 41 tests.
+- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 43 tests.
 - `python3 tools/bazel/phase18_cutover_review.py --contract-only` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --quick` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --security-only` passed.
@@ -102,6 +116,6 @@ status: all_fixed
 
 ---
 
-_Fixed: 2026-06-20T16:49:04Z_
+_Fixed: 2026-06-20T16:57:29Z_
 _Fixer: the agent (gsd-code-fixer)_
-_Iteration: 7_
+_Iteration: 8_
