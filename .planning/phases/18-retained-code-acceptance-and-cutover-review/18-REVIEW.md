@@ -1,6 +1,6 @@
 ---
 phase: 18-retained-code-acceptance-and-cutover-review
-reviewed: 2026-06-20T16:32:00Z
+reviewed: 2026-06-20T16:39:01Z
 depth: standard
 files_reviewed: 7
 files_reviewed_list:
@@ -13,87 +13,66 @@ files_reviewed_list:
   - justfile
 findings:
   critical: 1
-  warning: 1
+  warning: 0
   info: 0
-  total: 2
+  total: 1
 status: issues_found
 ---
 
 # Phase 18: Code Review Report
 
-**Reviewed:** 2026-06-20T16:32:00Z
+**Reviewed:** 2026-06-20T16:39:01Z
 **Depth:** standard
 **Files Reviewed:** 7
 **Status:** issues_found
 
 ## Summary
 
-Re-reviewed the listed Phase 18 verifier, contract manifest, tests, Bazel wiring, shell workflow, and just recipe at standard depth after fix `39c351cdb`. This review used `AGENTS.md`, `AGENTS.bright-builds.md`, `standards-overrides.md`, and Bright Builds architecture, code-shape, verification, and testing standards. No project-local skills were present under `.claude/skills/` or `.agents/skills/`.
+Re-reviewed the listed Phase 18 verifier, contract manifest, tests, Bazel wiring, shell workflow, and just recipe at standard depth after fix `64515085a`. This review used `AGENTS.md`, `AGENTS.bright-builds.md`, `standards-overrides.md`, and Bright Builds architecture, code-shape, verification, and testing standards. No project-local skills were present under `.claude/skills/` or `.agents/skills/`.
 
-Fix `39c351cdb` correctly rejects non-boolean generated `decision_inputs_supplied` values, and the scoped verifier tests pass. Two generated-artifact overclaim gaps remain in the same guard area.
+Fix `64515085a` closes the previous no-decision artifact gaps for a missing decision input and for top-level normalized demotion overclaims. One decision-input binding gap remains in `--security-only`: a syntactically valid but empty decision packet can still bless tampered generated demotion claims because the security scan does not compare generated artifacts to the supplied decision input.
 
 Verification performed:
 
-- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 37 tests.
+- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 39 tests.
 - `python3 tools/bazel/phase18_cutover_review.py --contract-only` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --wiring-only` passed.
-- Targeted tamper check reproduced CR-01: after a no-decision quick run, changing `run-manifest.json` to `decision_inputs_supplied: true` and `demotion_allowed: true` still made `--security-only` pass.
-- Targeted tamper check reproduced WR-01: after a no-decision quick run, changing `normalized-final-demotion-results.json` to `demotion_allowed: true` still made `--security-only` pass.
+- Targeted isolated repro: after a no-decision quick run, changing `run-manifest.json` to `decision_inputs_supplied: true` and `demotion_allowed: true`, then supplying a minimal decision packet with empty review/decision lists, still makes `--security-only --decision-input decision-input.json` pass.
 
 ## Critical Issues
 
-### CR-01: Generated decision-input flag is trusted as proof of maintainer input
+### CR-01: Security-only accepts tampered demotion claims with any validated decision packet
 
-**File:** `tools/bazel/phase18_cutover_review.py:1279`
-**Issue:** `validate_generated_overclaim_guards` returns as soon as the generated `run-manifest.json` says `decision_inputs_supplied` is boolean `True`. The security scan does not require a validated `--decision-input` for that branch, so a no-decision artifact can be tampered from `false` to `true`, set `demotion_allowed: true`, and pass `--security-only`. That bypasses the Phase 18 rule that reference demotion needs explicit maintainer decision input rather than local generated proof.
+**File:** `tools/bazel/phase18_cutover_review.py:1290`
+**Issue:** `run_security_scan` treats `load_decision_input(...)` success as enough proof that generated artifacts with `decision_inputs_supplied: true` are legitimate. But `load_decision_input` accepts a packet containing only the correct `decision_packet` phase/lifecycle plus empty `retained_code_reviews` and `final_criterion_decisions`, and `validate_generated_overclaim_guards` returns immediately when `decision_inputs_supplied` is true. As a result, a no-decision quick artifact can be manually changed to `decision_inputs_supplied: true` and `demotion_allowed: true`; `--security-only --decision-input` then reports success without proving the generated files were produced from that input or contain complete approving decisions. That keeps the Phase 18 reference-demotion gate bypassable in post-generation security checks.
 **Fix:**
 ```python
 def run_security_scan(
     root: Path,
     maybe_decision_input_path: str | None,
+    contract: dict[str, Any],
     output_dir: Path | None = None,
 ) -> None:
-    decision_input_validated = False
-    if maybe_decision_input_path:
-        load_decision_input(root, maybe_decision_input_path)
-        decision_input_validated = True
-    ...
-    validate_generated_overclaim_guards(root, errors, output_dir, decision_input_validated)
-
-def validate_generated_overclaim_guards(
-    root: Path,
-    errors: list[str],
-    output_dir: Path | None = None,
-    decision_input_validated: bool = False,
-) -> None:
-    ...
-    if decision_inputs_supplied and not decision_input_validated:
-        errors.append("generated run-manifest.json claims decision input without validated --decision-input")
-        return
-    if decision_inputs_supplied:
-        return
-```
-Add a regression test that runs `--quick` without decision input, flips `decision_inputs_supplied` to `True` with `demotion_allowed: true`, and expects `--security-only` to fail unless a matching decision input was supplied and validated.
-
-## Warnings
-
-### WR-01: Normalized final results can overclaim demotion in no-decision artifacts
-
-**File:** `tools/bazel/phase18_cutover_review.py:1283`
-**Issue:** The no-decision guard checks `run-manifest.json` for `demotion_allowed: true` and checks individual normalized row statuses, but it does not check the top-level `demotion_allowed` field in `normalized-final-demotion-results.json`. A generated artifact can therefore claim `{"demotion_allowed": true}` in that machine-readable file while every row remains pending and the security scan still passes.
-**Fix:**
-```python
-normalized = json.loads(normalized_path.read_text(encoding="utf-8"))
-if isinstance(normalized, dict) and normalized.get("demotion_allowed") is True:
-    errors.append(
-        "generated no-decision normalized-final-demotion-results.json cannot set demotion_allowed true"
+    decision_input = load_decision_input(root, maybe_decision_input_path)
+    packets = contract_packets(contract)
+    criteria = contract_final_criteria(contract)
+    retained_reviews, final_decisions = validated_decision_maps(decision_input, packets, criteria)
+    expected_final_results = normalize_final_results(criteria, final_decisions)
+    expected_retained_rows = normalize_retained_reviews(packets, retained_reviews)
+    expected_allowed = demotion_allowed(decision_input is not None, expected_final_results)
+    validate_generated_overclaim_guards(
+        root,
+        errors,
+        output_dir,
+        expected_final_results,
+        expected_retained_rows,
+        expected_allowed,
     )
-results = normalized.get("results") if isinstance(normalized, dict) else None
 ```
-Add a regression test that mutates only `normalized-final-demotion-results.json["demotion_allowed"]` after a no-decision quick run and expects `--security-only` to fail.
+Then remove the early return for `decision_inputs_supplied`, compare `run-manifest.json`, `normalized-final-demotion-results.json`, and `retained-code-acceptance-summary.json` against the recomputed values, and fail if generated `demotion_allowed` is true while the supplied decisions do not fully support it. Add a regression test using a minimal empty decision packet against tampered no-decision artifacts.
 
 ---
 
-_Reviewed: 2026-06-20T16:32:00Z_
+_Reviewed: 2026-06-20T16:39:01Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
