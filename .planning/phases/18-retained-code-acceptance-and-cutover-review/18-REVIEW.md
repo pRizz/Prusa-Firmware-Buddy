@@ -1,6 +1,6 @@
 ---
 phase: 18-retained-code-acceptance-and-cutover-review
-reviewed: 2026-06-20T16:45:51Z
+reviewed: 2026-06-20T16:54:06Z
 depth: standard
 files_reviewed: 7
 files_reviewed_list:
@@ -12,69 +12,63 @@ files_reviewed_list:
   - tools/bazel/rust_workflow.sh
   - justfile
 findings:
-  critical: 1
-  warning: 0
+  critical: 0
+  warning: 2
   info: 0
-  total: 1
+  total: 2
 status: issues_found
 ---
 
 # Phase 18: Code Review Report
 
-**Reviewed:** 2026-06-20T16:45:51Z
+**Reviewed:** 2026-06-20T16:54:06Z
 **Depth:** standard
 **Files Reviewed:** 7
 **Status:** issues_found
 
 ## Summary
 
-Re-reviewed the listed Phase 18 verifier, contract manifest, tests, Bazel wiring, shell workflow, and just recipe at standard depth after fix `7b725fe84`. This review used `AGENTS.md`, `AGENTS.bright-builds.md`, `standards-overrides.md`, and Bright Builds architecture, code-shape, verification, and testing standards. No project-local skills were present under `.claude/skills/` or `.agents/skills/`.
+Re-reviewed the listed Phase 18 verifier, contract manifest, tests, Bazel wiring, shell workflow, and just recipe at standard depth after fix `8ae5d32e4`. This review used `AGENTS.md`, `AGENTS.bright-builds.md`, `standards-overrides.md`, and Bright Builds architecture, code-shape, verification, and testing standards. No project-local skills were present under `.claude/skills/` or `.agents/skills/`.
 
-Fix `7b725fe84` closes the empty-decision-input demotion overclaim reported in the prior review. One security-only regression remains: the scan recomputes expected demotion from final criterion decisions but does not re-apply the retained-packet acceptance coupling that `--quick` enforces before writing artifacts.
+Fix `8ae5d32e4` correctly reuses the retained-acceptance consistency check in `--security-only` for top-level demotion overclaims. Two warning-level gaps remain in the Phase 18 verifier: row-level generated artifacts can still overclaim retained packet acceptance when demotion stays blocked, and the redaction scanner misses common API-key field names.
 
 Verification performed:
 
-- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 40 tests.
+- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 41 tests.
 - `python3 tools/bazel/phase18_cutover_review.py --contract-only` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --wiring-only` passed.
-- Targeted isolated repro: after a no-decision quick run, changing generated `run-manifest.json` and `normalized-final-demotion-results.json` to `demotion_allowed: true`, then supplying a decision input where all final criteria are `passed` but every retained packet review is `blocked`, still makes `--security-only --decision-input decision-input.json` pass.
+- `python3 tools/bazel/phase18_cutover_review.py --security-only` passed.
+- Targeted temp-root probes reproduced both findings without modifying source files.
 
-## Critical Issues
+## Warnings
 
-### CR-01: Security-only demotion check ignores retained-packet review status
+### WR-01: Security scan misses row-level retained acceptance overclaims
 
-**File:** `tools/bazel/phase18_cutover_review.py:1263`
-**Issue:** `run_security_scan` discards `retained_reviews` when validating supplied decision input and computes `expected_demotion_allowed` only from final criterion decisions. That misses the consistency rule in `write_quick_artifacts`: `final-retained-code-acceptance` cannot pass unless every retained-code packet review is `accepted` or `deferred-approved-exception`. A tampered generated artifact can therefore claim `demotion_allowed: true` when the decision input marks all final criteria as `passed` but leaves retained packets `blocked` or `rejected`.
+**File:** `tools/bazel/phase18_cutover_review.py:1324`
+**Issue:** When generated `run-manifest.json` says `decision_inputs_supplied: true`, `validate_generated_overclaim_guards` only rejects `demotion_allowed: true` if it conflicts with validated decision input, then returns before checking `retained-code-acceptance-summary.json`. A stale or tampered summary can therefore change retained packet rows from `blocked` to `accepted` while `demotion_allowed` remains false, and `--security-only --decision-input ...` still passes. That is a retained-code acceptance overclaim in a machine-readable Phase 18 artifact.
 **Fix:**
 ```python
-def validate_retained_acceptance_consistency(
-    packets: list[dict[str, Any]],
-    retained_reviews: dict[str, dict[str, Any]],
-    final_decisions: dict[str, dict[str, Any]],
-) -> None:
-    retained_acceptance_decision = final_decisions.get("final-retained-code-acceptance")
-    if not retained_acceptance_decision or not final_status_allows_demotion(
-        str(retained_acceptance_decision["status"]),
-        retained_acceptance_decision,
-    ):
-        return
+expected_retained_rows = normalize_retained_reviews(packets, retained_reviews)
+expected_retained_statuses = {row["id"]: row["status"] for row in expected_retained_rows}
 
-    packet_ids = {str(packet["id"]) for packet in packets}
-    missing_reviews = packet_ids - set(retained_reviews)
-    bad_statuses = [
-        f"{packet_id}:{review['status']}"
-        for packet_id, review in sorted(retained_reviews.items())
-        if review["status"] not in {"accepted", "deferred-approved-exception"}
-    ]
-    if missing_reviews or bad_statuses:
-        raise VerificationError(
-            "final-retained-code-acceptance cannot pass without accepted retained reviews"
-        )
+retained_path = output_dir / "retained-code-acceptance-summary.json"
+if retained_path.exists():
+    retained = json.loads(retained_path.read_text(encoding="utf-8"))
+    for row in retained.get("packets", []):
+        packet_id = row.get("id")
+        if row.get("status") != expected_retained_statuses.get(packet_id):
+            errors.append(f"generated retained-code packet status mismatch: {packet_id}")
 ```
-Call this helper from both `write_quick_artifacts` and `run_security_scan` immediately after `validated_decision_maps(...)`. Add a regression test where final criteria all pass but retained reviews are `blocked`, and assert `--security-only --decision-input` rejects generated `demotion_allowed: true`.
+Apply the same comparison to `normalized-final-demotion-results.json` row statuses, and add a regression test that tampers generated retained rows to `accepted` while decision input keeps those packet reviews `blocked`.
+
+### WR-02: Redaction scan allows common API-key field names
+
+**File:** `tools/bazel/phase18_cutover_review.py:165`
+**Issue:** `reject_forbidden_json_fields` only rejects exact keys listed in `FORBIDDEN_FIELD_NAMES`, and that list omits common secret-bearing names such as `api_key`, `apikey`, `api-key`, `access_token`, and `bearer_token`. A Phase 18 decision input with an `api_key` field currently passes `--security-only`, weakening the name-only/redacted evidence boundary.
+**Fix:** Extend the forbidden field-name vocabulary with common credential key variants and add focused tests for at least `api_key` and `access_token`.
 
 ---
 
-_Reviewed: 2026-06-20T16:45:51Z_
+_Reviewed: 2026-06-20T16:54:06Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
