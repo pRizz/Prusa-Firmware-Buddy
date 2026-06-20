@@ -230,6 +230,57 @@ EXPECTED_TOP_LEVEL_FIELDS = {
     "final_demotion_criteria",
     "generated_artifacts",
 }
+WIRING_REQUIRED_TEXT = {
+    Path("tools/bazel/BUILD.bazel"): [
+        'name = "phase18_source_ref_manifests"',
+        '"manifests/phase11_cutover_readiness.json"',
+        '"manifests/phase11_retained_code_justifications.json"',
+        '"manifests/foreign_code_inventory.json"',
+        '"manifests/unsafe_boundary_audit.json"',
+        '"manifests/phase13_ci_evidence_contract.json"',
+        '"manifests/phase14_simulator_evidence_contract.json"',
+        '"manifests/phase15_hardware_evidence_contract.json"',
+        '"manifests/phase16_live_network_evidence_contract.json"',
+        '"manifests/phase17_release_candidate_evidence_contract.json"',
+        'name = "phase18_verify"',
+        'name = "phase18_verify_tests"',
+        'src = "rust_workflow.sh"',
+        '"phase18_cutover_review.py"',
+        '"phase18_cutover_review_test.py"',
+        '"manifests/phase18_cutover_review_contract.json"',
+        '":phase18_source_ref_manifests"',
+        '"//:phase18_cutover_review_docs"',
+        '"//:phase11_cutover_evidence_docs"',
+        '"//:phase13_ci_evidence_docs"',
+        '"//:phase14_simulator_evidence_docs"',
+        '"//:phase15_hardware_evidence_docs"',
+        '"//:phase16_live_network_evidence_docs"',
+        '"//:phase17_release_candidate_evidence_docs"',
+    ],
+    Path("BUILD.bazel"): [
+        'name = "phase18_cutover_review_docs"',
+        '".planning/phases/18-retained-code-acceptance-and-cutover-review/18-CONTEXT.md"',
+        '".planning/phases/18-retained-code-acceptance-and-cutover-review/18-RESEARCH.md"',
+        '".planning/phases/18-retained-code-acceptance-and-cutover-review/18-VALIDATION.md"',
+        '".planning/phases/18-retained-code-acceptance-and-cutover-review/18-01-PLAN.md"',
+        'name = "phase18_verify"',
+        'actual = "//tools/bazel:phase18_verify"',
+        'name = "phase18_verify_tests"',
+        'actual = "//tools/bazel:phase18_verify_tests"',
+    ],
+    Path("tools/bazel/rust_workflow.sh"): [
+        "phase18_verify)",
+        "python3 tools/bazel/phase18_cutover_review.py --wiring-only",
+        "python3 tools/bazel/phase18_cutover_review.py --quick",
+        "phase18_verify_tests)",
+        "python3 tools/bazel/phase18_cutover_review_test.py",
+    ],
+    Path("justfile"): [
+        "phase18-verify:",
+        "bazel run //tools/bazel:phase18_verify_tests",
+        "bazel run //tools/bazel:phase18_verify",
+    ],
+}
 
 
 class VerificationError(Exception):
@@ -1213,11 +1264,38 @@ def validate_generated_overclaim_guards(root: Path, errors: list[str]) -> None:
             errors.append(f"{retained_path.relative_to(root).as_posix()} is not valid JSON: {error}")
 
 
+def check_wiring(root: Path) -> None:
+    errors: list[str] = []
+    for path, required_values in WIRING_REQUIRED_TEXT.items():
+        try:
+            text = read_text(root, path)
+        except VerificationError as error:
+            errors.append(str(error))
+            continue
+        for required_text in required_values:
+            if required_text not in text:
+                errors.append(f"{path.as_posix()} missing required wiring text: {required_text}")
+    try:
+        just_text = read_text(root, "justfile")
+        recipe_index = just_text.find("phase18-verify:")
+        tests_index = just_text.find("\n    bazel run //tools/bazel:phase18_verify_tests\n", recipe_index)
+        verify_index = just_text.find("\n    bazel run //tools/bazel:phase18_verify\n", recipe_index)
+        if recipe_index == -1 or tests_index == -1 or verify_index == -1:
+            errors.append("justfile missing complete phase18-verify recipe")
+        elif tests_index > verify_index:
+            errors.append("justfile phase18-verify must run phase18_verify_tests before phase18_verify")
+    except VerificationError as error:
+        errors.append(str(error))
+    if errors:
+        raise VerificationError("\n".join(errors))
+
+
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Validate the Phase 18 retained-code cutover review contract.")
     parser.add_argument("--contract-only", action="store_true", help="validate only the Phase 18 source contract")
     parser.add_argument("--quick", action="store_true", help="write deterministic redacted Phase 18 review artifacts")
     parser.add_argument("--security-only", action="store_true", help="scan Phase 18 inputs and generated artifacts")
+    parser.add_argument("--wiring-only", action="store_true", help="validate Bazel, workflow, and just wiring")
     parser.add_argument("--decision-input", help="optional Phase 18 maintainer decision input JSON")
     parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR.as_posix(), help="Phase 18 output directory")
     return parser.parse_args(argv)
@@ -1230,6 +1308,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.security_only:
             run_security_scan(ROOT, args.decision_input)
             print("Phase 18 security scan passed")
+            return 0
+        if args.wiring_only:
+            check_wiring(ROOT)
+            print("Phase 18 wiring passed")
             return 0
         if args.quick:
             decision_input = load_decision_input(ROOT, args.decision_input)

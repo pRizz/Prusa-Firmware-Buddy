@@ -103,6 +103,13 @@ case "$command_name" in
   phase17_verify_tests)
     python3 tools/bazel/phase17_release_candidate_evidence_test.py
     ;;
+  phase18_verify)
+    python3 tools/bazel/phase18_cutover_review.py --wiring-only
+    python3 tools/bazel/phase18_cutover_review.py --quick
+    ;;
+  phase18_verify_tests)
+    python3 tools/bazel/phase18_cutover_review_test.py
+    ;;
   *)
     printf 'Unknown Rust workflow target: %s\n' "$command_name" >&2
     exit 2

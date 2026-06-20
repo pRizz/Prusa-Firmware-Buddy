@@ -654,8 +654,8 @@ class Phase18CutoverReviewTest(unittest.TestCase):
 
         # Act
         recipe_index = justfile.find("phase18-verify:")
-        tests_index = justfile.find("bazel run //tools/bazel:phase18_verify_tests", recipe_index)
-        verify_index = justfile.find("bazel run //tools/bazel:phase18_verify", recipe_index)
+        tests_index = justfile.find("\n    bazel run //tools/bazel:phase18_verify_tests\n", recipe_index)
+        verify_index = justfile.find("\n    bazel run //tools/bazel:phase18_verify\n", recipe_index)
 
         # Assert
         self.assertNotEqual(recipe_index, -1)
