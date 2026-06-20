@@ -1,26 +1,40 @@
 ---
 phase: 18-retained-code-acceptance-and-cutover-review
-fixed_at: "2026-06-20T17:04:14Z"
+fixed_at: "2026-06-20T17:13:47Z"
 review_path: .planning/phases/18-retained-code-acceptance-and-cutover-review/18-REVIEW.md
-iteration: 9
-findings_in_scope: 1
-fixed: 1
+iteration: 10
+findings_in_scope: 2
+fixed: 2
 skipped: 0
 status: all_fixed
 ---
 
 # Phase 18: Code Review Fix Report
 
-**Fixed at:** 2026-06-20T17:04:14Z
+**Fixed at:** 2026-06-20T17:13:47Z
 **Source review:** .planning/phases/18-retained-code-acceptance-and-cutover-review/18-REVIEW.md
-**Iteration:** 9
+**Iteration:** 10
 
 **Summary:**
-- Findings in scope: 1
-- Fixed: 1
+- Findings in scope: 2
+- Fixed: 2
 - Skipped: 0
 
 ## Fixed Issues
+
+### CR-01: Normalized Secret Field Denylist Is Incomplete
+
+**Status:** fixed: requires human verification
+**Files modified:** `tools/bazel/phase18_cutover_review.py`, `tools/bazel/phase18_cutover_review_test.py`
+**Commit:** 60a549e1a
+**Applied fix:** Normalized forbidden field names are now derived from the full canonical forbidden field set, with explicit authorization-header aliases preserved. Added regression coverage for normalized/camelCase variants such as `signingKeyValue`, `certificatePrivateMaterial`, `rawFirmwarePayload`, `rawCrashDump`, `wifiPassword`, and `prusalinkPassword`.
+
+### WR-01: Generated Row-Level Demotion Flags Can Be Tampered Without Detection
+
+**Status:** fixed: requires human verification
+**Files modified:** `tools/bazel/phase18_cutover_review.py`, `tools/bazel/phase18_cutover_review_test.py`
+**Commit:** 60a549e1a
+**Applied fix:** Security-only validation now compares generated row-level `demotion_status_allows_cutover` values against values recomputed from validated decision input, and rejects true row-level demotion flags in no-decision generated artifacts. Added regression tests for both decision-input and no-decision tamper paths.
 
 ### WR-01: Redaction Scan Allows CamelCase API-Key Fields
 
@@ -115,14 +129,17 @@ status: all_fixed
 
 ## Verification
 
-- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 44 tests.
+- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 45 tests.
 - `python3 tools/bazel/phase18_cutover_review.py --contract-only` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --quick` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --security-only` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --wiring-only` passed.
+- `bazel run //tools/bazel:phase18_verify_tests` passed: 45 tests.
+- `bazel run //tools/bazel:phase18_verify` passed.
+- `just phase18-verify` passed.
 
 ---
 
-_Fixed: 2026-06-20T17:04:14Z_
+_Fixed: 2026-06-20T17:13:47Z_
 _Fixer: the agent (gsd-code-fixer)_
-_Iteration: 9_
+_Iteration: 10_
