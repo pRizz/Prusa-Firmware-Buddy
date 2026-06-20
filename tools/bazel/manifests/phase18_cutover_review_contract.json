@@ -1,0 +1,981 @@
+{
+  "schema_version": "1",
+  "id": "phase18_cutover_review_contract",
+  "phase": "18-retained-code-acceptance-and-cutover-review",
+  "phase_lifecycle_id": "18-2026-06-20T14-27-15",
+  "artifact_name": "phase18-cutover-review",
+  "output_root": "build/ci-evidence/phase18",
+  "retained_packet_status_vocabulary": [
+    "pending-evidence",
+    "pending-maintainer-review",
+    "accepted",
+    "rejected",
+    "blocked",
+    "deferred-approved-exception",
+    "rejected-redaction",
+    "rejected-overclaim"
+  ],
+  "final_criterion_status_vocabulary": [
+    "pending",
+    "passed",
+    "failed",
+    "blocked",
+    "exception-requested",
+    "exception-approved",
+    "exception-rejected",
+    "not-applicable",
+    "rejected-redaction",
+    "rejected-overclaim"
+  ],
+  "review_decision_vocabulary": [
+    "approve",
+    "reject",
+    "exception"
+  ],
+  "allowed_demotion_statuses": [
+    "passed",
+    "exception-approved",
+    "not-applicable"
+  ],
+  "retained_source_collections": {
+    "tools/bazel/manifests/phase11_retained_code_justifications.json": {
+      "collection": "retained_code_justifications",
+      "key": "id"
+    },
+    "tools/bazel/manifests/foreign_code_inventory.json": {
+      "collection": "components",
+      "key": "id"
+    },
+    "tools/bazel/manifests/unsafe_boundary_audit.json": {
+      "collection": "surfaces",
+      "key": "surface_id"
+    },
+    "tools/bazel/manifests/phase11_cutover_readiness.json": {
+      "collection": "cutover_criteria",
+      "key": "id"
+    },
+    "tools/bazel/manifests/phase13_ci_evidence_contract.json": {
+      "collection": "gates",
+      "key": "id"
+    },
+    "tools/bazel/manifests/phase14_simulator_evidence_contract.json": {
+      "collection": "scenarios",
+      "key": "id"
+    },
+    "tools/bazel/manifests/phase15_hardware_evidence_contract.json": {
+      "collection": "scenarios",
+      "key": "id"
+    },
+    "tools/bazel/manifests/phase16_live_network_evidence_contract.json": {
+      "collection": "scenarios",
+      "key": "id"
+    },
+    "tools/bazel/manifests/phase17_release_candidate_evidence_contract.json": {
+      "collection": "rows",
+      "key": "id"
+    }
+  },
+  "retained_code_acceptance_packet_schema": {
+    "required_fields": [
+      "id",
+      "title",
+      "requirement_ids",
+      "taxonomy_tags",
+      "retained_source_refs",
+      "prior_phase_refs",
+      "required_evidence_refs",
+      "supplied_evidence_result_refs",
+      "owner",
+      "approver_role",
+      "approval_metadata",
+      "status",
+      "rationale",
+      "residual_risk",
+      "blocker_or_deferred_action",
+      "exception_ref",
+      "secret_handling_policy",
+      "unsupported_claims"
+    ],
+    "secret_handling_policy": "name-only-or-redacted"
+  },
+  "final_decision_schema": {
+    "required_fields": [
+      "decision_id",
+      "criterion_id",
+      "decision",
+      "status",
+      "approver",
+      "approver_role",
+      "decision_timestamp",
+      "rationale",
+      "evidence_refs",
+      "residual_risk",
+      "exception",
+      "redaction_summary"
+    ],
+    "decision_vocabulary": [
+      "approve",
+      "reject",
+      "exception"
+    ],
+    "exception": {
+      "required_fields": [
+        "scope",
+        "rationale",
+        "approver",
+        "approver_role",
+        "affected_printer_or_release_surface",
+        "mitigation_or_follow_up",
+        "expiry_or_review_trigger",
+        "evidence_refs"
+      ]
+    }
+  },
+  "retained_code_acceptance_packets": [
+    {
+      "id": "packet-hal-cmsis-startup-asm",
+      "title": "HAL, CMSIS, startup assembly, linker, clock tree, and MMIO retained-code packet",
+      "requirement_ids": [
+        "REV-01",
+        "REV-02",
+        "REV-03"
+      ],
+      "taxonomy_tags": [
+        "C",
+        "ASM",
+        "vendor",
+        "HAL",
+        "runtime"
+      ],
+      "retained_source_refs": [
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-hal-cmsis-vendor",
+        "tools/bazel/manifests/foreign_code_inventory.json#stm32f4-startup-linker",
+        "tools/bazel/manifests/foreign_code_inventory.json#stm32g0-startup-linker",
+        "tools/bazel/manifests/foreign_code_inventory.json#stm32h503-xbuddy-extension-startup-linker",
+        "tools/bazel/manifests/foreign_code_inventory.json#stm32-board-clock-tree",
+        "tools/bazel/manifests/foreign_code_inventory.json#stm32-hal-cmsis",
+        "tools/bazel/manifests/unsafe_boundary_audit.json#ffi-symbol-contracts",
+        "tools/bazel/manifests/unsafe_boundary_audit.json#linker-section-contracts",
+        "tools/bazel/manifests/unsafe_boundary_audit.json#startup-vector-contracts",
+        "tools/bazel/manifests/unsafe_boundary_audit.json#board-clock-tree-contracts",
+        "tools/bazel/manifests/unsafe_boundary_audit.json#mmio-register-contracts",
+        "tools/bazel/manifests/unsafe_boundary_audit.json#dma-buffer-contracts",
+        "tools/bazel/manifests/unsafe_boundary_audit.json#interrupt-registration-contracts"
+      ],
+      "prior_phase_refs": [
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-hal-cmsis-vendor"
+      ],
+      "required_evidence_refs": [
+        "retained-code-acceptance-summary.json#packet-hal-cmsis-startup-asm",
+        "residual-risk-register.json#packet-hal-cmsis-startup-asm"
+      ],
+      "supplied_evidence_result_refs": [
+        "build/ci-evidence/phase18/retained-code-acceptance-summary.json#packet-hal-cmsis-startup-asm"
+      ],
+      "owner": "firmware-platform-maintainer",
+      "approver_role": "firmware-platform-maintainer",
+      "approval_metadata": {
+        "decision_schema": "final_decision_schema",
+        "maintainer_review_required": true
+      },
+      "status": "pending-evidence",
+      "rationale": "Retained startup, linker, clock, MMIO, DMA, interrupt, HAL, and CMSIS code controls hardware boot and board access.",
+      "residual_risk": "Hardware startup behavior remains blocked until maintainer review accepts the retained packet or approves an exception.",
+      "blocker_or_deferred_action": "Collect final hardware evidence and maintainer disposition.",
+      "exception_ref": "none-before-maintainer-decision",
+      "secret_handling_policy": "name-only-or-redacted",
+      "unsupported_claims": [
+        "claim-local-proof-is-maintainer-acceptance",
+        "claim-reference-demotion-without-decision-input",
+        "claim-sensitive-payload-retained"
+      ]
+    },
+    {
+      "id": "packet-freertos-runtime",
+      "title": "FreeRTOS runtime and synchronization retained-code packet",
+      "requirement_ids": [
+        "REV-01",
+        "REV-02",
+        "REV-03"
+      ],
+      "taxonomy_tags": [
+        "C",
+        "vendor",
+        "RTOS",
+        "runtime"
+      ],
+      "retained_source_refs": [
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-freertos-rtos",
+        "tools/bazel/manifests/foreign_code_inventory.json#freertos-kernel",
+        "tools/bazel/manifests/foreign_code_inventory.json#freertos-task-queue-timer-runtime",
+        "tools/bazel/manifests/foreign_code_inventory.json#freertos-synchronization-wrappers",
+        "tools/bazel/manifests/unsafe_boundary_audit.json#static-task-memory-contracts",
+        "tools/bazel/manifests/unsafe_boundary_audit.json#allocator-heap-contracts",
+        "tools/bazel/manifests/unsafe_boundary_audit.json#task-dependency-readiness",
+        "tools/bazel/manifests/unsafe_boundary_audit.json#freertos-queue-contracts",
+        "tools/bazel/manifests/unsafe_boundary_audit.json#freertos-timer-contracts",
+        "tools/bazel/manifests/unsafe_boundary_audit.json#freertos-mutex-contracts",
+        "tools/bazel/manifests/unsafe_boundary_audit.json#freertos-binary-semaphore-contracts",
+        "tools/bazel/manifests/unsafe_boundary_audit.json#freertos-counting-semaphore-contracts",
+        "tools/bazel/manifests/unsafe_boundary_audit.json#freertos-event-group-contracts",
+        "tools/bazel/manifests/unsafe_boundary_audit.json#freertos-wait-condition-contracts"
+      ],
+      "prior_phase_refs": [
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-freertos-rtos"
+      ],
+      "required_evidence_refs": [
+        "retained-code-acceptance-summary.json#packet-freertos-runtime",
+        "residual-risk-register.json#packet-freertos-runtime"
+      ],
+      "supplied_evidence_result_refs": [
+        "build/ci-evidence/phase18/retained-code-acceptance-summary.json#packet-freertos-runtime"
+      ],
+      "owner": "runtime-maintainer",
+      "approver_role": "runtime-maintainer",
+      "approval_metadata": {
+        "decision_schema": "final_decision_schema",
+        "maintainer_review_required": true
+      },
+      "status": "pending-evidence",
+      "rationale": "FreeRTOS scheduling and synchronization remain retained runtime code and gate final demotion.",
+      "residual_risk": "Scheduler and synchronization behavior remains pending until packet acceptance or exception approval.",
+      "blocker_or_deferred_action": "Collect simulator, hardware, and maintainer review evidence for runtime primitives.",
+      "exception_ref": "none-before-maintainer-decision",
+      "secret_handling_policy": "name-only-or-redacted",
+      "unsupported_claims": [
+        "claim-local-proof-is-maintainer-acceptance",
+        "claim-reference-demotion-without-decision-input",
+        "claim-sensitive-payload-retained"
+      ]
+    },
+    {
+      "id": "packet-marlin-cpp-print-core-oracle",
+      "title": "Marlin C++ print core retained reference-oracle packet",
+      "requirement_ids": [
+        "REV-01",
+        "REV-02",
+        "REV-03"
+      ],
+      "taxonomy_tags": [
+        "C++",
+        "vendor",
+        "runtime"
+      ],
+      "retained_source_refs": [
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-marlin-print-core-oracle",
+        "tools/bazel/manifests/foreign_code_inventory.json#marlin-reference-core",
+        "tools/bazel/manifests/foreign_code_inventory.json#tmc-stepper-drivers",
+        "tools/bazel/manifests/foreign_code_inventory.json#prusa-error-codes",
+        "tools/bazel/manifests/foreign_code_inventory.json#libbgcode"
+      ],
+      "prior_phase_refs": [
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-marlin-print-core-oracle"
+      ],
+      "required_evidence_refs": [
+        "retained-code-acceptance-summary.json#packet-marlin-cpp-print-core-oracle",
+        "residual-risk-register.json#packet-marlin-cpp-print-core-oracle"
+      ],
+      "supplied_evidence_result_refs": [
+        "build/ci-evidence/phase18/retained-code-acceptance-summary.json#packet-marlin-cpp-print-core-oracle"
+      ],
+      "owner": "print-core-maintainer",
+      "approver_role": "print-core-maintainer",
+      "approval_metadata": {
+        "decision_schema": "final_decision_schema",
+        "maintainer_review_required": true
+      },
+      "status": "pending-evidence",
+      "rationale": "Marlin remains the retained print-core reference oracle until cutover evidence and explicit decision input approve demotion.",
+      "residual_risk": "Print behavior parity cannot be claimed from local source validation alone.",
+      "blocker_or_deferred_action": "Collect final simulator, hardware, and release evidence before maintainer decision.",
+      "exception_ref": "none-before-maintainer-decision",
+      "secret_handling_policy": "name-only-or-redacted",
+      "unsupported_claims": [
+        "claim-local-proof-is-maintainer-acceptance",
+        "claim-reference-demotion-without-decision-input",
+        "claim-sensitive-payload-retained"
+      ]
+    },
+    {
+      "id": "packet-network-lwip-mbedtls-wui",
+      "title": "LwIP, mbedTLS, WUI, Connect, and transfer retained-code packet",
+      "requirement_ids": [
+        "REV-01",
+        "REV-02",
+        "REV-03"
+      ],
+      "taxonomy_tags": [
+        "C",
+        "C++",
+        "vendor",
+        "network"
+      ],
+      "retained_source_refs": [
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-lwip-mbedtls-wui",
+        "tools/bazel/manifests/foreign_code_inventory.json#wui-network-stack",
+        "tools/bazel/manifests/foreign_code_inventory.json#lwip-network-stack",
+        "tools/bazel/manifests/foreign_code_inventory.json#mbedtls-tls",
+        "tools/bazel/manifests/foreign_code_inventory.json#connect-transfer-reference"
+      ],
+      "prior_phase_refs": [
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-lwip-mbedtls-wui"
+      ],
+      "required_evidence_refs": [
+        "retained-code-acceptance-summary.json#packet-network-lwip-mbedtls-wui",
+        "residual-risk-register.json#packet-network-lwip-mbedtls-wui"
+      ],
+      "supplied_evidence_result_refs": [
+        "build/ci-evidence/phase18/retained-code-acceptance-summary.json#packet-network-lwip-mbedtls-wui"
+      ],
+      "owner": "network-maintainer",
+      "approver_role": "network-security-maintainer",
+      "approval_metadata": {
+        "decision_schema": "final_decision_schema",
+        "maintainer_review_required": true
+      },
+      "status": "pending-evidence",
+      "rationale": "Network, TLS, WUI, Connect, and transfer code crosses credential and live-service trust boundaries.",
+      "residual_risk": "Live-service evidence and redaction review remain required before acceptance.",
+      "blocker_or_deferred_action": "Review Phase 16 evidence and reject any credential or payload material.",
+      "exception_ref": "none-before-maintainer-decision",
+      "secret_handling_policy": "name-only-or-redacted",
+      "unsupported_claims": [
+        "claim-local-proof-is-maintainer-acceptance",
+        "claim-reference-demotion-without-decision-input",
+        "claim-sensitive-payload-retained"
+      ]
+    },
+    {
+      "id": "packet-filesystem-fatfs-littlefs-libsysbase",
+      "title": "FatFs, littlefs, libsysbase, and persistent-store retained-code packet",
+      "requirement_ids": [
+        "REV-01",
+        "REV-02",
+        "REV-03"
+      ],
+      "taxonomy_tags": [
+        "C",
+        "C++",
+        "vendor",
+        "filesystem"
+      ],
+      "retained_source_refs": [
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-fatfs-littlefs",
+        "tools/bazel/manifests/foreign_code_inventory.json#fatfs-media",
+        "tools/bazel/manifests/foreign_code_inventory.json#littlefs-internal",
+        "tools/bazel/manifests/foreign_code_inventory.json#libsysbase-runtime",
+        "tools/bazel/manifests/foreign_code_inventory.json#persistent-store-reference"
+      ],
+      "prior_phase_refs": [
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-fatfs-littlefs"
+      ],
+      "required_evidence_refs": [
+        "retained-code-acceptance-summary.json#packet-filesystem-fatfs-littlefs-libsysbase",
+        "residual-risk-register.json#packet-filesystem-fatfs-littlefs-libsysbase"
+      ],
+      "supplied_evidence_result_refs": [
+        "build/ci-evidence/phase18/retained-code-acceptance-summary.json#packet-filesystem-fatfs-littlefs-libsysbase"
+      ],
+      "owner": "storage-maintainer",
+      "approver_role": "storage-maintainer",
+      "approval_metadata": {
+        "decision_schema": "final_decision_schema",
+        "maintainer_review_required": true
+      },
+      "status": "pending-evidence",
+      "rationale": "Filesystem, media, and persistent-store retained code controls release resources and durable settings.",
+      "residual_risk": "Media behavior and stored configuration compatibility remain pending hardware and maintainer evidence.",
+      "blocker_or_deferred_action": "Review Phase 15 media evidence and retained-code packet disposition.",
+      "exception_ref": "none-before-maintainer-decision",
+      "secret_handling_policy": "name-only-or-redacted",
+      "unsupported_claims": [
+        "claim-local-proof-is-maintainer-acceptance",
+        "claim-reference-demotion-without-decision-input",
+        "claim-sensitive-payload-retained"
+      ]
+    },
+    {
+      "id": "packet-usb-tinyusb-and-media",
+      "title": "TinyUSB and USB media retained-code packet",
+      "requirement_ids": [
+        "REV-01",
+        "REV-02",
+        "REV-03"
+      ],
+      "taxonomy_tags": [
+        "C",
+        "vendor",
+        "filesystem",
+        "runtime"
+      ],
+      "retained_source_refs": [
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-tinyusb-usb",
+        "tools/bazel/manifests/foreign_code_inventory.json#tinyusb-device"
+      ],
+      "prior_phase_refs": [
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-tinyusb-usb"
+      ],
+      "required_evidence_refs": [
+        "retained-code-acceptance-summary.json#packet-usb-tinyusb-and-media",
+        "residual-risk-register.json#packet-usb-tinyusb-and-media"
+      ],
+      "supplied_evidence_result_refs": [
+        "build/ci-evidence/phase18/retained-code-acceptance-summary.json#packet-usb-tinyusb-and-media"
+      ],
+      "owner": "media-maintainer",
+      "approver_role": "media-maintainer",
+      "approval_metadata": {
+        "decision_schema": "final_decision_schema",
+        "maintainer_review_required": true
+      },
+      "status": "pending-evidence",
+      "rationale": "USB media behavior depends on retained TinyUSB and filesystem integration.",
+      "residual_risk": "USB stack and media behavior remain pending hardware evidence and review.",
+      "blocker_or_deferred_action": "Review removable-media evidence and maintainer disposition.",
+      "exception_ref": "none-before-maintainer-decision",
+      "secret_handling_policy": "name-only-or-redacted",
+      "unsupported_claims": [
+        "claim-local-proof-is-maintainer-acceptance",
+        "claim-reference-demotion-without-decision-input",
+        "claim-sensitive-payload-retained"
+      ]
+    },
+    {
+      "id": "packet-generated-assets-resource-pipeline",
+      "title": "Generated assets, resources, translation fonts, and ESP package retained-code packet",
+      "requirement_ids": [
+        "REV-01",
+        "REV-02",
+        "REV-03"
+      ],
+      "taxonomy_tags": [
+        "generated",
+        "resource",
+        "runtime"
+      ],
+      "retained_source_refs": [
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-generated-assets-tools",
+        "tools/bazel/manifests/foreign_code_inventory.json#generated-runtime-assets",
+        "tools/bazel/manifests/foreign_code_inventory.json#resource-translation-font-pipeline",
+        "tools/bazel/manifests/foreign_code_inventory.json#esp-network-firmware"
+      ],
+      "prior_phase_refs": [
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-generated-assets-tools"
+      ],
+      "required_evidence_refs": [
+        "retained-code-acceptance-summary.json#packet-generated-assets-resource-pipeline",
+        "residual-risk-register.json#packet-generated-assets-resource-pipeline"
+      ],
+      "supplied_evidence_result_refs": [
+        "build/ci-evidence/phase18/retained-code-acceptance-summary.json#packet-generated-assets-resource-pipeline"
+      ],
+      "owner": "release-assets-maintainer",
+      "approver_role": "release-assets-maintainer",
+      "approval_metadata": {
+        "decision_schema": "final_decision_schema",
+        "maintainer_review_required": true
+      },
+      "status": "pending-evidence",
+      "rationale": "Generated resources and package inputs must remain traceable without claiming byte identity from local quick artifacts.",
+      "residual_risk": "Generated output parity remains pending Phase 17 release evidence.",
+      "blocker_or_deferred_action": "Review release artifact evidence and retained resource pipeline disposition.",
+      "exception_ref": "none-before-maintainer-decision",
+      "secret_handling_policy": "name-only-or-redacted",
+      "unsupported_claims": [
+        "claim-local-proof-is-maintainer-acceptance",
+        "claim-reference-demotion-without-decision-input",
+        "claim-sensitive-payload-retained"
+      ]
+    },
+    {
+      "id": "packet-release-signing-and-packaging",
+      "title": "Release signing, packaging, build selection, and provenance retained-code packet",
+      "requirement_ids": [
+        "REV-01",
+        "REV-02",
+        "REV-03"
+      ],
+      "taxonomy_tags": [
+        "signing",
+        "release-artifact",
+        "generated"
+      ],
+      "retained_source_refs": [
+        "tools/bazel/manifests/foreign_code_inventory.json#cmake-reference-build-selection"
+      ],
+      "prior_phase_refs": [
+        "tools/bazel/manifests/phase17_release_candidate_evidence_contract.json#rel-signing-key-identity"
+      ],
+      "required_evidence_refs": [
+        "retained-code-acceptance-summary.json#packet-release-signing-and-packaging",
+        "residual-risk-register.json#packet-release-signing-and-packaging"
+      ],
+      "supplied_evidence_result_refs": [
+        "build/ci-evidence/phase18/retained-code-acceptance-summary.json#packet-release-signing-and-packaging"
+      ],
+      "owner": "release-maintainer",
+      "approver_role": "release-maintainer",
+      "approval_metadata": {
+        "decision_schema": "final_decision_schema",
+        "maintainer_review_required": true
+      },
+      "status": "pending-evidence",
+      "rationale": "Release signing and packaging depend on external evidence and must not expose key material.",
+      "residual_risk": "Signing and package provenance remain blocked until Phase 17 evidence and maintainer review are accepted.",
+      "blocker_or_deferred_action": "Review release artifact and signing evidence without storing private material.",
+      "exception_ref": "none-before-maintainer-decision",
+      "secret_handling_policy": "name-only-or-redacted",
+      "unsupported_claims": [
+        "claim-local-proof-is-maintainer-acceptance",
+        "claim-reference-demotion-without-decision-input",
+        "claim-sensitive-payload-retained"
+      ]
+    },
+    {
+      "id": "packet-mmu-modbus-auxiliary-controllers",
+      "title": "MMU, Modbus, puppies, and auxiliary-controller retained-code packet",
+      "requirement_ids": [
+        "REV-01",
+        "REV-02",
+        "REV-03"
+      ],
+      "taxonomy_tags": [
+        "C",
+        "C++",
+        "vendor",
+        "MMU",
+        "auxiliary-controller",
+        "runtime"
+      ],
+      "retained_source_refs": [
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-auxiliary-mmu-modbus",
+        "tools/bazel/manifests/foreign_code_inventory.json#auxiliary-runtime-shells",
+        "tools/bazel/manifests/foreign_code_inventory.json#prusa-mmu",
+        "tools/bazel/manifests/foreign_code_inventory.json#lightmodbus",
+        "tools/bazel/manifests/foreign_code_inventory.json#puppy-auxiliary-runtime"
+      ],
+      "prior_phase_refs": [
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-auxiliary-mmu-modbus"
+      ],
+      "required_evidence_refs": [
+        "retained-code-acceptance-summary.json#packet-mmu-modbus-auxiliary-controllers",
+        "residual-risk-register.json#packet-mmu-modbus-auxiliary-controllers"
+      ],
+      "supplied_evidence_result_refs": [
+        "build/ci-evidence/phase18/retained-code-acceptance-summary.json#packet-mmu-modbus-auxiliary-controllers"
+      ],
+      "owner": "auxiliary-controller-maintainer",
+      "approver_role": "auxiliary-controller-maintainer",
+      "approval_metadata": {
+        "decision_schema": "final_decision_schema",
+        "maintainer_review_required": true
+      },
+      "status": "pending-evidence",
+      "rationale": "Auxiliary controllers and Modbus/MMU support remain retained and require product-specific evidence.",
+      "residual_risk": "Auxiliary behavior remains blocked until hardware and maintainer evidence is accepted.",
+      "blocker_or_deferred_action": "Review Phase 15 auxiliary-controller scenarios and packet decision input.",
+      "exception_ref": "none-before-maintainer-decision",
+      "secret_handling_policy": "name-only-or-redacted",
+      "unsupported_claims": [
+        "claim-local-proof-is-maintainer-acceptance",
+        "claim-reference-demotion-without-decision-input",
+        "claim-sensitive-payload-retained"
+      ]
+    },
+    {
+      "id": "packet-runtime-safety-crashdump-watchdog",
+      "title": "Runtime shell, crash dump, watchdog, panic, and mutable-static retained-code packet",
+      "requirement_ids": [
+        "REV-01",
+        "REV-02",
+        "REV-03"
+      ],
+      "taxonomy_tags": [
+        "C",
+        "C++",
+        "ASM",
+        "runtime"
+      ],
+      "retained_source_refs": [
+        "tools/bazel/manifests/foreign_code_inventory.json#buddy-master-runtime-shell",
+        "tools/bazel/manifests/foreign_code_inventory.json#crashcatcher-crashdump",
+        "tools/bazel/manifests/unsafe_boundary_audit.json#panic-bsod-assert-boundary",
+        "tools/bazel/manifests/unsafe_boundary_audit.json#mutable-static-boundary",
+        "tools/bazel/manifests/unsafe_boundary_audit.json#crash-dump-memory-boundary",
+        "tools/bazel/manifests/unsafe_boundary_audit.json#watchdog-boundary"
+      ],
+      "prior_phase_refs": [
+        "tools/bazel/manifests/phase15_hardware_evidence_contract.json#hard-safety-watchdog-crash-recovery"
+      ],
+      "required_evidence_refs": [
+        "retained-code-acceptance-summary.json#packet-runtime-safety-crashdump-watchdog",
+        "residual-risk-register.json#packet-runtime-safety-crashdump-watchdog"
+      ],
+      "supplied_evidence_result_refs": [
+        "build/ci-evidence/phase18/retained-code-acceptance-summary.json#packet-runtime-safety-crashdump-watchdog"
+      ],
+      "owner": "safety-maintainer",
+      "approver_role": "safety-maintainer",
+      "approval_metadata": {
+        "decision_schema": "final_decision_schema",
+        "maintainer_review_required": true
+      },
+      "status": "pending-evidence",
+      "rationale": "Crash dump, watchdog, panic, mutable static, and runtime shell boundaries are safety-relevant retained code.",
+      "residual_risk": "Runtime safety demotion remains blocked until hardware evidence and maintainer decision input are accepted.",
+      "blocker_or_deferred_action": "Review safety evidence and retained runtime boundary disposition.",
+      "exception_ref": "none-before-maintainer-decision",
+      "secret_handling_policy": "name-only-or-redacted",
+      "unsupported_claims": [
+        "claim-local-proof-is-maintainer-acceptance",
+        "claim-reference-demotion-without-decision-input",
+        "claim-sensitive-payload-retained"
+      ]
+    }
+  ],
+  "final_demotion_criteria": [
+    {
+      "id": "final-ci-evidence",
+      "title": "Phase 13 CI evidence gate completed",
+      "requirement_ids": [
+        "REV-02",
+        "REV-03"
+      ],
+      "evidence_family": "ci",
+      "source_refs": [
+        "tools/bazel/manifests/phase13_ci_evidence_contract.json#ciev-01-aggregate-cutover-verifier",
+        "tools/bazel/manifests/phase13_ci_evidence_contract.json#ciev-02-run-manifest",
+        "tools/bazel/manifests/phase13_ci_evidence_contract.json#ciev-03-redacted-summary"
+      ],
+      "required_decision": "approve",
+      "default_status": "pending",
+      "allowed_statuses": [
+        "pending",
+        "passed",
+        "failed",
+        "blocked",
+        "exception-requested",
+        "exception-approved",
+        "exception-rejected",
+        "not-applicable",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "maintainer_decision_required": false,
+      "exception_allowed": true,
+      "blocks_demotion": true,
+      "residual_risk_ref": "residual-risk-register.json#final-ci-evidence",
+      "local_proof_boundary": "local verifier checks Phase 13 contract refs only",
+      "non_local_evidence_boundary": "CI service artifacts remain non-local evidence",
+      "unsupported_claims": [
+        "claim-reference-demotion-without-decision-input"
+      ]
+    },
+    {
+      "id": "final-simulator-evidence",
+      "title": "Phase 14 simulator evidence reviewed",
+      "requirement_ids": [
+        "REV-02",
+        "REV-03"
+      ],
+      "evidence_family": "simulator",
+      "source_refs": [
+        "tools/bazel/manifests/phase14_simulator_evidence_contract.json#sim-startup-bootstrap-ready",
+        "tools/bazel/manifests/phase14_simulator_evidence_contract.json#sim-traceability-non-simulator-boundaries"
+      ],
+      "required_decision": "approve",
+      "default_status": "pending",
+      "allowed_statuses": [
+        "pending",
+        "passed",
+        "failed",
+        "blocked",
+        "exception-requested",
+        "exception-approved",
+        "exception-rejected",
+        "not-applicable",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "maintainer_decision_required": false,
+      "exception_allowed": true,
+      "blocks_demotion": true,
+      "residual_risk_ref": "residual-risk-register.json#final-simulator-evidence",
+      "local_proof_boundary": "local verifier checks Phase 14 scenario refs only",
+      "non_local_evidence_boundary": "simulator logs and generated traces remain non-local evidence",
+      "unsupported_claims": [
+        "claim-reference-demotion-without-decision-input"
+      ]
+    },
+    {
+      "id": "final-hardware-safety-media-evidence",
+      "title": "Phase 15 hardware, safety, and media evidence reviewed",
+      "requirement_ids": [
+        "REV-02",
+        "REV-03"
+      ],
+      "evidence_family": "hardware",
+      "source_refs": [
+        "tools/bazel/manifests/phase15_hardware_evidence_contract.json#hard-safety-watchdog-crash-recovery",
+        "tools/bazel/manifests/phase15_hardware_evidence_contract.json#hard-safety-thermal-motion-emergency-stop",
+        "tools/bazel/manifests/phase15_hardware_evidence_contract.json#hard-contract-traceability-and-redaction-boundary"
+      ],
+      "required_decision": "approve",
+      "default_status": "pending",
+      "allowed_statuses": [
+        "pending",
+        "passed",
+        "failed",
+        "blocked",
+        "exception-requested",
+        "exception-approved",
+        "exception-rejected",
+        "not-applicable",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "maintainer_decision_required": false,
+      "exception_allowed": true,
+      "blocks_demotion": true,
+      "residual_risk_ref": "residual-risk-register.json#final-hardware-safety-media-evidence",
+      "local_proof_boundary": "local verifier checks Phase 15 hardware contract refs only",
+      "non_local_evidence_boundary": "physical printer behavior remains non-local evidence",
+      "unsupported_claims": [
+        "claim-reference-demotion-without-decision-input"
+      ]
+    },
+    {
+      "id": "final-live-network-transfer-evidence",
+      "title": "Phase 16 live-service, network, and transfer evidence reviewed",
+      "requirement_ids": [
+        "REV-02",
+        "REV-03"
+      ],
+      "evidence_family": "live-service",
+      "source_refs": [
+        "tools/bazel/manifests/phase16_live_network_evidence_contract.json#live-connect-registration-token-fingerprint",
+        "tools/bazel/manifests/phase16_live_network_evidence_contract.json#live-tls-certificate-verification",
+        "tools/bazel/manifests/phase16_live_network_evidence_contract.json#live-contract-traceability-redaction-boundary"
+      ],
+      "required_decision": "approve",
+      "default_status": "pending",
+      "allowed_statuses": [
+        "pending",
+        "passed",
+        "failed",
+        "blocked",
+        "exception-requested",
+        "exception-approved",
+        "exception-rejected",
+        "not-applicable",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "maintainer_decision_required": false,
+      "exception_allowed": true,
+      "blocks_demotion": true,
+      "residual_risk_ref": "residual-risk-register.json#final-live-network-transfer-evidence",
+      "local_proof_boundary": "local verifier checks Phase 16 live network contract refs only",
+      "non_local_evidence_boundary": "live service responses and credentials remain non-local evidence",
+      "unsupported_claims": [
+        "claim-reference-demotion-without-decision-input"
+      ]
+    },
+    {
+      "id": "final-release-artifact-signing-evidence",
+      "title": "Phase 17 release artifact, signing, and package evidence reviewed",
+      "requirement_ids": [
+        "REV-02",
+        "REV-03"
+      ],
+      "evidence_family": "release",
+      "source_refs": [
+        "tools/bazel/manifests/phase17_release_candidate_evidence_contract.json#rel-bin-firmware-image",
+        "tools/bazel/manifests/phase17_release_candidate_evidence_contract.json#rel-signing-key-identity",
+        "tools/bazel/manifests/phase17_release_candidate_evidence_contract.json#rel-reference-comparison-report"
+      ],
+      "required_decision": "approve",
+      "default_status": "pending",
+      "allowed_statuses": [
+        "pending",
+        "passed",
+        "failed",
+        "blocked",
+        "exception-requested",
+        "exception-approved",
+        "exception-rejected",
+        "not-applicable",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "maintainer_decision_required": false,
+      "exception_allowed": true,
+      "blocks_demotion": true,
+      "residual_risk_ref": "residual-risk-register.json#final-release-artifact-signing-evidence",
+      "local_proof_boundary": "local verifier checks Phase 17 release contract refs only",
+      "non_local_evidence_boundary": "release build, signing, and artifact retention evidence remain non-local",
+      "unsupported_claims": [
+        "claim-reference-demotion-without-decision-input"
+      ]
+    },
+    {
+      "id": "final-retained-code-acceptance",
+      "title": "All retained-code acceptance packets reviewed",
+      "requirement_ids": [
+        "REV-01",
+        "REV-03"
+      ],
+      "evidence_family": "retained-code",
+      "source_refs": [
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-retained-code-justifications-accepted",
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-hal-cmsis-vendor",
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-freertos-rtos",
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-marlin-print-core-oracle",
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-lwip-mbedtls-wui",
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-fatfs-littlefs",
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-tinyusb-usb",
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-auxiliary-mmu-modbus",
+        "tools/bazel/manifests/phase11_retained_code_justifications.json#retained-generated-assets-tools"
+      ],
+      "required_decision": "approve",
+      "default_status": "pending",
+      "allowed_statuses": [
+        "pending",
+        "passed",
+        "failed",
+        "blocked",
+        "exception-requested",
+        "exception-approved",
+        "exception-rejected",
+        "not-applicable",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "maintainer_decision_required": true,
+      "exception_allowed": true,
+      "blocks_demotion": true,
+      "residual_risk_ref": "residual-risk-register.json#final-retained-code-acceptance",
+      "local_proof_boundary": "local verifier validates packet shape and refs only",
+      "non_local_evidence_boundary": "packet acceptance requires maintainer decision input",
+      "unsupported_claims": [
+        "claim-reference-demotion-without-decision-input"
+      ]
+    },
+    {
+      "id": "final-residual-risk-review",
+      "title": "Residual cutover risk register reviewed",
+      "requirement_ids": [
+        "REV-03"
+      ],
+      "evidence_family": "residual-risk",
+      "source_refs": [
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-intentional-deltas-documented",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-overclaim-scan-clean",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-non-local-gates-identified"
+      ],
+      "required_decision": "approve",
+      "default_status": "pending",
+      "allowed_statuses": [
+        "pending",
+        "passed",
+        "failed",
+        "blocked",
+        "exception-requested",
+        "exception-approved",
+        "exception-rejected",
+        "not-applicable",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "maintainer_decision_required": true,
+      "exception_allowed": true,
+      "blocks_demotion": true,
+      "residual_risk_ref": "residual-risk-register.json#final-residual-risk-review",
+      "local_proof_boundary": "local verifier builds residual risk register only",
+      "non_local_evidence_boundary": "residual risk acceptance requires maintainer decision input",
+      "unsupported_claims": [
+        "claim-reference-demotion-without-decision-input"
+      ]
+    },
+    {
+      "id": "final-maintainer-decision",
+      "title": "Maintainer decision input prepared and reviewed",
+      "requirement_ids": [
+        "REV-03"
+      ],
+      "evidence_family": "maintainer-decision",
+      "source_refs": [
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-reference-demotion-blocked"
+      ],
+      "required_decision": "approve",
+      "default_status": "pending",
+      "allowed_statuses": [
+        "pending",
+        "passed",
+        "failed",
+        "blocked",
+        "exception-requested",
+        "exception-approved",
+        "exception-rejected",
+        "not-applicable",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "maintainer_decision_required": true,
+      "exception_allowed": true,
+      "blocks_demotion": true,
+      "residual_risk_ref": "residual-risk-register.json#final-maintainer-decision",
+      "local_proof_boundary": "local verifier can prepare a decision template only",
+      "non_local_evidence_boundary": "human maintainer approval is non-local evidence",
+      "unsupported_claims": [
+        "claim-reference-demotion-without-decision-input"
+      ]
+    },
+    {
+      "id": "final-reference-demotion-allowed",
+      "title": "Reference demotion remains blocked until all criteria pass or approved exceptions exist",
+      "requirement_ids": [
+        "REV-01",
+        "REV-02",
+        "REV-03"
+      ],
+      "evidence_family": "residual-risk",
+      "source_refs": [
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-reference-demotion-blocked",
+        "tools/bazel/manifests/phase11_cutover_readiness.json#criteria-all-v1-requirements-mapped"
+      ],
+      "required_decision": "approve",
+      "default_status": "blocked",
+      "allowed_statuses": [
+        "pending",
+        "passed",
+        "failed",
+        "blocked",
+        "exception-requested",
+        "exception-approved",
+        "exception-rejected",
+        "not-applicable",
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "maintainer_decision_required": true,
+      "exception_allowed": true,
+      "blocks_demotion": true,
+      "residual_risk_ref": "residual-risk-register.json#final-reference-demotion-allowed",
+      "local_proof_boundary": "local verifier can only calculate demotion_allowed from statuses",
+      "non_local_evidence_boundary": "reference demotion requires explicit maintainer decision input",
+      "unsupported_claims": [
+        "claim-reference-demotion-without-decision-input"
+      ]
+    }
+  ],
+  "generated_artifacts": [
+    "run-manifest.json",
+    "normalized-final-demotion-results.json",
+    "retained-code-acceptance-summary.json",
+    "residual-risk-register.json",
+    "redacted-readiness-report.md",
+    "source-contract-snapshots/phase18_cutover_review_contract.json",
+    "maintainer-decision-input-template.json"
+  ]
+}
