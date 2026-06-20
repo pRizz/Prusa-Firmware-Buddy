@@ -1217,7 +1217,7 @@ def write_quick_artifacts(
         redacted_report_text(run_manifest, final_results, retained_rows),
         encoding="utf-8",
     )
-    run_security_scan(root, None, output_dir)
+    run_security_scan(root, None, output_dir, decision_input_validated=decision_input is not None)
     return run_manifest
 
 
@@ -1231,7 +1231,12 @@ def generated_artifacts_to_scan(root: Path, output_dir: Path | None = None) -> l
     return paths
 
 
-def run_security_scan(root: Path, maybe_decision_input_path: str | None, output_dir: Path | None = None) -> None:
+def run_security_scan(
+    root: Path,
+    maybe_decision_input_path: str | None,
+    output_dir: Path | None = None,
+    decision_input_validated: bool = False,
+) -> None:
     errors: list[str] = []
     for path in [CONTRACT_MANIFEST]:
         try:
@@ -1243,6 +1248,7 @@ def run_security_scan(root: Path, maybe_decision_input_path: str | None, output_
     if maybe_decision_input_path:
         try:
             load_decision_input(root, maybe_decision_input_path)
+            decision_input_validated = True
         except VerificationError as error:
             errors.append(str(error))
     for full_path in generated_artifacts_to_scan(root, output_dir):
@@ -1254,12 +1260,17 @@ def run_security_scan(root: Path, maybe_decision_input_path: str | None, output_
                 reject_forbidden_json_fields(json.loads(text), relative_path.as_posix())
         except (json.JSONDecodeError, VerificationError) as error:
             errors.append(str(error))
-    validate_generated_overclaim_guards(root, errors, output_dir)
+    validate_generated_overclaim_guards(root, errors, output_dir, decision_input_validated)
     if errors:
         raise VerificationError("\n".join(errors))
 
 
-def validate_generated_overclaim_guards(root: Path, errors: list[str], output_dir: Path | None = None) -> None:
+def validate_generated_overclaim_guards(
+    root: Path,
+    errors: list[str],
+    output_dir: Path | None = None,
+    decision_input_validated: bool = False,
+) -> None:
     output_dir = output_dir or root / DEFAULT_OUTPUT_DIR
     run_manifest_path = output_dir / "run-manifest.json"
     if not run_manifest_path.exists():
@@ -1276,6 +1287,9 @@ def validate_generated_overclaim_guards(root: Path, errors: list[str], output_di
     if not isinstance(decision_inputs_supplied, bool):
         errors.append("generated run-manifest.json decision_inputs_supplied must be boolean")
         return
+    if decision_inputs_supplied and not decision_input_validated:
+        errors.append("generated run-manifest.json claims decision input without validated --decision-input")
+        return
     if decision_inputs_supplied:
         return
     if run_manifest.get("demotion_allowed") is True:
@@ -1284,6 +1298,8 @@ def validate_generated_overclaim_guards(root: Path, errors: list[str], output_di
     if normalized_path.exists():
         try:
             normalized = json.loads(normalized_path.read_text(encoding="utf-8"))
+            if isinstance(normalized, dict) and normalized.get("demotion_allowed") is True:
+                errors.append("generated no-decision normalized-final-demotion-results.json cannot set demotion_allowed true")
             results = normalized.get("results") if isinstance(normalized, dict) else None
             if isinstance(results, list):
                 for row in results:

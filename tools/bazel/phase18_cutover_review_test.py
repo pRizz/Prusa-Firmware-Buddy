@@ -866,6 +866,43 @@ class Phase18CutoverReviewTest(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn("decision_inputs_supplied must be boolean", result.stdout)
 
+    def test_security_only_rejects_generated_decision_input_claim_without_validated_input(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            quick_result = self.run_verifier(["--quick"], maybe_root=root)
+            self.assertEqual(quick_result.returncode, 0, quick_result.stdout)
+            run_manifest = self.read_json(root, "build/ci-evidence/phase18/run-manifest.json")
+            run_manifest["decision_inputs_supplied"] = True
+            run_manifest["demotion_allowed"] = True
+            self.write_json(root, "build/ci-evidence/phase18/run-manifest.json", run_manifest)
+
+            # Act
+            result = self.run_verifier(["--security-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("claims decision input without validated --decision-input", result.stdout)
+
+    def test_security_only_rejects_normalized_top_level_demotion_overclaim(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            quick_result = self.run_verifier(["--quick"], maybe_root=root)
+            self.assertEqual(quick_result.returncode, 0, quick_result.stdout)
+            normalized = self.read_json(root, "build/ci-evidence/phase18/normalized-final-demotion-results.json")
+            normalized["demotion_allowed"] = True
+            self.write_json(root, "build/ci-evidence/phase18/normalized-final-demotion-results.json", normalized)
+
+            # Act
+            result = self.run_verifier(["--security-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("normalized-final-demotion-results.json cannot set demotion_allowed true", result.stdout)
+
     def test_verifier_does_not_use_shell_or_inline_interpreters(self) -> None:
         # Arrange
         source = VERIFIER.read_text(encoding="utf-8")
