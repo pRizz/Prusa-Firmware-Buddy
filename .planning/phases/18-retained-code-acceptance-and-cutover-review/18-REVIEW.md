@@ -1,6 +1,6 @@
 ---
 phase: 18-retained-code-acceptance-and-cutover-review
-reviewed: 2026-06-20T16:15:33Z
+reviewed: 2026-06-20T16:25:00Z
 depth: standard
 files_reviewed: 7
 files_reviewed_list:
@@ -12,82 +12,56 @@ files_reviewed_list:
   - tools/bazel/rust_workflow.sh
   - justfile
 findings:
-  critical: 1
-  warning: 2
+  critical: 0
+  warning: 1
   info: 0
-  total: 3
+  total: 1
 status: issues_found
 ---
 
 # Phase 18: Code Review Report
 
-**Reviewed:** 2026-06-20T16:15:33Z
+**Reviewed:** 2026-06-20T16:25:00Z
 **Depth:** standard
 **Files Reviewed:** 7
 **Status:** issues_found
 
 ## Summary
 
-Reviewed the listed Phase 18 verifier, contract manifest, tests, Bazel wiring, shell workflow, and just recipe at standard depth. This review used the repo-local `AGENTS.md`, `AGENTS.bright-builds.md`, `standards-overrides.md`, and Bright Builds architecture, code-shape, verification, and testing standards. No project-local skills were present under `.claude/skills/` or `.agents/skills/`.
+Re-reviewed the listed Phase 18 verifier, contract manifest, tests, Bazel wiring, shell workflow, and just recipe at standard depth after fix `7e9d00a46` and report update `6efdd6e50`. This review used the repo-local `AGENTS.md`, `AGENTS.bright-builds.md`, `standards-overrides.md`, and Bright Builds architecture, code-shape, verification, and testing standards. No project-local skills were present under `.claude/skills/` or `.agents/skills/`.
 
-The existing happy path passes, but the verifier can still accept malformed decision input that undermines the retained-code approval gate and traceability. Targeted temp-root probes reproduced the findings below.
+The prior report's retained approver-role, custom output directory, and final decision ID findings are fixed in the current files. One generated-artifact overclaim guard gap remains.
 
 Verification performed:
 
+- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 36 tests.
 - `python3 tools/bazel/phase18_cutover_review.py --contract-only` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --wiring-only` passed.
-- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 32 tests.
-- Targeted temp-root probes reproduced CR-01, WR-01, and WR-02.
-
-## Critical Issues
-
-### CR-01: Retained packet approvals do not enforce the contract approver role
-
-**File:** `tools/bazel/phase18_cutover_review.py:838`
-**Issue:** `validate_retained_review` only checks that `approver_role` is a non-empty string. It receives only `packet_ids`, so it cannot compare the review role with the packet's required `approver_role` from the contract. A decision input can mark every retained packet `accepted` with `approver_role: "wrong-role"` and still generate `demotion_allowed=true` when the final criteria pass. That bypasses the Phase 18 retained-code maintainer-role gate.
-**Fix:**
-```python
-def validate_retained_review(row: Any, packets_by_id: dict[str, dict[str, Any]], row_index: int) -> dict[str, Any]:
-    ...
-    packet = packets_by_id.get(packet_id)
-    if packet is None:
-        raise VerificationError(f"{row_name} packet_id does not resolve: {packet_id}")
-    approver_role = require_string(row, "approver_role", row_name)
-    expected_role = require_string(packet, "approver_role", packet_id)
-    if approver_role != expected_role:
-        raise VerificationError(f"{row_name} approver_role must be {expected_role}")
-```
-Update `validated_decision_maps` to pass a `packets_by_id` map, and add a regression test where one retained review uses the wrong role while all final criteria otherwise pass; the verifier should reject it and never write `demotion_allowed=true`.
+- `python3 tools/bazel/phase18_cutover_review.py --quick --output-dir build/ci-evidence/phase18/review-check` passed.
+- `python3 tools/bazel/phase18_cutover_review.py --security-only --output-dir build/ci-evidence/phase18/review-check` passed on restored quick artifacts.
+- Targeted tamper check reproduced WR-01: changing `run-manifest.json` to `"decision_inputs_supplied": "false"` and `demotion_allowed: true` still made `--security-only` print `Phase 18 security scan passed`.
 
 ## Warnings
 
-### WR-01: Custom output directories produce misleading artifact paths and skip the matching scan target
+### WR-01: No-decision overclaim guard can be bypassed with a non-boolean manifest flag
 
-**File:** `tools/bazel/phase18_cutover_review.py:1191`
-**Issue:** `write_quick_artifacts` accepts `--output-dir`, but `run_manifest["source_contract_snapshot_path"]`, `run_manifest["generated_artifacts"]`, `generated_artifacts_to_scan`, and `validate_generated_overclaim_guards` still use `DEFAULT_OUTPUT_DIR`. A run with `--output-dir build/ci-evidence/phase18/custom` writes `custom/run-manifest.json` while the manifest points at `build/ci-evidence/phase18/...`, and the post-write scan targets the default directory instead of the actual output directory.
+**File:** `tools/bazel/phase18_cutover_review.py:1275`
+**Issue:** `validate_generated_overclaim_guards` returns whenever `decision_inputs_supplied` is not exactly boolean `False`. A malformed or tampered generated `run-manifest.json` can set `"decision_inputs_supplied": "false"` or omit the flag, then set `demotion_allowed: true`; the security scan skips the no-decision overclaim checks for `demotion_allowed`, allowed final statuses, and accepted retained packet statuses. This weakens the Phase 18 guard that is supposed to reject unsupported reference-demotion claims in generated review artifacts.
 **Fix:**
 ```python
-output_dir_relative = output_dir.relative_to(root)
-run_manifest["source_contract_snapshot_path"] = (output_dir_relative / snapshot_relative).as_posix()
-run_manifest["generated_artifacts"] = [
-    (output_dir_relative / artifact).as_posix() for artifact in sorted(REQUIRED_GENERATED_ARTIFACTS)
-]
-run_security_scan(root, None, output_dir)
+decision_inputs_supplied = run_manifest.get("decision_inputs_supplied")
+if not isinstance(decision_inputs_supplied, bool):
+    errors.append("generated run-manifest.json decision_inputs_supplied must be boolean")
+    return
+if decision_inputs_supplied:
+    return
+if run_manifest.get("demotion_allowed") is True:
+    errors.append("generated no-decision run-manifest.json cannot set demotion_allowed true")
 ```
-Thread `output_dir` through `generated_artifacts_to_scan` and `validate_generated_overclaim_guards`, or remove `--output-dir` if Phase 18 artifacts must always be written to the default root.
-
-### WR-02: Final decision IDs are not type-checked or de-duplicated
-
-**File:** `tools/bazel/phase18_cutover_review.py:794`
-**Issue:** `decision_id` is listed in the required final-decision schema, but validation only checks that the field exists. Non-string and duplicate `decision_id` values still pass, and a temp-root probe with `decision_id: 123` on every final criterion generated `demotion_allowed=true`. That weakens maintainer decision traceability for the final demotion gate.
-**Fix:**
-```python
-decision_id = require_string(row, "decision_id", row_name)
-```
-Track seen decision IDs in `validated_decision_maps` and reject duplicates across `final_criterion_decisions`. Add regression tests for non-string and duplicate decision IDs.
+Also add regression tests for string, missing, or otherwise non-boolean `decision_inputs_supplied` values combined with `demotion_allowed: true`, an allowed final criterion status, or an accepted retained packet status.
 
 ---
 
-_Reviewed: 2026-06-20T16:15:33Z_
+_Reviewed: 2026-06-20T16:25:00Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
