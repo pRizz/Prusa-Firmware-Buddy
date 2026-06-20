@@ -1,6 +1,6 @@
 ---
 phase: 18-retained-code-acceptance-and-cutover-review
-reviewed: 2026-06-20T15:48:02Z
+reviewed: 2026-06-20T16:02:08Z
 depth: standard
 files_reviewed: 7
 files_reviewed_list:
@@ -12,8 +12,8 @@ files_reviewed_list:
   - tools/bazel/rust_workflow.sh
   - justfile
 findings:
-  critical: 2
-  warning: 0
+  critical: 0
+  warning: 2
   info: 0
   total: 2
 status: issues_found
@@ -21,66 +21,66 @@ status: issues_found
 
 # Phase 18: Code Review Report
 
-**Reviewed:** 2026-06-20T15:48:02Z
+**Reviewed:** 2026-06-20T16:02:08Z
 **Depth:** standard
 **Files Reviewed:** 7
 **Status:** issues_found
 
 ## Summary
 
-Reviewed the Phase 18 verifier, manifest, Bazel wiring, shell workflow, just recipe, and tests using the repo-local AGENTS guidance plus Bright Builds architecture, code-shape, verification, and testing standards. The existing Phase 18 unit suite passes, but targeted negative checks show that the final demotion gate can still be unlocked by inconsistent or mis-scoped maintainer input.
+Reviewed the listed Phase 18 verifier, contract manifest, tests, Bazel wiring, shell workflow, and just recipe after fixes `6c06a052a` and `7dd3060e3`. This review used the repo-local `AGENTS.md`, `AGENTS.bright-builds.md`, `standards-overrides.md`, and Bright Builds architecture, code-shape, verification, and testing standards. No project-local skills were present under `.claude/skills/` or `.agents/skills/`.
 
-## Critical Issues
+The previously reported critical issues are fixed: decision inputs now require the Phase 18 lifecycle envelope, and allowed final demotion statuses now require matching decision/evidence/exception metadata. The repo-native Phase 18 verification passes. Two remaining validation gaps can still accept malformed maintainer input and should be fixed before relying on the generated demotion result.
 
-### CR-01: Final demotion accepts rejected decisions and empty evidence
+Verification performed:
 
-**File:** `tools/bazel/phase18_cutover_review.py:789`
-**Issue:** `validate_final_decision` validates `decision`, `status`, and `evidence_refs` independently, while `final_status_allows_demotion` treats any `status == "passed"` as sufficient. A decision input with every final criterion set to `decision: "reject"`, `status: "passed"`, and `evidence_refs: []` exits successfully and writes `demotion_allowed=true`. That bypasses the Phase 18 evidence and maintainer approval contract.
+- `python3 tools/bazel/phase18_cutover_review.py --contract-only` passed.
+- `python3 tools/bazel/phase18_cutover_review.py --wiring-only` passed.
+- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 30 tests.
+- `just phase18-verify` passed, including Bazel-backed tests and quick artifact generation.
+- Targeted temp-root probes reproduced both warnings below.
+
+## Warnings
+
+### WR-01: Deferred retained-code exceptions can pass without evidence
+
+**File:** `tools/bazel/phase18_cutover_review.py:845`
+**Issue:** `validate_retained_review` requires `supplied_evidence_result_refs` only for `accepted` retained-packet reviews. A review with `status: "deferred-approved-exception"`, an `exception_ref`, and a blocker action can leave `supplied_evidence_result_refs` empty. Because `write_quick_artifacts` treats `deferred-approved-exception` as an allowed retained packet status, a complete final approval payload can still write `demotion_allowed=true` with no packet evidence for that exception.
 **Fix:**
 ```python
-def require_non_empty_refs(refs: list[str], row_name: str, field: str) -> None:
-    if not refs:
-        raise VerificationError(f"{row_name} {field} must include at least one Phase 18 evidence ref")
+if status in {"accepted", "deferred-approved-exception"}:
+    require_non_empty_refs(supplied_refs, row_name, "supplied_evidence_result_refs")
 
+if status == "deferred-approved-exception":
+    if row["exception_ref"] == "none" or row["blocker_or_deferred_action"] == "none":
+        raise VerificationError(f"{row_name} deferred-approved-exception requires exception_ref and blocker action")
+```
+Add a regression test where one retained review is `deferred-approved-exception` with empty evidence and all final criteria otherwise pass; the verifier should reject it.
 
-def validate_final_decision(row: Any, criterion_ids: set[str], row_index: int) -> dict[str, Any]:
-    ...
-    evidence_refs = require_list_of_strings(row, "evidence_refs", row_name)
+### WR-02: Exception metadata fields are not type-checked
+
+**File:** `tools/bazel/phase18_cutover_review.py:770`
+**Issue:** `validate_exception_metadata` checks that exception fields are present and that `evidence_refs` is a list of strings, but it does not require the other exception fields to be non-empty strings. A decision input can mark all final criteria `exception-approved` with values such as lists, numbers, booleans, or objects in `scope`, `rationale`, `approver`, and related fields, and the verifier still writes `demotion_allowed=true`.
+**Fix:**
+```python
+def validate_exception_metadata(exception: Any, row_name: str) -> dict[str, Any]:
+    if not isinstance(exception, dict):
+        raise VerificationError(f"{row_name} exception must be an object")
+    require_fields(exception, EXCEPTION_REQUIRED_FIELDS, f"{row_name} exception")
+    for field in EXCEPTION_REQUIRED_FIELDS:
+        if field == "evidence_refs":
+            continue
+        require_string(exception, field, f"{row_name} exception")
+    evidence_refs = require_list_of_strings(exception, "evidence_refs", f"{row_name} exception")
+    require_non_empty_refs(evidence_refs, f"{row_name} exception", "evidence_refs")
     for ref in evidence_refs:
-        require_phase18_artifact_ref(ref, f"{row_name} evidence_refs")
-
-    if status == "passed":
-        if decision != "approve":
-            raise VerificationError(f"{row_name} status passed requires decision approve")
-        require_non_empty_refs(evidence_refs, row_name, "evidence_refs")
-    elif status in {"exception-approved", "not-applicable"}:
-        if decision != "exception":
-            raise VerificationError(f"{row_name} status {status} requires decision exception")
-        require_non_empty_refs(evidence_refs, row_name, "evidence_refs")
-        validate_exception_metadata(row["exception"], row_name)
+        require_phase18_artifact_ref(ref, f"{row_name} exception evidence_refs")
+    return exception
 ```
-Also make `final_status_allows_demotion` return `False` when no validated decision object is present or when the decision/status pair is inconsistent.
-
-### CR-02: Decision input can omit the Phase 18 lifecycle envelope
-
-**File:** `tools/bazel/phase18_cutover_review.py:752`
-**Issue:** `load_decision_input` validates `decision_packet` only when the field is present. A complete approval payload without `decision_packet` still passes `--quick` and writes `demotion_allowed=true`, so stale or mis-scoped approvals are not bound to `phase_lifecycle_id`.
-**Fix:**
-```python
-def load_decision_input(root: Path, maybe_path: str | None) -> dict[str, Any] | None:
-    ...
-    packet = data.get("decision_packet")
-    if not isinstance(packet, dict):
-        raise VerificationError("decision_packet must be present and must be an object")
-    if packet.get("phase") != PHASE:
-        raise VerificationError(f"decision_packet phase must be {PHASE}")
-    if packet.get("phase_lifecycle_id") != PHASE_LIFECYCLE_ID:
-        raise VerificationError(f"decision_packet phase_lifecycle_id must be {PHASE_LIFECYCLE_ID}")
-```
-Add regression tests for missing `decision_packet` and for stale `phase_lifecycle_id` values.
+Add a regression test that sets an `exception-approved` final decision with non-string exception metadata and expects rejection.
 
 ---
 
-_Reviewed: 2026-06-20T15:48:02Z_
+_Reviewed: 2026-06-20T16:02:08Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
