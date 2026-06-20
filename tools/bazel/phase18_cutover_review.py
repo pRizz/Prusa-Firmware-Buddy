@@ -1272,7 +1272,11 @@ def validate_generated_overclaim_guards(root: Path, errors: list[str], output_di
     if not isinstance(run_manifest, dict):
         errors.append("build/ci-evidence/phase18/run-manifest.json must contain an object")
         return
-    if run_manifest.get("decision_inputs_supplied") is not False:
+    decision_inputs_supplied = run_manifest.get("decision_inputs_supplied")
+    if not isinstance(decision_inputs_supplied, bool):
+        errors.append("generated run-manifest.json decision_inputs_supplied must be boolean")
+        return
+    if decision_inputs_supplied:
         return
     if run_manifest.get("demotion_allowed") is True:
         errors.append("generated no-decision run-manifest.json cannot set demotion_allowed true")
