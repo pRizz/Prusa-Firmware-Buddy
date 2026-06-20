@@ -108,9 +108,75 @@ class Phase18CutoverReviewTest(unittest.TestCase):
     def write_contract(self, root: Path, contract: dict[str, object]) -> None:
         self.write_file(root, CONTRACT, json.dumps(contract, indent=2, sort_keys=True) + "\n")
 
+    def write_json(self, root: Path, path: str, data: dict[str, object]) -> None:
+        self.write_file(root, path, json.dumps(data, indent=2, sort_keys=True) + "\n")
+
     def source_ids(self, path: str, collection: str, key: str) -> list[str]:
         data = json.loads((ROOT / path).read_text(encoding="utf-8"))
         return [row[key] for row in data[collection]]
+
+    def read_json(self, root: Path, path: str) -> dict[str, object]:
+        return json.loads((root / path).read_text(encoding="utf-8"))
+
+    def complete_decision_input(self, root: Path, status: str = "passed", decision: str = "approve") -> dict[str, object]:
+        contract = self.read_contract(root)
+        exception = {
+            "scope": "phase18-final-review",
+            "rationale": "Exception metadata is complete for test coverage.",
+            "approver": "release-maintainer",
+            "approver_role": "release-maintainer",
+            "affected_printer_or_release_surface": "all-supported-release-surfaces",
+            "mitigation_or_follow_up": "Review at release cutover checkpoint.",
+            "expiry_or_review_trigger": "before-reference-demotion",
+            "evidence_refs": ["external://phase18/exception-evidence"],
+        }
+        retained_reviews = []
+        for packet in contract["retained_code_acceptance_packets"]:
+            retained_reviews.append(
+                {
+                    "packet_id": packet["id"],
+                    "status": "accepted",
+                    "approver": "release-maintainer",
+                    "approver_role": packet["approver_role"],
+                    "decision_timestamp": "2026-06-20T15:30:00Z",
+                    "rationale": f"Reviewed retained packet {packet['id']}.",
+                    "supplied_evidence_result_refs": [
+                        f"external://phase18/retained/{packet['id']}",
+                    ],
+                    "residual_risk": "Reviewed and accepted for test decision input.",
+                    "blocker_or_deferred_action": "none",
+                    "exception_ref": "none",
+                    "redaction_summary": "No sensitive material included.",
+                }
+            )
+        final_decisions = []
+        for criterion in contract["final_demotion_criteria"]:
+            final_decisions.append(
+                {
+                    "decision_id": f"decision-{criterion['id']}",
+                    "criterion_id": criterion["id"],
+                    "decision": decision,
+                    "status": status,
+                    "approver": "release-maintainer",
+                    "approver_role": "release-maintainer",
+                    "decision_timestamp": "2026-06-20T15:30:00Z",
+                    "rationale": f"Reviewed final criterion {criterion['id']}.",
+                    "evidence_refs": [
+                        f"external://phase18/final/{criterion['id']}",
+                    ],
+                    "residual_risk": "Reviewed and accepted for test decision input.",
+                    "exception": exception,
+                    "redaction_summary": "No sensitive material included.",
+                }
+            )
+        return {
+            "decision_packet": {
+                "phase": "18-retained-code-acceptance-and-cutover-review",
+                "phase_lifecycle_id": "18-2026-06-20T14-27-15",
+            },
+            "retained_code_reviews": retained_reviews,
+            "final_criterion_decisions": final_decisions,
+        }
 
     def test_contract_accepts_complete_phase18_contract(self) -> None:
         # Arrange
@@ -265,6 +331,219 @@ class Phase18CutoverReviewTest(unittest.TestCase):
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("missing-row", result.stdout)
+
+    def test_quick_without_decision_input_writes_artifacts_and_blocks_demotion(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+            # Assert
+            self.assertEqual(result.returncode, 0, result.stdout)
+            for path in [
+                "build/ci-evidence/phase18/run-manifest.json",
+                "build/ci-evidence/phase18/normalized-final-demotion-results.json",
+                "build/ci-evidence/phase18/retained-code-acceptance-summary.json",
+                "build/ci-evidence/phase18/residual-risk-register.json",
+                "build/ci-evidence/phase18/redacted-readiness-report.md",
+                "build/ci-evidence/phase18/source-contract-snapshots/phase18_cutover_review_contract.json",
+                "build/ci-evidence/phase18/maintainer-decision-input-template.json",
+            ]:
+                self.assertTrue((root / path).exists(), path)
+            run_manifest = self.read_json(root, "build/ci-evidence/phase18/run-manifest.json")
+            self.assertFalse(run_manifest["decision_inputs_supplied"])
+            self.assertFalse(run_manifest["demotion_allowed"])
+
+    def test_decision_input_requires_complete_final_approval_metadata(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            decision_input = self.complete_decision_input(root)
+            del decision_input["final_criterion_decisions"][0]["approver"]
+            self.write_json(root, "decision-input.json", decision_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("approver", result.stdout)
+
+    def test_exception_approved_requires_complete_exception_metadata(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            decision_input = self.complete_decision_input(root, status="exception-approved", decision="exception")
+            del decision_input["final_criterion_decisions"][0]["exception"]["scope"]
+            self.write_json(root, "decision-input.json", decision_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("scope", result.stdout)
+
+    def test_demotion_allowed_only_when_all_final_criteria_have_allowed_statuses(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            decision_input = self.complete_decision_input(root)
+            self.write_json(root, "decision-input.json", decision_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+
+            # Assert
+            self.assertEqual(result.returncode, 0, result.stdout)
+            run_manifest = self.read_json(root, "build/ci-evidence/phase18/run-manifest.json")
+            self.assertTrue(run_manifest["decision_inputs_supplied"])
+            self.assertTrue(run_manifest["demotion_allowed"])
+
+    def test_blocking_final_criterion_statuses_keep_demotion_false(self) -> None:
+        for status in [
+            "pending",
+            "failed",
+            "blocked",
+            "exception-requested",
+            "exception-rejected",
+            "rejected-redaction",
+            "rejected-overclaim",
+        ]:
+            with self.subTest(status=status):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_complete_surface(root)
+                    decision_input = self.complete_decision_input(root)
+                    decision_input["final_criterion_decisions"][0]["status"] = status
+                    self.write_json(root, "decision-input.json", decision_input)
+
+                    # Act
+                    result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+
+                    # Assert
+                    self.assertEqual(result.returncode, 0, result.stdout)
+                    run_manifest = self.read_json(root, "build/ci-evidence/phase18/run-manifest.json")
+                    self.assertFalse(run_manifest["demotion_allowed"])
+
+    def test_retained_packet_acceptance_requires_supplied_evidence(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            decision_input = self.complete_decision_input(root)
+            decision_input["retained_code_reviews"][0]["supplied_evidence_result_refs"] = []
+            self.write_json(root, "decision-input.json", decision_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("supplied_evidence_result_refs", result.stdout)
+
+    def test_decision_input_rejects_paths_outside_phase18_output_or_external_refs(self) -> None:
+        cases = ["/tmp/phase18-evidence.json", "../phase18-evidence.json", "build/ci-evidence/phase17/result.json"]
+        for evidence_ref in cases:
+            with self.subTest(evidence_ref=evidence_ref):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_complete_surface(root)
+                    decision_input = self.complete_decision_input(root)
+                    decision_input["final_criterion_decisions"][0]["evidence_refs"] = [evidence_ref]
+                    self.write_json(root, "decision-input.json", decision_input)
+
+                    # Act
+                    result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(evidence_ref, result.stdout)
+
+    def test_security_only_rejects_forbidden_contract_input_and_generated_markers(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            contract = self.read_contract(root)
+            contract["private_key"] = "redacted-test-value"
+            self.write_contract(root, contract)
+
+            # Act
+            contract_result = self.run_verifier(["--security-only"], maybe_root=root)
+
+            # Assert
+            self.assertNotEqual(contract_result.returncode, 0)
+            self.assertIn("private_key", contract_result.stdout)
+
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            decision_input = self.complete_decision_input(root)
+            decision_input["password"] = "redacted-test-value"
+            self.write_json(root, "decision-input.json", decision_input)
+
+            # Act
+            input_result = self.run_verifier(["--security-only", "--decision-input", "decision-input.json"], maybe_root=root)
+
+            # Assert
+            self.assertNotEqual(input_result.returncode, 0)
+            self.assertIn("password", input_result.stdout)
+
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            quick_result = self.run_verifier(["--quick"], maybe_root=root)
+            self.assertEqual(quick_result.returncode, 0, quick_result.stdout)
+            self.write_file(
+                root,
+                "build/ci-evidence/phase18/redacted-readiness-report.md",
+                "raw crash dump",
+            )
+
+            # Act
+            generated_result = self.run_verifier(["--security-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(generated_result.returncode, 0)
+        self.assertIn("raw crash dump", generated_result.stdout)
+
+    def test_generated_report_names_review_material_boundary(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+            # Assert
+            self.assertEqual(result.returncode, 0, result.stdout)
+            report = (root / "build/ci-evidence/phase18/redacted-readiness-report.md").read_text(encoding="utf-8")
+            self.assertIn(
+                "Review material only; machine-readable gate rows and maintainer decision input determine final status.",
+                report,
+            )
+            self.assertIn("demotion_allowed: false", report)
+
+    def test_verifier_does_not_use_shell_or_inline_interpreters(self) -> None:
+        # Arrange
+        source = VERIFIER.read_text(encoding="utf-8")
+
+        # Act / Assert
+        for forbidden in ["shell=True", "bash -c", "python -c", "node -e"]:
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, source)
 
 
 if __name__ == "__main__":
