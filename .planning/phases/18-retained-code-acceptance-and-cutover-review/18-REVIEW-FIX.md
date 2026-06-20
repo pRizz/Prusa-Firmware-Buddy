@@ -1,26 +1,33 @@
 ---
 phase: 18-retained-code-acceptance-and-cutover-review
-fixed_at: "2026-06-20T16:57:29Z"
+fixed_at: "2026-06-20T17:04:14Z"
 review_path: .planning/phases/18-retained-code-acceptance-and-cutover-review/18-REVIEW.md
-iteration: 8
-findings_in_scope: 2
-fixed: 2
+iteration: 9
+findings_in_scope: 1
+fixed: 1
 skipped: 0
 status: all_fixed
 ---
 
 # Phase 18: Code Review Fix Report
 
-**Fixed at:** 2026-06-20T16:57:29Z
+**Fixed at:** 2026-06-20T17:04:14Z
 **Source review:** .planning/phases/18-retained-code-acceptance-and-cutover-review/18-REVIEW.md
-**Iteration:** 8
+**Iteration:** 9
 
 **Summary:**
-- Findings in scope: 2
-- Fixed: 2
+- Findings in scope: 1
+- Fixed: 1
 - Skipped: 0
 
 ## Fixed Issues
+
+### WR-01: Redaction Scan Allows CamelCase API-Key Fields
+
+**Status:** fixed: requires human verification
+**Files modified:** `tools/bazel/phase18_cutover_review.py`, `tools/bazel/phase18_cutover_review_test.py`
+**Commit:** 4d9f1f88d
+**Applied fix:** Forbidden JSON field checks now normalize key names before matching, so camelCase and separator variants such as `apiKey`, `accessToken`, and `authorizationHeader` are rejected. Added regression tests for decision input and generated artifact scans.
 
 ### WR-01: Security scan misses row-level retained acceptance overclaims
 
@@ -108,7 +115,7 @@ status: all_fixed
 
 ## Verification
 
-- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 43 tests.
+- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 44 tests.
 - `python3 tools/bazel/phase18_cutover_review.py --contract-only` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --quick` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --security-only` passed.
@@ -116,6 +123,6 @@ status: all_fixed
 
 ---
 
-_Fixed: 2026-06-20T16:57:29Z_
+_Fixed: 2026-06-20T17:04:14Z_
 _Fixer: the agent (gsd-code-fixer)_
-_Iteration: 8_
+_Iteration: 9_
