@@ -1,6 +1,6 @@
 ---
 phase: 18-retained-code-acceptance-and-cutover-review
-reviewed: 2026-06-20T17:30:03Z
+reviewed: 2026-06-20T17:38:42Z
 depth: standard
 files_reviewed: 7
 files_reviewed_list:
@@ -12,57 +12,70 @@ files_reviewed_list:
   - tools/bazel/rust_workflow.sh
   - justfile
 findings:
-  critical: 1
+  critical: 0
   warning: 0
   info: 0
-  total: 1
-status: issues_found
+  total: 0
+status: clean
 ---
 
 # Phase 18: Code Review Report
 
-**Reviewed:** 2026-06-20T17:30:03Z
+**Reviewed:** 2026-06-20T17:38:42Z
 **Depth:** standard
 **Files Reviewed:** 7
-**Status:** issues_found
+**Status:** clean
 
 ## Summary
 
-Reviewed the requested Phase 18 implementation surfaces at HEAD `e46bfe548adb49b4729a8c7cbdf9ec82a7a65f03`: verifier, tests, contract manifest, Bazel wiring, workflow shell wrapper, and just recipe. Material guidance applied: `AGENTS.md`, `AGENTS.bright-builds.md`, `standards-overrides.md` (no active overrides), and Bright Builds core code-shape, verification, and testing standards.
+Reviewed the requested Phase 18 implementation surfaces at HEAD `120976004114cee6df08515261a8ba4d969d0536`: verifier, tests, contract manifest, Bazel wiring, workflow shell wrapper, and just recipe. Material guidance applied: `AGENTS.md`, `AGENTS.bright-builds.md`, `standards-overrides.md` (no active overrides), and Bright Builds core architecture, code-shape, verification, and testing standards.
 
-Repo-native verification passed:
+All reviewed files meet quality standards. No actionable bugs, security issues, behavioral regressions, or missing tests were found.
+
+The prior narrative secret-marker finding is addressed. The verifier now derives narrative assignment checks from the forbidden field vocabulary, including API key, access token, credential, WiFi password, authorization, and related separator/case variants. Criterion-level `allowed_statuses` and `exception_allowed` policy, generated artifact exactness, normalized forbidden field matching, generated demotion flags, retained-code acceptance overclaim checks, custom output directory handling, and Bazel/just wiring are covered by the implementation and tests.
+
+## Verification
+
+```text
+python3 tools/bazel/phase18_cutover_review_test.py &&
+python3 tools/bazel/phase18_cutover_review.py --contract-only &&
+python3 tools/bazel/phase18_cutover_review.py --quick &&
+python3 tools/bazel/phase18_cutover_review.py --security-only &&
+python3 tools/bazel/phase18_cutover_review.py --wiring-only
+
+Ran 49 tests in 11.673s
+OK
+Phase 18 cutover review contract passed
+Phase 18 quick artifacts written; demotion_allowed=false
+Phase 18 security scan passed
+Phase 18 wiring passed
+```
 
 ```text
 just phase18-verify
-Ran 49 tests in 10.035s
+
+Ran 49 tests in 11.791s
 OK
 Phase 18 wiring passed
 Phase 18 quick artifacts written; demotion_allowed=false
 ```
 
-The prior findings for criterion-level policy enforcement, generated artifact exactness, custom output directory scanning, generated row demotion flags, and retained-code acceptance overclaim checks are addressed. One actionable redaction gap remains in narrative secret marker handling.
+```text
+python3 tools/bazel/phase18_cutover_review.py --quick --output-dir build/ci-evidence/phase18/review-check &&
+python3 tools/bazel/phase18_cutover_review.py --security-only --output-dir build/ci-evidence/phase18/review-check
 
-## Critical Issues
-
-### CR-01: API-Key Narrative Markers Pass Redaction And Are Written To Artifacts
-
-**File:** `tools/bazel/phase18_cutover_review.py:196`
-**Issue:** `FORBIDDEN_TEXT_PATTERNS` now rejects bearer headers and `password:`, `token:`, or `secret:` narrative assignments, but it still does not reject API-key style assignments such as `api_key: ...`, `api-key: ...`, `api key: ...`, or `access_token: ...`. Decision input values in narrative fields are copied into generated artifacts; an adversarial probe with `retained_code_reviews[0].residual_risk = "api_key: sk_test_redacted_value_123456"` passed `--quick --decision-input`, set `demotion_allowed=true`, and wrote the marker into `build/ci-evidence/phase18/retained-code-acceptance-summary.json`.
-**Fix:**
-```python
-FORBIDDEN_TEXT_PATTERNS = (
-    # existing patterns...
-    ("api-key-assignment", re.compile(r"\bapi[\s_-]?key\s*[:=]", re.IGNORECASE)),
-    ("access-token-assignment", re.compile(r"\baccess[\s_-]?token\s*[:=]", re.IGNORECASE)),
-    ("credential-assignment", re.compile(r"\bcredential(?:[\s_-]?value)?\s*[:=]", re.IGNORECASE)),
-    ("wifi-password-assignment", re.compile(r"\bwifi[\s_-]?password\s*[:=]", re.IGNORECASE)),
-)
+Phase 18 quick artifacts written; demotion_allowed=false
+Phase 18 security scan passed
 ```
 
-Extend `test_decision_input_rejects_narrative_secret_markers` in `tools/bazel/phase18_cutover_review_test.py:875` to cover API-key and access-token narrative assignments for both `--quick --decision-input` and `--security-only --decision-input`, and assert no generated retained summary is written.
+## Residual Risks And Test Gaps
+
+- Non-local hardware, simulator, live-service, signing, and maintainer-approval evidence was not re-executed in this review. Phase 18 intentionally models those as external evidence inputs and keeps `demotion_allowed=false` without validated decision input.
+- Wiring validation is intentionally exact-string based, with `bazel run` used to prove the configured targets execute. It is not a full Bazel AST parser.
+- The generated-artifact security scan detects redaction and overclaim violations in ignored review outputs; it is not a cryptographic integrity mechanism for post-generation tampering.
 
 ---
 
-_Reviewed: 2026-06-20T17:30:03Z_
+_Reviewed: 2026-06-20T17:38:42Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
