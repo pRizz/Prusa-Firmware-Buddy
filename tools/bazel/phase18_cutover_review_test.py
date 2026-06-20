@@ -773,7 +773,7 @@ class Phase18CutoverReviewTest(unittest.TestCase):
         self.assertIn("raw crash dump", generated_result.stdout)
 
     def test_security_only_rejects_common_api_key_fields(self) -> None:
-        for field in ["api_key", "access_token"]:
+        for field in ["api_key", "access_token", "apiKey", "accessToken", "authorizationHeader"]:
             with self.subTest(field=field):
                 # Arrange
                 temp_dir, root = self.make_temp_root()
@@ -789,6 +789,24 @@ class Phase18CutoverReviewTest(unittest.TestCase):
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(field, result.stdout)
+
+    def test_security_only_rejects_generated_camel_case_secret_fields(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            quick_result = self.run_verifier(["--quick"], maybe_root=root)
+            self.assertEqual(quick_result.returncode, 0, quick_result.stdout)
+            run_manifest = self.read_json(root, "build/ci-evidence/phase18/run-manifest.json")
+            run_manifest["apiKey"] = "redacted-test-value"
+            self.write_json(root, "build/ci-evidence/phase18/run-manifest.json", run_manifest)
+
+            # Act
+            result = self.run_verifier(["--security-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("apiKey", result.stdout)
 
     def test_generated_report_names_review_material_boundary(self) -> None:
         # Arrange

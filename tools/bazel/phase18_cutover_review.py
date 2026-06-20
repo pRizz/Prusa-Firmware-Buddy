@@ -187,6 +187,18 @@ FORBIDDEN_FIELD_NAMES = {
     "connect_token",
     "prusalink_password",
 }
+FORBIDDEN_NORMALIZED_FIELD_NAMES = {
+    "accesstoken",
+    "apikey",
+    "authorization",
+    "authorizationheader",
+    "bearertoken",
+    "connecttoken",
+    "credentialvalue",
+    "password",
+    "privatekey",
+    "secret",
+}
 FORBIDDEN_TEXT_PATTERNS = (
     ("private-key-marker", re.compile(r"BEGIN (?:RSA |EC )?PRIVATE KEY", re.IGNORECASE)),
     ("firmware-payload-marker", re.compile(r"\b(?:raw )?firmware payload\b", re.IGNORECASE)),
@@ -417,6 +429,10 @@ def reject_forbidden_text(path: Path, text: str) -> None:
         raise VerificationError("\n".join(errors))
 
 
+def normalized_field_name(key: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", key.lower())
+
+
 def reject_forbidden_json_fields(data: Any, source_name: str, maybe_path: str = "$") -> None:
     errors: list[str] = []
 
@@ -424,7 +440,7 @@ def reject_forbidden_json_fields(data: Any, source_name: str, maybe_path: str = 
         if isinstance(value, dict):
             for key, nested in value.items():
                 nested_path = f"{path}.{key}"
-                if key in FORBIDDEN_FIELD_NAMES:
+                if key in FORBIDDEN_FIELD_NAMES or normalized_field_name(key) in FORBIDDEN_NORMALIZED_FIELD_NAMES:
                     errors.append(f"{source_name} contains forbidden field name {key} at {nested_path}")
                 walk(nested, nested_path)
         elif isinstance(value, list):
