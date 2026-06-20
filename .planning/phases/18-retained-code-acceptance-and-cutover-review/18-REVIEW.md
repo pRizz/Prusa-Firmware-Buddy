@@ -1,6 +1,6 @@
 ---
 phase: 18-retained-code-acceptance-and-cutover-review
-reviewed: 2026-06-20T17:01:30Z
+reviewed: 2026-06-20T17:08:39Z
 depth: standard
 files_reviewed: 7
 files_reviewed_list:
@@ -12,68 +12,90 @@ files_reviewed_list:
   - tools/bazel/rust_workflow.sh
   - justfile
 findings:
-  critical: 0
+  critical: 1
   warning: 1
   info: 0
-  total: 1
+  total: 2
 status: issues_found
 ---
 
 # Phase 18: Code Review Report
 
-**Reviewed:** 2026-06-20T17:01:30Z
+**Reviewed:** 2026-06-20T17:08:39Z
 **Depth:** standard
 **Files Reviewed:** 7
 **Status:** issues_found
 
 ## Summary
 
-Re-reviewed the listed Phase 18 verifier, contract manifest, tests, Bazel wiring, shell workflow, and just recipe at standard depth after fix `c480970c4`. This review used `AGENTS.md`, `AGENTS.bright-builds.md`, `standards-overrides.md`, and Bright Builds architecture, code-shape, verification, and testing standards. No project-local skills were present under `.claude/skills/` or `.agents/skills/`.
+Re-reviewed the listed Phase 18 verifier, manifest, tests, Bazel wiring, workflow wrapper, and just recipe after fix `4d9f1f88d`. Material guidance applied: `AGENTS.md`, `AGENTS.bright-builds.md`, `standards-overrides.md` (no active overrides), and Bright Builds core architecture, code-shape, verification, and testing standards.
 
-Fix `c480970c4` resolves the prior row-status overclaim gap by comparing generated final and retained row statuses against validated decision input. One warning-level redaction gap remains in the Phase 18 verifier.
+The Phase 18 tests pass, but the verifier still has security/correctness gaps in the redaction and generated-overclaim guards.
 
-Verification performed:
+Verification run:
 
-- `python3 -m py_compile tools/bazel/phase18_cutover_review.py tools/bazel/phase18_cutover_review_test.py` passed.
-- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 43 tests.
-- `python3 tools/bazel/phase18_cutover_review.py --contract-only` passed.
-- `python3 tools/bazel/phase18_cutover_review.py --wiring-only` passed.
-- `python3 tools/bazel/phase18_cutover_review.py --security-only` passed.
-- Targeted temp-root probe reproduced the finding: a decision input containing top-level `apiKey` returned exit code 0 with "Phase 18 security scan passed."
+```text
+python3 tools/bazel/phase18_cutover_review_test.py
+Ran 44 tests in 7.363s
+OK
+```
 
-## Warnings
+Additional probe: `reject_forbidden_json_fields` currently accepts camelCase forms of several existing forbidden fields: `signingKeyValue`, `certificatePrivateMaterial`, `rawFirmwarePayload`, `rawCrashDump`, `wifiPassword`, and `prusalinkPassword`.
 
-### WR-01: Redaction Scan Allows CamelCase API-Key Fields
+## Critical Issues
 
-**File:** `tools/bazel/phase18_cutover_review.py:427`
-**Issue:** `reject_forbidden_json_fields` only compares JSON keys by exact spelling against `FORBIDDEN_FIELD_NAMES`. The recent fix adds `api_key`, `api-key`, `apikey`, `access_token`, and `bearer_token`, but common camelCase forms such as `apiKey` still pass because the decision-input schema allows extra fields. A Phase 18 maintainer decision input or generated artifact can therefore contain an obvious credential-bearing field while `--security-only` reports success, weakening the name-only/redacted evidence boundary.
+### CR-01: Normalized Secret Field Denylist Is Incomplete
+
+**File:** `tools/bazel/phase18_cutover_review.py:190`
+**Issue:** The fix added `FORBIDDEN_NORMALIZED_FIELD_NAMES`, but the normalized list is manually maintained and only covers a subset of `FORBIDDEN_FIELD_NAMES`. CamelCase or otherwise normalized forms of already-forbidden fields such as `signingKeyValue`, `certificatePrivateMaterial`, `rawFirmwarePayload`, `rawCrashDump`, `wifiPassword`, and `prusalinkPassword` are not rejected. Because Phase 18 decision inputs and generated artifacts are explicitly redaction-gated, this allows sensitive or payload-bearing fields through the security scan by changing field casing.
 **Fix:**
+
 ```python
-FORBIDDEN_NORMALIZED_FIELD_NAMES = {
-    "accesstoken",
-    "apikey",
-    "authorization",
-    "authorizationheader",
-    "bearertoken",
-    "connecttoken",
-    "credentialvalue",
-    "password",
-    "privatekey",
-    "secret",
-}
-
-
 def normalized_field_name(key: str) -> str:
     return re.sub(r"[^a-z0-9]", "", key.lower())
 
 
-if key in FORBIDDEN_FIELD_NAMES or normalized_field_name(key) in FORBIDDEN_NORMALIZED_FIELD_NAMES:
-    errors.append(f"{source_name} contains forbidden field name {key} at {nested_path}")
+FORBIDDEN_NORMALIZED_FIELD_NAMES = {
+    normalized_field_name(field_name) for field_name in FORBIDDEN_FIELD_NAMES
+} | {
+    "authorization",
+    "authorizationheader",
+}
 ```
-Add regression tests for `apiKey`, `accessToken`, and one authorization-header variant in both decision input and generated artifact scans.
+
+Also extend `test_security_only_rejects_common_api_key_fields` or add a focused test that covers normalized forms for every existing forbidden field, especially signing, certificate, firmware payload, crash dump, and WiFi/PrusaLink password names.
+
+## Warnings
+
+### WR-01: Generated Row-Level Demotion Flags Can Be Tampered Without Detection
+
+**File:** `tools/bazel/phase18_cutover_review.py:1369`
+**Issue:** `--security-only` checks generated `normalized-final-demotion-results.json` statuses and top-level `demotion_allowed`, but it does not verify each row's `demotion_status_allows_cutover` value. A generated artifact can leave a row status as `pending` or `blocked`, keep top-level `demotion_allowed` false, but set that row's `demotion_status_allows_cutover` to `true`; the current scan passes. The redacted report says machine-readable gate rows determine final status, so row-level overclaims should be rejected too.
+**Fix:**
+
+```python
+expected_final_allows = {
+    row["id"]: bool(row["demotion_status_allows_cutover"])
+    for row in expected_results
+}
+
+# In validate_generated_overclaim_guards, after loading each normalized row:
+expected_allows = expected_final_allows.get(row_id)
+if expected_allows is not None and row.get("demotion_status_allows_cutover") != expected_allows:
+    errors.append(f"generated final criterion demotion flag mismatch: {row_id}")
+
+# In the no-decision branch:
+if row.get("demotion_status_allows_cutover") is True:
+    errors.append(
+        "generated no-decision normalized-final-demotion-results.json cannot set "
+        f"{row.get('id', 'unknown')} demotion_status_allows_cutover true"
+    )
+```
+
+Add tests that tamper `demotion_status_allows_cutover` in both no-decision and decision-input generated artifacts and assert `--security-only` rejects them.
 
 ---
 
-_Reviewed: 2026-06-20T17:01:30Z_
+_Reviewed: 2026-06-20T17:08:39Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
