@@ -792,6 +792,7 @@ def validate_final_decision(row: Any, criterion_ids: set[str], row_index: int) -
         raise VerificationError(f"final_criterion_decisions[{row_index}] must be an object")
     row_name = str(row.get("criterion_id", f"final_criterion_decisions[{row_index}]"))
     require_fields(row, FINAL_DECISION_REQUIRED_FIELDS, row_name)
+    require_string(row, "decision_id", row_name)
     criterion_id = require_string(row, "criterion_id", row_name)
     if criterion_id not in criterion_ids:
         raise VerificationError(f"{row_name} criterion_id does not resolve: {criterion_id}")
@@ -824,19 +825,23 @@ def validate_final_decision(row: Any, criterion_ids: set[str], row_index: int) -
     return row
 
 
-def validate_retained_review(row: Any, packet_ids: set[str], row_index: int) -> dict[str, Any]:
+def validate_retained_review(row: Any, packets_by_id: dict[str, dict[str, Any]], row_index: int) -> dict[str, Any]:
     if not isinstance(row, dict):
         raise VerificationError(f"retained_code_reviews[{row_index}] must be an object")
     row_name = str(row.get("packet_id", f"retained_code_reviews[{row_index}]"))
     require_fields(row, REQUIRED_RETAINED_REVIEW_FIELDS, row_name)
     packet_id = require_string(row, "packet_id", row_name)
-    if packet_id not in packet_ids:
+    packet = packets_by_id.get(packet_id)
+    if packet is None:
         raise VerificationError(f"{row_name} packet_id does not resolve: {packet_id}")
     status = require_string(row, "status", row_name)
     if status not in RETAINED_PACKET_STATUS_VOCABULARY:
         raise VerificationError(f"{row_name} status is invalid: {status}")
     require_string(row, "approver", row_name)
-    require_string(row, "approver_role", row_name)
+    approver_role = require_string(row, "approver_role", row_name)
+    expected_role = require_string(packet, "approver_role", packet_id)
+    if approver_role != expected_role:
+        raise VerificationError(f"{row_name} approver_role must be {expected_role}")
     require_iso_utc(require_string(row, "decision_timestamp", row_name), row_name)
     require_string(row, "rationale", row_name)
     supplied_refs = require_list_of_strings(row, "supplied_evidence_result_refs", row_name)
@@ -865,17 +870,22 @@ def validated_decision_maps(
     if decision_input is None:
         return {}, {}
     criterion_ids = {str(row["id"]) for row in criteria}
-    packet_ids = {str(row["id"]) for row in packets}
+    packets_by_id = {str(row["id"]): row for row in packets}
     final_decisions: dict[str, dict[str, Any]] = {}
     retained_reviews: dict[str, dict[str, Any]] = {}
+    final_decision_ids: set[str] = set()
     for index, row in enumerate(decision_input["final_criterion_decisions"]):
         decision = validate_final_decision(row, criterion_ids, index)
+        decision_id = str(decision["decision_id"])
+        if decision_id in final_decision_ids:
+            raise VerificationError(f"duplicate final decision id: {decision_id}")
+        final_decision_ids.add(decision_id)
         criterion_id = str(decision["criterion_id"])
         if criterion_id in final_decisions:
             raise VerificationError(f"duplicate final criterion decision: {criterion_id}")
         final_decisions[criterion_id] = decision
     for index, row in enumerate(decision_input["retained_code_reviews"]):
-        review = validate_retained_review(row, packet_ids, index)
+        review = validate_retained_review(row, packets_by_id, index)
         packet_id = str(review["packet_id"])
         if packet_id in retained_reviews:
             raise VerificationError(f"duplicate retained code review: {packet_id}")
@@ -883,8 +893,8 @@ def validated_decision_maps(
     if final_decisions and set(final_decisions) != criterion_ids:
         missing = ", ".join(sorted(criterion_ids - set(final_decisions)))
         raise VerificationError("decision input missing final criterion decisions: " + missing)
-    if retained_reviews and set(retained_reviews) != packet_ids:
-        missing = ", ".join(sorted(packet_ids - set(retained_reviews)))
+    if retained_reviews and set(retained_reviews) != set(packets_by_id):
+        missing = ", ".join(sorted(set(packets_by_id) - set(retained_reviews)))
         raise VerificationError("decision input missing retained code reviews: " + missing)
     return retained_reviews, final_decisions
 
@@ -1172,13 +1182,14 @@ def write_quick_artifacts(
     decision_inputs_supplied = decision_input is not None
     allowed = demotion_allowed(decision_inputs_supplied, final_results)
     artifacts = generated_artifact_paths(output_dir)
+    output_dir_relative = output_dir.relative_to(root)
     snapshot_relative = Path("source-contract-snapshots/phase18_cutover_review_contract.json")
     run_manifest = {
         "phase": PHASE,
         "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
         "artifact_name": contract["artifact_name"],
         "command_mode": "quick",
-        "output_root": DEFAULT_OUTPUT_DIR.as_posix(),
+        "output_root": output_dir_relative.as_posix(),
         "decision_inputs_supplied": decision_inputs_supplied,
         "demotion_allowed": allowed,
         "requirement_coverage": requirement_coverage(packets, criteria),
@@ -1188,9 +1199,9 @@ def write_quick_artifacts(
         },
         "retained_packet_status_counts": count_statuses(retained_rows),
         "final_criterion_status_counts": count_statuses(final_results),
-        "source_contract_snapshot_path": (DEFAULT_OUTPUT_DIR / snapshot_relative).as_posix(),
+        "source_contract_snapshot_path": (output_dir_relative / snapshot_relative).as_posix(),
         "generated_artifacts": [
-            (DEFAULT_OUTPUT_DIR / artifact).as_posix() for artifact in sorted(REQUIRED_GENERATED_ARTIFACTS)
+            (output_dir_relative / artifact).as_posix() for artifact in sorted(REQUIRED_GENERATED_ARTIFACTS)
         ],
     }
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -1206,21 +1217,21 @@ def write_quick_artifacts(
         redacted_report_text(run_manifest, final_results, retained_rows),
         encoding="utf-8",
     )
-    run_security_scan(root, None)
+    run_security_scan(root, None, output_dir)
     return run_manifest
 
 
-def generated_artifacts_to_scan(root: Path) -> list[Path]:
-    output_dir = root / DEFAULT_OUTPUT_DIR
+def generated_artifacts_to_scan(root: Path, output_dir: Path | None = None) -> list[Path]:
+    scan_dir = output_dir or root / DEFAULT_OUTPUT_DIR
     paths: list[Path] = []
     for artifact in sorted(REQUIRED_GENERATED_ARTIFACTS):
-        full_path = output_dir / artifact
+        full_path = scan_dir / artifact
         if full_path.exists():
             paths.append(full_path)
     return paths
 
 
-def run_security_scan(root: Path, maybe_decision_input_path: str | None) -> None:
+def run_security_scan(root: Path, maybe_decision_input_path: str | None, output_dir: Path | None = None) -> None:
     errors: list[str] = []
     for path in [CONTRACT_MANIFEST]:
         try:
@@ -1234,7 +1245,7 @@ def run_security_scan(root: Path, maybe_decision_input_path: str | None) -> None
             load_decision_input(root, maybe_decision_input_path)
         except VerificationError as error:
             errors.append(str(error))
-    for full_path in generated_artifacts_to_scan(root):
+    for full_path in generated_artifacts_to_scan(root, output_dir):
         relative_path = full_path.relative_to(root)
         try:
             text = full_path.read_text(encoding="utf-8")
@@ -1243,13 +1254,13 @@ def run_security_scan(root: Path, maybe_decision_input_path: str | None) -> None
                 reject_forbidden_json_fields(json.loads(text), relative_path.as_posix())
         except (json.JSONDecodeError, VerificationError) as error:
             errors.append(str(error))
-    validate_generated_overclaim_guards(root, errors)
+    validate_generated_overclaim_guards(root, errors, output_dir)
     if errors:
         raise VerificationError("\n".join(errors))
 
 
-def validate_generated_overclaim_guards(root: Path, errors: list[str]) -> None:
-    output_dir = root / DEFAULT_OUTPUT_DIR
+def validate_generated_overclaim_guards(root: Path, errors: list[str], output_dir: Path | None = None) -> None:
+    output_dir = output_dir or root / DEFAULT_OUTPUT_DIR
     run_manifest_path = output_dir / "run-manifest.json"
     if not run_manifest_path.exists():
         return
@@ -1337,7 +1348,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         contract = check_contract(ROOT)
         if args.security_only:
-            run_security_scan(ROOT, args.decision_input)
+            output_dir = contained_output_dir(ROOT, args.output_dir)
+            run_security_scan(ROOT, args.decision_input, output_dir)
             print("Phase 18 security scan passed")
             return 0
         if args.wiring_only:

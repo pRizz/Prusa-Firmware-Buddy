@@ -367,6 +367,35 @@ class Phase18CutoverReviewTest(unittest.TestCase):
             self.assertFalse(run_manifest["decision_inputs_supplied"])
             self.assertFalse(run_manifest["demotion_allowed"])
 
+    def test_quick_custom_output_dir_uses_matching_manifest_paths_and_security_scan(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        custom_output = "build/ci-evidence/phase18/custom"
+        with temp_dir:
+            self.copy_complete_surface(root)
+
+            # Act
+            quick_result = self.run_verifier(["--quick", "--output-dir", custom_output], maybe_root=root)
+
+            # Assert
+            self.assertEqual(quick_result.returncode, 0, quick_result.stdout)
+            run_manifest = self.read_json(root, f"{custom_output}/run-manifest.json")
+            self.assertEqual(run_manifest["output_root"], custom_output)
+            self.assertEqual(
+                run_manifest["source_contract_snapshot_path"],
+                f"{custom_output}/source-contract-snapshots/phase18_cutover_review_contract.json",
+            )
+            self.assertIn(f"{custom_output}/run-manifest.json", run_manifest["generated_artifacts"])
+
+            # Act
+            run_manifest["demotion_allowed"] = True
+            self.write_json(root, f"{custom_output}/run-manifest.json", run_manifest)
+            security_result = self.run_verifier(["--security-only", "--output-dir", custom_output], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(security_result.returncode, 0)
+        self.assertIn("demotion_allowed", security_result.stdout)
+
     def test_decision_input_requires_complete_final_approval_metadata(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -529,6 +558,40 @@ class Phase18CutoverReviewTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("exception evidence_refs must include at least one Phase 18 evidence ref", result.stdout)
 
+    def test_final_decision_requires_string_decision_id(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            decision_input = self.complete_decision_input(root)
+            decision_input["final_criterion_decisions"][0]["decision_id"] = 123
+            self.write_json(root, "decision-input.json", decision_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("decision_id must be a non-empty string", result.stdout)
+
+    def test_final_decision_rejects_duplicate_decision_ids(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            decision_input = self.complete_decision_input(root)
+            decision_input["final_criterion_decisions"][1]["decision_id"] = decision_input["final_criterion_decisions"][0][
+                "decision_id"
+            ]
+            self.write_json(root, "decision-input.json", decision_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("duplicate final decision id", result.stdout)
+
     def test_exception_approved_final_decision_rejects_non_string_exception_metadata(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -623,6 +686,22 @@ class Phase18CutoverReviewTest(unittest.TestCase):
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("supplied_evidence_result_refs must include at least one Phase 18 evidence ref", result.stdout)
+
+    def test_retained_packet_acceptance_requires_contract_approver_role(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            decision_input = self.complete_decision_input(root)
+            decision_input["retained_code_reviews"][0]["approver_role"] = "wrong-role"
+            self.write_json(root, "decision-input.json", decision_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("approver_role must be", result.stdout)
 
     def test_decision_input_rejects_paths_outside_phase18_output_or_external_refs(self) -> None:
         cases = ["/tmp/phase18-evidence.json", "../phase18-evidence.json", "build/ci-evidence/phase17/result.json"]
