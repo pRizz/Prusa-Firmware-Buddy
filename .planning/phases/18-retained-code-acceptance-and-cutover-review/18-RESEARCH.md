@@ -325,17 +325,17 @@ The field names should follow Phase 17's quick artifact pattern while keeping de
 
 All claims in this research were verified against local project files, tool output, or phase context; no assumed claims are intentionally relied on. [VERIFIED: source list below]
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Who are the concrete approver roles?**
    - What we know: Phase 18 packets require owner, approver role, approval metadata, and auditable rationale. [VERIFIED: 18-CONTEXT.md D-03]
    - What's unclear: The context does not name specific maintainer role labels or people. [VERIFIED: 18-CONTEXT.md]
-   - Recommendation: Use role strings in the schema and examples, not person-specific names, unless the implementation phase receives maintainer role data. [VERIFIED: 18-CONTEXT.md D-03, D-18]
+   - RESOLVED: Use role strings in the schema and examples, not person-specific names. The plan requires approver role metadata and leaves concrete organization-specific role labels as data supplied in maintainer decision input. [VERIFIED: 18-CONTEXT.md D-03, D-09, D-18; 18-01-PLAN.md]
 
 2. **Will Phase 18 consume real maintainer decisions during local verification?**
    - What we know: Local verification must not require real sign-off and should reject reference-demotion approval without decision input. [VERIFIED: 18-CONTEXT.md D-14, D-18]
    - What's unclear: Whether a real decision input will be supplied during final UAT is outside research scope. [VERIFIED: 18-CONTEXT.md]
-   - Recommendation: Generate a decision input template in quick mode; allow optional `--decision-input` validation, but keep default quick artifacts pending and `demotion_allowed: false`. [VERIFIED: 18-CONTEXT.md D-08, D-13, D-18]
+   - RESOLVED: Generate a decision input template in quick mode and allow optional `--decision-input` validation, while default local quick artifacts remain pending with `demotion_allowed: false`. [VERIFIED: 18-CONTEXT.md D-08, D-13, D-18; 18-01-PLAN.md]
 
 ## Environment Availability
 
