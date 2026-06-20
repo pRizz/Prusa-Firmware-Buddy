@@ -174,6 +174,7 @@ FORBIDDEN_FIELD_NAMES = {
     "api_key",
     "apikey",
     "bearer_token",
+    "credential",
     "private_key",
     "signing_key_value",
     "certificate_private_material",
@@ -193,21 +194,37 @@ FORBIDDEN_FIELD_NAMES = {
     "connect_token",
     "prusalink_password",
 }
+FORBIDDEN_ASSIGNMENT_FIELD_NAMES = FORBIDDEN_FIELD_NAMES | {
+    "authorization",
+    "authorization_header",
+}
+
+
+def forbidden_assignment_pattern(field_name: str):
+    segments = [segment for segment in re.split(r"[^A-Za-z0-9]+", field_name) if segment]
+    if len(segments) > 1:
+        field_pattern = r"[\s_-]*".join(re.escape(segment) for segment in segments)
+    else:
+        field_pattern = re.escape(segments[0] if segments else field_name)
+    return re.compile(rf"\b{field_pattern}\s*[:=]", re.IGNORECASE)
+
+
 FORBIDDEN_TEXT_PATTERNS = (
     ("private-key-marker", re.compile(r"BEGIN (?:RSA |EC )?PRIVATE KEY", re.IGNORECASE)),
     ("firmware-payload-marker", re.compile(r"\b(?:raw )?firmware payload\b", re.IGNORECASE)),
     ("raw-crash-dump-marker", re.compile(r"\braw crash dump\b", re.IGNORECASE)),
     ("authorization-header", re.compile(r"\bauthorization\s*:\s*bearer\b", re.IGNORECASE)),
     ("bearer-token", re.compile(r"\bbearer\s+[A-Za-z0-9._~+/=-]{8,}\b", re.IGNORECASE)),
-    ("password-assignment", re.compile(r"\bpassword\s*[:=]", re.IGNORECASE)),
-    ("token-assignment", re.compile(r"\btoken\s*[:=]", re.IGNORECASE)),
-    ("secret-assignment", re.compile(r"\bsecret\s*[:=]", re.IGNORECASE)),
     ("reference-demotion-approved", re.compile(r"\breference demotion approved\b", re.IGNORECASE)),
     ("final-cutover-complete", re.compile(r"\bfinal cutover complete\b", re.IGNORECASE)),
     ("cutover-readiness-proven", re.compile(r"\bcutover readiness proven\b", re.IGNORECASE)),
     ("retained-code-accepted", re.compile(r"\bretained[- ]code accepted by maintainer\b", re.IGNORECASE)),
     ("maintainer-approval-complete", re.compile(r"\bmaintainer approval complete\b", re.IGNORECASE)),
     ("local-proof-approved-demotion", re.compile(r"\blocal proof approved demotion\b", re.IGNORECASE)),
+    *(
+        (f"{field_name}-assignment", forbidden_assignment_pattern(field_name))
+        for field_name in sorted(FORBIDDEN_ASSIGNMENT_FIELD_NAMES)
+    ),
 )
 SOURCE_REF_ROW_COLLECTIONS = {
     "tools/bazel/manifests/phase11_retained_code_justifications.json": ("retained_code_justifications", "id"),

@@ -877,6 +877,12 @@ class Phase18CutoverReviewTest(unittest.TestCase):
             "Authorization: Bearer redacted-test-value",
             "token: redacted-test-value",
             "password: redacted-test-value",
+            "api_key: sk_test_redacted_value_123456",
+            "api-key: sk_test_redacted_value_123456",
+            "api key: sk_test_redacted_value_123456",
+            "access_token: redacted-test-value",
+            "credential value: redacted-test-value",
+            "wifi_password: redacted-test-value",
         ]
         for marker in cases:
             with self.subTest(marker=marker):
@@ -894,13 +900,14 @@ class Phase18CutoverReviewTest(unittest.TestCase):
                         ["--security-only", "--decision-input", "decision-input.json"],
                         maybe_root=root,
                     )
+                    generated_retained_summary = (root / "build/ci-evidence/phase18/retained-code-acceptance-summary.json").exists()
 
-                # Assert
-                self.assertNotEqual(quick_result.returncode, 0)
-                self.assertIn("forbidden marker", quick_result.stdout)
-                self.assertNotEqual(security_result.returncode, 0)
-                self.assertIn("forbidden marker", security_result.stdout)
-                self.assertFalse((root / "build/ci-evidence/phase18/retained-code-acceptance-summary.json").exists())
+                    # Assert
+                    self.assertNotEqual(quick_result.returncode, 0)
+                    self.assertIn("forbidden marker", quick_result.stdout)
+                    self.assertNotEqual(security_result.returncode, 0)
+                    self.assertIn("forbidden marker", security_result.stdout)
+                    self.assertFalse(generated_retained_summary)
 
     def test_generated_report_names_review_material_boundary(self) -> None:
         # Arrange
