@@ -1217,7 +1217,13 @@ def write_quick_artifacts(
         redacted_report_text(run_manifest, final_results, retained_rows),
         encoding="utf-8",
     )
-    run_security_scan(root, None, output_dir, decision_input_validated=decision_input is not None)
+    run_security_scan(
+        root,
+        None,
+        output_dir,
+        decision_input_validated=decision_input is not None,
+        expected_demotion_allowed=allowed,
+    )
     return run_manifest
 
 
@@ -1236,6 +1242,8 @@ def run_security_scan(
     maybe_decision_input_path: str | None,
     output_dir: Path | None = None,
     decision_input_validated: bool = False,
+    expected_demotion_allowed: bool | None = None,
+    contract: dict[str, Any] | None = None,
 ) -> None:
     errors: list[str] = []
     for path in [CONTRACT_MANIFEST]:
@@ -1247,8 +1255,14 @@ def run_security_scan(
             errors.append(str(error))
     if maybe_decision_input_path:
         try:
-            load_decision_input(root, maybe_decision_input_path)
+            decision_input = load_decision_input(root, maybe_decision_input_path)
             decision_input_validated = True
+            if contract is not None and decision_input is not None:
+                packets = contract_packets(contract)
+                criteria = contract_final_criteria(contract)
+                _, final_decisions = validated_decision_maps(decision_input, packets, criteria)
+                expected_results = normalize_final_results(criteria, final_decisions)
+                expected_demotion_allowed = demotion_allowed(True, expected_results)
         except VerificationError as error:
             errors.append(str(error))
     for full_path in generated_artifacts_to_scan(root, output_dir):
@@ -1260,7 +1274,13 @@ def run_security_scan(
                 reject_forbidden_json_fields(json.loads(text), relative_path.as_posix())
         except (json.JSONDecodeError, VerificationError) as error:
             errors.append(str(error))
-    validate_generated_overclaim_guards(root, errors, output_dir, decision_input_validated)
+    validate_generated_overclaim_guards(
+        root,
+        errors,
+        output_dir,
+        decision_input_validated,
+        expected_demotion_allowed,
+    )
     if errors:
         raise VerificationError("\n".join(errors))
 
@@ -1270,6 +1290,7 @@ def validate_generated_overclaim_guards(
     errors: list[str],
     output_dir: Path | None = None,
     decision_input_validated: bool = False,
+    expected_demotion_allowed: bool | None = None,
 ) -> None:
     output_dir = output_dir or root / DEFAULT_OUTPUT_DIR
     run_manifest_path = output_dir / "run-manifest.json"
@@ -1291,6 +1312,18 @@ def validate_generated_overclaim_guards(
         errors.append("generated run-manifest.json claims decision input without validated --decision-input")
         return
     if decision_inputs_supplied:
+        if expected_demotion_allowed is not True and run_manifest.get("demotion_allowed") is True:
+            errors.append("generated run-manifest.json demotion_allowed true requires complete approving decision input")
+        normalized_path = output_dir / "normalized-final-demotion-results.json"
+        if normalized_path.exists():
+            try:
+                normalized = json.loads(normalized_path.read_text(encoding="utf-8"))
+                if isinstance(normalized, dict) and expected_demotion_allowed is not True and normalized.get("demotion_allowed") is True:
+                    errors.append(
+                        "generated normalized-final-demotion-results.json demotion_allowed true requires complete approving decision input"
+                    )
+            except json.JSONDecodeError as error:
+                errors.append(f"{normalized_path.relative_to(root).as_posix()} is not valid JSON: {error}")
         return
     if run_manifest.get("demotion_allowed") is True:
         errors.append("generated no-decision run-manifest.json cannot set demotion_allowed true")
@@ -1369,7 +1402,7 @@ def main(argv: list[str] | None = None) -> int:
         contract = check_contract(ROOT)
         if args.security_only:
             output_dir = contained_output_dir(ROOT, args.output_dir)
-            run_security_scan(ROOT, args.decision_input, output_dir)
+            run_security_scan(ROOT, args.decision_input, output_dir, contract=contract)
             print("Phase 18 security scan passed")
             return 0
         if args.wiring_only:
