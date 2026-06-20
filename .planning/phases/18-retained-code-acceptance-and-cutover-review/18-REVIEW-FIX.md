@@ -1,26 +1,40 @@
 ---
 phase: 18-retained-code-acceptance-and-cutover-review
-fixed_at: "2026-06-20T16:27:30Z"
+fixed_at: "2026-06-20T16:35:02Z"
 review_path: .planning/phases/18-retained-code-acceptance-and-cutover-review/18-REVIEW.md
-iteration: 4
-findings_in_scope: 1
-fixed: 1
+iteration: 5
+findings_in_scope: 2
+fixed: 2
 skipped: 0
 status: all_fixed
 ---
 
 # Phase 18: Code Review Fix Report
 
-**Fixed at:** 2026-06-20T16:27:30Z
+**Fixed at:** 2026-06-20T16:35:02Z
 **Source review:** .planning/phases/18-retained-code-acceptance-and-cutover-review/18-REVIEW.md
-**Iteration:** 4
+**Iteration:** 5
 
 **Summary:**
-- Findings in scope: 1
-- Fixed: 1
+- Findings in scope: 2
+- Fixed: 2
 - Skipped: 0
 
 ## Fixed Issues
+
+### CR-01: Generated decision-input flag is trusted as proof of maintainer input
+
+**Status:** fixed: requires human verification
+**Files modified:** `tools/bazel/phase18_cutover_review.py`, `tools/bazel/phase18_cutover_review_test.py`
+**Commit:** 64515085a
+**Applied fix:** Security scanning now tracks whether a `--decision-input` file was actually loaded and validated before trusting generated `decision_inputs_supplied: true` artifacts. Quick-mode scans carry through the already-validated decision-input state. Added a regression test proving a no-decision artifact cannot self-attest decision input and `demotion_allowed: true`.
+
+### WR-01: Normalized final results can overclaim demotion in no-decision artifacts
+
+**Status:** fixed: requires human verification
+**Files modified:** `tools/bazel/phase18_cutover_review.py`, `tools/bazel/phase18_cutover_review_test.py`
+**Commit:** 64515085a
+**Applied fix:** Generated overclaim validation now rejects top-level `normalized-final-demotion-results.json` `demotion_allowed: true` in no-decision artifacts. Added a regression test for that tamper path.
 
 ### WR-01: No-decision overclaim guard can be bypassed with a non-boolean manifest flag
 
@@ -66,7 +80,7 @@ status: all_fixed
 
 ## Verification
 
-- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 37 tests.
+- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 39 tests.
 - `python3 tools/bazel/phase18_cutover_review.py --contract-only` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --quick` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --security-only` passed.
@@ -74,6 +88,6 @@ status: all_fixed
 
 ---
 
-_Fixed: 2026-06-20T16:27:30Z_
+_Fixed: 2026-06-20T16:35:02Z_
 _Fixer: the agent (gsd-code-fixer)_
-_Iteration: 4_
+_Iteration: 5_
