@@ -750,13 +750,12 @@ def load_decision_input(root: Path, maybe_path: str | None) -> dict[str, Any] | 
         raise VerificationError("--decision-input must contain a top-level object")
     reject_forbidden_json_fields(data, input_path.as_posix())
     packet = data.get("decision_packet")
-    if packet is not None:
-        if not isinstance(packet, dict):
-            raise VerificationError("decision_packet must be an object")
-        if packet.get("phase") != PHASE:
-            raise VerificationError(f"decision_packet phase must be {PHASE}")
-        if packet.get("phase_lifecycle_id") != PHASE_LIFECYCLE_ID:
-            raise VerificationError(f"decision_packet phase_lifecycle_id must be {PHASE_LIFECYCLE_ID}")
+    if not isinstance(packet, dict):
+        raise VerificationError("decision_packet must be present and must be an object")
+    if packet.get("phase") != PHASE:
+        raise VerificationError(f"decision_packet phase must be {PHASE}")
+    if packet.get("phase_lifecycle_id") != PHASE_LIFECYCLE_ID:
+        raise VerificationError(f"decision_packet phase_lifecycle_id must be {PHASE_LIFECYCLE_ID}")
     if "retained_code_reviews" not in data:
         data["retained_code_reviews"] = []
     if "final_criterion_decisions" not in data:

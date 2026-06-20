@@ -383,6 +383,54 @@ class Phase18CutoverReviewTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("approver", result.stdout)
 
+    def test_decision_input_requires_decision_packet(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            decision_input = self.complete_decision_input(root)
+            del decision_input["decision_packet"]
+            self.write_json(root, "decision-input.json", decision_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("decision_packet", result.stdout)
+
+    def test_decision_input_requires_current_phase(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            decision_input = self.complete_decision_input(root)
+            decision_input["decision_packet"]["phase"] = "17-release-candidate-evidence"
+            self.write_json(root, "decision-input.json", decision_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("decision_packet phase", result.stdout)
+
+    def test_decision_input_requires_current_phase_lifecycle_id(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            decision_input = self.complete_decision_input(root)
+            decision_input["decision_packet"]["phase_lifecycle_id"] = "18-stale-lifecycle"
+            self.write_json(root, "decision-input.json", decision_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("decision_packet phase_lifecycle_id", result.stdout)
+
     def test_exception_approved_requires_complete_exception_metadata(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
