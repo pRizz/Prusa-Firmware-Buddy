@@ -536,6 +536,58 @@ class Phase18CutoverReviewTest(unittest.TestCase):
             )
             self.assertIn("demotion_allowed: false", report)
 
+    def test_security_only_rejects_generated_local_proof_and_retained_acceptance_overclaims(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            quick_result = self.run_verifier(["--quick"], maybe_root=root)
+            self.assertEqual(quick_result.returncode, 0, quick_result.stdout)
+            run_manifest = self.read_json(root, "build/ci-evidence/phase18/run-manifest.json")
+            run_manifest["demotion_allowed"] = True
+            self.write_json(root, "build/ci-evidence/phase18/run-manifest.json", run_manifest)
+
+            # Act
+            result = self.run_verifier(["--security-only"], maybe_root=root)
+
+            # Assert
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("demotion_allowed", result.stdout)
+
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            quick_result = self.run_verifier(["--quick"], maybe_root=root)
+            self.assertEqual(quick_result.returncode, 0, quick_result.stdout)
+            normalized = self.read_json(root, "build/ci-evidence/phase18/normalized-final-demotion-results.json")
+            normalized["results"][0]["status"] = "passed"
+            self.write_json(root, "build/ci-evidence/phase18/normalized-final-demotion-results.json", normalized)
+
+            # Act
+            result = self.run_verifier(["--security-only"], maybe_root=root)
+
+            # Assert
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("passed", result.stdout)
+
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            quick_result = self.run_verifier(["--quick"], maybe_root=root)
+            self.assertEqual(quick_result.returncode, 0, quick_result.stdout)
+            summary = self.read_json(root, "build/ci-evidence/phase18/retained-code-acceptance-summary.json")
+            summary["packets"][0]["status"] = "accepted"
+            self.write_json(root, "build/ci-evidence/phase18/retained-code-acceptance-summary.json", summary)
+
+            # Act
+            result = self.run_verifier(["--security-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("accepted", result.stdout)
+
     def test_verifier_does_not_use_shell_or_inline_interpreters(self) -> None:
         # Arrange
         source = VERIFIER.read_text(encoding="utf-8")
