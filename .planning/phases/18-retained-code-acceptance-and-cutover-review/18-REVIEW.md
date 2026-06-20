@@ -1,6 +1,6 @@
 ---
 phase: 18-retained-code-acceptance-and-cutover-review
-reviewed: 2026-06-20T16:39:01Z
+reviewed: 2026-06-20T16:45:51Z
 depth: standard
 files_reviewed: 7
 files_reviewed_list:
@@ -21,58 +21,60 @@ status: issues_found
 
 # Phase 18: Code Review Report
 
-**Reviewed:** 2026-06-20T16:39:01Z
+**Reviewed:** 2026-06-20T16:45:51Z
 **Depth:** standard
 **Files Reviewed:** 7
 **Status:** issues_found
 
 ## Summary
 
-Re-reviewed the listed Phase 18 verifier, contract manifest, tests, Bazel wiring, shell workflow, and just recipe at standard depth after fix `64515085a`. This review used `AGENTS.md`, `AGENTS.bright-builds.md`, `standards-overrides.md`, and Bright Builds architecture, code-shape, verification, and testing standards. No project-local skills were present under `.claude/skills/` or `.agents/skills/`.
+Re-reviewed the listed Phase 18 verifier, contract manifest, tests, Bazel wiring, shell workflow, and just recipe at standard depth after fix `7b725fe84`. This review used `AGENTS.md`, `AGENTS.bright-builds.md`, `standards-overrides.md`, and Bright Builds architecture, code-shape, verification, and testing standards. No project-local skills were present under `.claude/skills/` or `.agents/skills/`.
 
-Fix `64515085a` closes the previous no-decision artifact gaps for a missing decision input and for top-level normalized demotion overclaims. One decision-input binding gap remains in `--security-only`: a syntactically valid but empty decision packet can still bless tampered generated demotion claims because the security scan does not compare generated artifacts to the supplied decision input.
+Fix `7b725fe84` closes the empty-decision-input demotion overclaim reported in the prior review. One security-only regression remains: the scan recomputes expected demotion from final criterion decisions but does not re-apply the retained-packet acceptance coupling that `--quick` enforces before writing artifacts.
 
 Verification performed:
 
-- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 39 tests.
+- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 40 tests.
 - `python3 tools/bazel/phase18_cutover_review.py --contract-only` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --wiring-only` passed.
-- Targeted isolated repro: after a no-decision quick run, changing `run-manifest.json` to `decision_inputs_supplied: true` and `demotion_allowed: true`, then supplying a minimal decision packet with empty review/decision lists, still makes `--security-only --decision-input decision-input.json` pass.
+- Targeted isolated repro: after a no-decision quick run, changing generated `run-manifest.json` and `normalized-final-demotion-results.json` to `demotion_allowed: true`, then supplying a decision input where all final criteria are `passed` but every retained packet review is `blocked`, still makes `--security-only --decision-input decision-input.json` pass.
 
 ## Critical Issues
 
-### CR-01: Security-only accepts tampered demotion claims with any validated decision packet
+### CR-01: Security-only demotion check ignores retained-packet review status
 
-**File:** `tools/bazel/phase18_cutover_review.py:1290`
-**Issue:** `run_security_scan` treats `load_decision_input(...)` success as enough proof that generated artifacts with `decision_inputs_supplied: true` are legitimate. But `load_decision_input` accepts a packet containing only the correct `decision_packet` phase/lifecycle plus empty `retained_code_reviews` and `final_criterion_decisions`, and `validate_generated_overclaim_guards` returns immediately when `decision_inputs_supplied` is true. As a result, a no-decision quick artifact can be manually changed to `decision_inputs_supplied: true` and `demotion_allowed: true`; `--security-only --decision-input` then reports success without proving the generated files were produced from that input or contain complete approving decisions. That keeps the Phase 18 reference-demotion gate bypassable in post-generation security checks.
+**File:** `tools/bazel/phase18_cutover_review.py:1263`
+**Issue:** `run_security_scan` discards `retained_reviews` when validating supplied decision input and computes `expected_demotion_allowed` only from final criterion decisions. That misses the consistency rule in `write_quick_artifacts`: `final-retained-code-acceptance` cannot pass unless every retained-code packet review is `accepted` or `deferred-approved-exception`. A tampered generated artifact can therefore claim `demotion_allowed: true` when the decision input marks all final criteria as `passed` but leaves retained packets `blocked` or `rejected`.
 **Fix:**
 ```python
-def run_security_scan(
-    root: Path,
-    maybe_decision_input_path: str | None,
-    contract: dict[str, Any],
-    output_dir: Path | None = None,
+def validate_retained_acceptance_consistency(
+    packets: list[dict[str, Any]],
+    retained_reviews: dict[str, dict[str, Any]],
+    final_decisions: dict[str, dict[str, Any]],
 ) -> None:
-    decision_input = load_decision_input(root, maybe_decision_input_path)
-    packets = contract_packets(contract)
-    criteria = contract_final_criteria(contract)
-    retained_reviews, final_decisions = validated_decision_maps(decision_input, packets, criteria)
-    expected_final_results = normalize_final_results(criteria, final_decisions)
-    expected_retained_rows = normalize_retained_reviews(packets, retained_reviews)
-    expected_allowed = demotion_allowed(decision_input is not None, expected_final_results)
-    validate_generated_overclaim_guards(
-        root,
-        errors,
-        output_dir,
-        expected_final_results,
-        expected_retained_rows,
-        expected_allowed,
-    )
+    retained_acceptance_decision = final_decisions.get("final-retained-code-acceptance")
+    if not retained_acceptance_decision or not final_status_allows_demotion(
+        str(retained_acceptance_decision["status"]),
+        retained_acceptance_decision,
+    ):
+        return
+
+    packet_ids = {str(packet["id"]) for packet in packets}
+    missing_reviews = packet_ids - set(retained_reviews)
+    bad_statuses = [
+        f"{packet_id}:{review['status']}"
+        for packet_id, review in sorted(retained_reviews.items())
+        if review["status"] not in {"accepted", "deferred-approved-exception"}
+    ]
+    if missing_reviews or bad_statuses:
+        raise VerificationError(
+            "final-retained-code-acceptance cannot pass without accepted retained reviews"
+        )
 ```
-Then remove the early return for `decision_inputs_supplied`, compare `run-manifest.json`, `normalized-final-demotion-results.json`, and `retained-code-acceptance-summary.json` against the recomputed values, and fail if generated `demotion_allowed` is true while the supplied decisions do not fully support it. Add a regression test using a minimal empty decision packet against tampered no-decision artifacts.
+Call this helper from both `write_quick_artifacts` and `run_security_scan` immediately after `validated_decision_maps(...)`. Add a regression test where final criteria all pass but retained reviews are `blocked`, and assert `--security-only --decision-input` rejects generated `demotion_allowed: true`.
 
 ---
 
-_Reviewed: 2026-06-20T16:39:01Z_
+_Reviewed: 2026-06-20T16:45:51Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
