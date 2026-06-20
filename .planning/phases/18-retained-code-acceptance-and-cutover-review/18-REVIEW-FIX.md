@@ -1,26 +1,47 @@
 ---
 phase: 18-retained-code-acceptance-and-cutover-review
-fixed_at: "2026-06-20T17:13:47Z"
+fixed_at: "2026-06-20T17:25:05Z"
 review_path: .planning/phases/18-retained-code-acceptance-and-cutover-review/18-REVIEW.md
-iteration: 10
-findings_in_scope: 2
-fixed: 2
+iteration: 11
+findings_in_scope: 3
+fixed: 3
 skipped: 0
 status: all_fixed
 ---
 
 # Phase 18: Code Review Fix Report
 
-**Fixed at:** 2026-06-20T17:13:47Z
+**Fixed at:** 2026-06-20T17:25:05Z
 **Source review:** .planning/phases/18-retained-code-acceptance-and-cutover-review/18-REVIEW.md
-**Iteration:** 10
+**Iteration:** 11
 
 **Summary:**
-- Findings in scope: 2
-- Fixed: 2
+- Findings in scope: 3
+- Fixed: 3
 - Skipped: 0
 
 ## Fixed Issues
+
+### CR-01: Narrative Secret Markers Can Pass Redaction And Be Written To Artifacts
+
+**Status:** fixed: requires human verification
+**Files modified:** `tools/bazel/phase18_cutover_review.py`, `tools/bazel/phase18_cutover_review_test.py`
+**Commit:** 0a5b957eb
+**Applied fix:** Text redaction now rejects authorization bearer headers, bearer-token text, and colon-style `password:`, `token:`, and `secret:` assignments in decision inputs and generated artifacts. Added regression coverage proving `--quick --decision-input` and `--security-only --decision-input` reject narrative secret markers before retained-code artifacts are written.
+
+### WR-01: Decision Inputs Do Not Enforce Criterion-Level Allowed Statuses
+
+**Status:** fixed: requires human verification
+**Files modified:** `tools/bazel/phase18_cutover_review.py`, `tools/bazel/phase18_cutover_review_test.py`
+**Commit:** 0a5b957eb
+**Applied fix:** Final decision validation now uses a `criteria_by_id` map, rejects statuses outside the criterion's `allowed_statuses`, and rejects exception-policy statuses when `exception_allowed` is false. `final_status_allows_demotion` now checks the criterion policy before allowing row-level demotion. Added regression tests for narrowed allowed statuses and disallowed exception status.
+
+### WR-02: Extra Generated Artifacts Are Accepted But Not Written Or Scanned
+
+**Status:** fixed: requires human verification
+**Files modified:** `tools/bazel/phase18_cutover_review.py`, `tools/bazel/phase18_cutover_review_test.py`
+**Commit:** 0a5b957eb
+**Applied fix:** Contract validation now treats `generated_artifacts` as an exact set, rejecting unexpected entries and duplicates in addition to missing required artifacts. Added a regression test proving `--contract-only` rejects an extra generated artifact claim.
 
 ### CR-01: Normalized Secret Field Denylist Is Incomplete
 
@@ -129,17 +150,17 @@ status: all_fixed
 
 ## Verification
 
-- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 45 tests.
+- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 49 tests.
 - `python3 tools/bazel/phase18_cutover_review.py --contract-only` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --quick` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --security-only` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --wiring-only` passed.
-- `bazel run //tools/bazel:phase18_verify_tests` passed: 45 tests.
+- `bazel run //tools/bazel:phase18_verify_tests` passed: 49 tests.
 - `bazel run //tools/bazel:phase18_verify` passed.
 - `just phase18-verify` passed.
 
 ---
 
-_Fixed: 2026-06-20T17:13:47Z_
+_Fixed: 2026-06-20T17:25:05Z_
 _Fixer: the agent (gsd-code-fixer)_
-_Iteration: 10_
+_Iteration: 11_
