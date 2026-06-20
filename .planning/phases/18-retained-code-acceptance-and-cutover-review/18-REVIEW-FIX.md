@@ -1,26 +1,33 @@
 ---
 phase: 18-retained-code-acceptance-and-cutover-review
-fixed_at: "2026-06-20T16:35:02Z"
+fixed_at: "2026-06-20T16:42:09Z"
 review_path: .planning/phases/18-retained-code-acceptance-and-cutover-review/18-REVIEW.md
-iteration: 5
-findings_in_scope: 2
-fixed: 2
+iteration: 6
+findings_in_scope: 1
+fixed: 1
 skipped: 0
 status: all_fixed
 ---
 
 # Phase 18: Code Review Fix Report
 
-**Fixed at:** 2026-06-20T16:35:02Z
+**Fixed at:** 2026-06-20T16:42:09Z
 **Source review:** .planning/phases/18-retained-code-acceptance-and-cutover-review/18-REVIEW.md
-**Iteration:** 5
+**Iteration:** 6
 
 **Summary:**
-- Findings in scope: 2
-- Fixed: 2
+- Findings in scope: 1
+- Fixed: 1
 - Skipped: 0
 
 ## Fixed Issues
+
+### CR-01: Security-only accepts tampered demotion claims with any validated decision packet
+
+**Status:** fixed: requires human verification
+**Files modified:** `tools/bazel/phase18_cutover_review.py`, `tools/bazel/phase18_cutover_review_test.py`
+**Commit:** 7b725fe84
+**Applied fix:** `--security-only --decision-input` now recomputes expected demotion from the supplied decision input and rejects generated `demotion_allowed: true` artifacts unless the input contains complete approving decisions. Added a regression test for a tampered no-decision artifact paired with an otherwise valid but empty decision packet.
 
 ### CR-01: Generated decision-input flag is trusted as proof of maintainer input
 
@@ -80,7 +87,7 @@ status: all_fixed
 
 ## Verification
 
-- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 39 tests.
+- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 40 tests.
 - `python3 tools/bazel/phase18_cutover_review.py --contract-only` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --quick` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --security-only` passed.
@@ -88,6 +95,6 @@ status: all_fixed
 
 ---
 
-_Fixed: 2026-06-20T16:35:02Z_
+_Fixed: 2026-06-20T16:42:09Z_
 _Fixer: the agent (gsd-code-fixer)_
-_Iteration: 5_
+_Iteration: 6_
