@@ -1,35 +1,56 @@
 ---
 phase: 18-retained-code-acceptance-and-cutover-review
-fixed_at: "2026-06-20T16:07:37Z"
+fixed_at: "2026-06-20T16:19:40Z"
 review_path: .planning/phases/18-retained-code-acceptance-and-cutover-review/18-REVIEW.md
-iteration: 2
-findings_in_scope: 2
-fixed: 2
+iteration: 3
+findings_in_scope: 3
+fixed: 3
 skipped: 0
 status: all_fixed
 ---
 
 # Phase 18: Code Review Fix Report
 
-**Fixed at:** 2026-06-20T16:07:37Z
+**Fixed at:** 2026-06-20T16:19:40Z
 **Source review:** .planning/phases/18-retained-code-acceptance-and-cutover-review/18-REVIEW.md
-**Iteration:** 2
+**Iteration:** 3
 
 **Summary:**
-- Findings in scope: 2
-- Fixed: 2
+- Findings in scope: 3
+- Fixed: 3
 - Skipped: 0
 
 ## Fixed Issues
 
-### WR-01: Deferred retained-code exceptions can pass without evidence
+### CR-01: Retained packet approvals do not enforce the contract approver role
+
+**Status:** fixed: requires human verification
+**Files modified:** `tools/bazel/phase18_cutover_review.py`, `tools/bazel/phase18_cutover_review_test.py`
+**Commit:** 7e9d00a46
+**Applied fix:** Retained review validation now compares each review's `approver_role` with the packet's contract-required `approver_role`. Added a regression test proving a retained packet review with the wrong role is rejected.
+
+### WR-01: Custom output directories produce misleading artifact paths and skip the matching scan target
+
+**Status:** fixed: requires human verification
+**Files modified:** `tools/bazel/phase18_cutover_review.py`, `tools/bazel/phase18_cutover_review_test.py`
+**Commit:** 7e9d00a46
+**Applied fix:** Quick-mode manifests now use the actual selected output directory for `output_root`, `source_contract_snapshot_path`, and `generated_artifacts`. Security scanning and generated overclaim guards now scan the same selected output directory, including custom `--output-dir` paths. Added a regression test proving a custom-output overclaim is caught by `--security-only --output-dir`.
+
+### WR-02: Final decision IDs are not type-checked or de-duplicated
+
+**Status:** fixed: requires human verification
+**Files modified:** `tools/bazel/phase18_cutover_review.py`, `tools/bazel/phase18_cutover_review_test.py`
+**Commit:** 7e9d00a46
+**Applied fix:** Final decision validation now requires `decision_id` to be a non-empty string and rejects duplicate decision IDs across final criterion decisions. Added regression tests for non-string and duplicate decision IDs.
+
+### Prior WR-01: Deferred retained-code exceptions can pass without evidence
 
 **Status:** fixed: requires human verification
 **Files modified:** `tools/bazel/phase18_cutover_review.py`, `tools/bazel/phase18_cutover_review_test.py`
 **Commit:** d8778a906
 **Applied fix:** Retained review validation now requires non-empty `supplied_evidence_result_refs` for both `accepted` and `deferred-approved-exception` statuses, while preserving the existing requirement that deferred approved exceptions include non-`none` exception and blocker/action fields. Added a regression test proving a deferred approved exception with empty supplied evidence is rejected.
 
-### WR-02: Exception metadata fields are not type-checked
+### Prior WR-02: Exception metadata fields are not type-checked
 
 **Status:** fixed: requires human verification
 **Files modified:** `tools/bazel/phase18_cutover_review.py`, `tools/bazel/phase18_cutover_review_test.py`
@@ -38,13 +59,14 @@ status: all_fixed
 
 ## Verification
 
-- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 32 tests.
+- `python3 tools/bazel/phase18_cutover_review_test.py` passed: 36 tests.
 - `python3 tools/bazel/phase18_cutover_review.py --contract-only` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --quick` passed.
 - `python3 tools/bazel/phase18_cutover_review.py --security-only` passed.
+- `python3 tools/bazel/phase18_cutover_review.py --wiring-only` passed.
 
 ---
 
-_Fixed: 2026-06-20T16:07:37Z_
+_Fixed: 2026-06-20T16:19:40Z_
 _Fixer: the agent (gsd-code-fixer)_
-_Iteration: 2_
+_Iteration: 3_
