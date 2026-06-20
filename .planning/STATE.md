@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Cutover Evidence Hardening
-status: executing
-stopped_at: Phase 18 context gathered
-last_updated: "2026-06-20T15:05:32.190Z"
-last_activity: 2026-06-20 -- Phase 18 execution started
+status: verifying
+stopped_at: Completed 18-01-PLAN.md
+last_updated: "2026-06-20T15:42:22.026Z"
+last_activity: 2026-06-20
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 6
-  completed_plans: 5
-  percent: 83
+  completed_plans: 6
+  percent: 100
 ---
 
 # Project State
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-06-15)
 
 Phase: 18 (Retained-Code Acceptance and Cutover Review) — EXECUTING
 Plan: 1 of 1
-Status: Executing Phase 18
-Last activity: 2026-06-20 -- Phase 18 execution started
+Status: Phase complete — ready for verification
+Last activity: 2026-06-20
 
 Progress: [██████████] 100%
 
@@ -70,6 +70,7 @@ Progress: [██████████] 100%
 | Phase 12 P01 | 7 min | 3 tasks | 7 files |
 | Phase 13 P01 | 18 min | 3 tasks | 12 files |
 | Phase 15 P01 | 23m31s | 3 tasks | 7 files |
+| Phase 18 P01 | 30m 21s | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -115,6 +116,9 @@ Recent decisions affecting current work:
 - [Phase 15]: Phase 15 operator evidence requires complete device, build, operator, timestamp, scenario, result, artifact ref, and residual-risk metadata.
 - [Phase 15]: Phase 15 artifact paths and operator refs stay repo-relative under build/ci-evidence/phase15 and are scanned before retention.
 - [Phase 15]: Phase 15 follows the existing Bazel rust_workflow dispatch model and just phase15-verify runs tests before the verifier.
+- [Phase 18]: Quick-mode output is review material only; demotion_allowed remains false without maintainer decision input.
+- [Phase 18]: Phase 18 source refs resolve against approved prior-phase manifests instead of prose-only evidence references.
+- [Phase 18]: Security scanning rejects secret, payload, crash-dump, credential, and cutover-approval overclaim markers across inputs and generated artifacts.
 
 ### Pending Todos
 
@@ -128,6 +132,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-20T14:34:49.636Z
-Stopped at: Phase 18 context gathered
-Resume file: .planning/phases/18-retained-code-acceptance-and-cutover-review/18-CONTEXT.md
+Last session: 2026-06-20T15:42:22.021Z
+Stopped at: Completed 18-01-PLAN.md
+Resume file: None

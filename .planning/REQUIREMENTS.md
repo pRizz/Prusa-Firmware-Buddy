@@ -39,9 +39,9 @@ These requirements convert the non-local v1.0 cutover blockers into durable evid
 
 ### Cutover Review
 
-- [ ] **REV-01**: Maintainer can review retained-code acceptance packets for every C, C++, ASM, generated, vendor, HAL, RTOS, network, filesystem, and signing surface that remains at cutover.
-- [ ] **REV-02**: Maintainer can approve or reject final reference-demotion criteria through an explicit checklist that links CI, simulator, hardware, live-service, release, retained-code, and residual-risk evidence.
-- [ ] **REV-03**: Maintainer can produce a final cutover readiness report that marks reference demotion allowed only when all required gates pass or have documented maintainer-approved exceptions.
+- [x] **REV-01**: Maintainer can review retained-code acceptance packets for every C, C++, ASM, generated, vendor, HAL, RTOS, network, filesystem, and signing surface that remains at cutover.
+- [x] **REV-02**: Maintainer can approve or reject final reference-demotion criteria through an explicit checklist that links CI, simulator, hardware, live-service, release, retained-code, and residual-risk evidence.
+- [x] **REV-03**: Maintainer can produce a final cutover readiness report that marks reference demotion allowed only when all required gates pass or have documented maintainer-approved exceptions.
 
 ## Future Requirements
 
@@ -86,9 +86,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REL-01 | Phase 17 | Pending |
 | REL-02 | Phase 17 | Pending |
 | REL-03 | Phase 17 | Pending |
-| REV-01 | Phase 18 | Pending |
-| REV-02 | Phase 18 | Pending |
-| REV-03 | Phase 18 | Pending |
+| REV-01 | Phase 18 | Complete |
+| REV-02 | Phase 18 | Complete |
+| REV-03 | Phase 18 | Complete |
 
 **Coverage:**
 

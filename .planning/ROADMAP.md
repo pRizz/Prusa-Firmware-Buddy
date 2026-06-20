@@ -38,7 +38,7 @@ Full phase details are archived in `.planning/milestones/v1.0-ROADMAP.md`.
 - [x] **Phase 15: Hardware Safety and Media Qualification** - Define and capture hardware, safety, storage-media, UI-input, MMU, RS485, and toolchanger cutover evidence. (completed 2026-06-18)
 - [x] **Phase 16: Live Network and Transfer Qualification** - Capture live or controlled-service evidence for Connect, WUI, TLS, telemetry, proxy behavior, and transfers. (completed 2026-06-18)
 - [x] **Phase 17: Release Candidate Artifact and Signing Gates** - Prove release-candidate artifacts, signing, provenance, resources, and auxiliary packages through Bazel-owned workflows. (completed 2026-06-19)
-- [ ] **Phase 18: Retained-Code Acceptance and Cutover Review** - Make retained-code acceptance, final reference-demotion criteria, and maintainer approval explicit and auditable.
+- [x] **Phase 18: Retained-Code Acceptance and Cutover Review** - Make retained-code acceptance, final reference-demotion criteria, and maintainer approval explicit and auditable. (completed 2026-06-20)
 
 ## Phase Details
 
@@ -130,7 +130,7 @@ Plans:
    **Plans**: 1 plan
 
 Plans:
-- [ ] 18-01-PLAN.md - Retained-code acceptance packets, final-demotion decision gate, verifier, Bazel labels, and just facade.
+- [x] 18-01-PLAN.md - Retained-code acceptance packets, final-demotion decision gate, verifier, Bazel labels, and just facade.
 
 ## Progress
 
@@ -144,4 +144,4 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17 -> 18
 | 15. Hardware Safety and Media Qualification | v1.1 | 1/1 | Complete    | 2026-06-18 |
 | 16. Live Network and Transfer Qualification | v1.1 | 1/1 | Complete    | 2026-06-18 |
 | 17. Release Candidate Artifact and Signing Gates | v1.1 | 1/1 | Complete    | 2026-06-19 |
-| 18. Retained-Code Acceptance and Cutover Review | v1.1 | 0/1 | Not started | - |
+| 18. Retained-Code Acceptance and Cutover Review | v1.1 | 1/1 | Complete   | 2026-06-20 |
