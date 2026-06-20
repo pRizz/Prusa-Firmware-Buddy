@@ -187,18 +187,6 @@ FORBIDDEN_FIELD_NAMES = {
     "connect_token",
     "prusalink_password",
 }
-FORBIDDEN_NORMALIZED_FIELD_NAMES = {
-    "accesstoken",
-    "apikey",
-    "authorization",
-    "authorizationheader",
-    "bearertoken",
-    "connecttoken",
-    "credentialvalue",
-    "password",
-    "privatekey",
-    "secret",
-}
 FORBIDDEN_TEXT_PATTERNS = (
     ("private-key-marker", re.compile(r"BEGIN (?:RSA |EC )?PRIVATE KEY", re.IGNORECASE)),
     ("firmware-payload-marker", re.compile(r"\b(?:raw )?firmware payload\b", re.IGNORECASE)),
@@ -431,6 +419,12 @@ def reject_forbidden_text(path: Path, text: str) -> None:
 
 def normalized_field_name(key: str) -> str:
     return re.sub(r"[^a-z0-9]", "", key.lower())
+
+
+FORBIDDEN_NORMALIZED_FIELD_NAMES = {normalized_field_name(field_name) for field_name in FORBIDDEN_FIELD_NAMES} | {
+    "authorization",
+    "authorizationheader",
+}
 
 
 def reject_forbidden_json_fields(data: Any, source_name: str, maybe_path: str = "$") -> None:
@@ -1248,6 +1242,7 @@ def write_quick_artifacts(
         encoding="utf-8",
     )
     expected_final_statuses = {row["id"]: row["status"] for row in final_results}
+    expected_final_allows = {row["id"]: bool(row["demotion_status_allows_cutover"]) for row in final_results}
     expected_retained_statuses = {row["id"]: row["status"] for row in retained_rows}
     run_security_scan(
         root,
@@ -1256,6 +1251,7 @@ def write_quick_artifacts(
         decision_input_validated=decision_input is not None,
         expected_demotion_allowed=allowed,
         expected_final_statuses=expected_final_statuses,
+        expected_final_allows=expected_final_allows,
         expected_retained_statuses=expected_retained_statuses,
     )
     return run_manifest
@@ -1278,6 +1274,7 @@ def run_security_scan(
     decision_input_validated: bool = False,
     expected_demotion_allowed: bool | None = None,
     expected_final_statuses: dict[str, str] | None = None,
+    expected_final_allows: dict[str, bool] | None = None,
     expected_retained_statuses: dict[str, str] | None = None,
     contract: dict[str, Any] | None = None,
 ) -> None:
@@ -1302,6 +1299,7 @@ def run_security_scan(
                 expected_retained_rows = normalize_retained_reviews(packets, retained_reviews)
                 expected_demotion_allowed = demotion_allowed(True, expected_results)
                 expected_final_statuses = {row["id"]: row["status"] for row in expected_results}
+                expected_final_allows = {row["id"]: bool(row["demotion_status_allows_cutover"]) for row in expected_results}
                 expected_retained_statuses = {row["id"]: row["status"] for row in expected_retained_rows}
         except VerificationError as error:
             errors.append(str(error))
@@ -1321,6 +1319,7 @@ def run_security_scan(
         decision_input_validated,
         expected_demotion_allowed,
         expected_final_statuses,
+        expected_final_allows,
         expected_retained_statuses,
     )
     if errors:
@@ -1334,6 +1333,7 @@ def validate_generated_overclaim_guards(
     decision_input_validated: bool = False,
     expected_demotion_allowed: bool | None = None,
     expected_final_statuses: dict[str, str] | None = None,
+    expected_final_allows: dict[str, bool] | None = None,
     expected_retained_statuses: dict[str, str] | None = None,
 ) -> None:
     output_dir = output_dir or root / DEFAULT_OUTPUT_DIR
@@ -1375,6 +1375,9 @@ def validate_generated_overclaim_guards(
                         expected_status = expected_final_statuses.get(row_id)
                         if expected_status is not None and row.get("status") != expected_status:
                             errors.append(f"generated final criterion status mismatch: {row_id}")
+                        expected_allows = expected_final_allows.get(row_id) if expected_final_allows is not None else None
+                        if expected_allows is not None and row.get("demotion_status_allows_cutover") != expected_allows:
+                            errors.append(f"generated final criterion demotion flag mismatch: {row_id}")
             except json.JSONDecodeError as error:
                 errors.append(f"{normalized_path.relative_to(root).as_posix()} is not valid JSON: {error}")
         retained_path = output_dir / "retained-code-acceptance-summary.json"
@@ -1404,10 +1407,17 @@ def validate_generated_overclaim_guards(
             results = normalized.get("results") if isinstance(normalized, dict) else None
             if isinstance(results, list):
                 for row in results:
-                    if isinstance(row, dict) and row.get("status") in ALLOWED_DEMOTION_STATUSES:
+                    if not isinstance(row, dict):
+                        continue
+                    if row.get("status") in ALLOWED_DEMOTION_STATUSES:
                         errors.append(
                             "generated no-decision normalized-final-demotion-results.json cannot set "
                             f"{row.get('id', 'unknown')} to {row.get('status')}"
+                        )
+                    if row.get("demotion_status_allows_cutover") is True:
+                        errors.append(
+                            "generated no-decision normalized-final-demotion-results.json cannot set "
+                            f"{row.get('id', 'unknown')} demotion_status_allows_cutover true"
                         )
         except json.JSONDecodeError as error:
             errors.append(f"{normalized_path.relative_to(root).as_posix()} is not valid JSON: {error}")

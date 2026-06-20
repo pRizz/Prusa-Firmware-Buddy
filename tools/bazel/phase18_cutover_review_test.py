@@ -773,7 +773,19 @@ class Phase18CutoverReviewTest(unittest.TestCase):
         self.assertIn("raw crash dump", generated_result.stdout)
 
     def test_security_only_rejects_common_api_key_fields(self) -> None:
-        for field in ["api_key", "access_token", "apiKey", "accessToken", "authorizationHeader"]:
+        for field in [
+            "api_key",
+            "access_token",
+            "apiKey",
+            "accessToken",
+            "authorizationHeader",
+            "signingKeyValue",
+            "certificatePrivateMaterial",
+            "rawFirmwarePayload",
+            "rawCrashDump",
+            "wifiPassword",
+            "prusalinkPassword",
+        ]:
             with self.subTest(field=field):
                 # Arrange
                 temp_dir, root = self.make_temp_root()
@@ -860,6 +872,23 @@ class Phase18CutoverReviewTest(unittest.TestCase):
             # Assert
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("passed", result.stdout)
+
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            quick_result = self.run_verifier(["--quick"], maybe_root=root)
+            self.assertEqual(quick_result.returncode, 0, quick_result.stdout)
+            normalized = self.read_json(root, "build/ci-evidence/phase18/normalized-final-demotion-results.json")
+            normalized["results"][0]["demotion_status_allows_cutover"] = True
+            self.write_json(root, "build/ci-evidence/phase18/normalized-final-demotion-results.json", normalized)
+
+            # Act
+            result = self.run_verifier(["--security-only"], maybe_root=root)
+
+            # Assert
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("demotion_status_allows_cutover true", result.stdout)
 
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -978,6 +1007,26 @@ class Phase18CutoverReviewTest(unittest.TestCase):
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("final-retained-code-acceptance has non-accepted retained reviews", result.stdout)
+
+    def test_security_only_rejects_final_row_demotion_flag_mismatch_with_decision_input(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            decision_input = self.complete_decision_input(root)
+            self.write_json(root, "decision-input.json", decision_input)
+            quick_result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+            self.assertEqual(quick_result.returncode, 0, quick_result.stdout)
+            normalized = self.read_json(root, "build/ci-evidence/phase18/normalized-final-demotion-results.json")
+            normalized["results"][0]["demotion_status_allows_cutover"] = False
+            self.write_json(root, "build/ci-evidence/phase18/normalized-final-demotion-results.json", normalized)
+
+            # Act
+            result = self.run_verifier(["--security-only", "--decision-input", "decision-input.json"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("generated final criterion demotion flag mismatch", result.stdout)
 
     def test_security_only_rejects_retained_row_status_mismatch_with_decision_input(self) -> None:
         # Arrange
