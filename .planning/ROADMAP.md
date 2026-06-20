@@ -144,4 +144,4 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17 -> 18
 | 15. Hardware Safety and Media Qualification | v1.1 | 1/1 | Complete    | 2026-06-18 |
 | 16. Live Network and Transfer Qualification | v1.1 | 1/1 | Complete    | 2026-06-18 |
 | 17. Release Candidate Artifact and Signing Gates | v1.1 | 1/1 | Complete    | 2026-06-19 |
-| 18. Retained-Code Acceptance and Cutover Review | v1.1 | 1/1 | Complete   | 2026-06-20 |
+| 18. Retained-Code Acceptance and Cutover Review | v1.1 | 1/1 | Complete    | 2026-06-20 |
