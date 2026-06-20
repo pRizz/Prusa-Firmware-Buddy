@@ -342,6 +342,22 @@ class Phase18CutoverReviewTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("missing-row", result.stdout)
 
+    def test_contract_rejects_extra_generated_artifacts(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            contract = self.read_contract(root)
+            contract["generated_artifacts"].append("unexpected-extra-output.json")
+            self.write_contract(root, contract)
+
+            # Act
+            result = self.run_verifier(["--contract-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unexpected generated artifact", result.stdout)
+
     def test_quick_without_decision_input_writes_artifacts_and_blocks_demotion(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -592,6 +608,42 @@ class Phase18CutoverReviewTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("duplicate final decision id", result.stdout)
 
+    def test_final_decision_rejects_status_outside_criterion_policy(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            contract = self.read_contract(root)
+            contract["final_demotion_criteria"][0]["allowed_statuses"] = ["pending"]
+            self.write_contract(root, contract)
+            decision_input = self.complete_decision_input(root)
+            self.write_json(root, "decision-input.json", decision_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("status passed is not allowed by criterion policy", result.stdout)
+
+    def test_final_decision_rejects_exception_status_when_criterion_disallows_exceptions(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            contract = self.read_contract(root)
+            contract["final_demotion_criteria"][0]["exception_allowed"] = False
+            self.write_contract(root, contract)
+            decision_input = self.complete_decision_input(root, status="exception-approved", decision="exception")
+            self.write_json(root, "decision-input.json", decision_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("status exception-approved is not allowed by criterion policy", result.stdout)
+
     def test_exception_approved_final_decision_rejects_non_string_exception_metadata(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -819,6 +871,36 @@ class Phase18CutoverReviewTest(unittest.TestCase):
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("apiKey", result.stdout)
+
+    def test_decision_input_rejects_narrative_secret_markers(self) -> None:
+        cases = [
+            "Authorization: Bearer redacted-test-value",
+            "token: redacted-test-value",
+            "password: redacted-test-value",
+        ]
+        for marker in cases:
+            with self.subTest(marker=marker):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_complete_surface(root)
+                    decision_input = self.complete_decision_input(root)
+                    decision_input["retained_code_reviews"][0]["residual_risk"] = marker
+                    self.write_json(root, "decision-input.json", decision_input)
+
+                    # Act
+                    quick_result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+                    security_result = self.run_verifier(
+                        ["--security-only", "--decision-input", "decision-input.json"],
+                        maybe_root=root,
+                    )
+
+                # Assert
+                self.assertNotEqual(quick_result.returncode, 0)
+                self.assertIn("forbidden marker", quick_result.stdout)
+                self.assertNotEqual(security_result.returncode, 0)
+                self.assertIn("forbidden marker", security_result.stdout)
+                self.assertFalse((root / "build/ci-evidence/phase18/retained-code-acceptance-summary.json").exists())
 
     def test_generated_report_names_review_material_boundary(self) -> None:
         # Arrange

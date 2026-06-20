@@ -41,6 +41,12 @@ FINAL_CRITERION_STATUS_VOCABULARY = [
 ]
 REVIEW_DECISION_VOCABULARY = ["approve", "reject", "exception"]
 ALLOWED_DEMOTION_STATUSES = ["passed", "exception-approved", "not-applicable"]
+EXCEPTION_POLICY_STATUSES = {
+    "exception-requested",
+    "exception-approved",
+    "exception-rejected",
+    "not-applicable",
+}
 REQUIRED_RETAINED_PACKET_IDS = {
     "packet-hal-cmsis-startup-asm",
     "packet-freertos-runtime",
@@ -191,9 +197,11 @@ FORBIDDEN_TEXT_PATTERNS = (
     ("private-key-marker", re.compile(r"BEGIN (?:RSA |EC )?PRIVATE KEY", re.IGNORECASE)),
     ("firmware-payload-marker", re.compile(r"\b(?:raw )?firmware payload\b", re.IGNORECASE)),
     ("raw-crash-dump-marker", re.compile(r"\braw crash dump\b", re.IGNORECASE)),
-    ("password-assignment", re.compile(r"\bpassword\s*=", re.IGNORECASE)),
-    ("token-assignment", re.compile(r"\btoken\s*=", re.IGNORECASE)),
-    ("secret-assignment", re.compile(r"\bsecret\s*=", re.IGNORECASE)),
+    ("authorization-header", re.compile(r"\bauthorization\s*:\s*bearer\b", re.IGNORECASE)),
+    ("bearer-token", re.compile(r"\bbearer\s+[A-Za-z0-9._~+/=-]{8,}\b", re.IGNORECASE)),
+    ("password-assignment", re.compile(r"\bpassword\s*[:=]", re.IGNORECASE)),
+    ("token-assignment", re.compile(r"\btoken\s*[:=]", re.IGNORECASE)),
+    ("secret-assignment", re.compile(r"\bsecret\s*[:=]", re.IGNORECASE)),
     ("reference-demotion-approved", re.compile(r"\breference demotion approved\b", re.IGNORECASE)),
     ("final-cutover-complete", re.compile(r"\bfinal cutover complete\b", re.IGNORECASE)),
     ("cutover-readiness-proven", re.compile(r"\bcutover readiness proven\b", re.IGNORECASE)),
@@ -592,6 +600,10 @@ def validate_generated_artifacts(contract: dict[str, Any], errors: list[str]) ->
     seen = set(artifacts)
     for missing in sorted(REQUIRED_GENERATED_ARTIFACTS - seen):
         errors.append(f"missing required generated artifact: {missing}")
+    for extra in sorted(seen - REQUIRED_GENERATED_ARTIFACTS):
+        errors.append(f"unexpected generated artifact: {extra}")
+    if len(artifacts) != len(seen):
+        errors.append("generated_artifacts must not contain duplicates")
     for artifact in artifacts:
         try:
             require_repo_relative(artifact, "generated_artifacts")
@@ -802,14 +814,24 @@ def require_non_empty_refs(refs: list[str], row_name: str, field: str) -> None:
         raise VerificationError(f"{row_name} {field} must include at least one Phase 18 evidence ref")
 
 
-def validate_final_decision(row: Any, criterion_ids: set[str], row_index: int) -> dict[str, Any]:
+def criterion_allows_status(criterion: dict[str, Any], status: str) -> bool:
+    allowed_statuses = criterion.get("allowed_statuses")
+    if not isinstance(allowed_statuses, list) or status not in allowed_statuses:
+        return False
+    if criterion.get("exception_allowed") is not True and status in EXCEPTION_POLICY_STATUSES:
+        return False
+    return True
+
+
+def validate_final_decision(row: Any, criteria_by_id: dict[str, dict[str, Any]], row_index: int) -> dict[str, Any]:
     if not isinstance(row, dict):
         raise VerificationError(f"final_criterion_decisions[{row_index}] must be an object")
     row_name = str(row.get("criterion_id", f"final_criterion_decisions[{row_index}]"))
     require_fields(row, FINAL_DECISION_REQUIRED_FIELDS, row_name)
     require_string(row, "decision_id", row_name)
     criterion_id = require_string(row, "criterion_id", row_name)
-    if criterion_id not in criterion_ids:
+    criterion = criteria_by_id.get(criterion_id)
+    if criterion is None:
         raise VerificationError(f"{row_name} criterion_id does not resolve: {criterion_id}")
     decision = require_string(row, "decision", row_name)
     status = require_string(row, "status", row_name)
@@ -817,6 +839,8 @@ def validate_final_decision(row: Any, criterion_ids: set[str], row_index: int) -
         raise VerificationError(f"{row_name} decision is invalid: {decision}")
     if status not in FINAL_CRITERION_STATUS_VOCABULARY:
         raise VerificationError(f"{row_name} status is invalid: {status}")
+    if not criterion_allows_status(criterion, status):
+        raise VerificationError(f"{row_name} status {status} is not allowed by criterion policy")
     require_string(row, "approver", row_name)
     require_string(row, "approver_role", row_name)
     require_iso_utc(require_string(row, "decision_timestamp", row_name), row_name)
@@ -884,13 +908,14 @@ def validated_decision_maps(
 ) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
     if decision_input is None:
         return {}, {}
-    criterion_ids = {str(row["id"]) for row in criteria}
+    criteria_by_id = {str(row["id"]): row for row in criteria}
+    criterion_ids = set(criteria_by_id)
     packets_by_id = {str(row["id"]): row for row in packets}
     final_decisions: dict[str, dict[str, Any]] = {}
     retained_reviews: dict[str, dict[str, Any]] = {}
     final_decision_ids: set[str] = set()
     for index, row in enumerate(decision_input["final_criterion_decisions"]):
-        decision = validate_final_decision(row, criterion_ids, index)
+        decision = validate_final_decision(row, criteria_by_id, index)
         decision_id = str(decision["decision_id"])
         if decision_id in final_decision_ids:
             raise VerificationError(f"duplicate final decision id: {decision_id}")
@@ -937,8 +962,14 @@ def valid_not_applicable(decision: dict[str, Any]) -> bool:
     return has_complete_exception_metadata(decision)
 
 
-def final_status_allows_demotion(status: str, maybe_decision: dict[str, Any] | None) -> bool:
+def final_status_allows_demotion(
+    status: str,
+    maybe_decision: dict[str, Any] | None,
+    criterion: dict[str, Any] | None = None,
+) -> bool:
     if maybe_decision is None or maybe_decision.get("status") != status:
+        return False
+    if criterion is not None and not criterion_allows_status(criterion, status):
         return False
     if status == "passed":
         return maybe_decision.get("decision") == "approve" and has_non_empty_evidence_refs(maybe_decision)
@@ -1007,7 +1038,7 @@ def normalize_final_results(
         decision = str(maybe_decision["decision"]) if maybe_decision else "pending"
         evidence_refs = list(maybe_decision["evidence_refs"]) if maybe_decision else []
         residual_risk = str(maybe_decision["residual_risk"]) if maybe_decision else str(criterion["residual_risk_ref"])
-        status_allows = final_status_allows_demotion(status, maybe_decision)
+        status_allows = final_status_allows_demotion(status, maybe_decision, criterion)
         blocking_reason = "" if status_allows else f"{criterion_id} status {status} blocks reference demotion"
         results.append(
             {
