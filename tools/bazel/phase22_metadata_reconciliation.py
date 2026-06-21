@@ -88,6 +88,26 @@ FILE_SECRET_PATTERNS = [
 
 PHASES_WITH_VALIDATION_METADATA = [14, 15, 16, 17, 18, 20]
 
+REQUIRED_PHASE22_VALIDATION_DOCS = [
+    ".planning/phases/14-simulator-evidence-gates/14-VALIDATION.md",
+    ".planning/phases/15-hardware-safety-and-media-qualification/15-VALIDATION.md",
+    ".planning/phases/16-live-network-and-transfer-qualification/16-VALIDATION.md",
+    ".planning/phases/17-release-candidate-artifact-and-signing-gates/17-VALIDATION.md",
+    ".planning/phases/18-retained-code-acceptance-and-cutover-review/18-VALIDATION.md",
+    ".planning/phases/20-release-candidate-artifact-production/20-VALIDATION.md",
+]
+
+REQUIRED_PHASE22_SOURCE_REF_MANIFESTS = [
+    "manifests/phase14_simulator_evidence_contract.json",
+    "manifests/phase15_hardware_evidence_contract.json",
+    "manifests/phase16_live_network_evidence_contract.json",
+    "manifests/phase17_release_candidate_evidence_contract.json",
+    "manifests/phase18_cutover_review_contract.json",
+    "manifests/phase19_aggregate_ci_evidence_contract.json",
+    "manifests/phase20_release_candidate_artifacts_contract.json",
+    "manifests/phase22_metadata_reconciliation_contract.json",
+]
+
 
 class VerificationError(Exception):
     pass
@@ -519,6 +539,59 @@ def check_wiring(root: Path) -> None:
     for path in [CONTRACT_MANIFEST, Path("tools/bazel/phase22_metadata_reconciliation.py"), Path("tools/bazel/phase22_metadata_reconciliation_test.py")]:
         if not (root / path).exists():
             errors.append(f"missing wiring file: {path}")
+
+    root_build = read_text(root / "BUILD.bazel")
+    tools_build = read_text(root / "tools/bazel/BUILD.bazel")
+    rust_workflow = read_text(root / "tools/bazel/rust_workflow.sh")
+    justfile = read_text(root / "justfile")
+
+    root_markers = [
+        'name = "phase22_metadata_reconciliation_docs"',
+        'name = "phase22_verify"',
+        'actual = "//tools/bazel:phase22_verify"',
+        'name = "phase22_verify_tests"',
+        'actual = "//tools/bazel:phase22_verify_tests"',
+    ]
+    for marker in root_markers:
+        if marker not in root_build:
+            errors.append(f"BUILD.bazel missing Phase 22 marker: {marker}")
+    for path in REQUIRED_PHASE22_VALIDATION_DOCS:
+        if path not in root_build:
+            errors.append(f"phase22_metadata_reconciliation_docs missing validation file: {path}")
+
+    tools_markers = [
+        'name = "phase22_source_ref_manifests"',
+        'name = "phase22_verify"',
+        'name = "phase22_verify_tests"',
+        "//:phase22_metadata_reconciliation_docs",
+    ]
+    for marker in tools_markers:
+        if marker not in tools_build:
+            errors.append(f"tools/bazel/BUILD.bazel missing Phase 22 marker: {marker}")
+    for path in REQUIRED_PHASE22_SOURCE_REF_MANIFESTS:
+        if path not in tools_build:
+            errors.append(f"phase22_source_ref_manifests missing manifest: {path}")
+
+    workflow_markers = [
+        "phase22_verify)",
+        "python3 tools/bazel/phase22_metadata_reconciliation.py --wiring-only",
+        "python3 tools/bazel/phase22_metadata_reconciliation.py --quick --output-dir build/ci-evidence/phase22",
+        "phase22_verify_tests)",
+        "python3 tools/bazel/phase22_metadata_reconciliation_test.py",
+    ]
+    for marker in workflow_markers:
+        if marker not in rust_workflow:
+            errors.append(f"rust_workflow.sh missing Phase 22 marker: {marker}")
+
+    just_markers = [
+        "phase22-verify:",
+        "bazel run //tools/bazel:phase22_verify_tests",
+        "bazel run //tools/bazel:phase22_verify",
+    ]
+    for marker in just_markers:
+        if marker not in justfile:
+            errors.append(f"justfile missing Phase 22 marker: {marker}")
+
     if errors:
         raise VerificationError("\n".join(errors))
 

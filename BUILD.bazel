@@ -180,6 +180,30 @@ filegroup(
 )
 
 filegroup(
+    name = "phase22_metadata_reconciliation_docs",
+    srcs = [
+        ".planning/REQUIREMENTS.md",
+        ".planning/ROADMAP.md",
+        ".planning/STATE.md",
+        ".planning/v1.1-MILESTONE-AUDIT.md",
+        ".planning/phases/14-simulator-evidence-gates/14-VALIDATION.md",
+        ".planning/phases/15-hardware-safety-and-media-qualification/15-VALIDATION.md",
+        ".planning/phases/16-live-network-and-transfer-qualification/16-VALIDATION.md",
+        ".planning/phases/17-release-candidate-artifact-and-signing-gates/17-VALIDATION.md",
+        ".planning/phases/18-retained-code-acceptance-and-cutover-review/18-VALIDATION.md",
+        ".planning/phases/20-release-candidate-artifact-production/20-VALIDATION.md",
+        ".planning/phases/22-evidence-metadata-reconciliation/22-CONTEXT.md",
+        ".planning/phases/22-evidence-metadata-reconciliation/22-RESEARCH.md",
+        ".planning/phases/22-evidence-metadata-reconciliation/22-VALIDATION.md",
+        ".planning/phases/22-evidence-metadata-reconciliation/22-01-PLAN.md",
+        ".planning/phases/22-evidence-metadata-reconciliation/22-01-SUMMARY.md",
+        ".planning/phases/22-evidence-metadata-reconciliation/22-02-PLAN.md",
+        ".planning/phases/22-evidence-metadata-reconciliation/22-02-SUMMARY.md",
+        ".planning/phases/22-evidence-metadata-reconciliation/22-03-PLAN.md",
+    ],
+)
+
+filegroup(
     name = "phase7_storage_migration_fixtures",
     srcs = ["//tools/bazel:fixtures/phase7_storage/redacted_migration_catalog.json"],
 )
@@ -392,6 +416,16 @@ alias(
 alias(
     name = "phase20_verify_tests",
     actual = "//tools/bazel:phase20_verify_tests",
+)
+
+alias(
+    name = "phase22_verify",
+    actual = "//tools/bazel:phase22_verify",
+)
+
+alias(
+    name = "phase22_verify_tests",
+    actual = "//tools/bazel:phase22_verify_tests",
 )
 
 alias(

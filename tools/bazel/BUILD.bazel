@@ -565,6 +565,43 @@ shell_binary(
 )
 
 filegroup(
+    name = "phase22_source_ref_manifests",
+    srcs = [
+        "manifests/phase14_simulator_evidence_contract.json",
+        "manifests/phase15_hardware_evidence_contract.json",
+        "manifests/phase16_live_network_evidence_contract.json",
+        "manifests/phase17_release_candidate_evidence_contract.json",
+        "manifests/phase18_cutover_review_contract.json",
+        "manifests/phase19_aggregate_ci_evidence_contract.json",
+        "manifests/phase20_release_candidate_artifacts_contract.json",
+        "manifests/phase22_metadata_reconciliation_contract.json",
+    ],
+)
+
+shell_binary(
+    name = "phase22_verify",
+    src = "rust_workflow.sh",
+    data = [
+        "phase22_metadata_reconciliation.py",
+        "manifests/phase22_metadata_reconciliation_contract.json",
+        ":phase22_source_ref_manifests",
+        "//:phase22_metadata_reconciliation_docs",
+    ],
+)
+
+shell_binary(
+    name = "phase22_verify_tests",
+    src = "rust_workflow.sh",
+    data = [
+        "phase22_metadata_reconciliation.py",
+        "phase22_metadata_reconciliation_test.py",
+        "manifests/phase22_metadata_reconciliation_contract.json",
+        ":phase22_source_ref_manifests",
+        "//:phase22_metadata_reconciliation_docs",
+    ],
+)
+
+filegroup(
     name = "unsafe_boundary_audit",
     srcs = ["manifests/unsafe_boundary_audit.json"],
 )

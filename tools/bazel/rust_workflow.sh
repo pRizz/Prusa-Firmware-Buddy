@@ -124,6 +124,13 @@ case "$command_name" in
   phase20_verify_tests)
     python3 tools/bazel/phase20_release_candidate_artifacts_test.py
     ;;
+  phase22_verify)
+    python3 tools/bazel/phase22_metadata_reconciliation.py --wiring-only
+    python3 tools/bazel/phase22_metadata_reconciliation.py --quick --output-dir build/ci-evidence/phase22
+    ;;
+  phase22_verify_tests)
+    python3 tools/bazel/phase22_metadata_reconciliation_test.py
+    ;;
   *)
     printf 'Unknown Rust workflow target: %s\n' "$command_name" >&2
     exit 2

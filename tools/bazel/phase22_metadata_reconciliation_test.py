@@ -19,13 +19,21 @@ class Phase22MetadataReconciliationTest(unittest.TestCase):
         temp_dir = tempfile.TemporaryDirectory()
         root = Path(temp_dir.name)
         (root / "tools/bazel/manifests").mkdir(parents=True)
-        if VERIFIER.exists():
-            shutil.copy2(VERIFIER, root / "tools/bazel/phase22_metadata_reconciliation.py")
-        test_path = ROOT / "tools/bazel/phase22_metadata_reconciliation_test.py"
-        if test_path.exists():
-            shutil.copy2(test_path, root / "tools/bazel/phase22_metadata_reconciliation_test.py")
-        if (ROOT / CONTRACT).exists():
-            shutil.copy2(ROOT / CONTRACT, root / CONTRACT)
+        for relative_path in [
+            "BUILD.bazel",
+            "justfile",
+            "tools/bazel/BUILD.bazel",
+            "tools/bazel/rust_workflow.sh",
+            "tools/bazel/phase22_metadata_reconciliation.py",
+            "tools/bazel/phase22_metadata_reconciliation_test.py",
+            CONTRACT,
+        ]:
+            source = ROOT / relative_path
+            if not source.exists():
+                continue
+            destination = root / relative_path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, destination)
         return temp_dir, root
 
     def run_verifier(
