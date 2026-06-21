@@ -7,7 +7,7 @@ The v1.0 milestone established the Rust+Bazel rewrite evidence foundation: sourc
 ## Milestones
 
 - **v1.0 Rust Port Evidence Foundation** — Phases 1-12, 38 plans, shipped 2026-06-15. Archives: [roadmap](milestones/v1.0-ROADMAP.md), [requirements](milestones/v1.0-REQUIREMENTS.md), [audit](milestones/v1.0-MILESTONE-AUDIT.md), [phase history](milestones/v1.0-phases/).
-- **v1.1 Cutover Evidence Hardening** — Phases 13-18, planned. Goal: move from locally evidenced cutover readiness to release-governed and enforceable approval workflows.
+- **v1.1 Cutover Evidence Hardening** — Phases 13-22, in gap closure. Goal: move from locally evidenced cutover readiness to release-governed and enforceable approval workflows.
 
 ## v1.1 Cutover Evidence Hardening
 
@@ -39,6 +39,10 @@ Full phase details are archived in `.planning/milestones/v1.0-ROADMAP.md`.
 - [x] **Phase 16: Live Network and Transfer Qualification** - Capture live or controlled-service evidence for Connect, WUI, TLS, telemetry, proxy behavior, and transfers. (completed 2026-06-18)
 - [x] **Phase 17: Release Candidate Artifact and Signing Gates** - Prove release-candidate artifacts, signing, provenance, resources, and auxiliary packages through Bazel-owned workflows. (completed 2026-06-19)
 - [x] **Phase 18: Retained-Code Acceptance and Cutover Review** - Make retained-code acceptance, final reference-demotion criteria, and maintainer approval explicit and auditable. (completed 2026-06-20)
+- [ ] **Phase 19: Aggregate Cutover Evidence CI** - Run and retain Phase 14-18 cutover gate evidence through a single CI-owned manifest and artifact bundle.
+- [ ] **Phase 20: Release Candidate Artifact Production** - Replace the empty release-candidate artifact identity target with real Bazel-owned release outputs and retained signing/provenance/comparison evidence.
+- [ ] **Phase 21: Final Readiness Result Consumption** - Require final cutover review to consume machine-readable upstream result manifests before any demotion decision can pass.
+- [ ] **Phase 22: Evidence Metadata Reconciliation** - Reconcile requirement traceability, validation metadata, roadmap progress, and milestone audit state after functional gap closure.
 
 ## Phase Details
 
@@ -132,10 +136,66 @@ Plans:
 Plans:
 - [x] 18-01-PLAN.md - Retained-code acceptance packets, final-demotion decision gate, verifier, Bazel labels, and just facade.
 
+### Phase 19: Aggregate Cutover Evidence CI
+
+**Goal**: Maintainers can review one CI-owned aggregate cutover evidence bundle that runs or ingests Phase 14-18 gate results, reports requirement-level status, and retains every required manifest without overclaiming external evidence.
+**Depends on**: Phase 13, Phase 14, Phase 15, Phase 16, Phase 17, Phase 18
+**Requirements**: CIEV-01, CIEV-02, CIEV-03, SIM-01, SIM-02, HARD-01, HARD-02, HARD-03, LIVE-01, LIVE-02, LIVE-03
+**Gap Closure**: Closes v1.1 audit findings for aggregate CI stopping at Phase 13, missing Phase 14-18 retained artifacts, and incomplete milestone evidence download flow.
+**Success Criteria** (what must be TRUE):
+
+1. CI runs every locally runnable Phase 14-18 verifier mode needed for cutover evidence when relevant source, manifest, release, or planning surfaces change.
+1. CI produces one machine-readable aggregate manifest with gate status, owning phase, command or evidence input, artifact path, requirement IDs, and failure reason for Phase 14-18 gates.
+1. CI retains Phase 14-18 verifier logs, generated manifests, normalized result files, redacted summaries, and external-input placeholders as downloadable artifacts.
+1. Simulator, hardware, live-service, signing, release, and maintainer-decision rows that still require external evidence remain pending or blocked, never locally passed by CI.
+   **Plans**: Not created yet.
+
+### Phase 20: Release Candidate Artifact Production
+
+**Goal**: Release managers can produce release-candidate firmware, resource, signing, provenance, and comparison outputs through the Bazel-owned release artifact identity target instead of an empty placeholder.
+**Depends on**: Phase 17, Phase 19
+**Requirements**: REL-01, REL-02, REL-03
+**Gap Closure**: Closes v1.1 audit findings for the empty `phase17_release_candidate_artifacts` target and missing real release output flow into final review.
+**Success Criteria** (what must be TRUE):
+
+1. `//tools/bazel:phase17_release_candidate_artifacts` resolves to real release-candidate `.bin`, `.bbf`, `.dfu`, map/provenance, resource, language, WUI, ESP, MMU, and auxiliary package outputs or explicit release-environment inputs.
+1. Representative smoke fixtures remain separate from release proof and cannot satisfy production release evidence rows.
+1. Signing and provenance evidence records key identity, build input identity, artifact digests, retention refs, and verification outcomes without private keys or payload leakage.
+1. Release-candidate comparison outputs classify every archived-reference mismatch as pass, intentional delta, blocker, or deferred retained-code issue.
+   **Plans**: Not created yet.
+
+### Phase 21: Final Readiness Result Consumption
+
+**Goal**: Maintainers can approve final cutover only when Phase 18 consumes machine-readable upstream gate results for CI, simulator, hardware, live-service, release, retained-code, residual-risk, and maintainer-decision evidence.
+**Depends on**: Phase 19, Phase 20
+**Requirements**: REV-02, REV-03
+**Gap Closure**: Closes v1.1 audit findings for Phase 18 linking contracts instead of generated gate result manifests and allowing decision refs without independently proving upstream results passed.
+**Success Criteria** (what must be TRUE):
+
+1. Phase 18 final criteria require machine-readable upstream result manifests for Phase 14-17 gates instead of only contract/source rows.
+1. `demotion_allowed` remains false when required upstream manifests are missing, failed, stale, redaction-failed, or not covered by approved exceptions.
+1. Maintainer decision input can approve, reject, or exception criteria only after upstream result status and evidence refs have passed schema, lifecycle, source-ref, and redaction checks.
+1. Final readiness artifacts explain every blocked, pending, failed, exception-approved, and passed criterion with requirement IDs and retained evidence refs.
+   **Plans**: Not created yet.
+
+### Phase 22: Evidence Metadata Reconciliation
+
+**Goal**: Maintainers can rerun the milestone audit against synchronized roadmap, requirement, validation, and audit metadata after gap closure work lands.
+**Depends on**: Phase 19, Phase 20, Phase 21
+**Requirements**: Metadata debt from v1.1 audit
+**Gap Closure**: Closes v1.1 audit metadata debt for stale requirement statuses, incomplete Phase 14-18 Wave 0 validation metadata, roadmap progress, and audit rerun readiness.
+**Success Criteria** (what must be TRUE):
+
+1. `.planning/REQUIREMENTS.md` checkboxes and traceability rows match the actual gap-closure phase evidence.
+1. Phase 14-18 validation files no longer show incomplete Wave 0 metadata after their verified work is complete, or they document a deliberate exception.
+1. ROADMAP progress, phase details, and phase directories are internally consistent with Phases 19-22.
+1. A rerun milestone audit reports `passed` or only deliberate, documented non-blocking debt.
+   **Plans**: Not created yet.
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17 -> 18
+Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -145,3 +205,7 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17 -> 18
 | 16. Live Network and Transfer Qualification | v1.1 | 1/1 | Complete    | 2026-06-18 |
 | 17. Release Candidate Artifact and Signing Gates | v1.1 | 1/1 | Complete    | 2026-06-19 |
 | 18. Retained-Code Acceptance and Cutover Review | v1.1 | 1/1 | Complete    | 2026-06-20 |
+| 19. Aggregate Cutover Evidence CI | v1.1 | 0/0 | Planned    | - |
+| 20. Release Candidate Artifact Production | v1.1 | 0/0 | Planned    | - |
+| 21. Final Readiness Result Consumption | v1.1 | 0/0 | Planned    | - |
+| 22. Evidence Metadata Reconciliation | v1.1 | 0/0 | Planned    | - |

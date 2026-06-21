@@ -9,9 +9,9 @@ These requirements convert the non-local v1.0 cutover blockers into durable evid
 
 ### CI Evidence
 
-- [x] **CIEV-01**: Maintainer can run the aggregate cutover verifier in CI for every pull request that changes Rust, Bazel, verifier, manifest, or release-evidence surfaces.
-- [x] **CIEV-02**: Maintainer can inspect a machine-readable CI evidence manifest that records gate status, owning phase, command, artifact path, and failure reason for each cutover gate.
-- [x] **CIEV-03**: Maintainer can download retained CI artifacts for verifier logs, manifest snapshots, normalized comparison outputs, and redacted evidence summaries without relying on local workspace state.
+- [ ] **CIEV-01**: Maintainer can run the aggregate cutover verifier in CI for every pull request that changes Rust, Bazel, verifier, manifest, or release-evidence surfaces.
+- [ ] **CIEV-02**: Maintainer can inspect a machine-readable CI evidence manifest that records gate status, owning phase, command, artifact path, and failure reason for each cutover gate.
+- [ ] **CIEV-03**: Maintainer can download retained CI artifacts for verifier logs, manifest snapshots, normalized comparison outputs, and redacted evidence summaries without relying on local workspace state.
 
 ### Simulator Evidence
 
@@ -21,15 +21,15 @@ These requirements convert the non-local v1.0 cutover blockers into durable evid
 
 ### Hardware and Safety Evidence
 
-- [x] **HARD-01**: Maintainer can execute a hardware smoke matrix for supported printer families, boards, storage media, and auxiliary-controller combinations required for cutover readiness.
-- [x] **HARD-02**: Maintainer can record hardware safety evidence for watchdog, thermal/motion safety, emergency stop, safe-output, crash recovery, UI input, MMU, RS485, and toolchanger scenarios.
-- [x] **HARD-03**: Maintainer can review hardware evidence artifacts that identify device, firmware build, operator, timestamp, scenario, result, and residual risk without exposing secrets or unsafe operational data.
+- [ ] **HARD-01**: Maintainer can execute a hardware smoke matrix for supported printer families, boards, storage media, and auxiliary-controller combinations required for cutover readiness.
+- [ ] **HARD-02**: Maintainer can record hardware safety evidence for watchdog, thermal/motion safety, emergency stop, safe-output, crash recovery, UI input, MMU, RS485, and toolchanger scenarios.
+- [ ] **HARD-03**: Maintainer can review hardware evidence artifacts that identify device, firmware build, operator, timestamp, scenario, result, and residual risk without exposing secrets or unsafe operational data.
 
 ### Live Network Evidence
 
-- [x] **LIVE-01**: Maintainer can run live or controlled-service evidence for Prusa Connect registration, telemetry, WebSocket commands, token/fingerprint behavior, and proxy limitations.
-- [x] **LIVE-02**: Maintainer can run live or controlled-service evidence for PrusaLink/WUI HTTP API, digest/API-key auth, SNTP, mDNS, syslog, metrics, and transfer behavior.
-- [x] **LIVE-03**: Maintainer can verify TLS, certificate, credential-redaction, negative protocol, long-transfer, and crash-dump upload evidence without committing secrets, tokens, or private certificates.
+- [ ] **LIVE-01**: Maintainer can run live or controlled-service evidence for Prusa Connect registration, telemetry, WebSocket commands, token/fingerprint behavior, and proxy limitations.
+- [ ] **LIVE-02**: Maintainer can run live or controlled-service evidence for PrusaLink/WUI HTTP API, digest/API-key auth, SNTP, mDNS, syslog, metrics, and transfer behavior.
+- [ ] **LIVE-03**: Maintainer can verify TLS, certificate, credential-redaction, negative protocol, long-transfer, and crash-dump upload evidence without committing secrets, tokens, or private certificates.
 
 ### Release Candidate Evidence
 
@@ -40,8 +40,8 @@ These requirements convert the non-local v1.0 cutover blockers into durable evid
 ### Cutover Review
 
 - [x] **REV-01**: Maintainer can review retained-code acceptance packets for every C, C++, ASM, generated, vendor, HAL, RTOS, network, filesystem, and signing surface that remains at cutover.
-- [x] **REV-02**: Maintainer can approve or reject final reference-demotion criteria through an explicit checklist that links CI, simulator, hardware, live-service, release, retained-code, and residual-risk evidence.
-- [x] **REV-03**: Maintainer can produce a final cutover readiness report that marks reference demotion allowed only when all required gates pass or have documented maintainer-approved exceptions.
+- [ ] **REV-02**: Maintainer can approve or reject final reference-demotion criteria through an explicit checklist that links CI, simulator, hardware, live-service, release, retained-code, and residual-risk evidence.
+- [ ] **REV-03**: Maintainer can produce a final cutover readiness report that marks reference demotion allowed only when all required gates pass or have documented maintainer-approved exceptions.
 
 ## Future Requirements
 
@@ -71,24 +71,24 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CIEV-01 | Phase 13 | Complete |
-| CIEV-02 | Phase 13 | Complete |
-| CIEV-03 | Phase 13 | Complete |
-| SIM-01 | Phase 14 | Pending |
-| SIM-02 | Phase 14 | Pending |
+| CIEV-01 | Phase 19 | Pending |
+| CIEV-02 | Phase 19 | Pending |
+| CIEV-03 | Phase 19 | Pending |
+| SIM-01 | Phase 19 | Pending |
+| SIM-02 | Phase 19 | Pending |
 | SIM-03 | Phase 14 | Pending |
-| HARD-01 | Phase 15 | Complete |
-| HARD-02 | Phase 15 | Complete |
-| HARD-03 | Phase 15 | Complete |
-| LIVE-01 | Phase 16 | Complete |
-| LIVE-02 | Phase 16 | Complete |
-| LIVE-03 | Phase 16 | Complete |
-| REL-01 | Phase 17 | Pending |
-| REL-02 | Phase 17 | Pending |
-| REL-03 | Phase 17 | Pending |
+| HARD-01 | Phase 19 | Pending |
+| HARD-02 | Phase 19 | Pending |
+| HARD-03 | Phase 19 | Pending |
+| LIVE-01 | Phase 19 | Pending |
+| LIVE-02 | Phase 19 | Pending |
+| LIVE-03 | Phase 19 | Pending |
+| REL-01 | Phase 20 | Pending |
+| REL-02 | Phase 20 | Pending |
+| REL-03 | Phase 20 | Pending |
 | REV-01 | Phase 18 | Complete |
-| REV-02 | Phase 18 | Complete |
-| REV-03 | Phase 18 | Complete |
+| REV-02 | Phase 21 | Pending |
+| REV-03 | Phase 21 | Pending |
 
 **Coverage:**
 
@@ -99,4 +99,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 ______________________________________________________________________
 
 *Requirements defined: 2026-06-15*
-*Last updated: 2026-06-18 after Phase 16 completion*
+*Last updated: 2026-06-21 after v1.1 milestone audit gap planning*
