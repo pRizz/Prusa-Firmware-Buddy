@@ -422,6 +422,40 @@ esac
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("row not found in approved row collections", result.stdout)
 
+    def test_contract_rejects_passed_default_status(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            contract = self.read_contract(root)
+            if contract is None:
+                self.skipTest("contract fixture is unavailable")
+            contract["rows"][0]["default_status"] = "passed"
+            self.write_contract(root, contract)
+
+            # Act
+            result = self.run_verifier(["--contract-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("default_status cannot be passed without approved release input", result.stdout)
+
+    def test_quick_rejects_passed_default_status_from_contract(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            contract = self.read_contract(root)
+            if contract is None:
+                self.skipTest("contract fixture is unavailable")
+            contract["rows"][0]["default_status"] = "passed"
+            self.write_contract(root, contract)
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("default_status cannot be passed without approved release input", result.stdout)
+
     def test_quick_without_release_input_writes_pending_result_manifest(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -580,6 +614,33 @@ esac
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("unclassified", result.stdout)
+
+    def test_passed_release_input_rejects_invalid_comparison_metadata_values(self) -> None:
+        cases = [
+            ("mismatch_class", "", "mismatch_class must be a non-empty string"),
+            ("mismatch_reason", "", "mismatch_reason must be a non-empty string"),
+            ("residual_risk", "", "residual_risk must be a non-empty string"),
+            ("owner_phase", "19-aggregate-ci-evidence", "owner_phase must be 20-release-candidate-artifact-production"),
+            ("affected_artifact_surface", "wrong-surface", "affected_artifact_surface must match contract row"),
+        ]
+        for field_name, bad_value, expected_message in cases:
+            with self.subTest(field_name=field_name):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    rows = self.complete_release_rows(root)
+                    rows[0][field_name] = bad_value
+                    release_input = self.write_release_input(root, rows)
+
+                    # Act
+                    result = self.run_verifier(
+                        ["--quick", "--release-input", release_input],
+                        maybe_root=root,
+                    )
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(expected_message, result.stdout)
 
     def test_wiring_requires_phase20_identity_manifest(self) -> None:
         # Arrange

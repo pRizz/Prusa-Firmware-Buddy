@@ -138,13 +138,6 @@ REQUIRED_PASS_FIELDS = [
     "retention_refs",
     "verification_outcome",
 ]
-REQUIRED_COMPARISON_FIELDS = [
-    "mismatch_class",
-    "mismatch_reason",
-    "owner_phase",
-    "affected_artifact_surface",
-    "residual_risk",
-]
 FORBIDDEN_FIELD_NAMES = {
     "private_key",
     "signing_key_value",
@@ -453,6 +446,8 @@ def validate_row(root: Path, row: dict[str, Any], row_name: str) -> None:
     default_status = require_string(row, "default_status", row_name)
     if default_status not in STATUS_VOCABULARY:
         errors.append(f"{row_name} default_status is invalid: {default_status}")
+    if default_status == "passed":
+        errors.append(f"{row_name} default_status cannot be passed without approved release input")
     if require_string(row, "owner_phase", row_name) != PHASE:
         errors.append(f"{row_name} owner_phase must be {PHASE}")
     if errors:
@@ -553,9 +548,17 @@ def validate_release_row(row: dict[str, Any], contract_row: dict[str, Any], row_
             validate_ref_list(row, field, row_name, require_nonempty=status == "passed")
         except VerificationError as error:
             errors.append(str(error))
-    for field in REQUIRED_COMPARISON_FIELDS:
-        if status == "passed" and field not in row:
-            errors.append(f"{row_name} missing required comparison metadata: {field}")
+    if status == "passed":
+        for field in contract_row["comparison_metadata_required"]:
+            try:
+                value = require_string(row, field, row_name)
+            except VerificationError as error:
+                errors.append(str(error))
+                continue
+            if field == "owner_phase" and value != PHASE:
+                errors.append(f"{row_name} owner_phase must be {PHASE}")
+            if field == "affected_artifact_surface" and value != contract_row["artifact_surface"]:
+                errors.append(f"{row_name} affected_artifact_surface must match contract row {contract_row['id']}")
     mismatch_class = row.get("mismatch_class")
     if mismatch_class is not None and mismatch_class not in MISMATCH_CLASS_VOCABULARY:
         errors.append(f"{row_name} mismatch_class is invalid: {mismatch_class}")
