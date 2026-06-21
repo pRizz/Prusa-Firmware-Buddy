@@ -1,0 +1,194 @@
+{
+  "artifact_name": "phase19-ci-evidence",
+  "id": "phase19_aggregate_ci_evidence_contract",
+  "output_root": "build/ci-evidence/phase19",
+  "phase": "19-aggregate-cutover-evidence-ci",
+  "phase_lifecycle_id": "19-2026-06-21T01-07-45",
+  "phases": [
+    {
+      "artifact_subdir": "phase14",
+      "expected_artifacts": [
+        "run-manifest.json",
+        "redacted-summary.json"
+      ],
+      "external_input": {
+        "artifact_path": "build/ci-evidence/phase19/external-input-placeholders.json",
+        "description": "Real simulator execution artifacts are supplied by a simulator-capable environment.",
+        "id": "phase14-real-simulator-input",
+        "status": "pending-simulator-input"
+      },
+      "local_modes": [
+        "contract-only",
+        "wiring-only",
+        "quick",
+        "security-only"
+      ],
+      "owning_phase": "14-simulator-evidence-gates",
+      "quick_output_dir": "build/ci-evidence/phase14",
+      "requirements": [
+        "CIEV-01",
+        "CIEV-02",
+        "CIEV-03",
+        "SIM-01",
+        "SIM-02"
+      ],
+      "script": "tools/bazel/phase14_simulator_evidence.py"
+    },
+    {
+      "artifact_subdir": "phase15",
+      "expected_artifacts": [
+        "run-manifest.json",
+        "redacted-hardware-summary.json",
+        "operator-evidence-input.json"
+      ],
+      "external_input": {
+        "artifact_path": "build/ci-evidence/phase19/external-input-placeholders.json",
+        "description": "Physical printer, storage-media, safety, MMU, RS485, and toolchanger evidence requires operator-supplied hardware runs.",
+        "id": "phase15-hardware-operator-input",
+        "status": "pending-hardware-input"
+      },
+      "local_modes": [
+        "contract-only",
+        "wiring-only",
+        "quick",
+        "security-only"
+      ],
+      "owning_phase": "15-hardware-safety-and-media-qualification",
+      "quick_output_dir": "build/ci-evidence/phase15",
+      "requirements": [
+        "CIEV-01",
+        "CIEV-02",
+        "CIEV-03",
+        "HARD-01",
+        "HARD-02",
+        "HARD-03"
+      ],
+      "script": "tools/bazel/phase15_hardware_evidence.py"
+    },
+    {
+      "artifact_subdir": "phase16",
+      "expected_artifacts": [
+        "run-manifest.json",
+        "redacted-network-summary.json",
+        "operator-evidence-input.json"
+      ],
+      "external_input": {
+        "artifact_path": "build/ci-evidence/phase19/external-input-placeholders.json",
+        "description": "Live or controlled-service network evidence requires redacted operator-supplied service runs.",
+        "id": "phase16-live-service-operator-input",
+        "status": "pending-live-input"
+      },
+      "local_modes": [
+        "contract-only",
+        "wiring-only",
+        "quick",
+        "security-only"
+      ],
+      "owning_phase": "16-live-network-and-transfer-qualification",
+      "quick_output_dir": "build/ci-evidence/phase16",
+      "requirements": [
+        "CIEV-01",
+        "CIEV-02",
+        "CIEV-03",
+        "LIVE-01",
+        "LIVE-02",
+        "LIVE-03"
+      ],
+      "script": "tools/bazel/phase16_live_network_evidence.py"
+    },
+    {
+      "artifact_subdir": "phase17",
+      "expected_artifacts": [
+        "run-manifest.json",
+        "redacted-signing-provenance-summary.json",
+        "release-operator-evidence-input.json"
+      ],
+      "external_input": {
+        "artifact_path": "build/ci-evidence/phase19/external-input-placeholders.json",
+        "description": "Production release-candidate artifacts and signing evidence require release-environment inputs.",
+        "id": "phase17-release-operator-input",
+        "status": "pending-release-input"
+      },
+      "local_modes": [
+        "contract-only",
+        "wiring-only",
+        "quick",
+        "security-only"
+      ],
+      "owning_phase": "17-release-candidate-artifact-and-signing-gates",
+      "quick_output_dir": "build/ci-evidence/phase17",
+      "requirements": [
+        "CIEV-01",
+        "CIEV-02",
+        "CIEV-03"
+      ],
+      "script": "tools/bazel/phase17_release_candidate_evidence.py"
+    },
+    {
+      "artifact_subdir": "phase18",
+      "expected_artifacts": [
+        "run-manifest.json",
+        "redacted-readiness-report.md",
+        "maintainer-decision-input-template.json"
+      ],
+      "external_input": {
+        "artifact_path": "build/ci-evidence/phase19/external-input-placeholders.json",
+        "description": "Final cutover approval requires a maintainer decision packet and upstream result manifests.",
+        "id": "phase18-maintainer-decision-input",
+        "status": "pending-maintainer-review"
+      },
+      "local_modes": [
+        "contract-only",
+        "wiring-only",
+        "quick",
+        "security-only"
+      ],
+      "owning_phase": "18-retained-code-acceptance-and-cutover-review",
+      "quick_output_dir": "build/ci-evidence/phase18",
+      "requirements": [
+        "CIEV-01",
+        "CIEV-02",
+        "CIEV-03"
+      ],
+      "script": "tools/bazel/phase18_cutover_review.py"
+    }
+  ],
+  "required_manifest_fields": [
+    "id",
+    "requirement_ids",
+    "owning_phase",
+    "command",
+    "artifact_path",
+    "status",
+    "failure_reason"
+  ],
+  "requirement_ids": [
+    "CIEV-01",
+    "CIEV-02",
+    "CIEV-03",
+    "SIM-01",
+    "SIM-02",
+    "HARD-01",
+    "HARD-02",
+    "HARD-03",
+    "LIVE-01",
+    "LIVE-02",
+    "LIVE-03"
+  ],
+  "retention_days": 30,
+  "schema_version": "1",
+  "status_vocabulary": [
+    "passed",
+    "failed",
+    "pending-simulator-input",
+    "pending-hardware-input",
+    "pending-live-input",
+    "pending-release-input",
+    "pending-maintainer-review",
+    "blocked-hardware-unavailable",
+    "blocked-credentials-unavailable",
+    "blocked-endpoint-unavailable",
+    "blocked-signing-key-unavailable",
+    "blocked"
+  ]
+}
