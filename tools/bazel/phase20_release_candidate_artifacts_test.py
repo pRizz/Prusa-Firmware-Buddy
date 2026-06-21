@@ -1,0 +1,362 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import json
+import shutil
+import subprocess
+import tempfile
+import unittest
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[2]
+VERIFIER = ROOT / "tools/bazel/phase20_release_candidate_artifacts.py"
+CONTRACT = "tools/bazel/manifests/phase20_release_candidate_artifacts_contract.json"
+TEMPLATE = "tools/bazel/manifests/phase20_release_environment_inputs.template.json"
+DEFAULT_OUTPUT_DIR = "build/ci-evidence/phase20"
+REQUIRED_SURFACES = [
+    ".bin",
+    ".bbf",
+    ".dfu",
+    ".map",
+    ".provenance.json",
+    "resource-image",
+    "resource-package",
+    "language-bundle",
+    "wui-assets",
+    "esp-package",
+    "mmu-package",
+    "dwarf-firmware",
+    "modularbed-firmware",
+    "xbuddy-extension-firmware",
+    "package-manifest",
+    "signing-summary",
+    "provenance-summary",
+    "retention-manifest",
+    "comparison-report",
+]
+REQUIRED_ROW_IDS = [
+    "rel-bin-firmware-image",
+    "rel-bbf-firmware-package",
+    "rel-dfu-update-package",
+    "rel-map-and-provenance",
+    "rel-resource-image-package",
+    "rel-language-bundles",
+    "rel-wui-assets",
+    "rel-esp-packages",
+    "rel-mmu-package",
+    "rel-auxiliary-dwarf-firmware",
+    "rel-auxiliary-modularbed-firmware",
+    "rel-auxiliary-xbuddy-extension-firmware",
+    "rel-package-manifests",
+    "rel-signing-key-identity",
+    "rel-build-input-identity",
+    "rel-artifact-retention",
+    "rel-reference-comparison-report",
+    "rel-contract-traceability-redaction-boundary",
+]
+PROOF_CLASSES = [
+    "release-candidate",
+    "approved-release-run",
+    "external-release-key-evidence",
+    "local-smoke",
+    "template-only",
+]
+STATUS_VOCABULARY = [
+    "pending-release-input",
+    "release-run-required",
+    "external-signing-required",
+    "blocked-signing-key-unavailable",
+    "source-contract-passed",
+    "passed",
+    "failed",
+    "rejected-redaction",
+    "rejected-overclaim",
+]
+MISMATCH_CLASSES = [
+    "pass",
+    "intentional-delta",
+    "blocker",
+    "deferred-retained-code-issue",
+]
+
+
+class Phase20ReleaseCandidateArtifactsTest(unittest.TestCase):
+    def make_temp_root(self) -> tuple[tempfile.TemporaryDirectory[str], Path]:
+        temp_dir = tempfile.TemporaryDirectory()
+        root = Path(temp_dir.name)
+        (root / "tools/bazel/manifests").mkdir(parents=True)
+        if VERIFIER.exists():
+            shutil.copy2(VERIFIER, root / "tools/bazel/phase20_release_candidate_artifacts.py")
+        for path in [CONTRACT, TEMPLATE]:
+            source = ROOT / path
+            if source.exists():
+                destination = root / path
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, destination)
+        return temp_dir, root
+
+    def run_verifier(
+        self,
+        args: list[str],
+        maybe_root: Path | None = None,
+    ) -> subprocess.CompletedProcess[str]:
+        root = maybe_root or ROOT
+        verifier = root / "tools/bazel/phase20_release_candidate_artifacts.py"
+        return subprocess.run(
+            ["python3", verifier.as_posix(), *args],
+            cwd=root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            check=False,
+            shell=False,
+        )
+
+    def read_contract(self, root: Path) -> dict[str, object] | None:
+        contract_path = root / CONTRACT
+        if not contract_path.exists():
+            return None
+        return json.loads(contract_path.read_text(encoding="utf-8"))
+
+    def write_contract(self, root: Path, contract: dict[str, object]) -> None:
+        contract_path = root / CONTRACT
+        contract_path.parent.mkdir(parents=True, exist_ok=True)
+        contract_path.write_text(json.dumps(contract, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    def write_release_input(
+        self,
+        root: Path,
+        rows: list[dict[str, object]],
+        path: str = "release-input.json",
+    ) -> str:
+        input_path = root / path
+        input_path.write_text(json.dumps({"evidence_rows": rows}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        return path
+
+    def complete_release_rows(self) -> list[dict[str, object]]:
+        rows: list[dict[str, object]] = []
+        for row_id in REQUIRED_ROW_IDS:
+            artifact_ref = f"external://phase20/artifacts/{row_id}.json"
+            rows.append(
+                {
+                    "id": row_id,
+                    "artifact_refs": [artifact_ref],
+                    "artifact_surface": ".bbf",
+                    "build_input_identity": "git:phase20-test-build;bazel:phase17_release_candidate_artifacts",
+                    "builder_command": "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+                    "key_identity_ref": "release-key-fingerprint:sha256:phase20-test",
+                    "mismatch_class": "pass",
+                    "mismatch_reason": "Approved release metadata matched the archived reference classification.",
+                    "operator": "phase20-test-operator",
+                    "owner_phase": "20-release-candidate-artifact-production",
+                    "proof_class": "approved-release-run",
+                    "release_run_id": "phase20-approved-run-001",
+                    "residual_risk": "Limited to supplied release-environment evidence.",
+                    "retention_refs": ["external://phase20/retention/phase20-approved-run-001"],
+                    "status": "passed",
+                    "subject_digests": [
+                        {
+                            "artifact_ref": artifact_ref,
+                            "sha256": "a" * 64,
+                        }
+                    ],
+                    "timestamp": "2026-06-21T13:00:00Z",
+                    "verification_outcome": "approved-release-metadata",
+                    "affected_artifact_surface": ".bbf",
+                }
+            )
+        return rows
+
+    def test_contract_lists_all_release_surfaces(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            contract = self.read_contract(root)
+            if contract is None:
+                # Act
+                result = self.run_verifier(["--contract-only"], maybe_root=root)
+
+                # Assert
+                self.assertEqual(result.returncode, 0, result.stdout)
+                return
+
+            # Act
+            result = self.run_verifier(["--contract-only"], maybe_root=root)
+
+            # Assert
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertEqual(contract.get("required_artifact_outputs"), REQUIRED_SURFACES)
+            self.assertEqual(contract.get("proof_class_vocabulary"), PROOF_CLASSES)
+            self.assertEqual(contract.get("status_vocabulary"), STATUS_VOCABULARY)
+            self.assertEqual(contract.get("mismatch_class_vocabulary"), MISMATCH_CLASSES)
+            self.assertEqual(
+                [row.get("id") for row in contract.get("rows", [])],
+                REQUIRED_ROW_IDS,
+            )
+            for surface in REQUIRED_SURFACES:
+                with self.subTest(surface=surface):
+                    broken_contract = json.loads(json.dumps(contract))
+                    broken_contract["required_artifact_outputs"] = [
+                        existing for existing in REQUIRED_SURFACES if existing != surface
+                    ]
+                    self.write_contract(root, broken_contract)
+
+                    # Act
+                    broken_result = self.run_verifier(["--contract-only"], maybe_root=root)
+
+                    # Assert
+                    self.assertNotEqual(broken_result.returncode, 0)
+                    self.assertIn(surface, broken_result.stdout)
+            self.write_contract(root, contract)
+            for row_id in REQUIRED_ROW_IDS:
+                with self.subTest(row_id=row_id):
+                    broken_contract = json.loads(json.dumps(contract))
+                    broken_contract["rows"] = [
+                        row for row in broken_contract["rows"] if row.get("id") != row_id
+                    ]
+                    self.write_contract(root, broken_contract)
+
+                    # Act
+                    broken_result = self.run_verifier(["--contract-only"], maybe_root=root)
+
+                    # Assert
+                    self.assertNotEqual(broken_result.returncode, 0)
+                    self.assertIn(row_id, broken_result.stdout)
+
+    def test_quick_without_release_input_writes_pending_result_manifest(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            output_dir = root / DEFAULT_OUTPUT_DIR
+
+            # Act
+            result = self.run_verifier(["--quick", "--output-dir", output_dir.as_posix()], maybe_root=root)
+
+            # Assert
+            self.assertEqual(result.returncode, 0, result.stdout)
+            manifest_path = output_dir / "release-result-manifest.json"
+            self.assertTrue(manifest_path.exists())
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            self.assertFalse(manifest["release_inputs_supplied"])
+            for row in manifest["rows"]:
+                self.assertNotEqual(row["status"], "passed")
+
+    def test_passed_result_rejects_local_smoke_and_template_only_proof(self) -> None:
+        for proof_class in ["local-smoke", "template-only"]:
+            with self.subTest(proof_class=proof_class):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    rows = self.complete_release_rows()
+                    rows[0]["proof_class"] = proof_class
+                    release_input = self.write_release_input(root, rows)
+
+                    # Act
+                    result = self.run_verifier(
+                        ["--quick", "--release-input", release_input],
+                        maybe_root=root,
+                    )
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(proof_class, result.stdout)
+
+    def test_redaction_rejects_private_key_and_payload_fields(self) -> None:
+        forbidden_fields = [
+            "private_key",
+            "raw_firmware_payload",
+            "token",
+            "password",
+            "credential",
+        ]
+        for field_name in forbidden_fields:
+            with self.subTest(field_name=field_name):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    rows = self.complete_release_rows()
+                    rows[0][field_name] = "secret-material"
+                    release_input = self.write_release_input(root, rows)
+
+                    # Act
+                    result = self.run_verifier(
+                        ["--quick", "--release-input", release_input],
+                        maybe_root=root,
+                    )
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(field_name, result.stdout)
+
+    def test_release_refs_reject_absolute_and_parent_traversal_paths(self) -> None:
+        bad_refs = [
+            "/tmp/phase20/artifact.bbf",
+            "../phase20/artifact.bbf",
+            "build/ci-evidence/phase19/release-result-manifest.json",
+        ]
+        for bad_ref in bad_refs:
+            with self.subTest(bad_ref=bad_ref):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    rows = self.complete_release_rows()
+                    rows[0]["artifact_refs"] = [bad_ref]
+                    rows[0]["retention_refs"] = [bad_ref]
+                    rows[0]["subject_digests"] = [{"artifact_ref": bad_ref, "sha256": "b" * 64}]
+                    release_input = self.write_release_input(root, rows)
+
+                    # Act
+                    result = self.run_verifier(
+                        ["--quick", "--release-input", release_input],
+                        maybe_root=root,
+                    )
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(bad_ref, result.stdout)
+
+    def test_comparison_rows_require_exact_classification_metadata(self) -> None:
+        required_fields = [
+            "mismatch_class",
+            "mismatch_reason",
+            "owner_phase",
+            "affected_artifact_surface",
+            "residual_risk",
+        ]
+        for required_field in required_fields:
+            with self.subTest(required_field=required_field):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    rows = self.complete_release_rows()
+                    rows[0].pop(required_field)
+                    release_input = self.write_release_input(root, rows)
+
+                    # Act
+                    result = self.run_verifier(
+                        ["--quick", "--release-input", release_input],
+                        maybe_root=root,
+                    )
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(required_field, result.stdout)
+
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            rows = self.complete_release_rows()
+            rows[0]["mismatch_class"] = "unclassified"
+            release_input = self.write_release_input(root, rows)
+
+            # Act
+            result = self.run_verifier(["--quick", "--release-input", release_input], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unclassified", result.stdout)
+
+
+if __name__ == "__main__":
+    unittest.main()
