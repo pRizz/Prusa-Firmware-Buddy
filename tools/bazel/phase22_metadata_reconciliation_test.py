@@ -50,6 +50,33 @@ class Phase22MetadataReconciliationTest(unittest.TestCase):
         contract_path.parent.mkdir(parents=True, exist_ok=True)
         contract_path.write_text(json.dumps(contract, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
+    def write_text(self, root: Path, path: str, text: str) -> None:
+        target = root / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(text, encoding="utf-8")
+
+    def write_clean_validation_files(self, root: Path) -> None:
+        clean_validation = """---
+phase: phase
+nyquist_compliant: true
+wave_0_complete: true
+---
+
+## Wave 0 Requirements
+
+- [x] Contract exists
+
+| Task | Status |
+| --- | --- |
+| Task 1 | pass |
+"""
+        for phase in [14, 15, 16, 17, 18, 20]:
+            self.write_text(
+                root,
+                f".planning/phases/{phase:02d}-example/{phase:02d}-VALIDATION.md",
+                clean_validation,
+            )
+
     def test_missing_correction_source_refs_names_row_id(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -133,6 +160,140 @@ class Phase22MetadataReconciliationTest(unittest.TestCase):
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(marker, result.stdout)
+
+    def test_requirements_only_rejects_unchecked_and_complete_without_caveat(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_text(
+                root,
+                ".planning/REQUIREMENTS.md",
+                """
+- [ ] **SIM-03** Simulator evidence gates
+- [ ] **REV-02** Upstream result consumption
+- [ ] **REV-03** Demotion safeguards
+
+| ID | Status |
+| --- | --- |
+| SIM-03 | Pending |
+| REV-02 | Pending |
+| REV-03 | Pending |
+""",
+            )
+
+            # Act
+            result = self.run_verifier(["--requirements-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        for requirement_id in ["SIM-03", "REV-02", "REV-03"]:
+            self.assertIn(requirement_id, result.stdout)
+
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_text(
+                root,
+                ".planning/REQUIREMENTS.md",
+                """
+- [x] **SIM-03** Simulator evidence gates
+- [x] **REV-02** Upstream result consumption
+- [x] **REV-03** Demotion safeguards
+
+| ID | Status |
+| --- | --- |
+| SIM-03 | Complete |
+| REV-02 | Complete |
+| REV-03 | Complete |
+""",
+            )
+
+            # Act
+            result = self.run_verifier(["--requirements-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("hardware-only behavior is not simulator-proven", result.stdout)
+        self.assertIn("demotion_allowed remains blocked", result.stdout)
+
+    def test_validation_only_rejects_wave_zero_placeholders_and_pending_rows(self) -> None:
+        cases = {
+            "wave_0_complete: false": "wave_0_complete",
+            "nyquist_compliant: false": "nyquist_compliant",
+            "no - Wave 0": "Wave 0",
+            "No - Wave 0": "Wave 0",
+            "no W0": "W0",
+            "- [ ] Contract exists": "unchecked Wave 0",
+            "| Task 1 | pending |": "pending",
+        }
+        for bad_text, expected in cases.items():
+            with self.subTest(bad_text=bad_text):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.write_clean_validation_files(root)
+                    self.write_text(
+                        root,
+                        ".planning/phases/14-example/14-VALIDATION.md",
+                        f"""---
+phase: phase
+nyquist_compliant: true
+wave_0_complete: true
+---
+
+## Wave 0 Requirements
+
+{bad_text}
+""",
+                    )
+
+                    # Act
+                    result = self.run_verifier(["--validation-only"], maybe_root=root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(expected, result.stdout)
+
+    def test_roadmap_state_only_rejects_stale_phase21_and_state_focus(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_text(
+                root,
+                ".planning/ROADMAP.md",
+                """
+| Phase | Version | Plans | Status |
+| --- | --- | --- | --- |
+| 21. Final Readiness Result Consumption | v1.1 | 0/0 | Planned |
+""",
+            )
+            self.write_text(
+                root,
+                ".planning/STATE.md",
+                """
+Current focus: Phase 21 final readiness
+Current position: Phase 21 awaiting verification
+""",
+            )
+
+            # Act
+            result = self.run_verifier(["--roadmap-state-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Phase 21", result.stdout)
+        self.assertIn("STATE", result.stdout)
+
+    def test_security_only_rejects_output_dir_escape(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            # Act
+            result = self.run_verifier(["--security-only", "--output-dir", "../phase22"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("output", result.stdout)
 
 
 if __name__ == "__main__":
