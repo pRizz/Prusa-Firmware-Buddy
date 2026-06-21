@@ -27,6 +27,25 @@
     "rejected-redaction",
     "rejected-overclaim"
   ],
+  "upstream_result_status_vocabulary": [
+    "missing",
+    "not-required",
+    "pending",
+    "pending-ci-input",
+    "pending-simulator-input",
+    "pending-hardware-input",
+    "pending-live-input",
+    "pending-release-input",
+    "release-run-required",
+    "external-signing-required",
+    "blocked-signing-key-unavailable",
+    "source-contract-passed",
+    "passed",
+    "failed",
+    "blocked",
+    "rejected-redaction",
+    "rejected-overclaim"
+  ],
   "review_decision_vocabulary": [
     "approve",
     "reject",
@@ -36,6 +55,10 @@
     "passed",
     "exception-approved",
     "not-applicable"
+  ],
+  "acceptable_upstream_result_statuses": [
+    "passed",
+    "not-required"
   ],
   "retained_source_collections": {
     "tools/bazel/manifests/phase11_retained_code_justifications.json": {
@@ -131,6 +154,470 @@
       ]
     }
   },
+  "upstream_result_requirements": [
+    {
+      "criterion_id": "final-ci-evidence",
+      "evidence_family": "ci",
+      "result_required": true,
+      "source_phase": "19-aggregate-cutover-evidence-ci",
+      "source_lifecycle_id": "19-2026-06-21T01-07-45",
+      "required_manifest_refs": [
+        "build/ci-evidence/phase19/run-manifest.json"
+      ],
+      "approved_ref_roots": [
+        "build/ci-evidence/phase19",
+        "external://phase19/"
+      ],
+      "acceptable_statuses": [
+        "passed"
+      ],
+      "hard_blocking_statuses": [
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "exception_coverable_statuses": [
+        "pending",
+        "failed",
+        "blocked"
+      ],
+      "required_row_fields": [
+        "criterion_id",
+        "evidence_family",
+        "owning_phase",
+        "source_lifecycle_id",
+        "status",
+        "failure_reason",
+        "artifact_refs",
+        "redaction_status",
+        "source_ref_status",
+        "generated_at_utc",
+        "requirement_ids"
+      ],
+      "redaction_status_field": "redaction_status",
+      "source_ref_status_field": "source_ref_status",
+      "hard_blocker_reasons": [
+        "redaction-failed",
+        "overclaim-failed",
+        "lifecycle-mismatch",
+        "source-ref-failed",
+        "unsafe-ref"
+      ],
+      "requirement_ids": [
+        "REV-02",
+        "REV-03"
+      ]
+    },
+    {
+      "criterion_id": "final-simulator-evidence",
+      "evidence_family": "simulator",
+      "result_required": true,
+      "source_phase": "19-aggregate-cutover-evidence-ci",
+      "source_lifecycle_id": "19-2026-06-21T01-07-45",
+      "required_manifest_refs": [
+        "build/ci-evidence/phase19/run-manifest.json"
+      ],
+      "approved_ref_roots": [
+        "build/ci-evidence/phase19",
+        "external://phase19/"
+      ],
+      "acceptable_statuses": [
+        "passed"
+      ],
+      "hard_blocking_statuses": [
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "exception_coverable_statuses": [
+        "pending",
+        "pending-simulator-input",
+        "failed",
+        "blocked"
+      ],
+      "required_row_fields": [
+        "criterion_id",
+        "evidence_family",
+        "owning_phase",
+        "source_lifecycle_id",
+        "status",
+        "failure_reason",
+        "artifact_refs",
+        "redaction_status",
+        "source_ref_status",
+        "generated_at_utc",
+        "requirement_ids"
+      ],
+      "redaction_status_field": "redaction_status",
+      "source_ref_status_field": "source_ref_status",
+      "hard_blocker_reasons": [
+        "redaction-failed",
+        "overclaim-failed",
+        "lifecycle-mismatch",
+        "source-ref-failed",
+        "unsafe-ref"
+      ],
+      "requirement_ids": [
+        "REV-02",
+        "REV-03"
+      ]
+    },
+    {
+      "criterion_id": "final-hardware-safety-media-evidence",
+      "evidence_family": "hardware",
+      "result_required": true,
+      "source_phase": "19-aggregate-cutover-evidence-ci",
+      "source_lifecycle_id": "19-2026-06-21T01-07-45",
+      "required_manifest_refs": [
+        "build/ci-evidence/phase19/run-manifest.json"
+      ],
+      "approved_ref_roots": [
+        "build/ci-evidence/phase19",
+        "external://phase19/"
+      ],
+      "acceptable_statuses": [
+        "passed"
+      ],
+      "hard_blocking_statuses": [
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "exception_coverable_statuses": [
+        "pending",
+        "pending-hardware-input",
+        "failed",
+        "blocked"
+      ],
+      "required_row_fields": [
+        "criterion_id",
+        "evidence_family",
+        "owning_phase",
+        "source_lifecycle_id",
+        "status",
+        "failure_reason",
+        "artifact_refs",
+        "redaction_status",
+        "source_ref_status",
+        "generated_at_utc",
+        "requirement_ids"
+      ],
+      "redaction_status_field": "redaction_status",
+      "source_ref_status_field": "source_ref_status",
+      "hard_blocker_reasons": [
+        "redaction-failed",
+        "overclaim-failed",
+        "lifecycle-mismatch",
+        "source-ref-failed",
+        "unsafe-ref"
+      ],
+      "requirement_ids": [
+        "REV-02",
+        "REV-03"
+      ]
+    },
+    {
+      "criterion_id": "final-live-network-transfer-evidence",
+      "evidence_family": "live-service",
+      "result_required": true,
+      "source_phase": "19-aggregate-cutover-evidence-ci",
+      "source_lifecycle_id": "19-2026-06-21T01-07-45",
+      "required_manifest_refs": [
+        "build/ci-evidence/phase19/run-manifest.json"
+      ],
+      "approved_ref_roots": [
+        "build/ci-evidence/phase19",
+        "external://phase19/"
+      ],
+      "acceptable_statuses": [
+        "passed"
+      ],
+      "hard_blocking_statuses": [
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "exception_coverable_statuses": [
+        "pending",
+        "pending-live-input",
+        "failed",
+        "blocked"
+      ],
+      "required_row_fields": [
+        "criterion_id",
+        "evidence_family",
+        "owning_phase",
+        "source_lifecycle_id",
+        "status",
+        "failure_reason",
+        "artifact_refs",
+        "redaction_status",
+        "source_ref_status",
+        "generated_at_utc",
+        "requirement_ids"
+      ],
+      "redaction_status_field": "redaction_status",
+      "source_ref_status_field": "source_ref_status",
+      "hard_blocker_reasons": [
+        "redaction-failed",
+        "overclaim-failed",
+        "lifecycle-mismatch",
+        "source-ref-failed",
+        "unsafe-ref"
+      ],
+      "requirement_ids": [
+        "REV-02",
+        "REV-03"
+      ]
+    },
+    {
+      "criterion_id": "final-release-artifact-signing-evidence",
+      "evidence_family": "release",
+      "result_required": true,
+      "source_phase": "20-release-candidate-artifact-production",
+      "source_lifecycle_id": "20-2026-06-21T12-40-17",
+      "required_manifest_refs": [
+        "build/ci-evidence/phase20/release-result-manifest.json"
+      ],
+      "approved_ref_roots": [
+        "build/ci-evidence/phase20",
+        "external://phase20/"
+      ],
+      "acceptable_statuses": [
+        "passed"
+      ],
+      "hard_blocking_statuses": [
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "exception_coverable_statuses": [
+        "pending-release-input",
+        "release-run-required",
+        "external-signing-required",
+        "blocked-signing-key-unavailable",
+        "source-contract-passed",
+        "failed",
+        "blocked"
+      ],
+      "required_row_fields": [
+        "criterion_id",
+        "evidence_family",
+        "owning_phase",
+        "source_lifecycle_id",
+        "status",
+        "failure_reason",
+        "artifact_refs",
+        "redaction_status",
+        "source_ref_status",
+        "generated_at_utc",
+        "requirement_ids"
+      ],
+      "redaction_status_field": "redaction_status",
+      "source_ref_status_field": "source_ref_status",
+      "hard_blocker_reasons": [
+        "redaction-failed",
+        "overclaim-failed",
+        "lifecycle-mismatch",
+        "source-ref-failed",
+        "unsafe-ref"
+      ],
+      "requirement_ids": [
+        "REV-02",
+        "REV-03"
+      ]
+    },
+    {
+      "criterion_id": "final-retained-code-acceptance",
+      "evidence_family": "retained-code",
+      "result_required": true,
+      "source_phase": "19-aggregate-cutover-evidence-ci",
+      "source_lifecycle_id": "19-2026-06-21T01-07-45",
+      "required_manifest_refs": [
+        "build/ci-evidence/phase19/run-manifest.json"
+      ],
+      "approved_ref_roots": [
+        "build/ci-evidence/phase19",
+        "external://phase19/"
+      ],
+      "acceptable_statuses": [
+        "passed"
+      ],
+      "hard_blocking_statuses": [
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "exception_coverable_statuses": [
+        "pending",
+        "failed",
+        "blocked"
+      ],
+      "required_row_fields": [
+        "criterion_id",
+        "evidence_family",
+        "owning_phase",
+        "source_lifecycle_id",
+        "status",
+        "failure_reason",
+        "artifact_refs",
+        "redaction_status",
+        "source_ref_status",
+        "generated_at_utc",
+        "requirement_ids"
+      ],
+      "redaction_status_field": "redaction_status",
+      "source_ref_status_field": "source_ref_status",
+      "hard_blocker_reasons": [
+        "redaction-failed",
+        "overclaim-failed",
+        "lifecycle-mismatch",
+        "source-ref-failed",
+        "unsafe-ref"
+      ],
+      "requirement_ids": [
+        "REV-01",
+        "REV-03"
+      ]
+    },
+    {
+      "criterion_id": "final-residual-risk-review",
+      "evidence_family": "residual-risk",
+      "result_required": false,
+      "source_phase": "18-retained-code-acceptance-and-cutover-review",
+      "source_lifecycle_id": "18-2026-06-20T14-27-15",
+      "required_manifest_refs": [
+        "build/ci-evidence/phase18/residual-risk-register.json"
+      ],
+      "approved_ref_roots": [
+        "build/ci-evidence/phase18",
+        "external://phase18/"
+      ],
+      "acceptable_statuses": [
+        "not-required"
+      ],
+      "hard_blocking_statuses": [
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "exception_coverable_statuses": [],
+      "required_row_fields": [
+        "criterion_id",
+        "evidence_family",
+        "owning_phase",
+        "source_lifecycle_id",
+        "status",
+        "failure_reason",
+        "artifact_refs",
+        "redaction_status",
+        "source_ref_status",
+        "generated_at_utc",
+        "requirement_ids"
+      ],
+      "redaction_status_field": "redaction_status",
+      "source_ref_status_field": "source_ref_status",
+      "hard_blocker_reasons": [
+        "redaction-failed",
+        "overclaim-failed",
+        "lifecycle-mismatch",
+        "source-ref-failed",
+        "unsafe-ref"
+      ],
+      "requirement_ids": [
+        "REV-03"
+      ]
+    },
+    {
+      "criterion_id": "final-maintainer-decision",
+      "evidence_family": "maintainer-decision",
+      "result_required": false,
+      "source_phase": "18-retained-code-acceptance-and-cutover-review",
+      "source_lifecycle_id": "18-2026-06-20T14-27-15",
+      "required_manifest_refs": [
+        "build/ci-evidence/phase18/maintainer-decision-input-template.json"
+      ],
+      "approved_ref_roots": [
+        "build/ci-evidence/phase18",
+        "external://phase18/"
+      ],
+      "acceptable_statuses": [
+        "not-required"
+      ],
+      "hard_blocking_statuses": [
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "exception_coverable_statuses": [],
+      "required_row_fields": [
+        "criterion_id",
+        "evidence_family",
+        "owning_phase",
+        "source_lifecycle_id",
+        "status",
+        "failure_reason",
+        "artifact_refs",
+        "redaction_status",
+        "source_ref_status",
+        "generated_at_utc",
+        "requirement_ids"
+      ],
+      "redaction_status_field": "redaction_status",
+      "source_ref_status_field": "source_ref_status",
+      "hard_blocker_reasons": [
+        "redaction-failed",
+        "overclaim-failed",
+        "lifecycle-mismatch",
+        "source-ref-failed",
+        "unsafe-ref"
+      ],
+      "requirement_ids": [
+        "REV-03"
+      ]
+    },
+    {
+      "criterion_id": "final-reference-demotion-allowed",
+      "evidence_family": "residual-risk",
+      "result_required": false,
+      "source_phase": "18-retained-code-acceptance-and-cutover-review",
+      "source_lifecycle_id": "18-2026-06-20T14-27-15",
+      "required_manifest_refs": [
+        "build/ci-evidence/phase18/run-manifest.json"
+      ],
+      "approved_ref_roots": [
+        "build/ci-evidence/phase18",
+        "external://phase18/"
+      ],
+      "acceptable_statuses": [
+        "not-required"
+      ],
+      "hard_blocking_statuses": [
+        "rejected-redaction",
+        "rejected-overclaim"
+      ],
+      "exception_coverable_statuses": [],
+      "required_row_fields": [
+        "criterion_id",
+        "evidence_family",
+        "owning_phase",
+        "source_lifecycle_id",
+        "status",
+        "failure_reason",
+        "artifact_refs",
+        "redaction_status",
+        "source_ref_status",
+        "generated_at_utc",
+        "requirement_ids"
+      ],
+      "redaction_status_field": "redaction_status",
+      "source_ref_status_field": "source_ref_status",
+      "hard_blocker_reasons": [
+        "redaction-failed",
+        "overclaim-failed",
+        "lifecycle-mismatch",
+        "source-ref-failed",
+        "unsafe-ref"
+      ],
+      "requirement_ids": [
+        "REV-01",
+        "REV-02",
+        "REV-03"
+      ]
+    }
+  ],
   "retained_code_acceptance_packets": [
     {
       "id": "packet-hal-cmsis-startup-asm",
@@ -972,6 +1459,7 @@
   "generated_artifacts": [
     "run-manifest.json",
     "normalized-final-demotion-results.json",
+    "upstream-result-consumption.json",
     "retained-code-acceptance-summary.json",
     "residual-risk-register.json",
     "redacted-readiness-report.md",

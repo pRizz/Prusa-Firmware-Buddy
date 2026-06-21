@@ -41,6 +41,26 @@ FINAL_CRITERION_STATUS_VOCABULARY = [
 ]
 REVIEW_DECISION_VOCABULARY = ["approve", "reject", "exception"]
 ALLOWED_DEMOTION_STATUSES = ["passed", "exception-approved", "not-applicable"]
+UPSTREAM_RESULT_STATUS_VOCABULARY = [
+    "missing",
+    "not-required",
+    "pending",
+    "pending-ci-input",
+    "pending-simulator-input",
+    "pending-hardware-input",
+    "pending-live-input",
+    "pending-release-input",
+    "release-run-required",
+    "external-signing-required",
+    "blocked-signing-key-unavailable",
+    "source-contract-passed",
+    "passed",
+    "failed",
+    "blocked",
+    "rejected-redaction",
+    "rejected-overclaim",
+]
+ACCEPTABLE_UPSTREAM_RESULT_STATUSES = ["passed", "not-required"]
 EXCEPTION_POLICY_STATUSES = {
     "exception-requested",
     "exception-approved",
@@ -131,6 +151,36 @@ FINAL_DECISION_REQUIRED_FIELDS = [
     "exception",
     "redaction_summary",
 ]
+UPSTREAM_RESULT_REQUIREMENT_FIELDS = [
+    "criterion_id",
+    "evidence_family",
+    "result_required",
+    "source_phase",
+    "source_lifecycle_id",
+    "required_manifest_refs",
+    "approved_ref_roots",
+    "acceptable_statuses",
+    "hard_blocking_statuses",
+    "exception_coverable_statuses",
+    "required_row_fields",
+    "redaction_status_field",
+    "source_ref_status_field",
+    "hard_blocker_reasons",
+    "requirement_ids",
+]
+UPSTREAM_RESULT_ROW_REQUIRED_FIELDS = [
+    "criterion_id",
+    "evidence_family",
+    "owning_phase",
+    "source_lifecycle_id",
+    "status",
+    "failure_reason",
+    "artifact_refs",
+    "redaction_status",
+    "source_ref_status",
+    "generated_at_utc",
+    "requirement_ids",
+]
 EXCEPTION_REQUIRED_FIELDS = [
     "scope",
     "rationale",
@@ -149,6 +199,7 @@ REQUIRED_UNSUPPORTED_CLAIMS = {
 REQUIRED_GENERATED_ARTIFACTS = {
     "run-manifest.json",
     "normalized-final-demotion-results.json",
+    "upstream-result-consumption.json",
     "retained-code-acceptance-summary.json",
     "residual-risk-register.json",
     "redacted-readiness-report.md",
@@ -237,6 +288,11 @@ SOURCE_REF_ROW_COLLECTIONS = {
     "tools/bazel/manifests/phase16_live_network_evidence_contract.json": ("scenarios", "id"),
     "tools/bazel/manifests/phase17_release_candidate_evidence_contract.json": ("rows", "id"),
 }
+UPSTREAM_SOURCE_LIFECYCLES = {
+    PHASE: PHASE_LIFECYCLE_ID,
+    "19-aggregate-cutover-evidence-ci": "19-2026-06-21T01-07-45",
+    "20-release-candidate-artifact-production": "20-2026-06-21T12-40-17",
+}
 RETAINED_SURFACE_SOURCE_PATHS = [
     "tools/bazel/manifests/phase11_retained_code_justifications.json",
     "tools/bazel/manifests/foreign_code_inventory.json",
@@ -251,11 +307,14 @@ EXPECTED_TOP_LEVEL_FIELDS = {
     "output_root",
     "retained_packet_status_vocabulary",
     "final_criterion_status_vocabulary",
+    "upstream_result_status_vocabulary",
     "review_decision_vocabulary",
     "allowed_demotion_statuses",
+    "acceptable_upstream_result_statuses",
     "retained_source_collections",
     "retained_code_acceptance_packet_schema",
     "final_decision_schema",
+    "upstream_result_requirements",
     "retained_code_acceptance_packets",
     "final_demotion_criteria",
     "generated_artifacts",
@@ -421,6 +480,34 @@ def require_phase18_artifact_ref(ref: str, row_name: str) -> None:
     require_repo_relative_under(ref, DEFAULT_OUTPUT_DIR, row_name)
 
 
+def require_external_ref(ref: str, allowed_roots: list[str], row_name: str) -> None:
+    if not any(ref.startswith(root) for root in allowed_roots if root.startswith("external://")):
+        raise VerificationError(f"{row_name} external ref is outside approved roots: {ref}")
+    if ".." in ref.split("/"):
+        raise VerificationError(f"{row_name} external ref cannot traverse: {ref}")
+
+
+def require_upstream_artifact_ref(ref: str, allowed_roots: list[str], row_name: str) -> None:
+    if ref.startswith("artifact://"):
+        raise VerificationError(f"{row_name} artifact ref is outside approved roots: {ref}")
+    if ref.startswith("external://"):
+        require_external_ref(ref, allowed_roots, row_name)
+        return
+    matching_repo_roots = [root for root in allowed_roots if not root.startswith("external://")]
+    if not matching_repo_roots:
+        raise VerificationError(f"{row_name} repo ref is outside approved roots: {ref}")
+    last_error: VerificationError | None = None
+    for root in matching_repo_roots:
+        try:
+            require_repo_relative_under(ref, root, row_name)
+            return
+        except VerificationError as error:
+            last_error = error
+    if last_error is not None:
+        raise last_error
+    raise VerificationError(f"{row_name} repo ref is outside approved roots: {ref}")
+
+
 def require_iso_utc(timestamp_text: str, row_name: str) -> None:
     if not timestamp_text.endswith("Z"):
         raise VerificationError(f"{row_name} decision_timestamp must be ISO-8601 UTC ending in Z")
@@ -564,10 +651,17 @@ def validate_schema(contract: dict[str, Any], errors: list[str]) -> None:
             errors.append("retained_packet_status_vocabulary does not match the Phase 18 vocabulary")
         if require_list_of_strings(contract, "final_criterion_status_vocabulary", "contract") != FINAL_CRITERION_STATUS_VOCABULARY:
             errors.append("final_criterion_status_vocabulary does not match the Phase 18 vocabulary")
+        if require_list_of_strings(contract, "upstream_result_status_vocabulary", "contract") != UPSTREAM_RESULT_STATUS_VOCABULARY:
+            errors.append("upstream_result_status_vocabulary does not match the Phase 21 vocabulary")
         if require_list_of_strings(contract, "review_decision_vocabulary", "contract") != REVIEW_DECISION_VOCABULARY:
             errors.append("review_decision_vocabulary does not match the Phase 18 vocabulary")
         if require_list_of_strings(contract, "allowed_demotion_statuses", "contract") != ALLOWED_DEMOTION_STATUSES:
             errors.append("allowed_demotion_statuses does not match the Phase 18 demotion policy")
+        if (
+            require_list_of_strings(contract, "acceptable_upstream_result_statuses", "contract")
+            != ACCEPTABLE_UPSTREAM_RESULT_STATUSES
+        ):
+            errors.append("acceptable_upstream_result_statuses does not match the Phase 21 upstream policy")
         validate_source_collection_map(contract, errors)
         validate_packet_schema(contract, errors)
         validate_decision_schema(contract, errors)
@@ -610,6 +704,107 @@ def validate_decision_schema(contract: dict[str, Any], errors: list[str]) -> Non
     exception_fields = require_list_of_strings(exception, "required_fields", "final_decision_schema.exception")
     if exception_fields != EXCEPTION_REQUIRED_FIELDS:
         errors.append("final_decision_schema exception.required_fields do not match Phase 18 exception requirements")
+
+
+def contract_upstream_requirements(contract: dict[str, Any]) -> list[dict[str, Any]]:
+    raw_requirements = contract.get("upstream_result_requirements")
+    if not isinstance(raw_requirements, list):
+        raise VerificationError("contract upstream_result_requirements must be a list")
+    requirements: list[dict[str, Any]] = []
+    for index, requirement in enumerate(raw_requirements):
+        if not isinstance(requirement, dict):
+            raise VerificationError(f"upstream_result_requirements[{index}] must be an object")
+        requirements.append(requirement)
+    return requirements
+
+
+def validate_upstream_result_requirements(
+    requirements: list[dict[str, Any]],
+    criteria: list[dict[str, Any]],
+    errors: list[str],
+) -> None:
+    criteria_by_id = {str(criterion["id"]): criterion for criterion in criteria}
+    requirement_ids = [str(requirement.get("criterion_id")) for requirement in requirements]
+    for missing in sorted(set(criteria_by_id) - set(requirement_ids)):
+        errors.append("missing upstream result requirement for final criterion: " + missing)
+    for extra in sorted(set(requirement_ids) - set(criteria_by_id)):
+        errors.append("upstream result requirement criterion_id does not resolve: " + extra)
+    if len(requirement_ids) != len(set(requirement_ids)):
+        errors.append("duplicate upstream result requirement criterion IDs are not allowed")
+    for requirement in requirements:
+        criterion_id = str(requirement.get("criterion_id", "unknown-upstream-requirement"))
+        criterion = criteria_by_id.get(criterion_id)
+        try:
+            validate_upstream_result_requirement(requirement, criterion, criterion_id)
+        except VerificationError as error:
+            errors.append(str(error))
+
+
+def validate_upstream_result_requirement(
+    requirement: dict[str, Any],
+    criterion: dict[str, Any] | None,
+    requirement_name: str,
+) -> None:
+    errors: list[str] = []
+    try:
+        require_fields(requirement, UPSTREAM_RESULT_REQUIREMENT_FIELDS, requirement_name)
+        evidence_family = require_string(requirement, "evidence_family", requirement_name)
+        result_required = require_bool(requirement, "result_required", requirement_name)
+        source_phase = require_string(requirement, "source_phase", requirement_name)
+        source_lifecycle_id = require_string(requirement, "source_lifecycle_id", requirement_name)
+        manifest_refs = require_list_of_strings(requirement, "required_manifest_refs", requirement_name)
+        approved_roots = require_list_of_strings(requirement, "approved_ref_roots", requirement_name)
+        acceptable_statuses = set(require_list_of_strings(requirement, "acceptable_statuses", requirement_name))
+        hard_blocking_statuses = set(require_list_of_strings(requirement, "hard_blocking_statuses", requirement_name))
+        exception_coverable_statuses = set(require_list_of_strings(requirement, "exception_coverable_statuses", requirement_name))
+        required_row_fields = require_list_of_strings(requirement, "required_row_fields", requirement_name)
+        require_list_of_strings(requirement, "hard_blocker_reasons", requirement_name)
+        require_list_of_strings(requirement, "requirement_ids", requirement_name)
+        redaction_field = require_string(requirement, "redaction_status_field", requirement_name)
+        source_ref_field = require_string(requirement, "source_ref_status_field", requirement_name)
+    except VerificationError as error:
+        raise VerificationError(str(error)) from error
+    if criterion is not None and evidence_family != criterion["evidence_family"]:
+        errors.append(f"{requirement_name} evidence_family must match final criterion")
+    expected_lifecycle = UPSTREAM_SOURCE_LIFECYCLES.get(source_phase)
+    if expected_lifecycle is None:
+        errors.append(f"{requirement_name} source_phase is not approved: {source_phase}")
+    elif source_lifecycle_id != expected_lifecycle:
+        errors.append(f"{requirement_name} source_lifecycle_id must be {expected_lifecycle}")
+    if not set(acceptable_statuses) <= set(UPSTREAM_RESULT_STATUS_VOCABULARY):
+        errors.append(f"{requirement_name} acceptable_statuses contains unknown upstream statuses")
+    if not set(hard_blocking_statuses) <= set(UPSTREAM_RESULT_STATUS_VOCABULARY):
+        errors.append(f"{requirement_name} hard_blocking_statuses contains unknown upstream statuses")
+    if not set(exception_coverable_statuses) <= set(UPSTREAM_RESULT_STATUS_VOCABULARY):
+        errors.append(f"{requirement_name} exception_coverable_statuses contains unknown upstream statuses")
+    if hard_blocking_statuses & exception_coverable_statuses:
+        errors.append(f"{requirement_name} hard_blocking_statuses cannot be exception coverable")
+    if result_required and "passed" not in acceptable_statuses:
+        errors.append(f"{requirement_name} result_required requirements must accept passed")
+    if not result_required and "not-required" not in acceptable_statuses:
+        errors.append(f"{requirement_name} decision-owned requirements must accept not-required")
+    if "rejected-redaction" not in hard_blocking_statuses or "rejected-overclaim" not in hard_blocking_statuses:
+        errors.append(f"{requirement_name} must hard-block redaction and overclaim failures")
+    if required_row_fields != UPSTREAM_RESULT_ROW_REQUIRED_FIELDS:
+        errors.append(f"{requirement_name} required_row_fields do not match Phase 21 upstream row requirements")
+    if redaction_field != "redaction_status":
+        errors.append(f"{requirement_name} redaction_status_field must be redaction_status")
+    if source_ref_field != "source_ref_status":
+        errors.append(f"{requirement_name} source_ref_status_field must be source_ref_status")
+    for root in approved_roots:
+        if root.startswith("external://"):
+            continue
+        try:
+            require_repo_relative(root, f"{requirement_name} approved_ref_roots")
+        except VerificationError as error:
+            errors.append(str(error))
+    for manifest_ref in manifest_refs:
+        try:
+            require_upstream_artifact_ref(manifest_ref, approved_roots, f"{requirement_name} required_manifest_refs")
+        except VerificationError as error:
+            errors.append(str(error))
+    if errors:
+        raise VerificationError("\n".join(errors))
 
 
 def validate_generated_artifacts(contract: dict[str, Any], errors: list[str]) -> None:
@@ -771,8 +966,10 @@ def check_contract(root: Path) -> dict[str, Any]:
     try:
         packets = contract_packets(contract)
         final_criteria = contract_final_criteria(contract)
+        upstream_requirements = contract_upstream_requirements(contract)
         packet_ids = validate_packets(root, packets, errors)
         validate_final_criteria(root, final_criteria, packet_ids, errors)
+        validate_upstream_result_requirements(upstream_requirements, final_criteria, errors)
     except VerificationError as error:
         errors.append(str(error))
     if errors:
@@ -808,6 +1005,33 @@ def load_decision_input(root: Path, maybe_path: str | None) -> dict[str, Any] | 
         raise VerificationError("retained_code_reviews must be a list")
     if not isinstance(data["final_criterion_decisions"], list):
         raise VerificationError("final_criterion_decisions must be a list")
+    return data
+
+
+def load_upstream_results(root: Path, maybe_path: str | None) -> dict[str, Any] | None:
+    if not maybe_path:
+        return None
+    input_path = require_repo_relative(maybe_path, "--upstream-results")
+    raw_text = read_text(root, input_path)
+    reject_forbidden_text(input_path, raw_text)
+    try:
+        data = json.loads(raw_text)
+    except json.JSONDecodeError as error:
+        raise VerificationError(f"{input_path.as_posix()} is not valid JSON: {error}") from error
+    if not isinstance(data, dict):
+        raise VerificationError("--upstream-results must contain a top-level object")
+    reject_forbidden_json_fields(data, input_path.as_posix())
+    packet = data.get("upstream_result_packet")
+    if not isinstance(packet, dict):
+        raise VerificationError("upstream_result_packet must be present and must be an object")
+    if packet.get("phase") != PHASE:
+        raise VerificationError(f"upstream_result_packet phase must be {PHASE}")
+    if packet.get("phase_lifecycle_id") != PHASE_LIFECYCLE_ID:
+        raise VerificationError(f"upstream_result_packet phase_lifecycle_id must be {PHASE_LIFECYCLE_ID}")
+    if "upstream_results" not in data:
+        data["upstream_results"] = []
+    if not isinstance(data["upstream_results"], list):
+        raise VerificationError("upstream_results must be a list")
     return data
 
 
@@ -1001,8 +1225,237 @@ def final_status_allows_demotion(
     return False
 
 
-def demotion_allowed(decision_inputs_supplied: bool, normalized_results: list[dict[str, Any]]) -> bool:
+def requirements_by_criterion(contract: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {str(row["criterion_id"]): row for row in contract_upstream_requirements(contract)}
+
+
+def upstream_manifest_ref(row: dict[str, Any], row_name: str) -> str:
+    manifest_path = row.get("manifest_path")
+    external_ref = row.get("external_ref")
+    if isinstance(manifest_path, str) and manifest_path:
+        if isinstance(external_ref, str) and external_ref:
+            raise VerificationError(f"{row_name} must use either manifest_path or external_ref, not both")
+        return manifest_path
+    if isinstance(external_ref, str) and external_ref:
+        return external_ref
+    raise VerificationError(f"{row_name} must include manifest_path or external_ref")
+
+
+def validate_upstream_result_row(
+    row: Any,
+    row_index: int,
+    criteria_by_id: dict[str, dict[str, Any]],
+    upstream_requirements: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    if not isinstance(row, dict):
+        raise VerificationError(f"upstream_results[{row_index}] must be an object")
+    row_name = str(row.get("criterion_id", f"upstream_results[{row_index}]"))
+    require_fields(row, UPSTREAM_RESULT_ROW_REQUIRED_FIELDS, row_name)
+    criterion_id = require_string(row, "criterion_id", row_name)
+    criterion = criteria_by_id.get(criterion_id)
+    if criterion is None:
+        raise VerificationError(f"{row_name} criterion_id does not resolve: {criterion_id}")
+    requirement = upstream_requirements.get(criterion_id)
+    if requirement is None:
+        raise VerificationError(f"{row_name} upstream result requirement does not resolve: {criterion_id}")
+    evidence_family = require_string(row, "evidence_family", row_name)
+    if evidence_family != criterion["evidence_family"] or evidence_family != requirement["evidence_family"]:
+        raise VerificationError(f"{row_name} evidence_family must match final criterion")
+    owning_phase = require_string(row, "owning_phase", row_name)
+    if owning_phase != requirement["source_phase"]:
+        raise VerificationError(f"{row_name} owning_phase must be {requirement['source_phase']}")
+    source_lifecycle_id = require_string(row, "source_lifecycle_id", row_name)
+    if source_lifecycle_id != requirement["source_lifecycle_id"]:
+        raise VerificationError(f"{row_name} source_lifecycle_id must be {requirement['source_lifecycle_id']}")
+    status = require_string(row, "status", row_name)
+    if status not in UPSTREAM_RESULT_STATUS_VOCABULARY:
+        raise VerificationError(f"{row_name} status is invalid: {status}")
+    require_string(row, "failure_reason", row_name)
+    require_iso_utc(require_string(row, "generated_at_utc", row_name), row_name)
+    require_list_of_strings(row, "requirement_ids", row_name)
+    artifact_refs = require_list_of_strings(row, "artifact_refs", row_name)
+    approved_roots = require_list_of_strings(requirement, "approved_ref_roots", f"{row_name} requirement")
+    manifest_ref = upstream_manifest_ref(row, row_name)
+    require_upstream_artifact_ref(manifest_ref, approved_roots, f"{row_name} manifest_ref")
+    for artifact_ref in artifact_refs:
+        require_upstream_artifact_ref(artifact_ref, approved_roots, f"{row_name} artifact_refs")
+    redaction_status = require_string(row, "redaction_status", row_name)
+    source_ref_status = require_string(row, "source_ref_status", row_name)
+    normalized = dict(row)
+    normalized["manifest_ref"] = manifest_ref
+    normalized["upstream_status_allows_cutover"] = upstream_row_status_allows_cutover(normalized, requirement, None)
+    normalized["upstream_blocking_reasons"] = upstream_row_blocking_reasons(normalized, requirement, None)
+    if redaction_status != "passed":
+        normalized["upstream_status_allows_cutover"] = False
+    if source_ref_status != "passed":
+        normalized["upstream_status_allows_cutover"] = False
+    return normalized
+
+
+def validated_upstream_result_rows(
+    upstream_results: dict[str, Any] | None,
+    criteria: list[dict[str, Any]],
+    upstream_requirements: dict[str, dict[str, Any]],
+) -> dict[str, list[dict[str, Any]]]:
+    rows_by_criterion = {str(criterion["id"]): [] for criterion in criteria}
+    if upstream_results is None:
+        return rows_by_criterion
+    criteria_by_id = {str(criterion["id"]): criterion for criterion in criteria}
+    seen_manifest_refs: set[tuple[str, str]] = set()
+    for index, row in enumerate(upstream_results["upstream_results"]):
+        normalized = validate_upstream_result_row(row, index, criteria_by_id, upstream_requirements)
+        key = (str(normalized["criterion_id"]), str(normalized["manifest_ref"]))
+        if key in seen_manifest_refs:
+            raise VerificationError(f"duplicate upstream result row: {key[0]} {key[1]}")
+        seen_manifest_refs.add(key)
+        rows_by_criterion[str(normalized["criterion_id"])].append(normalized)
+    return rows_by_criterion
+
+
+def upstream_exception_ref(criterion_id: str) -> str:
+    return f"build/ci-evidence/phase18/upstream-result-consumption.json#{criterion_id}"
+
+
+def decision_exception_covers_upstream_result(
+    maybe_decision: dict[str, Any] | None,
+    requirement: dict[str, Any],
+    row: dict[str, Any],
+) -> bool:
+    if maybe_decision is None or maybe_decision.get("status") != "exception-approved":
+        return False
+    status = str(row["status"])
+    if status not in set(requirement.get("exception_coverable_statuses", [])):
+        return False
+    if status in set(requirement.get("hard_blocking_statuses", [])):
+        return False
+    if row.get("redaction_status") != "passed" or row.get("source_ref_status") != "passed":
+        return False
+    exception = maybe_decision.get("exception")
+    if not isinstance(exception, dict):
+        return False
+    evidence_refs = exception.get("evidence_refs")
+    if not isinstance(evidence_refs, list):
+        return False
+    expected_ref = upstream_exception_ref(str(row["criterion_id"]))
+    return any(isinstance(ref, str) and ref == expected_ref for ref in evidence_refs)
+
+
+def upstream_row_blocking_reasons(
+    row: dict[str, Any],
+    requirement: dict[str, Any],
+    maybe_decision: dict[str, Any] | None,
+) -> list[str]:
+    reasons: list[str] = []
+    status = str(row["status"])
+    if row.get("redaction_status") != "passed":
+        reasons.append(f"{row['criterion_id']} upstream redaction_status {row.get('redaction_status')} blocks reference demotion")
+    if row.get("source_ref_status") != "passed":
+        reasons.append(f"{row['criterion_id']} upstream source_ref_status {row.get('source_ref_status')} blocks reference demotion")
+    if status in set(requirement.get("hard_blocking_statuses", [])):
+        reasons.append(f"{row['criterion_id']} upstream status {status} is a hard blocker")
+    elif status in set(requirement.get("acceptable_statuses", [])):
+        return reasons
+    elif decision_exception_covers_upstream_result(maybe_decision, requirement, row):
+        return reasons
+    else:
+        reasons.append(f"{row['criterion_id']} upstream status {status} blocks reference demotion")
+    return reasons
+
+
+def upstream_row_status_allows_cutover(
+    row: dict[str, Any],
+    requirement: dict[str, Any],
+    maybe_decision: dict[str, Any] | None,
+) -> bool:
+    return not upstream_row_blocking_reasons(row, requirement, maybe_decision)
+
+
+def synthetic_upstream_consumption_row(
+    criterion: dict[str, Any],
+    requirement: dict[str, Any],
+    status: str,
+    reason: str,
+) -> dict[str, Any]:
+    criterion_id = str(criterion["id"])
+    allows = status in set(requirement.get("acceptable_statuses", []))
+    blocking_reasons = [] if allows else [f"{criterion_id} {reason}"]
+    manifest_refs = list(requirement["required_manifest_refs"])
+    return {
+        "criterion_id": criterion_id,
+        "evidence_family": criterion["evidence_family"],
+        "owning_phase": requirement["source_phase"],
+        "source_lifecycle_id": requirement["source_lifecycle_id"],
+        "manifest_ref": manifest_refs[0],
+        "status": status,
+        "failure_reason": reason,
+        "artifact_refs": manifest_refs,
+        "redaction_status": "passed",
+        "source_ref_status": "passed",
+        "generated_at_utc": "2026-06-21T00:00:00Z",
+        "requirement_ids": requirement["requirement_ids"],
+        "upstream_status_allows_cutover": allows,
+        "upstream_blocking_reasons": blocking_reasons,
+    }
+
+
+def normalize_upstream_consumption(
+    criteria: list[dict[str, Any]],
+    upstream_results: dict[str, Any] | None,
+    upstream_requirements: dict[str, dict[str, Any]],
+    decisions: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    input_rows = validated_upstream_result_rows(upstream_results, criteria, upstream_requirements)
+    consumption: dict[str, dict[str, Any]] = {}
+    for criterion in criteria:
+        criterion_id = str(criterion["id"])
+        requirement = upstream_requirements[criterion_id]
+        rows = input_rows.get(criterion_id, [])
+        if not rows and requirement["result_required"] is False:
+            rows = [synthetic_upstream_consumption_row(criterion, requirement, "not-required", "decision-owned upstream result not required")]
+        elif not rows:
+            rows = [synthetic_upstream_consumption_row(criterion, requirement, "missing", "upstream result evidence is missing")]
+        maybe_decision = decisions.get(criterion_id)
+        normalized_rows: list[dict[str, Any]] = []
+        for row in rows:
+            normalized_row = dict(row)
+            blocking_reasons = upstream_row_blocking_reasons(normalized_row, requirement, maybe_decision)
+            normalized_row["upstream_status_allows_cutover"] = not blocking_reasons
+            normalized_row["upstream_blocking_reasons"] = blocking_reasons
+            normalized_rows.append(normalized_row)
+        upstream_allows = all(bool(row["upstream_status_allows_cutover"]) for row in normalized_rows)
+        if upstream_allows:
+            aggregate_status = "not-required" if all(row["status"] == "not-required" for row in normalized_rows) else "passed"
+        elif any(row["status"] == "missing" for row in normalized_rows):
+            aggregate_status = "missing"
+        else:
+            aggregate_status = str(normalized_rows[0]["status"])
+        consumption[criterion_id] = {
+            "criterion_id": criterion_id,
+            "evidence_family": criterion["evidence_family"],
+            "result_required": requirement["result_required"],
+            "status": aggregate_status,
+            "upstream_result_status": aggregate_status,
+            "upstream_result_refs": [str(row["manifest_ref"]) for row in normalized_rows],
+            "upstream_artifact_refs": [
+                artifact_ref for row in normalized_rows for artifact_ref in row.get("artifact_refs", [])
+            ],
+            "upstream_blocking_reasons": [
+                reason for row in normalized_rows for reason in row.get("upstream_blocking_reasons", [])
+            ],
+            "upstream_status_allows_cutover": upstream_allows,
+            "rows": normalized_rows,
+        }
+    return consumption
+
+
+def demotion_allowed(
+    decision_inputs_supplied: bool,
+    upstream_results_supplied: bool,
+    normalized_results: list[dict[str, Any]],
+) -> bool:
     if not decision_inputs_supplied:
+        return False
+    if not upstream_results_supplied:
         return False
     return all(bool(row["demotion_status_allows_cutover"]) for row in normalized_results)
 
@@ -1046,6 +1499,7 @@ def write_json(path: Path, data: Any) -> None:
 def normalize_final_results(
     criteria: list[dict[str, Any]],
     decisions: dict[str, dict[str, Any]],
+    upstream_consumption: dict[str, dict[str, Any]],
 ) -> list[dict[str, Any]]:
     results: list[dict[str, Any]] = []
     for criterion in criteria:
@@ -1055,8 +1509,15 @@ def normalize_final_results(
         decision = str(maybe_decision["decision"]) if maybe_decision else "pending"
         evidence_refs = list(maybe_decision["evidence_refs"]) if maybe_decision else []
         residual_risk = str(maybe_decision["residual_risk"]) if maybe_decision else str(criterion["residual_risk_ref"])
-        status_allows = final_status_allows_demotion(status, maybe_decision, criterion)
-        blocking_reason = "" if status_allows else f"{criterion_id} status {status} blocks reference demotion"
+        maintainer_status_allows = final_status_allows_demotion(status, maybe_decision, criterion)
+        upstream = upstream_consumption[criterion_id]
+        upstream_status_allows = bool(upstream["upstream_status_allows_cutover"])
+        status_allows = maintainer_status_allows and upstream_status_allows
+        blocking_reasons = []
+        if not maintainer_status_allows:
+            blocking_reasons.append(f"{criterion_id} status {status} blocks reference demotion")
+        blocking_reasons.extend(upstream["upstream_blocking_reasons"])
+        blocking_reason = "; ".join(blocking_reasons)
         results.append(
             {
                 "id": criterion_id,
@@ -1069,6 +1530,12 @@ def normalize_final_results(
                 "blocks_demotion": criterion["blocks_demotion"],
                 "source_refs": criterion["source_refs"],
                 "evidence_refs": evidence_refs,
+                "upstream_result_status": upstream["upstream_result_status"],
+                "upstream_result_refs": upstream["upstream_result_refs"],
+                "upstream_artifact_refs": upstream["upstream_artifact_refs"],
+                "upstream_status_allows_cutover": upstream_status_allows,
+                "upstream_blocking_reasons": upstream["upstream_blocking_reasons"],
+                "maintainer_status_allows_cutover": maintainer_status_allows,
                 "residual_risk": residual_risk,
                 "demotion_blocking_reason": blocking_reason,
                 "demotion_status_allows_cutover": status_allows,
@@ -1217,6 +1684,7 @@ def redacted_report_text(
     run_manifest: dict[str, Any],
     final_results: list[dict[str, Any]],
     retained_rows: list[dict[str, Any]],
+    upstream_consumption: dict[str, dict[str, Any]],
 ) -> str:
     lines = [
         "# Phase 18 Cutover Review",
@@ -1226,12 +1694,20 @@ def redacted_report_text(
         f"phase: {PHASE}",
         f"phase_lifecycle_id: {PHASE_LIFECYCLE_ID}",
         f"decision_inputs_supplied: {str(run_manifest['decision_inputs_supplied']).lower()}",
+        f"upstream_results_supplied: {str(run_manifest['upstream_results_supplied']).lower()}",
         f"demotion_allowed: {str(run_manifest['demotion_allowed']).lower()}",
         "",
         "## Final Criteria",
     ]
     for row in final_results:
-        lines.append(f"- {row['id']}: {row['status']} ({row['evidence_family']})")
+        lines.append(
+            f"- {row['id']}: decision={row['status']} upstream={row['upstream_result_status']} ({row['evidence_family']})"
+        )
+        for reason in row["upstream_blocking_reasons"]:
+            lines.append(f"  - upstream blocker: {reason}")
+    lines.extend(["", "## Upstream Result Consumption"])
+    for row in upstream_consumption.values():
+        lines.append(f"- {row['criterion_id']}: {row['upstream_result_status']}")
     lines.extend(["", "## Retained Packets"])
     for row in retained_rows:
         lines.append(f"- {row['id']}: {row['status']} ({', '.join(row['taxonomy_tags'])})")
@@ -1242,17 +1718,21 @@ def write_quick_artifacts(
     root: Path,
     contract: dict[str, Any],
     decision_input: dict[str, Any] | None,
+    upstream_results: dict[str, Any] | None,
     output_dir_arg: str,
 ) -> dict[str, Any]:
     output_dir = contained_output_dir(root, output_dir_arg)
     packets = contract_packets(contract)
     criteria = contract_final_criteria(contract)
+    upstream_requirements = requirements_by_criterion(contract)
     retained_reviews, final_decisions = validated_decision_maps(decision_input, packets, criteria)
     validate_retained_acceptance_consistency(packets, retained_reviews, final_decisions)
-    final_results = normalize_final_results(criteria, final_decisions)
+    upstream_consumption = normalize_upstream_consumption(criteria, upstream_results, upstream_requirements, final_decisions)
+    final_results = normalize_final_results(criteria, final_decisions, upstream_consumption)
     retained_rows = normalize_retained_reviews(packets, retained_reviews)
     decision_inputs_supplied = decision_input is not None
-    allowed = demotion_allowed(decision_inputs_supplied, final_results)
+    upstream_results_supplied = upstream_results is not None
+    allowed = demotion_allowed(decision_inputs_supplied, upstream_results_supplied, final_results)
     artifacts = generated_artifact_paths(output_dir)
     output_dir_relative = output_dir.relative_to(root)
     snapshot_relative = Path("source-contract-snapshots/phase18_cutover_review_contract.json")
@@ -1263,14 +1743,17 @@ def write_quick_artifacts(
         "command_mode": "quick",
         "output_root": output_dir_relative.as_posix(),
         "decision_inputs_supplied": decision_inputs_supplied,
+        "upstream_results_supplied": upstream_results_supplied,
         "demotion_allowed": allowed,
         "requirement_coverage": requirement_coverage(packets, criteria),
         "status_counts": {
             "final": count_statuses(final_results),
             "retained": count_statuses(retained_rows),
+            "upstream": count_statuses(list(upstream_consumption.values())),
         },
         "retained_packet_status_counts": count_statuses(retained_rows),
         "final_criterion_status_counts": count_statuses(final_results),
+        "upstream_result_status_counts": count_statuses(list(upstream_consumption.values())),
         "source_contract_snapshot_path": (output_dir_relative / snapshot_relative).as_posix(),
         "generated_artifacts": [
             (output_dir_relative / artifact).as_posix() for artifact in sorted(REQUIRED_GENERATED_ARTIFACTS)
@@ -1278,6 +1761,15 @@ def write_quick_artifacts(
     }
     output_dir.mkdir(parents=True, exist_ok=True)
     write_json(artifacts["normalized-final-demotion-results.json"], {"results": final_results, "demotion_allowed": allowed})
+    write_json(
+        artifacts["upstream-result-consumption.json"],
+        {
+            "phase": PHASE,
+            "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
+            "upstream_results_supplied": upstream_results_supplied,
+            "results": list(upstream_consumption.values()),
+        },
+    )
     write_json(artifacts["retained-code-acceptance-summary.json"], {"packets": retained_rows})
     write_json(artifacts["residual-risk-register.json"], {"risks": build_residual_risk_register(final_results, retained_rows)})
     write_json(artifacts["maintainer-decision-input-template.json"], decision_input_template(contract))
@@ -1286,7 +1778,7 @@ def write_quick_artifacts(
     shutil.copy2(root / CONTRACT_MANIFEST, snapshot_path)
     write_json(artifacts["run-manifest.json"], run_manifest)
     artifacts["redacted-readiness-report.md"].write_text(
-        redacted_report_text(run_manifest, final_results, retained_rows),
+        redacted_report_text(run_manifest, final_results, retained_rows, upstream_consumption),
         encoding="utf-8",
     )
     expected_final_statuses = {row["id"]: row["status"] for row in final_results}
@@ -1295,12 +1787,15 @@ def write_quick_artifacts(
     run_security_scan(
         root,
         None,
+        None,
         output_dir,
         decision_input_validated=decision_input is not None,
+        upstream_results_validated=upstream_results is not None,
         expected_demotion_allowed=allowed,
         expected_final_statuses=expected_final_statuses,
         expected_final_allows=expected_final_allows,
         expected_retained_statuses=expected_retained_statuses,
+        expected_upstream_statuses={row["criterion_id"]: row["upstream_result_status"] for row in upstream_consumption.values()},
     )
     return run_manifest
 
@@ -1318,12 +1813,15 @@ def generated_artifacts_to_scan(root: Path, output_dir: Path | None = None) -> l
 def run_security_scan(
     root: Path,
     maybe_decision_input_path: str | None,
+    maybe_upstream_results_path: str | None,
     output_dir: Path | None = None,
     decision_input_validated: bool = False,
+    upstream_results_validated: bool = False,
     expected_demotion_allowed: bool | None = None,
     expected_final_statuses: dict[str, str] | None = None,
     expected_final_allows: dict[str, bool] | None = None,
     expected_retained_statuses: dict[str, str] | None = None,
+    expected_upstream_statuses: dict[str, str] | None = None,
     contract: dict[str, Any] | None = None,
 ) -> None:
     errors: list[str] = []
@@ -1338,17 +1836,35 @@ def run_security_scan(
         try:
             decision_input = load_decision_input(root, maybe_decision_input_path)
             decision_input_validated = True
-            if contract is not None and decision_input is not None:
-                packets = contract_packets(contract)
-                criteria = contract_final_criteria(contract)
-                retained_reviews, final_decisions = validated_decision_maps(decision_input, packets, criteria)
-                validate_retained_acceptance_consistency(packets, retained_reviews, final_decisions)
-                expected_results = normalize_final_results(criteria, final_decisions)
-                expected_retained_rows = normalize_retained_reviews(packets, retained_reviews)
-                expected_demotion_allowed = demotion_allowed(True, expected_results)
-                expected_final_statuses = {row["id"]: row["status"] for row in expected_results}
-                expected_final_allows = {row["id"]: bool(row["demotion_status_allows_cutover"]) for row in expected_results}
-                expected_retained_statuses = {row["id"]: row["status"] for row in expected_retained_rows}
+        except VerificationError as error:
+            errors.append(str(error))
+    upstream_results = None
+    if maybe_upstream_results_path:
+        try:
+            upstream_results = load_upstream_results(root, maybe_upstream_results_path)
+            upstream_results_validated = True
+        except VerificationError as error:
+            errors.append(str(error))
+    if contract is not None and not errors:
+        try:
+            decision_input = load_decision_input(root, maybe_decision_input_path) if maybe_decision_input_path else None
+            packets = contract_packets(contract)
+            criteria = contract_final_criteria(contract)
+            upstream_requirements = requirements_by_criterion(contract)
+            retained_reviews, final_decisions = validated_decision_maps(decision_input, packets, criteria)
+            validate_retained_acceptance_consistency(packets, retained_reviews, final_decisions)
+            expected_upstream = normalize_upstream_consumption(criteria, upstream_results, upstream_requirements, final_decisions)
+            expected_results = normalize_final_results(criteria, final_decisions, expected_upstream)
+            expected_retained_rows = normalize_retained_reviews(packets, retained_reviews)
+            expected_demotion_allowed = demotion_allowed(
+                decision_input is not None,
+                upstream_results is not None,
+                expected_results,
+            )
+            expected_final_statuses = {row["id"]: row["status"] for row in expected_results}
+            expected_final_allows = {row["id"]: bool(row["demotion_status_allows_cutover"]) for row in expected_results}
+            expected_retained_statuses = {row["id"]: row["status"] for row in expected_retained_rows}
+            expected_upstream_statuses = {row["criterion_id"]: row["upstream_result_status"] for row in expected_upstream.values()}
         except VerificationError as error:
             errors.append(str(error))
     for full_path in generated_artifacts_to_scan(root, output_dir):
@@ -1365,10 +1881,12 @@ def run_security_scan(
         errors,
         output_dir,
         decision_input_validated,
+        upstream_results_validated,
         expected_demotion_allowed,
         expected_final_statuses,
         expected_final_allows,
         expected_retained_statuses,
+        expected_upstream_statuses,
     )
     if errors:
         raise VerificationError("\n".join(errors))
@@ -1379,10 +1897,12 @@ def validate_generated_overclaim_guards(
     errors: list[str],
     output_dir: Path | None = None,
     decision_input_validated: bool = False,
+    upstream_results_validated: bool = False,
     expected_demotion_allowed: bool | None = None,
     expected_final_statuses: dict[str, str] | None = None,
     expected_final_allows: dict[str, bool] | None = None,
     expected_retained_statuses: dict[str, str] | None = None,
+    expected_upstream_statuses: dict[str, str] | None = None,
 ) -> None:
     output_dir = output_dir or root / DEFAULT_OUTPUT_DIR
     run_manifest_path = output_dir / "run-manifest.json"
@@ -1400,19 +1920,26 @@ def validate_generated_overclaim_guards(
     if not isinstance(decision_inputs_supplied, bool):
         errors.append("generated run-manifest.json decision_inputs_supplied must be boolean")
         return
+    upstream_results_supplied = run_manifest.get("upstream_results_supplied")
+    if not isinstance(upstream_results_supplied, bool):
+        errors.append("generated run-manifest.json upstream_results_supplied must be boolean")
+        return
     if decision_inputs_supplied and not decision_input_validated:
         errors.append("generated run-manifest.json claims decision input without validated --decision-input")
         return
-    if decision_inputs_supplied:
+    if upstream_results_supplied and not upstream_results_validated:
+        errors.append("generated run-manifest.json claims upstream results without validated --upstream-results")
+        return
+    if decision_inputs_supplied or upstream_results_supplied:
         if expected_demotion_allowed is not True and run_manifest.get("demotion_allowed") is True:
-            errors.append("generated run-manifest.json demotion_allowed true requires complete approving decision input")
+            errors.append("generated run-manifest.json demotion_allowed true requires complete decision input and upstream results")
         normalized_path = output_dir / "normalized-final-demotion-results.json"
         if normalized_path.exists():
             try:
                 normalized = json.loads(normalized_path.read_text(encoding="utf-8"))
                 if isinstance(normalized, dict) and expected_demotion_allowed is not True and normalized.get("demotion_allowed") is True:
                     errors.append(
-                        "generated normalized-final-demotion-results.json demotion_allowed true requires complete approving decision input"
+                        "generated normalized-final-demotion-results.json demotion_allowed true requires complete decision input and upstream results"
                     )
                 results = normalized.get("results") if isinstance(normalized, dict) else None
                 if expected_final_statuses is not None and isinstance(results, list):
@@ -1428,6 +1955,21 @@ def validate_generated_overclaim_guards(
                             errors.append(f"generated final criterion demotion flag mismatch: {row_id}")
             except json.JSONDecodeError as error:
                 errors.append(f"{normalized_path.relative_to(root).as_posix()} is not valid JSON: {error}")
+        upstream_path = output_dir / "upstream-result-consumption.json"
+        if upstream_path.exists():
+            try:
+                upstream = json.loads(upstream_path.read_text(encoding="utf-8"))
+                results = upstream.get("results") if isinstance(upstream, dict) else None
+                if expected_upstream_statuses is not None and isinstance(results, list):
+                    for row in results:
+                        if not isinstance(row, dict):
+                            continue
+                        row_id = str(row.get("criterion_id", "unknown"))
+                        expected_status = expected_upstream_statuses.get(row_id)
+                        if expected_status is not None and row.get("upstream_result_status") != expected_status:
+                            errors.append(f"generated upstream result status mismatch: {row_id}")
+            except json.JSONDecodeError as error:
+                errors.append(f"{upstream_path.relative_to(root).as_posix()} is not valid JSON: {error}")
         retained_path = output_dir / "retained-code-acceptance-summary.json"
         if retained_path.exists():
             try:
@@ -1518,6 +2060,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--security-only", action="store_true", help="scan Phase 18 inputs and generated artifacts")
     parser.add_argument("--wiring-only", action="store_true", help="validate Bazel, workflow, and just wiring")
     parser.add_argument("--decision-input", help="optional Phase 18 maintainer decision input JSON")
+    parser.add_argument("--upstream-results", help="optional Phase 18 upstream result consumption JSON")
     parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR.as_posix(), help="Phase 18 output directory")
     return parser.parse_args(argv)
 
@@ -1528,7 +2071,7 @@ def main(argv: list[str] | None = None) -> int:
         contract = check_contract(ROOT)
         if args.security_only:
             output_dir = contained_output_dir(ROOT, args.output_dir)
-            run_security_scan(ROOT, args.decision_input, output_dir, contract=contract)
+            run_security_scan(ROOT, args.decision_input, args.upstream_results, output_dir, contract=contract)
             print("Phase 18 security scan passed")
             return 0
         if args.wiring_only:
@@ -1537,7 +2080,8 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.quick:
             decision_input = load_decision_input(ROOT, args.decision_input)
-            run_manifest = write_quick_artifacts(ROOT, contract, decision_input, args.output_dir)
+            upstream_results = load_upstream_results(ROOT, args.upstream_results)
+            run_manifest = write_quick_artifacts(ROOT, contract, decision_input, upstream_results, args.output_dir)
             print(f"Phase 18 quick artifacts written; demotion_allowed={str(run_manifest['demotion_allowed']).lower()}")
             return 0
     except VerificationError as error:

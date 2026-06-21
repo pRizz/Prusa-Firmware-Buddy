@@ -188,6 +188,37 @@ class Phase18CutoverReviewTest(unittest.TestCase):
             "final_criterion_decisions": final_decisions,
         }
 
+    def complete_upstream_results(self, root: Path, status: str = "passed") -> dict[str, object]:
+        contract = self.read_contract(root)
+        rows = []
+        for requirement in contract["upstream_result_requirements"]:
+            if not requirement["result_required"]:
+                continue
+            failure_reason = "none" if status == "passed" else f"{status} injected by test fixture"
+            rows.append(
+                {
+                    "criterion_id": requirement["criterion_id"],
+                    "evidence_family": requirement["evidence_family"],
+                    "owning_phase": requirement["source_phase"],
+                    "source_lifecycle_id": requirement["source_lifecycle_id"],
+                    "manifest_path": requirement["required_manifest_refs"][0],
+                    "status": status,
+                    "failure_reason": failure_reason,
+                    "artifact_refs": [requirement["required_manifest_refs"][0]],
+                    "redaction_status": "passed",
+                    "source_ref_status": "passed",
+                    "generated_at_utc": "2026-06-21T16:30:00Z",
+                    "requirement_ids": requirement["requirement_ids"],
+                }
+            )
+        return {
+            "upstream_result_packet": {
+                "phase": "18-retained-code-acceptance-and-cutover-review",
+                "phase_lifecycle_id": "18-2026-06-20T14-27-15",
+            },
+            "upstream_results": rows,
+        }
+
     def test_contract_accepts_complete_phase18_contract(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -358,6 +389,59 @@ class Phase18CutoverReviewTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("unexpected generated artifact", result.stdout)
 
+    def test_contract_requires_upstream_result_requirements_for_final_criteria(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            contract = self.read_contract(root)
+            removed = contract["upstream_result_requirements"][0]["criterion_id"]
+            contract["upstream_result_requirements"] = [
+                row for row in contract["upstream_result_requirements"] if row["criterion_id"] != removed
+            ]
+            self.write_contract(root, contract)
+
+            # Act
+            result = self.run_verifier(["--contract-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(removed, result.stdout)
+
+    def test_contract_requires_upstream_result_consumption_artifact(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            contract = self.read_contract(root)
+            contract["generated_artifacts"] = [
+                artifact for artifact in contract["generated_artifacts"] if artifact != "upstream-result-consumption.json"
+            ]
+            self.write_contract(root, contract)
+
+            # Act
+            result = self.run_verifier(["--contract-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("upstream-result-consumption.json", result.stdout)
+
+    def test_contract_rejects_wrong_upstream_source_lifecycle_id(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            contract = self.read_contract(root)
+            contract["upstream_result_requirements"][0]["source_lifecycle_id"] = "19-stale-lifecycle"
+            self.write_contract(root, contract)
+
+            # Act
+            result = self.run_verifier(["--contract-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("source_lifecycle_id", result.stdout)
+
     def test_quick_without_decision_input_writes_artifacts_and_blocks_demotion(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -372,6 +456,7 @@ class Phase18CutoverReviewTest(unittest.TestCase):
             for path in [
                 "build/ci-evidence/phase18/run-manifest.json",
                 "build/ci-evidence/phase18/normalized-final-demotion-results.json",
+                "build/ci-evidence/phase18/upstream-result-consumption.json",
                 "build/ci-evidence/phase18/retained-code-acceptance-summary.json",
                 "build/ci-evidence/phase18/residual-risk-register.json",
                 "build/ci-evidence/phase18/redacted-readiness-report.md",
@@ -381,7 +466,9 @@ class Phase18CutoverReviewTest(unittest.TestCase):
                 self.assertTrue((root / path).exists(), path)
             run_manifest = self.read_json(root, "build/ci-evidence/phase18/run-manifest.json")
             self.assertFalse(run_manifest["decision_inputs_supplied"])
+            self.assertFalse(run_manifest["upstream_results_supplied"])
             self.assertFalse(run_manifest["demotion_allowed"])
+            self.assertEqual(run_manifest["upstream_result_status_counts"], {"missing": 6, "not-required": 3})
 
     def test_quick_custom_output_dir_uses_matching_manifest_paths_and_security_scan(self) -> None:
         # Arrange
@@ -660,7 +747,7 @@ class Phase18CutoverReviewTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("exception scope must be a non-empty string", result.stdout)
 
-    def test_demotion_allowed_only_when_all_final_criteria_have_allowed_statuses(self) -> None:
+    def test_complete_decision_input_without_upstream_results_keeps_demotion_false(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
@@ -675,6 +762,174 @@ class Phase18CutoverReviewTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stdout)
             run_manifest = self.read_json(root, "build/ci-evidence/phase18/run-manifest.json")
             self.assertTrue(run_manifest["decision_inputs_supplied"])
+            self.assertFalse(run_manifest["upstream_results_supplied"])
+            self.assertFalse(run_manifest["demotion_allowed"])
+            normalized = self.read_json(root, "build/ci-evidence/phase18/normalized-final-demotion-results.json")
+            self.assertEqual(normalized["results"][0]["upstream_result_status"], "missing")
+
+    def test_demotion_allowed_only_when_decisions_and_upstream_results_pass(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            decision_input = self.complete_decision_input(root)
+            upstream_results = self.complete_upstream_results(root)
+            self.write_json(root, "decision-input.json", decision_input)
+            self.write_json(root, "upstream-results.json", upstream_results)
+
+            # Act
+            result = self.run_verifier(
+                ["--quick", "--decision-input", "decision-input.json", "--upstream-results", "upstream-results.json"],
+                maybe_root=root,
+            )
+
+            # Assert
+            self.assertEqual(result.returncode, 0, result.stdout)
+            run_manifest = self.read_json(root, "build/ci-evidence/phase18/run-manifest.json")
+            self.assertTrue(run_manifest["decision_inputs_supplied"])
+            self.assertTrue(run_manifest["upstream_results_supplied"])
+            self.assertTrue(run_manifest["demotion_allowed"])
+            self.assertEqual(run_manifest["upstream_result_status_counts"], {"not-required": 3, "passed": 6})
+
+    def test_non_passing_upstream_result_keeps_demotion_false(self) -> None:
+        for status in ["failed", "pending-simulator-input", "rejected-redaction", "rejected-overclaim"]:
+            with self.subTest(status=status):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_complete_surface(root)
+                    decision_input = self.complete_decision_input(root)
+                    upstream_results = self.complete_upstream_results(root)
+                    upstream_results["upstream_results"][0]["status"] = status
+                    upstream_results["upstream_results"][0]["failure_reason"] = f"{status} fixture"
+                    self.write_json(root, "decision-input.json", decision_input)
+                    self.write_json(root, "upstream-results.json", upstream_results)
+
+                    # Act
+                    result = self.run_verifier(
+                        ["--quick", "--decision-input", "decision-input.json", "--upstream-results", "upstream-results.json"],
+                        maybe_root=root,
+                    )
+
+                    # Assert
+                    self.assertEqual(result.returncode, 0, result.stdout)
+                    run_manifest = self.read_json(root, "build/ci-evidence/phase18/run-manifest.json")
+                    self.assertFalse(run_manifest["demotion_allowed"])
+                    consumption = self.read_json(root, "build/ci-evidence/phase18/upstream-result-consumption.json")
+                    self.assertEqual(consumption["results"][0]["upstream_result_status"], status)
+
+    def test_missing_required_upstream_result_keeps_demotion_false(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            decision_input = self.complete_decision_input(root)
+            upstream_results = self.complete_upstream_results(root)
+            missing_id = upstream_results["upstream_results"][0]["criterion_id"]
+            upstream_results["upstream_results"] = [
+                row for row in upstream_results["upstream_results"] if row["criterion_id"] != missing_id
+            ]
+            self.write_json(root, "decision-input.json", decision_input)
+            self.write_json(root, "upstream-results.json", upstream_results)
+
+            # Act
+            result = self.run_verifier(
+                ["--quick", "--decision-input", "decision-input.json", "--upstream-results", "upstream-results.json"],
+                maybe_root=root,
+            )
+
+            # Assert
+            self.assertEqual(result.returncode, 0, result.stdout)
+            run_manifest = self.read_json(root, "build/ci-evidence/phase18/run-manifest.json")
+            self.assertFalse(run_manifest["demotion_allowed"])
+            consumption = self.read_json(root, "build/ci-evidence/phase18/upstream-result-consumption.json")
+            row = next(row for row in consumption["results"] if row["criterion_id"] == missing_id)
+            self.assertEqual(row["upstream_result_status"], "missing")
+
+    def test_upstream_results_reject_wrong_lifecycle_and_unsafe_refs(self) -> None:
+        cases = [
+            ("source_lifecycle_id", "19-stale-lifecycle", "source_lifecycle_id"),
+            ("manifest_path", "../phase19/run-manifest.json", "../phase19/run-manifest.json"),
+            ("manifest_path", "build/ci-evidence/phase17/run-manifest.json", "build/ci-evidence/phase17/run-manifest.json"),
+        ]
+        for field, value, expected in cases:
+            with self.subTest(field=field, value=value):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_complete_surface(root)
+                    decision_input = self.complete_decision_input(root)
+                    upstream_results = self.complete_upstream_results(root)
+                    upstream_results["upstream_results"][0][field] = value
+                    self.write_json(root, "decision-input.json", decision_input)
+                    self.write_json(root, "upstream-results.json", upstream_results)
+
+                    # Act
+                    result = self.run_verifier(
+                        ["--quick", "--decision-input", "decision-input.json", "--upstream-results", "upstream-results.json"],
+                        maybe_root=root,
+                    )
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(expected, result.stdout)
+
+    def test_redaction_and_source_ref_failures_block_upstream_results(self) -> None:
+        cases = [("redaction_status", "failed"), ("source_ref_status", "failed")]
+        for field, value in cases:
+            with self.subTest(field=field):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_complete_surface(root)
+                    decision_input = self.complete_decision_input(root)
+                    upstream_results = self.complete_upstream_results(root)
+                    upstream_results["upstream_results"][0][field] = value
+                    self.write_json(root, "decision-input.json", decision_input)
+                    self.write_json(root, "upstream-results.json", upstream_results)
+
+                    # Act
+                    result = self.run_verifier(
+                        ["--quick", "--decision-input", "decision-input.json", "--upstream-results", "upstream-results.json"],
+                        maybe_root=root,
+                    )
+
+                    # Assert
+                    self.assertEqual(result.returncode, 0, result.stdout)
+                    run_manifest = self.read_json(root, "build/ci-evidence/phase18/run-manifest.json")
+                    self.assertFalse(run_manifest["demotion_allowed"])
+                    consumption = self.read_json(root, "build/ci-evidence/phase18/upstream-result-consumption.json")
+                    self.assertIn(field, " ".join(consumption["results"][0]["upstream_blocking_reasons"]))
+
+    def test_exception_approved_decision_can_cover_coverable_upstream_failure(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            decision_input = self.complete_decision_input(root)
+            upstream_results = self.complete_upstream_results(root)
+            criterion_id = upstream_results["upstream_results"][0]["criterion_id"]
+            upstream_results["upstream_results"][0]["status"] = "failed"
+            upstream_results["upstream_results"][0]["failure_reason"] = "Operator accepted a documented exception."
+            for decision in decision_input["final_criterion_decisions"]:
+                if decision["criterion_id"] == criterion_id:
+                    decision["decision"] = "exception"
+                    decision["status"] = "exception-approved"
+                    decision["exception"]["evidence_refs"] = [
+                        f"build/ci-evidence/phase18/upstream-result-consumption.json#{criterion_id}",
+                    ]
+            self.write_json(root, "decision-input.json", decision_input)
+            self.write_json(root, "upstream-results.json", upstream_results)
+
+            # Act
+            result = self.run_verifier(
+                ["--quick", "--decision-input", "decision-input.json", "--upstream-results", "upstream-results.json"],
+                maybe_root=root,
+            )
+
+            # Assert
+            self.assertEqual(result.returncode, 0, result.stdout)
+            run_manifest = self.read_json(root, "build/ci-evidence/phase18/run-manifest.json")
             self.assertTrue(run_manifest["demotion_allowed"])
 
     def test_blocking_final_criterion_statuses_keep_demotion_false(self) -> None:
@@ -853,6 +1108,35 @@ class Phase18CutoverReviewTest(unittest.TestCase):
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(field, result.stdout)
+
+    def test_security_only_validates_upstream_results(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            upstream_results = self.complete_upstream_results(root)
+            self.write_json(root, "upstream-results.json", upstream_results)
+
+            # Act
+            valid_result = self.run_verifier(["--security-only", "--upstream-results", "upstream-results.json"], maybe_root=root)
+
+            # Assert
+            self.assertEqual(valid_result.returncode, 0, valid_result.stdout)
+
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            upstream_results = self.complete_upstream_results(root)
+            upstream_results["api_key"] = "redacted-test-value"
+            self.write_json(root, "upstream-results.json", upstream_results)
+
+            # Act
+            invalid_result = self.run_verifier(["--security-only", "--upstream-results", "upstream-results.json"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(invalid_result.returncode, 0)
+        self.assertIn("api_key", invalid_result.stdout)
 
     def test_security_only_rejects_generated_camel_case_secret_fields(self) -> None:
         # Arrange
@@ -1039,6 +1323,25 @@ class Phase18CutoverReviewTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("claims decision input without validated --decision-input", result.stdout)
 
+    def test_security_only_rejects_generated_upstream_result_claim_without_validated_input(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            quick_result = self.run_verifier(["--quick"], maybe_root=root)
+            self.assertEqual(quick_result.returncode, 0, quick_result.stdout)
+            run_manifest = self.read_json(root, "build/ci-evidence/phase18/run-manifest.json")
+            run_manifest["upstream_results_supplied"] = True
+            run_manifest["demotion_allowed"] = True
+            self.write_json(root, "build/ci-evidence/phase18/run-manifest.json", run_manifest)
+
+            # Act
+            result = self.run_verifier(["--security-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("claims upstream results without validated --upstream-results", result.stdout)
+
     def test_security_only_rejects_generated_demotion_claim_without_complete_decision_input(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -1068,7 +1371,7 @@ class Phase18CutoverReviewTest(unittest.TestCase):
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("demotion_allowed true requires complete approving decision input", result.stdout)
+        self.assertIn("demotion_allowed true requires complete decision input and upstream results", result.stdout)
 
     def test_security_only_rejects_generated_demotion_when_retained_reviews_block(self) -> None:
         # Arrange
@@ -1103,15 +1406,23 @@ class Phase18CutoverReviewTest(unittest.TestCase):
         with temp_dir:
             self.copy_complete_surface(root)
             decision_input = self.complete_decision_input(root)
+            upstream_results = self.complete_upstream_results(root)
             self.write_json(root, "decision-input.json", decision_input)
-            quick_result = self.run_verifier(["--quick", "--decision-input", "decision-input.json"], maybe_root=root)
+            self.write_json(root, "upstream-results.json", upstream_results)
+            quick_result = self.run_verifier(
+                ["--quick", "--decision-input", "decision-input.json", "--upstream-results", "upstream-results.json"],
+                maybe_root=root,
+            )
             self.assertEqual(quick_result.returncode, 0, quick_result.stdout)
             normalized = self.read_json(root, "build/ci-evidence/phase18/normalized-final-demotion-results.json")
             normalized["results"][0]["demotion_status_allows_cutover"] = False
             self.write_json(root, "build/ci-evidence/phase18/normalized-final-demotion-results.json", normalized)
 
             # Act
-            result = self.run_verifier(["--security-only", "--decision-input", "decision-input.json"], maybe_root=root)
+            result = self.run_verifier(
+                ["--security-only", "--decision-input", "decision-input.json", "--upstream-results", "upstream-results.json"],
+                maybe_root=root,
+            )
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
