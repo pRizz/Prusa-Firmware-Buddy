@@ -3,7 +3,7 @@ phase: 22
 slug: evidence-metadata-reconciliation
 status: approved
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-06-21
 lifecycle_mode: yolo
 phase_lifecycle_id: 22-2026-06-21T16-59-18
@@ -40,11 +40,11 @@ phase_lifecycle_id: 22-2026-06-21T16-59-18
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 22-01-01 | 01 | 1 | Metadata debt from v1.1 audit | T-22-01 | Requirement checkboxes and traceability rows match Phase 14/19/21 evidence without claiming hardware-only simulator proof or final demotion approval. | unit / contract | `python3 tools/bazel/phase22_metadata_reconciliation_test.py` | no - Wave 0 creates file | pending |
-| 22-01-02 | 01 | 1 | Metadata debt from v1.1 audit | T-22-02 | Phase 14-18 validation metadata reflects existing verifier files and passed local verification while preserving manual/external evidence boundaries. | unit / metadata | `python3 tools/bazel/phase22_metadata_reconciliation.py --validation-only` | no - Wave 0 creates file | pending |
-| 22-01-03 | 01 | 1 | Metadata debt from v1.1 audit | T-22-03 | ROADMAP and STATE reflect completed Phase 19/20/21 and pending Phase 22 boundaries using source-backed counts. | unit / metadata | `python3 tools/bazel/phase22_metadata_reconciliation.py --roadmap-state-only` | no - Wave 0 creates file | pending |
-| 22-01-04 | 01 | 1 | Metadata debt from v1.1 audit | T-22-04 | Generated audit-readiness output closes old functional gaps or lists only source-backed `non_blocking_debt`. | artifact / security | `python3 tools/bazel/phase22_metadata_reconciliation.py --quick --output-dir build/ci-evidence/phase22` | no - Wave 0 creates file | pending |
-| 22-01-05 | 01 | 1 | Metadata debt from v1.1 audit | T-22-05 | Secret-bearing refs, unsafe generated artifact paths, missing source refs, and overclaim wording are rejected. | unit / security | `python3 tools/bazel/phase22_metadata_reconciliation_test.py` | no - Wave 0 creates file | pending |
+| 22-01-01 | 01 | 1 | Metadata debt from v1.1 audit | T-22-01 | Requirement checkboxes and traceability rows match Phase 14/19/21 evidence without claiming hardware-only simulator proof or final demotion approval. | unit / contract | `python3 tools/bazel/phase22_metadata_reconciliation_test.py` | yes - Wave 0 files exist | green |
+| 22-01-02 | 01 | 1 | Metadata debt from v1.1 audit | T-22-02 | Phase 14-18 validation metadata reflects existing verifier files and passed local verification while preserving manual/external evidence boundaries. | unit / metadata | `python3 tools/bazel/phase22_metadata_reconciliation.py --validation-only` | yes - Wave 0 files exist | green |
+| 22-01-03 | 01 | 1 | Metadata debt from v1.1 audit | T-22-03 | ROADMAP and STATE reflect completed Phase 19/20/21 and pending Phase 22 boundaries using source-backed counts. | unit / metadata | `python3 tools/bazel/phase22_metadata_reconciliation.py --roadmap-state-only` | yes - Wave 0 files exist | green |
+| 22-01-04 | 01 | 1 | Metadata debt from v1.1 audit | T-22-04 | Generated audit-readiness output closes old functional gaps or lists only source-backed `non_blocking_debt`. | artifact / security | `python3 tools/bazel/phase22_metadata_reconciliation.py --quick --output-dir build/ci-evidence/phase22` | yes - Wave 0 files exist | green |
+| 22-01-05 | 01 | 1 | Metadata debt from v1.1 audit | T-22-05 | Secret-bearing refs, unsafe generated artifact paths, missing source refs, and overclaim wording are rejected. | unit / security | `python3 tools/bazel/phase22_metadata_reconciliation_test.py` | yes - Wave 0 files exist | green |
 
 *Status: pending, green, red, flaky*
 
@@ -52,10 +52,10 @@ phase_lifecycle_id: 22-2026-06-21T16-59-18
 
 ## Wave 0 Requirements
 
-- [ ] `tools/bazel/manifests/phase22_metadata_reconciliation_contract.json` - source-backed correction rows and allowed debt schema.
-- [ ] `tools/bazel/phase22_metadata_reconciliation.py` - stdlib verifier, generated report writer, source-ref/path/secret/overclaim checks, and wiring checks.
-- [ ] `tools/bazel/phase22_metadata_reconciliation_test.py` - focused tests for stale requirement rows, validation drift, roadmap/state mismatch, non-blocking debt schema, generated artifact path guards, and overclaim rejection.
-- [ ] `tools/bazel/BUILD.bazel`, root `BUILD.bazel`, `tools/bazel/rust_workflow.sh`, and `justfile` - Phase 22 labels, root aliases, dispatch, and facade.
+- [x] `tools/bazel/manifests/phase22_metadata_reconciliation_contract.json` - source-backed correction rows and allowed debt schema.
+- [x] `tools/bazel/phase22_metadata_reconciliation.py` - stdlib verifier, generated report writer, source-ref/path/secret/overclaim checks, and wiring checks.
+- [x] `tools/bazel/phase22_metadata_reconciliation_test.py` - focused tests for stale requirement rows, validation drift, roadmap/state mismatch, non-blocking debt schema, generated artifact path guards, and overclaim rejection.
+- [x] `tools/bazel/BUILD.bazel`, root `BUILD.bazel`, `tools/bazel/rust_workflow.sh`, and `justfile` - Phase 22 labels, root aliases, dispatch, and facade.
 
 ---
 
@@ -77,4 +77,4 @@ phase_lifecycle_id: 22-2026-06-21T16-59-18
 - [x] Feedback latency target is below 60 seconds for local checks.
 - [x] `nyquist_compliant: true` set in frontmatter.
 
-**Approval:** approved 2026-06-21 for planning; implementation must keep external evidence boundaries explicit and source-backed.
+**Approval:** approved 2026-06-21 after Phase 22 verifier, Bazel, just, lifecycle, and audit-readiness checks passed; external evidence remains governed by validated upstream inputs.
