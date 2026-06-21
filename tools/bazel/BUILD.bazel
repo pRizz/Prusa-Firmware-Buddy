@@ -475,6 +475,49 @@ shell_binary(
 )
 
 filegroup(
+    name = "phase19_source_ref_manifests",
+    srcs = [
+        "manifests/phase14_simulator_evidence_contract.json",
+        "manifests/phase15_hardware_evidence_contract.json",
+        "manifests/phase16_live_network_evidence_contract.json",
+        "manifests/phase17_release_candidate_evidence_contract.json",
+        "manifests/phase18_cutover_review_contract.json",
+    ],
+)
+
+shell_binary(
+    name = "phase19_verify",
+    src = "rust_workflow.sh",
+    data = [
+        "phase19_aggregate_ci_evidence.py",
+        "manifests/phase19_aggregate_ci_evidence_contract.json",
+        "phase14_simulator_evidence.py",
+        "phase15_hardware_evidence.py",
+        "phase16_live_network_evidence.py",
+        "phase17_release_candidate_evidence.py",
+        "phase18_cutover_review.py",
+        ":phase19_source_ref_manifests",
+        "//:phase19_aggregate_ci_evidence_docs",
+    ],
+)
+
+shell_binary(
+    name = "phase19_verify_tests",
+    src = "rust_workflow.sh",
+    data = [
+        "phase19_aggregate_ci_evidence.py",
+        "phase19_aggregate_ci_evidence_test.py",
+        "manifests/phase19_aggregate_ci_evidence_contract.json",
+        "phase14_simulator_evidence.py",
+        "phase15_hardware_evidence.py",
+        "phase16_live_network_evidence.py",
+        "phase17_release_candidate_evidence.py",
+        "phase18_cutover_review.py",
+        ":phase19_source_ref_manifests",
+    ],
+)
+
+filegroup(
     name = "unsafe_boundary_audit",
     srcs = ["manifests/unsafe_boundary_audit.json"],
 )

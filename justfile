@@ -64,6 +64,10 @@ phase18-verify:
     bazel run //tools/bazel:phase18_verify_tests
     bazel run //tools/bazel:phase18_verify
 
+phase19-verify:
+    bazel run //tools/bazel:phase19_verify_tests
+    bazel run //tools/bazel:phase19_verify
+
 phase17-release-artifacts-smoke:
     bazel build //tools/bazel:phase17_representative_release_smoke
 

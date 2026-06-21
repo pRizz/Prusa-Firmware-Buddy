@@ -158,6 +158,17 @@ filegroup(
 )
 
 filegroup(
+    name = "phase19_aggregate_ci_evidence_docs",
+    srcs = [
+        ".planning/phases/19-aggregate-cutover-evidence-ci/19-CONTEXT.md",
+        ".planning/phases/19-aggregate-cutover-evidence-ci/19-RESEARCH.md",
+        ".planning/phases/19-aggregate-cutover-evidence-ci/19-VALIDATION.md",
+        ".planning/phases/19-aggregate-cutover-evidence-ci/19-01-PLAN.md",
+        ".github/workflows/ci-evidence.yml",
+    ],
+)
+
+filegroup(
     name = "phase7_storage_migration_fixtures",
     srcs = ["//tools/bazel:fixtures/phase7_storage/redacted_migration_catalog.json"],
 )
@@ -350,6 +361,16 @@ alias(
 alias(
     name = "phase18_verify_tests",
     actual = "//tools/bazel:phase18_verify_tests",
+)
+
+alias(
+    name = "phase19_verify",
+    actual = "//tools/bazel:phase19_verify",
+)
+
+alias(
+    name = "phase19_verify_tests",
+    actual = "//tools/bazel:phase19_verify_tests",
 )
 
 alias(

@@ -36,18 +36,18 @@ permissions:
   contents: read
 
 jobs:
-  phase13-ci-evidence:
+  phase19-ci-evidence:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
       - name: Write CI evidence
-        run: python3 tools/bazel/phase13_ci_evidence.py --ci --output-dir build/ci-evidence/phase13
+        run: python3 tools/bazel/phase19_aggregate_ci_evidence.py --ci --output-dir build/ci-evidence/phase19
       - name: Upload CI evidence
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: phase13-ci-evidence-${{ github.run_id }}-${{ github.run_attempt }}
-          path: build/ci-evidence/phase13/
+          name: phase19-ci-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/ci-evidence/phase19/
           retention-days: 30
           if-no-files-found: error
