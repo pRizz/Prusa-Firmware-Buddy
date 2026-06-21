@@ -69,6 +69,15 @@ PHASE20_SOURCE_REF_MANIFESTS = [
     "manifests/phase11_reference_comparisons.json",
     "manifests/representative_products.json",
 ]
+PHASE20_SOURCE_REF_MANIFEST_PATHS = {Path("tools/bazel") / path for path in PHASE20_SOURCE_REF_MANIFESTS}
+PHASE20_SOURCE_REF_ROW_COLLECTIONS = {
+    "tools/bazel/manifests/phase17_release_candidate_evidence_contract.json": ["rows"],
+    "tools/bazel/manifests/phase19_aggregate_ci_evidence_contract.json": ["phases.external_input"],
+    "tools/bazel/manifests/phase20_release_candidate_artifacts_contract.json": ["rows"],
+    "tools/bazel/manifests/phase20_release_environment_inputs.template.json": ["evidence_rows"],
+    "tools/bazel/manifests/phase11_reference_comparisons.json": ["reference_comparisons"],
+    "tools/bazel/manifests/representative_products.json": ["entries"],
+}
 PHASE20_DOCS = [
     ".planning/phases/20-release-candidate-artifact-production/20-CONTEXT.md",
     ".planning/phases/20-release-candidate-artifact-production/20-RESEARCH.md",
@@ -299,6 +308,53 @@ def resolved_output_dir(root: Path, output_dir: Path) -> tuple[Path, Path]:
     return output_dir, root / output_dir
 
 
+def source_ref_row_matches(data: Any, collection_names: list[str], row_id: str) -> list[str]:
+    if not isinstance(data, dict):
+        return []
+    matches: list[str] = []
+    for collection_name in collection_names:
+        if collection_name == "phases.external_input":
+            phases = data.get("phases")
+            if not isinstance(phases, list):
+                continue
+            for index, phase in enumerate(phases):
+                if not isinstance(phase, dict):
+                    continue
+                external_input = phase.get("external_input")
+                if isinstance(external_input, dict) and external_input.get("id") == row_id:
+                    matches.append(f"phases[{index}].external_input")
+            continue
+        rows = data.get(collection_name)
+        if not isinstance(rows, list):
+            continue
+        for index, row in enumerate(rows):
+            if isinstance(row, dict) and row.get("id") == row_id:
+                matches.append(f"{collection_name}[{index}]")
+    return matches
+
+
+def resolve_source_ref(root: Path, source_ref: str, row_name: str) -> None:
+    if "#" not in source_ref:
+        raise VerificationError(f"{row_name} source ref must use file#row-id: {source_ref}")
+    path_text, row_id = source_ref.split("#", 1)
+    if not path_text or not row_id:
+        raise VerificationError(f"{row_name} source ref must include file and row ID: {source_ref}")
+    relative_path = Path(path_text)
+    if relative_path.is_absolute() or ".." in relative_path.parts:
+        raise VerificationError(f"{row_name} source ref must be repo-relative: {source_ref}")
+    if relative_path not in PHASE20_SOURCE_REF_MANIFEST_PATHS:
+        raise VerificationError(f"{row_name} source ref path is not an approved Phase 20 source manifest: {source_ref}")
+    data = load_json(root, relative_path)
+    collection_names = PHASE20_SOURCE_REF_ROW_COLLECTIONS.get(relative_path.as_posix(), [])
+    if not collection_names:
+        raise VerificationError(f"{row_name} source ref path has no approved row collections: {source_ref}")
+    matches = source_ref_row_matches(data, collection_names, row_id)
+    if not matches:
+        raise VerificationError(f"{row_name} source ref row not found in approved row collections: {source_ref}")
+    if len(matches) > 1:
+        raise VerificationError(f"{row_name} source ref row matches multiple approved rows: {source_ref}")
+
+
 def check_contract(root: Path) -> dict[str, Any]:
     contract = load_json(root, CONTRACT_MANIFEST)
     errors: list[str] = []
@@ -332,13 +388,13 @@ def check_contract(root: Path) -> dict[str, Any]:
     except VerificationError as error:
         errors.append(str(error))
         rows = []
-    validate_rows(rows, errors)
+    validate_rows(root, rows, errors)
     if errors:
         raise VerificationError("\n".join(errors))
     return contract
 
 
-def validate_rows(rows: list[dict[str, Any]], errors: list[str]) -> None:
+def validate_rows(root: Path, rows: list[dict[str, Any]], errors: list[str]) -> None:
     row_ids = [str(row.get("id")) for row in rows]
     if row_ids != REQUIRED_ROW_IDS:
         for missing in REQUIRED_ROW_IDS:
@@ -353,7 +409,7 @@ def validate_rows(rows: list[dict[str, Any]], errors: list[str]) -> None:
     for row in rows:
         row_name = str(row.get("id", "unknown-row"))
         try:
-            validate_row(row, row_name)
+            validate_row(root, row, row_name)
             covered_requirements.update(row["requirement_ids"])
         except VerificationError as error:
             errors.append(str(error))
@@ -361,7 +417,7 @@ def validate_rows(rows: list[dict[str, Any]], errors: list[str]) -> None:
         errors.append(f"missing REL requirement coverage: {missing}")
 
 
-def validate_row(row: dict[str, Any], row_name: str) -> None:
+def validate_row(root: Path, row: dict[str, Any], row_name: str) -> None:
     require_fields(row, REQUIRED_ROW_FIELDS, row_name)
     errors: list[str] = []
     requirement_ids = set(require_list(row, "requirement_ids", row_name))
@@ -387,6 +443,13 @@ def validate_row(row: dict[str, Any], row_name: str) -> None:
     proof_classes = set(row["proof_class_allowed"])
     if not proof_classes <= set(PROOF_CLASS_VOCABULARY):
         errors.append(f"{row_name} proof_class_allowed contains unknown proof classes")
+    for source_ref in row["source_contract_refs"]:
+        if not isinstance(source_ref, str):
+            continue
+        try:
+            resolve_source_ref(root, source_ref, row_name)
+        except VerificationError as error:
+            errors.append(str(error))
     default_status = require_string(row, "default_status", row_name)
     if default_status not in STATUS_VOCABULARY:
         errors.append(f"{row_name} default_status is invalid: {default_status}")

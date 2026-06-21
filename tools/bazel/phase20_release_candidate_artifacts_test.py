@@ -14,6 +14,14 @@ VERIFIER = ROOT / "tools/bazel/phase20_release_candidate_artifacts.py"
 CONTRACT = "tools/bazel/manifests/phase20_release_candidate_artifacts_contract.json"
 TEMPLATE = "tools/bazel/manifests/phase20_release_environment_inputs.template.json"
 DEFAULT_OUTPUT_DIR = "build/ci-evidence/phase20"
+SOURCE_REF_MANIFESTS = [
+    "tools/bazel/manifests/phase17_release_candidate_evidence_contract.json",
+    "tools/bazel/manifests/phase19_aggregate_ci_evidence_contract.json",
+    CONTRACT,
+    TEMPLATE,
+    "tools/bazel/manifests/phase11_reference_comparisons.json",
+    "tools/bazel/manifests/representative_products.json",
+]
 REQUIRED_SURFACES = [
     ".bin",
     ".bbf",
@@ -88,7 +96,7 @@ class Phase20ReleaseCandidateArtifactsTest(unittest.TestCase):
         (root / "tools/bazel/manifests").mkdir(parents=True)
         if VERIFIER.exists():
             shutil.copy2(VERIFIER, root / "tools/bazel/phase20_release_candidate_artifacts.py")
-        for path in [CONTRACT, TEMPLATE]:
+        for path in SOURCE_REF_MANIFESTS:
             source = ROOT / path
             if source.exists():
                 destination = root / path
@@ -370,6 +378,49 @@ esac
                     # Assert
                     self.assertNotEqual(broken_result.returncode, 0)
                     self.assertIn(row_id, broken_result.stdout)
+
+    def test_contract_rejects_source_refs_outside_approved_manifests(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_file(
+                root,
+                "tools/bazel/manifests/unapproved.json",
+                json.dumps({"rows": [{"id": "rel-bin-firmware-image"}]}, indent=2, sort_keys=True) + "\n",
+            )
+            contract = self.read_contract(root)
+            if contract is None:
+                self.skipTest("contract fixture is unavailable")
+            contract["rows"][0]["source_contract_refs"] = [
+                "tools/bazel/manifests/unapproved.json#rel-bin-firmware-image",
+            ]
+            self.write_contract(root, contract)
+
+            # Act
+            result = self.run_verifier(["--contract-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("not an approved Phase 20 source manifest", result.stdout)
+
+    def test_contract_rejects_missing_source_ref_row(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            contract = self.read_contract(root)
+            if contract is None:
+                self.skipTest("contract fixture is unavailable")
+            contract["rows"][0]["source_contract_refs"] = [
+                "tools/bazel/manifests/phase17_release_candidate_evidence_contract.json#does-not-exist",
+            ]
+            self.write_contract(root, contract)
+
+            # Act
+            result = self.run_verifier(["--contract-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("row not found in approved row collections", result.stdout)
 
     def test_quick_without_release_input_writes_pending_result_manifest(self) -> None:
         # Arrange
