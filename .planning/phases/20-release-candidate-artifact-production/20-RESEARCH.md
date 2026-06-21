@@ -335,17 +335,19 @@ All claims in this research were verified or cited in this session; no unverifie
 |---|-------|---------|---------------|
 | N/A | No assumed claims recorded. | N/A | N/A |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Which release-environment URI scheme and retention backend will release managers use?**
+1. **Which release-environment URI scheme and retention backend will release managers use? (RESOLVED)**
    - What we know: Phase 20 allows explicit release-environment input manifests and external refs without private payloads. [VERIFIED: .planning/phases/20-release-candidate-artifact-production/20-CONTEXT.md]
    - What's unclear: The repo does not define the production artifact store, retention backend, or key-management naming scheme. [VERIFIED: rg release/signing refs; .planning/codebase/INTEGRATIONS.md]
    - Recommendation: Use `external://phase20/...` refs and require `retention_refs`, `subject_digests`, `key_identity_ref`, and `verification_outcome` fields; do not block local verification on the real backend. [VERIFIED: tools/bazel/phase17_release_candidate_evidence.py; .planning/phases/20-release-candidate-artifact-production/20-CONTEXT.md]
+   - RESOLVED: Phase 20 uses `external://phase20/...` as the checked-in ref contract and records backend-specific storage through explicit `retention_refs`; production backend and key-management naming remain release-environment inputs, not local verifier assumptions. [VERIFIED: .planning/phases/20-release-candidate-artifact-production/20-01-PLAN.md]
 
-2. **Should Phase 19 retain Phase 20 outputs in this phase?**
+2. **Should Phase 19 retain Phase 20 outputs in this phase? (RESOLVED)**
    - What we know: Phase 20 decisions allow Phase 19 to retain or index Phase 20 artifacts, but forbid Phase 19 from owning release pass/fail semantics. [VERIFIED: .planning/phases/20-release-candidate-artifact-production/20-CONTEXT.md]
    - What's unclear: The roadmap success criteria for Phase 20 do not require a Phase 19 contract rewrite. [VERIFIED: .planning/ROADMAP.md]
    - Recommendation: Add only minimal discoverability/retention hooks if needed, such as docs aliases or an index row that points to `build/ci-evidence/phase20/release-result-manifest.json`; keep all REL status decisions in Phase 20. [VERIFIED: .planning/phases/20-release-candidate-artifact-production/20-CONTEXT.md]
+   - RESOLVED: Phase 20 owns release-result semantics through `build/ci-evidence/phase20/release-result-manifest.json`; Phase 19 is not changed to decide REL pass/fail in this phase and may only retain or index Phase 20 outputs later as a consumer. [VERIFIED: .planning/phases/20-release-candidate-artifact-production/20-02-PLAN.md]
 
 ## Environment Availability
 
