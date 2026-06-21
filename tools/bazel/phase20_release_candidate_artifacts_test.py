@@ -474,6 +474,33 @@ esac
             for row in manifest["rows"]:
                 self.assertNotEqual(row["status"], "passed")
 
+    def test_quick_rejects_relative_output_dir_that_escapes_through_symlink(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        outside_temp_dir = tempfile.TemporaryDirectory()
+        with temp_dir, outside_temp_dir:
+            outside_dir = Path(outside_temp_dir.name)
+            outside_target = outside_dir / "escaped"
+            outside_target.mkdir()
+            marker_path = outside_target / "do-not-delete.txt"
+            marker_path.write_text("outside target must survive\n", encoding="utf-8")
+            output_root = root / DEFAULT_OUTPUT_DIR
+            output_root.mkdir(parents=True)
+            (output_root / "link").symlink_to(outside_dir, target_is_directory=True)
+
+            # Act
+            result = self.run_verifier(
+                ["--quick", "--output-dir", f"{DEFAULT_OUTPUT_DIR}/link/escaped"],
+                maybe_root=root,
+            )
+
+            # Assert
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("--output-dir must stay under", result.stdout)
+            self.assertTrue(outside_target.is_dir())
+            self.assertEqual(marker_path.read_text(encoding="utf-8"), "outside target must survive\n")
+            self.assertFalse((outside_target / "release-result-manifest.json").exists())
+
     def test_passed_result_rejects_local_smoke_and_template_only_proof(self) -> None:
         for proof_class in ["local-smoke", "template-only"]:
             with self.subTest(proof_class=proof_class):

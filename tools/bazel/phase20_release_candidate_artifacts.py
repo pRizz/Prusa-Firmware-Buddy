@@ -283,22 +283,21 @@ def validate_ref_list(row: dict[str, Any], field: str, row_name: str, require_no
 
 
 def resolved_output_dir(root: Path, output_dir: Path) -> tuple[Path, Path]:
+    resolved_root = root.resolve(strict=False)
+    expected_root = (resolved_root / DEFAULT_OUTPUT_DIR).resolve(strict=False)
     if output_dir.is_absolute():
-        full_output_dir = output_dir.resolve(strict=False)
-        expected_root = (root / DEFAULT_OUTPUT_DIR).resolve(strict=False)
-        try:
-            relative_output_dir = full_output_dir.relative_to(root.resolve(strict=False))
-            full_output_dir.relative_to(expected_root)
-        except ValueError as error:
-            raise VerificationError(f"--output-dir must stay under {DEFAULT_OUTPUT_DIR.as_posix()}: {output_dir.as_posix()}") from error
-        return relative_output_dir, full_output_dir
-    if output_dir.is_absolute() or ".." in output_dir.parts:
-        raise VerificationError(f"--output-dir must be contained by {DEFAULT_OUTPUT_DIR.as_posix()}: {output_dir.as_posix()}")
+        candidate = output_dir
+    else:
+        if ".." in output_dir.parts:
+            raise VerificationError(f"--output-dir must be contained by {DEFAULT_OUTPUT_DIR.as_posix()}: {output_dir.as_posix()}")
+        candidate = resolved_root / output_dir
+    full_output_dir = candidate.resolve(strict=False)
     try:
-        output_dir.relative_to(DEFAULT_OUTPUT_DIR)
+        relative_output_dir = full_output_dir.relative_to(resolved_root)
+        full_output_dir.relative_to(expected_root)
     except ValueError as error:
         raise VerificationError(f"--output-dir must stay under {DEFAULT_OUTPUT_DIR.as_posix()}: {output_dir.as_posix()}") from error
-    return output_dir, root / output_dir
+    return relative_output_dir, full_output_dir
 
 
 def source_ref_row_matches(data: Any, collection_names: list[str], row_id: str) -> list[str]:
