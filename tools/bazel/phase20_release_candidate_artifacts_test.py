@@ -244,7 +244,15 @@ esac
         input_path.write_text(json.dumps({"evidence_rows": rows}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         return path
 
-    def complete_release_rows(self) -> list[dict[str, object]]:
+    def complete_release_rows(self, maybe_root: Path | None = None) -> list[dict[str, object]]:
+        root = maybe_root or ROOT
+        contract = self.read_contract(root) or {}
+        contract_rows = contract.get("rows", [])
+        artifact_surfaces = {
+            str(row.get("id")): str(row.get("artifact_surface"))
+            for row in contract_rows
+            if isinstance(row, dict) and row.get("id") and row.get("artifact_surface")
+        }
         rows: list[dict[str, object]] = []
         for row_id in REQUIRED_ROW_IDS:
             artifact_ref = f"external://phase20/artifacts/{row_id}.json"
@@ -252,18 +260,21 @@ esac
                 {
                     "id": row_id,
                     "artifact_refs": [artifact_ref],
-                    "artifact_surface": ".bbf",
+                    "artifact_surface": artifact_surfaces.get(row_id, ".bbf"),
                     "build_input_identity": "git:phase20-test-build;bazel:phase17_release_candidate_artifacts",
                     "builder_command": "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+                    "contract_validation": "phase20-contract-validation-passed",
                     "key_identity_ref": "release-key-fingerprint:sha256:phase20-test",
                     "mismatch_class": "pass",
                     "mismatch_reason": "Approved release metadata matched the archived reference classification.",
                     "operator": "phase20-test-operator",
                     "owner_phase": "20-release-candidate-artifact-production",
                     "proof_class": "approved-release-run",
+                    "redaction_scan": "phase20-redaction-scan-passed",
                     "release_run_id": "phase20-approved-run-001",
                     "residual_risk": "Limited to supplied release-environment evidence.",
                     "retention_refs": ["external://phase20/retention/phase20-approved-run-001"],
+                    "signing_mode": "external-release-signing",
                     "status": "passed",
                     "subject_digests": [
                         {
@@ -271,12 +282,38 @@ esac
                             "sha256": "a" * 64,
                         }
                     ],
+                    "source_contract_snapshot": "phase20-source-contract-snapshot",
                     "timestamp": "2026-06-21T13:00:00Z",
                     "verification_outcome": "approved-release-metadata",
-                    "affected_artifact_surface": ".bbf",
+                    "affected_artifact_surface": artifact_surfaces.get(row_id, ".bbf"),
                 }
             )
         return rows
+
+    def required_metadata_cases(self, contract: dict[str, object]) -> list[tuple[str, str]]:
+        rows = contract.get("rows", [])
+        cases: list[tuple[str, str]] = []
+        seen_fields: set[str] = set()
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            row_id = row.get("id")
+            if not isinstance(row_id, str):
+                continue
+            for group in [
+                "release_metadata_required",
+                "signing_metadata_required",
+                "provenance_metadata_required",
+                "retention_metadata_required",
+            ]:
+                fields = row.get(group)
+                if not isinstance(fields, list):
+                    continue
+                for field in fields:
+                    if isinstance(field, str) and field not in seen_fields:
+                        cases.append((row_id, field))
+                        seen_fields.add(field)
+        return cases
 
     def test_contract_lists_all_release_surfaces(self) -> None:
         # Arrange
@@ -371,6 +408,32 @@ esac
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(proof_class, result.stdout)
+
+    def test_passed_release_input_requires_contract_declared_metadata(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            contract = self.read_contract(root)
+            if contract is None:
+                self.skipTest("contract fixture is unavailable")
+            required_cases = self.required_metadata_cases(contract)
+
+            for row_id, required_field in required_cases:
+                with self.subTest(row_id=row_id, required_field=required_field):
+                    rows = self.complete_release_rows(root)
+                    target_row = next(row for row in rows if row["id"] == row_id)
+                    target_row.pop(required_field, None)
+                    release_input = self.write_release_input(root, rows)
+
+                    # Act
+                    result = self.run_verifier(
+                        ["--quick", "--release-input", release_input],
+                        maybe_root=root,
+                    )
+
+                    # Assert
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(required_field, result.stdout)
 
     def test_redaction_rejects_private_key_and_payload_fields(self) -> None:
         forbidden_fields = [

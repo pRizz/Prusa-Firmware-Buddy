@@ -508,8 +508,28 @@ def validate_release_row(row: dict[str, Any], contract_row: dict[str, Any], row_
             except VerificationError as error:
                 errors.append(str(error))
         validate_subject_digests(row, row_name, errors)
+        validate_required_metadata(row, contract_row, row_name, errors)
     if errors:
         raise VerificationError("\n".join(errors))
+
+
+def validate_required_metadata(row: dict[str, Any], contract_row: dict[str, Any], row_name: str, errors: list[str]) -> None:
+    metadata_fields = [
+        *contract_row["release_metadata_required"],
+        *contract_row["signing_metadata_required"],
+        *contract_row["provenance_metadata_required"],
+        *contract_row["retention_metadata_required"],
+    ]
+    for field in dict.fromkeys(metadata_fields):
+        try:
+            if field in {"artifact_refs", "retention_refs"}:
+                validate_ref_list(row, field, row_name, require_nonempty=True)
+            elif field == "subject_digests":
+                validate_subject_digests(row, row_name, errors)
+            else:
+                require_string(row, field, row_name)
+        except VerificationError as error:
+            errors.append(str(error))
 
 
 def validate_subject_digests(row: dict[str, Any], row_name: str, errors: list[str]) -> None:
@@ -545,9 +565,16 @@ def quick_result_row(contract_row: dict[str, Any], maybe_release_row: dict[str, 
         "proof_class": "template-only",
         "status": contract_row["default_status"],
         "artifact_refs": [],
+        "release_run_id": "",
+        "timestamp": "",
+        "operator": "",
         "subject_digests": [],
         "build_input_identity": "",
         "key_identity_ref": "",
+        "signing_mode": "",
+        "contract_validation": "",
+        "redaction_scan": "",
+        "source_contract_snapshot": "",
         "retention_refs": [],
         "verification_outcome": "pending-release-input",
         "mismatch_class": "blocker",
@@ -562,9 +589,16 @@ def quick_result_row(contract_row: dict[str, Any], maybe_release_row: dict[str, 
         "proof_class",
         "status",
         "artifact_refs",
+        "release_run_id",
+        "timestamp",
+        "operator",
         "subject_digests",
         "build_input_identity",
         "key_identity_ref",
+        "signing_mode",
+        "contract_validation",
+        "redaction_scan",
+        "source_contract_snapshot",
         "retention_refs",
         "verification_outcome",
         "mismatch_class",
@@ -620,10 +654,18 @@ def write_quick_artifacts(root: Path, contract: dict[str, Any], output_dir: Path
                 "id": row["id"],
                 "status": row["status"],
                 "proof_class": row["proof_class"],
+                "release_run_id": row["release_run_id"],
+                "timestamp": row["timestamp"],
+                "operator": row["operator"],
+                "build_input_identity": row["build_input_identity"],
                 "key_identity_ref": row["key_identity_ref"],
+                "signing_mode": row["signing_mode"],
                 "subject_digests": row["subject_digests"],
                 "retention_refs": row["retention_refs"],
                 "verification_outcome": row["verification_outcome"],
+                "contract_validation": row["contract_validation"],
+                "redaction_scan": row["redaction_scan"],
+                "source_contract_snapshot": row["source_contract_snapshot"],
             }
             for row in rows
         ],
