@@ -1,6 +1,6 @@
 ---
 phase: 20-release-candidate-artifact-production
-reviewed: 2026-06-21T13:59:48Z
+reviewed: 2026-06-21T14:13:13Z
 depth: standard
 files_reviewed: 10
 files_reviewed_list:
@@ -16,68 +16,63 @@ files_reviewed_list:
   - tools/bazel/manifests/phase20_release_environment_inputs.template.json
 findings:
   critical: 1
-  warning: 1
+  warning: 0
   info: 0
-  total: 2
+  total: 1
 status: issues_found
 ---
 
 # Phase 20: Code Review Report
 
-**Reviewed:** 2026-06-21T13:59:48Z
+**Reviewed:** 2026-06-21T14:13:13Z
 **Depth:** standard
 **Files Reviewed:** 10
 **Status:** issues_found
 
 ## Summary
 
-Reviewed the Phase 20 release artifact verifier, Bazel/just wiring, Phase 17 compatibility guard changes, tests, and release manifest templates. Repo guidance applied: `AGENTS.md`, `AGENTS.bright-builds.md`, `standards-overrides.md`, `standards/core/code-shape.md`, `standards/core/verification.md`, and `standards/core/testing.md`.
+Re-reviewed the Phase 20 release artifact verifier, Phase 17 compatibility guard changes, Bazel/just wiring, tests, and Phase 20 manifest templates after the CR-01/WR-01 fix report. Repo guidance applied: `AGENTS.md`, `AGENTS.bright-builds.md`, `standards-overrides.md`, `standards/core/code-shape.md`, `standards/core/verification.md`, and `standards/core/testing.md`.
 
-The Bazel and just wiring is coherent, and the targeted verifier/test commands pass. Two release-evidence correctness gaps remain: one allows `passed` release rows without contract-declared release/signing metadata, and one allows broken source traceability refs to pass contract validation.
+The previous findings were materially addressed: contract source refs now resolve against approved row collections, and passed release rows now require the contract-declared release/signing/provenance/retention metadata. The targeted verifier and test commands pass.
+
+One remaining release-evidence correctness gap remains: Phase 20 can still produce `passed` rows without substantive comparison metadata.
 
 ## Critical Issues
 
-### CR-01: Passed Release Input Can Omit Contract-Required Release And Signing Metadata
+### CR-01: Passed Rows Can Still Overclaim Comparison Evidence
 
-**File:** `tools/bazel/phase20_release_candidate_artifacts.py:499`
+**File:** `tools/bazel/phase20_release_candidate_artifacts.py:453,556-558`
 
-**Issue:** `validate_release_row` only enforces `REQUIRED_PASS_FIELDS` and comparison metadata for `status == "passed"`. It does not enforce the per-row metadata declared in the contract under `release_metadata_required`, `signing_metadata_required`, `provenance_metadata_required`, and `retention_metadata_required`. A temporary probe with every row marked `passed` but with no `release_run_id`, `operator`, `timestamp`, `signing_mode`, or `key_identity_ref` exited 0 and wrote a passed manifest. That lets Phase 20 overclaim approved release/signing evidence.
+**Issue:** `validate_row` accepts `default_status == "passed"` because it only checks the status vocabulary, so a contract edit can make `--quick` emit a passed row without release input. Separately, `validate_release_row` only checks that comparison metadata keys exist for passed rows; empty `mismatch_reason`, empty `residual_risk`, wrong `owner_phase`, and wrong `affected_artifact_surface` are accepted. Temporary probes confirmed both paths exit 0 and write passed artifacts.
 
 **Fix:**
 ```python
-def validate_required_metadata(row: dict[str, Any], contract_row: dict[str, Any], row_name: str, errors: list[str]) -> None:
-    metadata_fields = [
-        *contract_row["release_metadata_required"],
-        *contract_row["signing_metadata_required"],
-        *contract_row["provenance_metadata_required"],
-        *contract_row["retention_metadata_required"],
-    ]
-    for field in metadata_fields:
-        try:
-            if field in {"artifact_refs", "retention_refs"}:
-                validate_ref_list(row, field, row_name, require_nonempty=True)
-            elif field == "subject_digests":
-                validate_subject_digests(row, row_name, errors)
-            else:
-                require_string(row, field, row_name)
-        except VerificationError as error:
-            errors.append(str(error))
+if default_status == "passed":
+    errors.append(f"{row_name} default_status cannot be passed without approved release input")
+
+for field in contract_row["comparison_metadata_required"]:
+    value = require_string(row, field, row_name)
+    if field == "owner_phase" and value != PHASE:
+        errors.append(f"{row_name} owner_phase must be {PHASE}")
+    if field == "affected_artifact_surface" and value != contract_row["artifact_surface"]:
+        errors.append(f"{row_name} affected_artifact_surface must match contract row {contract_row['id']}")
 ```
 
-Call this inside the `status == "passed"` branch, preserve the accepted metadata in `quick_result_row`/summaries as needed by Phase 21, and add regression tests that passed rows fail when each contract-declared metadata field is missing.
+Add regression tests that `--contract-only` rejects a Phase 20 row with `default_status: "passed"`, and that `--quick --release-input` rejects passed rows with empty comparison strings or mismatched `owner_phase` / `affected_artifact_surface`.
 
-## Warnings
+## Verification
 
-### WR-01: Contract Source References Are Not Resolved
-
-**File:** `tools/bazel/phase20_release_candidate_artifacts.py:370`
-
-**Issue:** Phase 20 contract validation checks that `source_contract_refs` is a list of non-empty strings, but it never verifies that each `file#row-id` points to an approved manifest and an existing row. A temporary probe changed the first row to `tools/bazel/manifests/phase17_release_candidate_evidence_contract.json#does-not-exist`; `--contract-only` still passed. This weakens the release traceability claim.
-
-**Fix:** Port the Phase 17 source-ref resolver pattern into Phase 20: keep an approved manifest path to row-collection map, require repo-relative `file#row-id` refs, load the referenced JSON, and fail unless the row ID exists exactly once in an approved collection. Add a regression test that a nonexistent source row fails `--contract-only`.
+- `python3 -m py_compile tools/bazel/phase17_release_candidate_evidence.py tools/bazel/phase17_release_candidate_evidence_test.py tools/bazel/phase20_release_candidate_artifacts.py tools/bazel/phase20_release_candidate_artifacts_test.py` passed.
+- `python3 tools/bazel/phase20_release_candidate_artifacts_test.py` passed.
+- `python3 tools/bazel/phase17_release_candidate_evidence_test.py` passed.
+- `python3 tools/bazel/phase20_release_candidate_artifacts.py --contract-only` passed.
+- `python3 tools/bazel/phase20_release_candidate_artifacts.py --security-only` passed.
+- `python3 tools/bazel/phase20_release_candidate_artifacts.py --wiring-only` passed.
+- `python3 tools/bazel/phase20_release_candidate_artifacts.py --quick` passed.
+- Negative probes confirmed the remaining issue.
 
 ---
 
-_Reviewed: 2026-06-21T13:59:48Z_
+_Reviewed: 2026-06-21T14:13:13Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
