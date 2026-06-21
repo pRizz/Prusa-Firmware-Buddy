@@ -344,6 +344,15 @@ def generated_artifact_paths(root: Path, output_dir: Path, contract: dict[str, A
     return paths
 
 
+def has_symlink_descendant(path: Path) -> Path | None:
+    if not path.exists():
+        return None
+    for child in sorted(path.rglob("*")):
+        if child.is_symlink():
+            return child
+    return None
+
+
 def check_security(root: Path, output_dir: Path) -> None:
     contract = check_contract(root)
     validate_output_dir(root, output_dir)
@@ -449,7 +458,17 @@ def check_roadmap_state(root: Path) -> None:
         raise VerificationError("\n".join(errors))
 
 
-def check_audit_readiness(root: Path) -> dict[str, Any]:
+def normalized_audit_status(status: str, metadata_corrected: bool) -> str:
+    if status in {"closed", "still_blocking", "non_blocking_debt"}:
+        return status
+    if status == "metadata-correction-required" and metadata_corrected:
+        return "closed"
+    if status == "metadata-correction-required":
+        return "still_blocking"
+    return status
+
+
+def check_audit_readiness(root: Path, metadata_corrected: bool = False) -> dict[str, Any]:
     contract = check_contract(root)
     gap_rows = require_list(contract.get("audit_gap_mappings"), "audit_gap_mappings")
     debt_rows = require_list(contract.get("non_blocking_debt"), "non_blocking_debt")
@@ -465,9 +484,11 @@ def check_audit_readiness(root: Path) -> dict[str, Any]:
         status = str(raw_row.get("mapped_status", ""))
         if status not in allowed_statuses:
             errors.append(f"{row_id}: unsupported mapped_status {status}")
+        normalized_status = normalized_audit_status(status, metadata_corrected)
         normalized_rows.append({
             "id": row_id,
-            "mapped_status": status,
+            "status": normalized_status,
+            "original_mapped_status": status,
             "source_refs": raw_row.get("source_refs", []),
             "correction_ids": raw_row.get("correction_ids", []),
         })
@@ -479,7 +500,7 @@ def check_audit_readiness(root: Path) -> dict[str, Any]:
         raise VerificationError("\n".join(errors))
 
     status = "passed"
-    if any(row["mapped_status"] == "still_blocking" for row in normalized_rows):
+    if any(row["status"] == "still_blocking" for row in normalized_rows):
         status = "blocked"
     elif debt_rows:
         status = "non_blocking_debt"
@@ -502,11 +523,107 @@ def check_wiring(root: Path) -> None:
         raise VerificationError("\n".join(errors))
 
 
+def write_json(path: Path, data: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def prepare_output_dir(root: Path, output_dir: Path) -> Path:
+    full_output_dir = validate_output_dir(root, output_dir)
+    maybe_symlink = has_symlink_descendant(full_output_dir)
+    if maybe_symlink is not None:
+        raise VerificationError(f"output directory contains symlink descendant: {maybe_symlink.relative_to(root)}")
+    if full_output_dir.exists():
+        if not full_output_dir.is_dir():
+            raise VerificationError(f"output path exists but is not a directory: {full_output_dir.relative_to(root)}")
+        shutil.rmtree(full_output_dir)
+    full_output_dir.mkdir(parents=True, exist_ok=False)
+    return full_output_dir
+
+
+def correction_report_rows(contract: dict[str, Any]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for raw_row in require_list(contract.get("metadata_corrections"), "metadata_corrections"):
+        if not isinstance(raw_row, dict):
+            continue
+        rows.append({
+            "id": raw_row.get("id"),
+            "target_file": raw_row.get("target_file"),
+            "status": "corrected",
+            "correction_type": raw_row.get("correction_type"),
+            "source_refs": raw_row.get("source_refs", []),
+            "required_new_markers": raw_row.get("required_new_markers", []),
+        })
+    return rows
+
+
+def copy_sanitized_source_snapshots(root: Path, contract: dict[str, Any], output_dir: Path) -> None:
+    snapshot_root = output_dir / "sanitized-source-snapshots"
+    errors: list[str] = []
+    for snapshot in require_list(contract.get("sanitized_source_snapshots"), "sanitized_source_snapshots"):
+        if not isinstance(snapshot, str) or not is_safe_relative_path(snapshot):
+            errors.append(f"sanitized_source_snapshots unsafe path: {snapshot}")
+            continue
+        source_path = root / snapshot
+        if not source_path.exists():
+            errors.append(f"sanitized_source_snapshots missing source: {snapshot}")
+            continue
+        text = read_text(source_path)
+        errors.extend(check_file_security_text(Path(snapshot), text, broad_markers=False))
+        destination = snapshot_root / snapshot
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_path, destination)
+
+    if errors:
+        raise VerificationError("\n".join(errors))
+
+
+def write_quick_artifacts(root: Path, contract: dict[str, Any], output_dir: Path, readiness: dict[str, Any]) -> None:
+    full_output_dir = prepare_output_dir(root, output_dir)
+    generated_at_utc = utc_now()
+    corrections = correction_report_rows(contract)
+
+    metadata_report = {
+        "artifact_name": "phase22-metadata-reconciliation",
+        "schema_version": "1",
+        "phase": PHASE,
+        "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
+        "generated_at_utc": generated_at_utc,
+        "requirements": contract.get("requirements", []),
+        "correction_count": len(corrections),
+        "corrections": corrections,
+    }
+    readiness_report = dict(readiness)
+    readiness_report["generated_at_utc"] = generated_at_utc
+
+    redacted_summary = "\n".join([
+        "# Phase 22 Metadata Reconciliation",
+        "",
+        "Phase 22 reconciles source-backed planning metadata and writes an audit-rerun readiness report.",
+        "",
+        (
+            "Phase 22 reconciles metadata only; hardware, live-service, release signing, upstream-result pass evidence, "
+            "maintainer decisions, final demotion, and milestone archival remain governed by their validated inputs."
+        ),
+        "",
+    ])
+
+    write_json(full_output_dir / "metadata-reconciliation-report.json", metadata_report)
+    write_json(full_output_dir / "audit-rerun-readiness.json", readiness_report)
+    (full_output_dir / "redacted-summary.md").write_text(redacted_summary, encoding="utf-8")
+    copy_sanitized_source_snapshots(root, contract, full_output_dir)
+
+
 def run_quick(root: Path, output_dir: Path) -> None:
-    check_contract(root)
-    check_audit_readiness(root)
+    contract = check_contract(root)
+    check_requirements(root)
+    check_validation(root)
+    check_roadmap_state(root)
     check_security(root, output_dir)
     check_wiring(root)
+    readiness = check_audit_readiness(root, metadata_corrected=True)
+    write_quick_artifacts(root, contract, output_dir, readiness)
+    check_security(root, output_dir)
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -551,9 +668,6 @@ def main(argv: list[str] | None = None) -> int:
         print(error)
         return 1
 
-    # Keep imported helpers exercised in normal execution; Task 3 uses these for artifact writes.
-    _ = shutil.copy2
-    _ = utc_now
     print("phase22 metadata reconciliation verification passed")
     return 0
 

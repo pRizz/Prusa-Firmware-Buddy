@@ -21,6 +21,9 @@ class Phase22MetadataReconciliationTest(unittest.TestCase):
         (root / "tools/bazel/manifests").mkdir(parents=True)
         if VERIFIER.exists():
             shutil.copy2(VERIFIER, root / "tools/bazel/phase22_metadata_reconciliation.py")
+        test_path = ROOT / "tools/bazel/phase22_metadata_reconciliation_test.py"
+        if test_path.exists():
+            shutil.copy2(test_path, root / "tools/bazel/phase22_metadata_reconciliation_test.py")
         if (ROOT / CONTRACT).exists():
             shutil.copy2(ROOT / CONTRACT, root / CONTRACT)
         return temp_dir, root
@@ -76,6 +79,53 @@ wave_0_complete: true
                 f".planning/phases/{phase:02d}-example/{phase:02d}-VALIDATION.md",
                 clean_validation,
             )
+
+    def write_quick_ready_metadata(self, root: Path) -> None:
+        self.write_text(
+            root,
+            ".planning/REQUIREMENTS.md",
+            """
+- [x] **SIM-03** Simulator evidence gates
+- [x] **REV-02** Upstream result consumption
+- [x] **REV-03** Demotion safeguards
+
+| ID | Phase | Status |
+| --- | --- | --- |
+| SIM-03 | Phase 14 | Complete - hardware-only behavior is not simulator-proven |
+| REV-02 | Phase 21 | Complete - demotion_allowed remains blocked without valid upstream results and maintainer decisions |
+| REV-03 | Phase 21 | Complete - demotion_allowed remains blocked without valid upstream results and maintainer decisions |
+""",
+        )
+        self.write_text(
+            root,
+            ".planning/ROADMAP.md",
+            """
+| Phase | Version | Plans | Status |
+| --- | --- | --- | --- |
+| 21. Final Readiness Result Consumption | v1.1 | 1/1 | Complete |
+| 22. Evidence Metadata Reconciliation | v1.1 | 3/3 | Complete |
+""",
+        )
+        self.write_text(
+            root,
+            ".planning/STATE.md",
+            """
+Current focus: Phase 22 evidence metadata reconciliation
+Current position: Phase 22 Plan 3 of 3 completed
+""",
+        )
+        self.write_clean_validation_files(root)
+        validation_paths = [
+            ".planning/phases/14-simulator-evidence-gates/14-VALIDATION.md",
+            ".planning/phases/15-hardware-safety-and-media-qualification/15-VALIDATION.md",
+            ".planning/phases/16-live-network-and-transfer-qualification/16-VALIDATION.md",
+            ".planning/phases/17-release-candidate-artifact-and-signing-gates/17-VALIDATION.md",
+            ".planning/phases/18-retained-code-acceptance-and-cutover-review/18-VALIDATION.md",
+            ".planning/phases/20-release-candidate-artifact-production/20-VALIDATION.md",
+        ]
+        clean_validation = (root / ".planning/phases/14-example/14-VALIDATION.md").read_text(encoding="utf-8")
+        for path in validation_paths:
+            self.write_text(root, path, clean_validation)
 
     def test_missing_correction_source_refs_names_row_id(self) -> None:
         # Arrange
@@ -294,6 +344,83 @@ Current position: Phase 21 awaiting verification
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("output", result.stdout)
+
+    def test_quick_writes_reports_and_readiness_passed(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_quick_ready_metadata(root)
+            output_dir = root / "build/ci-evidence/phase22"
+
+            # Act
+            result = self.run_verifier(["--quick", "--output-dir", "build/ci-evidence/phase22"], maybe_root=root)
+
+            # Assert
+            self.assertEqual(result.returncode, 0, result.stdout)
+            report = json.loads((output_dir / "metadata-reconciliation-report.json").read_text(encoding="utf-8"))
+            readiness = json.loads((output_dir / "audit-rerun-readiness.json").read_text(encoding="utf-8"))
+            summary = (output_dir / "redacted-summary.md").read_text(encoding="utf-8")
+            self.assertEqual(report["artifact_name"], "phase22-metadata-reconciliation")
+            self.assertEqual(report["phase_lifecycle_id"], "22-2026-06-21T16-59-18")
+            self.assertEqual(report["correction_count"], 13)
+            self.assertEqual(readiness["status"], "passed")
+            self.assertIn("Phase 22 reconciles metadata only", summary)
+            self.assertTrue((output_dir / "sanitized-source-snapshots/.planning/REQUIREMENTS.md").is_file())
+
+    def test_audit_readiness_maps_gaps_to_allowed_statuses(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_quick_ready_metadata(root)
+
+            # Act
+            result = self.run_verifier(["--quick", "--output-dir", "build/ci-evidence/phase22"], maybe_root=root)
+
+            # Assert
+            self.assertEqual(result.returncode, 0, result.stdout)
+            readiness = json.loads(
+                (root / "build/ci-evidence/phase22/audit-rerun-readiness.json").read_text(encoding="utf-8")
+            )
+            statuses = {row["status"] for row in readiness["audit_gap_mappings"]}
+            self.assertEqual(readiness["status"], "passed")
+            self.assertLessEqual(statuses, {"closed", "still_blocking", "non_blocking_debt"})
+            self.assertIn("requirements-status-gap", {row["id"] for row in readiness["audit_gap_mappings"]})
+
+    def test_generated_artifact_secret_or_overclaim_fails_security_scan(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_quick_ready_metadata(root)
+            output_dir = root / "build/ci-evidence/phase22"
+            quick_result = self.run_verifier(["--quick", "--output-dir", "build/ci-evidence/phase22"], maybe_root=root)
+            self.assertEqual(quick_result.returncode, 0, quick_result.stdout)
+            self.write_text(root, "build/ci-evidence/phase22/redacted-summary.md", "private key\ncutover complete\n")
+
+            # Act
+            result = self.run_verifier(["--security-only", "--output-dir", "build/ci-evidence/phase22"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("private key", result.stdout)
+        self.assertIn("cutover complete", result.stdout)
+
+    def test_quick_rejects_symlink_before_deleting_output(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_quick_ready_metadata(root)
+            output_dir = root / "build/ci-evidence/phase22"
+            output_dir.mkdir(parents=True)
+            self.write_text(root, "build/ci-evidence/phase22/keep.txt", "keep\n")
+            (output_dir / "linked").symlink_to(root)
+
+            # Act
+            result = self.run_verifier(["--quick", "--output-dir", "build/ci-evidence/phase22"], maybe_root=root)
+
+            # Assert
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("symlink", result.stdout)
+            self.assertTrue((output_dir / "keep.txt").is_file())
 
 
 if __name__ == "__main__":
