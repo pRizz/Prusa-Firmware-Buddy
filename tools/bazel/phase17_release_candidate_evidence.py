@@ -967,19 +967,29 @@ def check_release_candidate_artifact_target(text: str) -> list[str]:
     if block is None:
         return ["tools/bazel/BUILD.bazel missing phase17_release_candidate_artifacts filegroup"]
     srcs = set(bazel_list_attr(block, "srcs"))
+    expected_release_identity_srcs = {":phase20_release_environment_input_manifest"}
     forbidden_smoke_deps = {
         ":phase17_representative_release_smoke",
         ":representative_release_artifacts",
         "//tools/bazel:phase17_representative_release_smoke",
         "//tools/bazel:representative_release_artifacts",
+        "//tools/bazel:phase3_verify",
     }
+    errors: list[str] = []
     wrapped_smoke = sorted(srcs & forbidden_smoke_deps)
-    if not wrapped_smoke:
-        return []
-    return [
-        "tools/bazel/BUILD.bazel phase17_release_candidate_artifacts cannot wrap local smoke dependencies: "
-        + ", ".join(wrapped_smoke)
-    ]
+    if wrapped_smoke:
+        errors.append(
+            "tools/bazel/BUILD.bazel phase17_release_candidate_artifacts cannot wrap local smoke dependencies: "
+            + ", ".join(wrapped_smoke)
+        )
+    if srcs != expected_release_identity_srcs:
+        actual = ", ".join(sorted(srcs)) if srcs else "<empty>"
+        errors.append(
+            "tools/bazel/BUILD.bazel phase17_release_candidate_artifacts must use "
+            ":phase20_release_environment_input_manifest, not "
+            + actual
+        )
+    return errors
 
 
 def shell_case_commands(text: str, case_name: str) -> list[str] | None:
