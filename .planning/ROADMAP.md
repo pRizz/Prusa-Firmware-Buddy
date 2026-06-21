@@ -194,7 +194,12 @@ Plans:
 1. Phase 14-18 validation files no longer show incomplete Wave 0 metadata after their verified work is complete, or they document a deliberate exception.
 1. ROADMAP progress, phase details, and phase directories are internally consistent with Phases 19-22.
 1. A rerun milestone audit reports `passed` or only deliberate, documented non-blocking debt.
-   **Plans**: Not created yet.
+   **Plans**: 3 plans
+
+Plans:
+- [ ] 22-01-PLAN.md - Source-backed reconciliation contract, verifier, and tests.
+- [ ] 22-02-PLAN.md - Requirement, validation, roadmap, and state metadata reconciliation.
+- [ ] 22-03-PLAN.md - Bazel/just wiring, validation signoff, and audit-readiness verification.
 
 ## Progress
 
@@ -212,4 +217,4 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17 -> 18 -> 19 -> 20 ->
 | 19. Aggregate Cutover Evidence CI | v1.1 | 1/1 | Complete    | 2026-06-21 |
 | 20. Release Candidate Artifact Production | v1.1 | 2/2 | Complete    | 2026-06-21 |
 | 21. Final Readiness Result Consumption | v1.1 | 0/0 | Planned    | - |
-| 22. Evidence Metadata Reconciliation | v1.1 | 0/0 | Planned    | - |
+| 22. Evidence Metadata Reconciliation | v1.1 | 0/3 | Planned    | - |
