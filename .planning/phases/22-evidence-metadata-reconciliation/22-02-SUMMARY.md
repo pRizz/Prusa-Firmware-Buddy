@@ -49,6 +49,10 @@ key_files:
 decisions:
   - Requirement traceability keeps exact plan status text and carries verifier-required no-overclaim phrases in an explicit caveat column.
   - Phase 22 state keeps live execution/progress metadata instead of reverting to stale planned wording.
+generated_by: gsd-execute-plan
+lifecycle_mode: yolo
+phase_lifecycle_id: 22-2026-06-21T16-59-18
+generated_at: 2026-06-21T18:30:16Z
 metrics:
   started_at_utc: 2026-06-21T18:18:19Z
   completed_at_utc: 2026-06-21T18:30:16Z

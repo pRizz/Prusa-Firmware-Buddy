@@ -36,6 +36,10 @@ key_files:
 decisions:
   - Phase 22 metadata corrections are represented as source-backed contract rows before shared planning files are edited by later plans.
   - Quick output writes ignored audit-readiness artifacts under build/ci-evidence/phase22 and refuses output-root traversal or symlink descendants before cleanup.
+generated_by: gsd-execute-plan
+lifecycle_mode: yolo
+phase_lifecycle_id: 22-2026-06-21T16-59-18
+generated_at: 2026-06-21T18:12:14Z
 metrics:
   started_at_utc: 2026-06-21T17:54:59Z
   completed_at_utc: 2026-06-21T18:12:14Z
