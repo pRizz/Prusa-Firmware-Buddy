@@ -210,6 +210,6 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17 -> 18 -> 19 -> 20 ->
 | 17. Release Candidate Artifact and Signing Gates | v1.1 | 1/1 | Complete    | 2026-06-19 |
 | 18. Retained-Code Acceptance and Cutover Review | v1.1 | 1/1 | Complete    | 2026-06-20 |
 | 19. Aggregate Cutover Evidence CI | v1.1 | 1/1 | Complete    | 2026-06-21 |
-| 20. Release Candidate Artifact Production | v1.1 | 2/2 | Complete   | 2026-06-21 |
+| 20. Release Candidate Artifact Production | v1.1 | 2/2 | Complete    | 2026-06-21 |
 | 21. Final Readiness Result Consumption | v1.1 | 0/0 | Planned    | - |
 | 22. Evidence Metadata Reconciliation | v1.1 | 0/0 | Planned    | - |
