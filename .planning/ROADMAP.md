@@ -39,7 +39,7 @@ Full phase details are archived in `.planning/milestones/v1.0-ROADMAP.md`.
 - [x] **Phase 16: Live Network and Transfer Qualification** - Capture live or controlled-service evidence for Connect, WUI, TLS, telemetry, proxy behavior, and transfers. (completed 2026-06-18)
 - [x] **Phase 17: Release Candidate Artifact and Signing Gates** - Prove release-candidate artifacts, signing, provenance, resources, and auxiliary packages through Bazel-owned workflows. (completed 2026-06-19)
 - [x] **Phase 18: Retained-Code Acceptance and Cutover Review** - Make retained-code acceptance, final reference-demotion criteria, and maintainer approval explicit and auditable. (completed 2026-06-20)
-- [ ] **Phase 19: Aggregate Cutover Evidence CI** - Run and retain Phase 14-18 cutover gate evidence through a single CI-owned manifest and artifact bundle.
+- [x] **Phase 19: Aggregate Cutover Evidence CI** - Run and retain Phase 14-18 cutover gate evidence through a single CI-owned manifest and artifact bundle. (completed 2026-06-21)
 - [ ] **Phase 20: Release Candidate Artifact Production** - Replace the empty release-candidate artifact identity target with real Bazel-owned release outputs and retained signing/provenance/comparison evidence.
 - [ ] **Phase 21: Final Readiness Result Consumption** - Require final cutover review to consume machine-readable upstream result manifests before any demotion decision can pass.
 - [ ] **Phase 22: Evidence Metadata Reconciliation** - Reconcile requirement traceability, validation metadata, roadmap progress, and milestone audit state after functional gap closure.
@@ -205,7 +205,7 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17 -> 18 -> 19 -> 20 ->
 | 16. Live Network and Transfer Qualification | v1.1 | 1/1 | Complete    | 2026-06-18 |
 | 17. Release Candidate Artifact and Signing Gates | v1.1 | 1/1 | Complete    | 2026-06-19 |
 | 18. Retained-Code Acceptance and Cutover Review | v1.1 | 1/1 | Complete    | 2026-06-20 |
-| 19. Aggregate Cutover Evidence CI | v1.1 | 0/0 | Planned    | - |
+| 19. Aggregate Cutover Evidence CI | v1.1 | 1/1 | Complete    | 2026-06-21 |
 | 20. Release Candidate Artifact Production | v1.1 | 0/0 | Planned    | - |
 | 21. Final Readiness Result Consumption | v1.1 | 0/0 | Planned    | - |
 | 22. Evidence Metadata Reconciliation | v1.1 | 0/0 | Planned    | - |

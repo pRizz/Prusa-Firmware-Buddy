@@ -9,27 +9,27 @@ These requirements convert the non-local v1.0 cutover blockers into durable evid
 
 ### CI Evidence
 
-- [ ] **CIEV-01**: Maintainer can run the aggregate cutover verifier in CI for every pull request that changes Rust, Bazel, verifier, manifest, or release-evidence surfaces.
-- [ ] **CIEV-02**: Maintainer can inspect a machine-readable CI evidence manifest that records gate status, owning phase, command, artifact path, and failure reason for each cutover gate.
-- [ ] **CIEV-03**: Maintainer can download retained CI artifacts for verifier logs, manifest snapshots, normalized comparison outputs, and redacted evidence summaries without relying on local workspace state.
+- [x] **CIEV-01**: Maintainer can run the aggregate cutover verifier in CI for every pull request that changes Rust, Bazel, verifier, manifest, or release-evidence surfaces.
+- [x] **CIEV-02**: Maintainer can inspect a machine-readable CI evidence manifest that records gate status, owning phase, command, artifact path, and failure reason for each cutover gate.
+- [x] **CIEV-03**: Maintainer can download retained CI artifacts for verifier logs, manifest snapshots, normalized comparison outputs, and redacted evidence summaries without relying on local workspace state.
 
 ### Simulator Evidence
 
-- [ ] **SIM-01**: Maintainer can run simulator evidence flows for startup, task readiness, watchdog-visible startup behavior, and representative G-code execution against the Rust+Bazel evidence surface.
-- [ ] **SIM-02**: Maintainer can run simulator evidence flows for GUI navigation, storage/resource access, transfers, and selected failure flows with reference-compatible pass/fail semantics.
+- [x] **SIM-01**: Maintainer can run simulator evidence flows for startup, task readiness, watchdog-visible startup behavior, and representative G-code execution against the Rust+Bazel evidence surface.
+- [x] **SIM-02**: Maintainer can run simulator evidence flows for GUI navigation, storage/resource access, transfers, and selected failure flows with reference-compatible pass/fail semantics.
 - [ ] **SIM-03**: Maintainer can map simulator evidence results back to the v1.0 requirement IDs and cutover criteria without marking hardware-only behavior as simulator-proven.
 
 ### Hardware and Safety Evidence
 
-- [ ] **HARD-01**: Maintainer can execute a hardware smoke matrix for supported printer families, boards, storage media, and auxiliary-controller combinations required for cutover readiness.
-- [ ] **HARD-02**: Maintainer can record hardware safety evidence for watchdog, thermal/motion safety, emergency stop, safe-output, crash recovery, UI input, MMU, RS485, and toolchanger scenarios.
-- [ ] **HARD-03**: Maintainer can review hardware evidence artifacts that identify device, firmware build, operator, timestamp, scenario, result, and residual risk without exposing secrets or unsafe operational data.
+- [x] **HARD-01**: Maintainer can execute a hardware smoke matrix for supported printer families, boards, storage media, and auxiliary-controller combinations required for cutover readiness.
+- [x] **HARD-02**: Maintainer can record hardware safety evidence for watchdog, thermal/motion safety, emergency stop, safe-output, crash recovery, UI input, MMU, RS485, and toolchanger scenarios.
+- [x] **HARD-03**: Maintainer can review hardware evidence artifacts that identify device, firmware build, operator, timestamp, scenario, result, and residual risk without exposing secrets or unsafe operational data.
 
 ### Live Network Evidence
 
-- [ ] **LIVE-01**: Maintainer can run live or controlled-service evidence for Prusa Connect registration, telemetry, WebSocket commands, token/fingerprint behavior, and proxy limitations.
-- [ ] **LIVE-02**: Maintainer can run live or controlled-service evidence for PrusaLink/WUI HTTP API, digest/API-key auth, SNTP, mDNS, syslog, metrics, and transfer behavior.
-- [ ] **LIVE-03**: Maintainer can verify TLS, certificate, credential-redaction, negative protocol, long-transfer, and crash-dump upload evidence without committing secrets, tokens, or private certificates.
+- [x] **LIVE-01**: Maintainer can run live or controlled-service evidence for Prusa Connect registration, telemetry, WebSocket commands, token/fingerprint behavior, and proxy limitations.
+- [x] **LIVE-02**: Maintainer can run live or controlled-service evidence for PrusaLink/WUI HTTP API, digest/API-key auth, SNTP, mDNS, syslog, metrics, and transfer behavior.
+- [x] **LIVE-03**: Maintainer can verify TLS, certificate, credential-redaction, negative protocol, long-transfer, and crash-dump upload evidence without committing secrets, tokens, or private certificates.
 
 ### Release Candidate Evidence
 
@@ -71,18 +71,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CIEV-01 | Phase 19 | Pending |
-| CIEV-02 | Phase 19 | Pending |
-| CIEV-03 | Phase 19 | Pending |
-| SIM-01 | Phase 19 | Pending |
-| SIM-02 | Phase 19 | Pending |
+| CIEV-01 | Phase 19 | Complete |
+| CIEV-02 | Phase 19 | Complete |
+| CIEV-03 | Phase 19 | Complete |
+| SIM-01 | Phase 19 | Complete |
+| SIM-02 | Phase 19 | Complete |
 | SIM-03 | Phase 14 | Pending |
-| HARD-01 | Phase 19 | Pending |
-| HARD-02 | Phase 19 | Pending |
-| HARD-03 | Phase 19 | Pending |
-| LIVE-01 | Phase 19 | Pending |
-| LIVE-02 | Phase 19 | Pending |
-| LIVE-03 | Phase 19 | Pending |
+| HARD-01 | Phase 19 | Complete |
+| HARD-02 | Phase 19 | Complete |
+| HARD-03 | Phase 19 | Complete |
+| LIVE-01 | Phase 19 | Complete |
+| LIVE-02 | Phase 19 | Complete |
+| LIVE-03 | Phase 19 | Complete |
 | REL-01 | Phase 20 | Pending |
 | REL-02 | Phase 20 | Pending |
 | REL-03 | Phase 20 | Pending |
