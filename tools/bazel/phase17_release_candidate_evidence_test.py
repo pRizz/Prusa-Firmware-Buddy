@@ -12,6 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 VERIFIER = ROOT / "tools/bazel/phase17_release_candidate_evidence.py"
 CONTRACT = "tools/bazel/manifests/phase17_release_candidate_evidence_contract.json"
+DEFAULT_OUTPUT_DIR = "build/ci-evidence/phase17"
 SOURCE_REF_FILES = [
     "tools/bazel/manifests/representative_products.json",
     "tools/bazel/manifests/phase7_generated_outputs.json",
@@ -540,6 +541,30 @@ phase17-release-artifacts-smoke:
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(expected, result.stdout)
+
+    def test_quick_rejects_symlinked_output_root_before_deleting_target(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            victim_dir = root / "build/ci-evidence/phase17-victim"
+            victim_dir.mkdir(parents=True)
+            marker_path = victim_dir / "do-not-delete.txt"
+            marker_path.write_text("victim target must survive\n", encoding="utf-8")
+            output_root = root / DEFAULT_OUTPUT_DIR
+            output_root.parent.mkdir(parents=True, exist_ok=True)
+            output_root.symlink_to(victim_dir, target_is_directory=True)
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+            # Assert
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("--output-dir resolves outside", result.stdout)
+            self.assertTrue(output_root.is_symlink())
+            self.assertTrue(victim_dir.is_dir())
+            self.assertEqual(marker_path.read_text(encoding="utf-8"), "victim target must survive\n")
+            self.assertFalse((victim_dir / "run-manifest.json").exists())
 
     def test_security_rejects_forbidden_markers_without_leaking_values(self) -> None:
         cases = [

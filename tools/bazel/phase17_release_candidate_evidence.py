@@ -312,8 +312,9 @@ def require_repo_relative_under(path_value: str | Path, output_root: str | Path,
 
 def contained_output_dir(root: Path, output_dir: str | Path) -> Path:
     relative_path = require_repo_relative_under(output_dir, DEFAULT_OUTPUT_DIR, "--output-dir")
-    expected_root = (root / DEFAULT_OUTPUT_DIR).resolve(strict=False)
-    full_output_dir = (root / relative_path).resolve(strict=False)
+    resolved_root = root.resolve(strict=False)
+    expected_root = resolved_root / DEFAULT_OUTPUT_DIR
+    full_output_dir = (resolved_root / relative_path).resolve(strict=False)
     try:
         full_output_dir.relative_to(expected_root)
     except ValueError as error:

@@ -284,7 +284,7 @@ def validate_ref_list(row: dict[str, Any], field: str, row_name: str, require_no
 
 def resolved_output_dir(root: Path, output_dir: Path) -> tuple[Path, Path]:
     resolved_root = root.resolve(strict=False)
-    expected_root = (resolved_root / DEFAULT_OUTPUT_DIR).resolve(strict=False)
+    expected_root = resolved_root / DEFAULT_OUTPUT_DIR
     if output_dir.is_absolute():
         candidate = output_dir
     else:

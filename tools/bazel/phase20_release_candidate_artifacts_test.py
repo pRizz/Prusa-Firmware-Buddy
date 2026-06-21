@@ -501,6 +501,29 @@ esac
             self.assertEqual(marker_path.read_text(encoding="utf-8"), "outside target must survive\n")
             self.assertFalse((outside_target / "release-result-manifest.json").exists())
 
+    def test_quick_rejects_symlinked_output_root_before_deleting_target(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            victim_dir = root / "build/ci-evidence/phase20-victim"
+            victim_dir.mkdir(parents=True)
+            marker_path = victim_dir / "do-not-delete.txt"
+            marker_path.write_text("victim target must survive\n", encoding="utf-8")
+            output_root = root / DEFAULT_OUTPUT_DIR
+            output_root.parent.mkdir(parents=True, exist_ok=True)
+            output_root.symlink_to(victim_dir, target_is_directory=True)
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+            # Assert
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("--output-dir must stay under", result.stdout)
+            self.assertTrue(output_root.is_symlink())
+            self.assertTrue(victim_dir.is_dir())
+            self.assertEqual(marker_path.read_text(encoding="utf-8"), "victim target must survive\n")
+            self.assertFalse((victim_dir / "release-result-manifest.json").exists())
+
     def test_passed_result_rejects_local_smoke_and_template_only_proof(self) -> None:
         for proof_class in ["local-smoke", "template-only"]:
             with self.subTest(proof_class=proof_class):
