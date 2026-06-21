@@ -375,9 +375,14 @@ shell_binary(
 )
 
 filegroup(
+    name = "phase20_release_environment_input_manifest",
+    srcs = ["manifests/phase20_release_environment_inputs.template.json"],
+)
+
+filegroup(
     name = "phase17_release_candidate_artifacts",
-    # Wire only real release-candidate outputs here; keep local smoke fixtures separate.
-    srcs = [],
+    # Wire only real release-candidate outputs or release-environment inputs here; keep local smoke fixtures separate.
+    srcs = [":phase20_release_environment_input_manifest"],
 )
 
 filegroup(
@@ -514,6 +519,48 @@ shell_binary(
         "phase17_release_candidate_evidence.py",
         "phase18_cutover_review.py",
         ":phase19_source_ref_manifests",
+    ],
+)
+
+filegroup(
+    name = "phase20_source_ref_manifests",
+    srcs = [
+        "manifests/phase17_release_candidate_evidence_contract.json",
+        "manifests/phase19_aggregate_ci_evidence_contract.json",
+        "manifests/phase20_release_candidate_artifacts_contract.json",
+        "manifests/phase20_release_environment_inputs.template.json",
+        "manifests/phase11_reference_comparisons.json",
+        "manifests/representative_products.json",
+    ],
+)
+
+shell_binary(
+    name = "phase20_verify",
+    src = "rust_workflow.sh",
+    data = [
+        "phase20_release_candidate_artifacts.py",
+        "manifests/phase20_release_candidate_artifacts_contract.json",
+        "manifests/phase20_release_environment_inputs.template.json",
+        ":phase20_source_ref_manifests",
+        ":phase17_release_candidate_artifacts",
+        ":phase17_representative_release_smoke",
+        "//:phase20_release_candidate_artifacts_docs",
+        "//:phase17_release_candidate_evidence_docs",
+        "//:phase19_aggregate_ci_evidence_docs",
+    ],
+)
+
+shell_binary(
+    name = "phase20_verify_tests",
+    src = "rust_workflow.sh",
+    data = [
+        "phase20_release_candidate_artifacts.py",
+        "phase20_release_candidate_artifacts_test.py",
+        "manifests/phase20_release_candidate_artifacts_contract.json",
+        "manifests/phase20_release_environment_inputs.template.json",
+        ":phase20_source_ref_manifests",
+        ":phase17_release_candidate_artifacts",
+        ":phase17_representative_release_smoke",
     ],
 )
 
