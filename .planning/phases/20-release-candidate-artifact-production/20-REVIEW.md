@@ -1,6 +1,6 @@
 ---
 phase: 20-release-candidate-artifact-production
-reviewed: 2026-06-21T14:13:13Z
+reviewed: 2026-06-21T14:26:59Z
 depth: standard
 files_reviewed: 10
 files_reviewed_list:
@@ -24,41 +24,52 @@ status: issues_found
 
 # Phase 20: Code Review Report
 
-**Reviewed:** 2026-06-21T14:13:13Z
+**Reviewed:** 2026-06-21T14:26:59Z
 **Depth:** standard
 **Files Reviewed:** 10
 **Status:** issues_found
 
 ## Summary
 
-Re-reviewed the Phase 20 release artifact verifier, Phase 17 compatibility guard changes, Bazel/just wiring, tests, and Phase 20 manifest templates after the CR-01/WR-01 fix report. Repo guidance applied: `AGENTS.md`, `AGENTS.bright-builds.md`, `standards-overrides.md`, `standards/core/code-shape.md`, `standards/core/verification.md`, and `standards/core/testing.md`.
+Final re-review of the Phase 20 release artifact verifier, Phase 17 compatibility guard, Bazel/just wiring, regression tests, and Phase 20 manifests after the latest review-fix pass. Repo guidance applied: `AGENTS.md`, `AGENTS.bright-builds.md`, `standards-overrides.md`, `standards/core/code-shape.md`, `standards/core/verification.md`, and `standards/core/testing.md`.
 
-The previous findings were materially addressed: contract source refs now resolve against approved row collections, and passed release rows now require the contract-declared release/signing/provenance/retention metadata. The targeted verifier and test commands pass.
+The previous passed-row overclaim finding is fixed: passed defaults are rejected, passed rows require approved proof classes, contract-declared release/signing/provenance/retention metadata, non-empty comparison metadata, Phase 20 ownership, and matching affected artifact surfaces.
 
-One remaining release-evidence correctness gap remains: Phase 20 can still produce `passed` rows without substantive comparison metadata.
+One remaining security issue remains in custom output directory containment.
 
 ## Critical Issues
 
-### CR-01: Passed Rows Can Still Overclaim Comparison Evidence
+### CR-01: Relative Output Directory Can Escape Through Symlinks
 
-**File:** `tools/bazel/phase20_release_candidate_artifacts.py:453,556-558`
+**File:** `tools/bazel/phase20_release_candidate_artifacts.py:285`
 
-**Issue:** `validate_row` accepts `default_status == "passed"` because it only checks the status vocabulary, so a contract edit can make `--quick` emit a passed row without release input. Separately, `validate_release_row` only checks that comparison metadata keys exist for passed rows; empty `mismatch_reason`, empty `residual_risk`, wrong `owner_phase`, and wrong `affected_artifact_surface` are accepted. Temporary probes confirmed both paths exit 0 and write passed artifacts.
+**Issue:** `resolved_output_dir()` resolves and containment-checks absolute `--output-dir` paths, but the relative-path branch only performs lexical checks before returning `root / output_dir`. A relative path such as `build/ci-evidence/phase20/link/escaped`, where `link` is a symlink inside the allowed tree, resolves outside the repo without error. `write_quick_artifacts()` then calls `shutil.rmtree(full_output_dir)` before writing artifacts, so a crafted relative output path can delete and write outside the intended evidence root.
 
 **Fix:**
 ```python
-if default_status == "passed":
-    errors.append(f"{row_name} default_status cannot be passed without approved release input")
-
-for field in contract_row["comparison_metadata_required"]:
-    value = require_string(row, field, row_name)
-    if field == "owner_phase" and value != PHASE:
-        errors.append(f"{row_name} owner_phase must be {PHASE}")
-    if field == "affected_artifact_surface" and value != contract_row["artifact_surface"]:
-        errors.append(f"{row_name} affected_artifact_surface must match contract row {contract_row['id']}")
+def resolved_output_dir(root: Path, output_dir: Path) -> tuple[Path, Path]:
+    resolved_root = root.resolve(strict=False)
+    expected_root = (resolved_root / DEFAULT_OUTPUT_DIR).resolve(strict=False)
+    if output_dir.is_absolute():
+        candidate = output_dir
+    else:
+        if ".." in output_dir.parts:
+            raise VerificationError(
+                f"--output-dir must be contained by {DEFAULT_OUTPUT_DIR.as_posix()}: {output_dir.as_posix()}"
+            )
+        candidate = resolved_root / output_dir
+    full_output_dir = candidate.resolve(strict=False)
+    try:
+        relative_output_dir = full_output_dir.relative_to(resolved_root)
+        full_output_dir.relative_to(expected_root)
+    except ValueError as error:
+        raise VerificationError(
+            f"--output-dir must stay under {DEFAULT_OUTPUT_DIR.as_posix()}: {output_dir.as_posix()}"
+        ) from error
+    return relative_output_dir, full_output_dir
 ```
 
-Add regression tests that `--contract-only` rejects a Phase 20 row with `default_status: "passed"`, and that `--quick --release-input` rejects passed rows with empty comparison strings or mismatched `owner_phase` / `affected_artifact_surface`.
+Add a regression test that creates `build/ci-evidence/phase20/link` as a symlink to a temporary outside directory, runs `--quick --output-dir build/ci-evidence/phase20/link/escaped`, and asserts the verifier fails without creating or deleting the outside target.
 
 ## Verification
 
@@ -69,10 +80,15 @@ Add regression tests that `--contract-only` rejects a Phase 20 row with `default
 - `python3 tools/bazel/phase20_release_candidate_artifacts.py --security-only` passed.
 - `python3 tools/bazel/phase20_release_candidate_artifacts.py --wiring-only` passed.
 - `python3 tools/bazel/phase20_release_candidate_artifacts.py --quick` passed.
-- Negative probes confirmed the remaining issue.
+- `python3 tools/bazel/phase17_release_candidate_evidence.py --contract-only` passed.
+- `python3 tools/bazel/phase17_release_candidate_evidence.py --security-only` passed.
+- `python3 tools/bazel/phase17_release_candidate_evidence.py --wiring-only` passed.
+- `python3 tools/bazel/phase17_release_candidate_evidence.py --quick` passed.
+- `git diff --check` passed.
+- Negative symlink probe confirmed the remaining `--output-dir` escape.
 
 ---
 
-_Reviewed: 2026-06-21T14:13:13Z_
+_Reviewed: 2026-06-21T14:26:59Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
