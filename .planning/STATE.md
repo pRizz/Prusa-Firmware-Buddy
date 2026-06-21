@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Cutover Evidence Hardening
-status: executing
-stopped_at: Completed 20-01-PLAN.md
-last_updated: "2026-06-21T13:35:26.716Z"
+status: verifying
+stopped_at: Completed 20-02-PLAN.md
+last_updated: "2026-06-21T13:53:09.997Z"
 last_activity: 2026-06-21
 progress:
   total_phases: 10
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 9
-  completed_plans: 8
-  percent: 89
+  completed_plans: 9
+  percent: 100
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-06-15)
 
 Phase: 20 (release-candidate-artifact-production) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-21
 
 Progress: [██████████] 100%
@@ -74,6 +74,7 @@ Progress: [██████████] 100%
 | Phase 18 P01 | 30m 21s | 3 tasks | 7 files |
 | Phase 19 P01 | 18 min | 4 tasks | 9 files |
 | Phase 20 P01 | 12 min | 2 tasks | 4 files |
+| Phase 20 P02 | 13m02s | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -125,6 +126,9 @@ Recent decisions affecting current work:
 - [Phase 20]: Phase 20 Plan 01 keeps release rows pending in quick mode unless approved release input is supplied.
 - [Phase 20]: Phase 20 release refs are limited to external://phase20/... or repo-relative build/ci-evidence/phase20 paths.
 - [Phase 20]: Phase 20 rejects private key, credential, token, password, raw payload, and crash-dump field names at the release input boundary.
+- [Phase 20]: Phase 17 release identity now resolves to the Phase 20 release-environment input manifest instead of remaining empty.
+- [Phase 20]: Representative smoke and phase3 verifier labels remain separate and are rejected as production release identity dependencies.
+- [Phase 20]: Phase 20 just and Bazel verifier facades run tests before verifier quick output.
 
 ### Pending Todos
 
@@ -138,6 +142,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-21T13:35:26.713Z
-Stopped at: Completed 20-01-PLAN.md
+Last session: 2026-06-21T13:53:09.991Z
+Stopped at: Completed 20-02-PLAN.md
 Resume file: None
