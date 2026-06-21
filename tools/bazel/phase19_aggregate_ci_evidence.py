@@ -189,6 +189,19 @@ def require_repo_relative_under(path_value: str | Path, output_root: str | Path,
     return relative_path
 
 
+def require_safe_output_dir(root: Path, path_value: str | Path, row_name: str) -> Path:
+    relative_path = require_repo_relative_under(path_value, DEFAULT_OUTPUT_DIR, row_name)
+    expected_root = root.resolve(strict=False) / DEFAULT_OUTPUT_DIR
+    resolved_path = (root / relative_path).resolve(strict=False)
+    try:
+        resolved_path.relative_to(expected_root)
+    except ValueError as error:
+        raise VerificationError(
+            f"{row_name} resolves outside {DEFAULT_OUTPUT_DIR.as_posix()}: {relative_path.as_posix()}"
+        ) from error
+    return relative_path
+
+
 def reject_forbidden_text(path: Path, text: str) -> None:
     errors: list[str] = []
     for pattern in FORBIDDEN_TEXT_PATTERNS:
@@ -524,7 +537,7 @@ def collect_statuses(value: Any) -> set[str]:
 
 
 def write_ci_evidence(root: Path, output_dir: Path) -> None:
-    output_relative = require_repo_relative_under(output_dir, DEFAULT_OUTPUT_DIR, "--output-dir")
+    output_relative = require_safe_output_dir(root, output_dir, "--output-dir")
     output_root = root / output_relative
     if output_root.exists():
         shutil.rmtree(output_root)
@@ -543,7 +556,6 @@ def write_ci_evidence(root: Path, output_dir: Path) -> None:
     external_placeholders: list[dict[str, Any]] = []
 
     snapshot_sources = [CONTRACT_MANIFEST]
-    snapshot_sources.extend(Path(require_string(phase, "script", "phase")).with_name("manifests-do-not-exist") for phase in [])
     for phase in contract_phases(contract):
         script = Path(require_string(phase, "script", "phase"))
         snapshot_sources.append(Path("tools/bazel/manifests") / f"{script.stem.replace('_test', '')}_contract.json")
@@ -562,6 +574,7 @@ def write_ci_evidence(root: Path, output_dir: Path) -> None:
         artifact_subdir = require_string(phase, "artifact_subdir", owning_phase)
         quick_output_dir = Path(require_string(phase, "quick_output_dir", owning_phase))
         local_modes = require_list_of_strings(phase, "local_modes", owning_phase)
+        expected_artifacts = require_list_of_strings(phase, "expected_artifacts", owning_phase)
         for mode in local_modes:
             command = command_for_mode(phase, mode)
             log_path = output_relative / "logs" / f"{artifact_subdir}-{mode}.log"
@@ -583,6 +596,13 @@ def write_ci_evidence(root: Path, output_dir: Path) -> None:
             )
         destination_dir = phase_artifacts_dir / artifact_subdir
         copy_failures, copy_redactions = copy_artifact_tree(root, quick_output_dir, destination_dir)
+        for artifact in expected_artifacts:
+            if not (root / quick_output_dir / artifact).is_file():
+                copy_failures.append(f"missing expected source artifact: {(quick_output_dir / artifact).as_posix()}")
+            elif not (destination_dir / artifact).is_file():
+                copy_failures.append(
+                    f"missing expected retained artifact: {(output_relative / 'phase-artifacts' / artifact_subdir / artifact).as_posix()}"
+                )
         redaction_failures.extend(copy_redactions)
         copy_status = "failed" if copy_failures else "passed"
         copy_reason = "; ".join(copy_failures)

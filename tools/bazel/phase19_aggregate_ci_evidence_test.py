@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -119,6 +120,47 @@ class Phase19AggregateCiEvidenceTest(unittest.TestCase):
                 "LIVE-03",
             },
         )
+
+    def test_ci_rejects_missing_expected_source_artifact(self) -> None:
+        # Arrange
+        contract_path = ROOT / "tools/bazel/manifests/phase19_aggregate_ci_evidence_contract.json"
+        original_contract = contract_path.read_text(encoding="utf-8")
+        contract = json.loads(original_contract)
+        contract["phases"][0]["expected_artifacts"].append("missing-required-artifact.json")
+        contract_path.write_text(json.dumps(contract, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        self.addCleanup(lambda: contract_path.write_text(original_contract, encoding="utf-8"))
+
+        # Act
+        result = self.run_verifier(["--ci", "--output-dir", "build/ci-evidence/phase19"])
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("missing expected source artifact: build/ci-evidence/phase14/missing-required-artifact.json", result.stdout)
+
+    def test_ci_rejects_output_directory_symlink_escape(self) -> None:
+        # Arrange
+        original_build = ROOT / "build"
+        backup_build = ROOT / "build.phase19-test-backup"
+        temp_dir = tempfile.TemporaryDirectory()
+        with temp_dir:
+            if original_build.exists() or original_build.is_symlink():
+                if backup_build.exists():
+                    shutil.rmtree(backup_build)
+                original_build.rename(backup_build)
+            try:
+                original_build.symlink_to(Path(temp_dir.name), target_is_directory=True)
+
+                # Act
+                result = self.run_verifier(["--ci", "--output-dir", "build/ci-evidence/phase19"])
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("resolves outside build/ci-evidence/phase19", result.stdout)
+            finally:
+                if original_build.is_symlink():
+                    original_build.unlink()
+                if backup_build.exists():
+                    backup_build.rename(original_build)
 
 
 if __name__ == "__main__":
