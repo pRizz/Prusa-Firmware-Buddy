@@ -1,0 +1,350 @@
+{
+  "schema_version": "1",
+  "id": "phase22_metadata_reconciliation_contract",
+  "artifact_name": "phase22-metadata-reconciliation",
+  "phase": "22-evidence-metadata-reconciliation",
+  "phase_lifecycle_id": "22-2026-06-21T16-59-18",
+  "requirements": [
+    "Metadata debt from v1.1 audit"
+  ],
+  "output_root": "build/ci-evidence/phase22",
+  "generated_artifacts": [
+    "metadata-reconciliation-report.json",
+    "audit-rerun-readiness.json",
+    "redacted-summary.md"
+  ],
+  "sanitized_source_snapshots": [
+    ".planning/REQUIREMENTS.md",
+    ".planning/ROADMAP.md",
+    ".planning/STATE.md",
+    ".planning/phases/14-simulator-evidence-gates/14-VALIDATION.md",
+    ".planning/phases/15-hardware-safety-and-media-qualification/15-VALIDATION.md",
+    ".planning/phases/16-live-network-and-transfer-qualification/16-VALIDATION.md",
+    ".planning/phases/17-release-candidate-artifact-and-signing-gates/17-VALIDATION.md",
+    ".planning/phases/18-retained-code-acceptance-and-cutover-review/18-VALIDATION.md",
+    ".planning/phases/20-release-candidate-artifact-production/20-VALIDATION.md"
+  ],
+  "metadata_corrections": [
+    {
+      "id": "requirements-sim-03",
+      "target_file": ".planning/REQUIREMENTS.md",
+      "correction_type": "requirement-status-and-traceability",
+      "old_state": "SIM-03 unchecked and traceability row marked Pending.",
+      "required_new_markers": [
+        "- [x] **SIM-03**",
+        "| SIM-03 | Phase 14 | Complete",
+        "hardware-only behavior is not simulator-proven"
+      ],
+      "source_refs": [
+        ".planning/phases/14-simulator-evidence-gates/14-VERIFICATION.md#SIM-03",
+        ".planning/phases/19-aggregate-cutover-evidence-ci/19-VERIFICATION.md#SIM-01",
+        ".planning/phases/19-aggregate-cutover-evidence-ci/19-VERIFICATION.md#SIM-02"
+      ],
+      "no_overclaim_rationale": "Marks simulator traceability capability satisfied while preserving hardware-only proof outside simulator evidence.",
+      "verification_command": "python3 tools/bazel/phase22_metadata_reconciliation.py --requirements-only"
+    },
+    {
+      "id": "requirements-rev-02",
+      "target_file": ".planning/REQUIREMENTS.md",
+      "correction_type": "requirement-status-and-traceability",
+      "old_state": "REV-02 unchecked and traceability row marked Pending.",
+      "required_new_markers": [
+        "- [x] **REV-02**",
+        "| REV-02 | Phase 21 | Complete",
+        "demotion_allowed remains blocked without valid upstream results and maintainer decisions"
+      ],
+      "source_refs": [
+        ".planning/phases/18-retained-code-acceptance-and-cutover-review/18-VERIFICATION.md#REV-02",
+        ".planning/phases/21-final-readiness-result-consumption/21-VERIFICATION.md#REV-02"
+      ],
+      "no_overclaim_rationale": "Marks review checklist capability satisfied while preserving the upstream result and maintainer decision gates.",
+      "verification_command": "python3 tools/bazel/phase22_metadata_reconciliation.py --requirements-only"
+    },
+    {
+      "id": "requirements-rev-03",
+      "target_file": ".planning/REQUIREMENTS.md",
+      "correction_type": "requirement-status-and-traceability",
+      "old_state": "REV-03 unchecked and traceability row marked Pending.",
+      "required_new_markers": [
+        "- [x] **REV-03**",
+        "| REV-03 | Phase 21 | Complete",
+        "demotion_allowed remains blocked without valid upstream results and maintainer decisions"
+      ],
+      "source_refs": [
+        ".planning/phases/18-retained-code-acceptance-and-cutover-review/18-VERIFICATION.md#REV-03",
+        ".planning/phases/21-final-readiness-result-consumption/21-VERIFICATION.md#REV-03"
+      ],
+      "no_overclaim_rationale": "Marks final readiness reporting capability satisfied while preserving the result-level demotion block.",
+      "verification_command": "python3 tools/bazel/phase22_metadata_reconciliation.py --requirements-only"
+    },
+    {
+      "id": "validation-phase14",
+      "target_file": ".planning/phases/14-simulator-evidence-gates/14-VALIDATION.md",
+      "correction_type": "validation-wave0-metadata",
+      "old_state": "Wave 0 file-existence cells and task rows still show pending placeholders.",
+      "required_new_markers": [
+        "wave_0_complete: true",
+        "| 22-01-01 |",
+        "| green |"
+      ],
+      "source_refs": [
+        ".planning/phases/14-simulator-evidence-gates/14-VERIFICATION.md#Status",
+        "tools/bazel/phase14_simulator_evidence.py",
+        "tools/bazel/phase14_simulator_evidence_test.py",
+        "tools/bazel/manifests/phase14_simulator_evidence_contract.json"
+      ],
+      "no_overclaim_rationale": "Updates local validation infrastructure status only; real simulator inputs remain external to this metadata correction.",
+      "verification_command": "python3 tools/bazel/phase22_metadata_reconciliation.py --validation-only"
+    },
+    {
+      "id": "validation-phase15",
+      "target_file": ".planning/phases/15-hardware-safety-and-media-qualification/15-VALIDATION.md",
+      "correction_type": "validation-wave0-metadata",
+      "old_state": "Wave 0 file-existence cells and task rows still show pending placeholders.",
+      "required_new_markers": [
+        "wave_0_complete: true",
+        "| 22-01-02 |",
+        "| green |"
+      ],
+      "source_refs": [
+        ".planning/phases/15-hardware-safety-and-media-qualification/15-VERIFICATION.md#Status",
+        "tools/bazel/phase15_hardware_evidence.py",
+        "tools/bazel/phase15_hardware_evidence_test.py",
+        "tools/bazel/manifests/phase15_hardware_evidence_contract.json"
+      ],
+      "no_overclaim_rationale": "Updates local validation infrastructure status only; physical operator evidence remains externally supplied.",
+      "verification_command": "python3 tools/bazel/phase22_metadata_reconciliation.py --validation-only"
+    },
+    {
+      "id": "validation-phase16",
+      "target_file": ".planning/phases/16-live-network-and-transfer-qualification/16-VALIDATION.md",
+      "correction_type": "validation-wave0-metadata",
+      "old_state": "Wave 0 file-existence cells and task rows still show pending placeholders.",
+      "required_new_markers": [
+        "wave_0_complete: true",
+        "| 22-01-02 |",
+        "| green |"
+      ],
+      "source_refs": [
+        ".planning/phases/16-live-network-and-transfer-qualification/16-VERIFICATION.md#Status",
+        "tools/bazel/phase16_live_network_evidence.py",
+        "tools/bazel/phase16_live_network_evidence_test.py",
+        "tools/bazel/manifests/phase16_live_network_evidence_contract.json"
+      ],
+      "no_overclaim_rationale": "Updates local validation infrastructure status only; live-service result evidence remains externally supplied.",
+      "verification_command": "python3 tools/bazel/phase22_metadata_reconciliation.py --validation-only"
+    },
+    {
+      "id": "validation-phase17",
+      "target_file": ".planning/phases/17-release-candidate-artifact-and-signing-gates/17-VALIDATION.md",
+      "correction_type": "validation-wave0-metadata",
+      "old_state": "Wave 0 file-existence cells and task rows still show pending placeholders.",
+      "required_new_markers": [
+        "wave_0_complete: true",
+        "| 22-01-02 |",
+        "| green |"
+      ],
+      "source_refs": [
+        ".planning/phases/17-release-candidate-artifact-and-signing-gates/17-VERIFICATION.md#Status",
+        "tools/bazel/phase17_release_candidate_evidence.py",
+        "tools/bazel/phase17_release_candidate_evidence_test.py",
+        "tools/bazel/manifests/phase17_release_candidate_evidence_contract.json"
+      ],
+      "no_overclaim_rationale": "Updates local validation infrastructure status only; release-environment evidence remains externally supplied.",
+      "verification_command": "python3 tools/bazel/phase22_metadata_reconciliation.py --validation-only"
+    },
+    {
+      "id": "validation-phase18",
+      "target_file": ".planning/phases/18-retained-code-acceptance-and-cutover-review/18-VALIDATION.md",
+      "correction_type": "validation-wave0-metadata",
+      "old_state": "Wave 0 file-existence cells and task rows still show pending placeholders.",
+      "required_new_markers": [
+        "wave_0_complete: true",
+        "| 22-01-02 |",
+        "| green |"
+      ],
+      "source_refs": [
+        ".planning/phases/18-retained-code-acceptance-and-cutover-review/18-VERIFICATION.md#Status",
+        "tools/bazel/phase18_cutover_review.py",
+        "tools/bazel/phase18_cutover_review_test.py",
+        "tools/bazel/manifests/phase18_cutover_review_contract.json"
+      ],
+      "no_overclaim_rationale": "Updates local validation infrastructure status only; maintainer decisions and upstream result evidence remain externally supplied.",
+      "verification_command": "python3 tools/bazel/phase22_metadata_reconciliation.py --validation-only"
+    },
+    {
+      "id": "validation-phase20-adjacent-drift",
+      "target_file": ".planning/phases/20-release-candidate-artifact-production/20-VALIDATION.md",
+      "correction_type": "validation-wave0-metadata",
+      "old_state": "Phase 20 validation metadata still reports noncompliance and pending Wave 0 rows after Phase 20 verification passed.",
+      "required_new_markers": [
+        "nyquist_compliant: true",
+        "wave_0_complete: true",
+        "| green |"
+      ],
+      "source_refs": [
+        ".planning/phases/20-release-candidate-artifact-production/20-VERIFICATION.md#Status",
+        "tools/bazel/phase20_release_candidate_artifacts.py",
+        "tools/bazel/phase20_release_candidate_artifacts_test.py",
+        "tools/bazel/manifests/phase20_release_candidate_artifacts_contract.json"
+      ],
+      "no_overclaim_rationale": "Updates adjacent validation metadata because Phase 20 verifier files and verification report exist; release run evidence remains externally supplied.",
+      "verification_command": "python3 tools/bazel/phase22_metadata_reconciliation.py --validation-only"
+    },
+    {
+      "id": "roadmap-phase21-progress",
+      "target_file": ".planning/ROADMAP.md",
+      "correction_type": "roadmap-progress",
+      "old_state": "Phase 21 details and progress table show 0/0 plans and Planned.",
+      "required_new_markers": [
+        "- [x] **Phase 21: Final Readiness Result Consumption**",
+        "| 21. Final Readiness Result Consumption | v1.1 | 1/1 | Complete",
+        ".planning/phases/21-final-readiness-result-consumption/21-VERIFICATION.md"
+      ],
+      "source_refs": [
+        ".planning/phases/21-final-readiness-result-consumption/21-01-SUMMARY.md",
+        ".planning/phases/21-final-readiness-result-consumption/21-VERIFICATION.md"
+      ],
+      "no_overclaim_rationale": "Records completed Phase 21 planning and verification metadata without changing final demotion evidence status.",
+      "verification_command": "python3 tools/bazel/phase22_metadata_reconciliation.py --roadmap-state-only"
+    },
+    {
+      "id": "roadmap-phase22-plan-count",
+      "target_file": ".planning/ROADMAP.md",
+      "correction_type": "roadmap-progress",
+      "old_state": "Phase 22 progress is stale until its plan summaries exist.",
+      "required_new_markers": [
+        "| 22. Evidence Metadata Reconciliation | v1.1 | 3/3 | Complete",
+        "22-01-PLAN.md - Source-backed reconciliation contract, verifier, and tests.",
+        "22-03-PLAN.md - Bazel/just wiring, validation signoff, and audit-readiness verification."
+      ],
+      "source_refs": [
+        ".planning/phases/22-evidence-metadata-reconciliation/22-01-PLAN.md",
+        ".planning/phases/22-evidence-metadata-reconciliation/22-02-PLAN.md",
+        ".planning/phases/22-evidence-metadata-reconciliation/22-03-PLAN.md"
+      ],
+      "no_overclaim_rationale": "Records Phase 22 plan directory consistency only after summaries exist; this plan alone does not complete Phase 22.",
+      "verification_command": "python3 tools/bazel/phase22_metadata_reconciliation.py --roadmap-state-only"
+    },
+    {
+      "id": "state-phase22-position",
+      "target_file": ".planning/STATE.md",
+      "correction_type": "state-position",
+      "old_state": "STATE current position and progress can lag active Phase 22 execution.",
+      "required_new_markers": [
+        "Phase: 22 (evidence-metadata-reconciliation)",
+        "Plan: 3 of 3",
+        "Completed 22-03-PLAN.md"
+      ],
+      "source_refs": [
+        ".planning/phases/22-evidence-metadata-reconciliation/22-01-SUMMARY.md",
+        ".planning/phases/22-evidence-metadata-reconciliation/22-02-SUMMARY.md",
+        ".planning/phases/22-evidence-metadata-reconciliation/22-03-SUMMARY.md"
+      ],
+      "no_overclaim_rationale": "Records GSD execution position only after Phase 22 completes; this plan does not mutate shared phase state.",
+      "verification_command": "python3 tools/bazel/phase22_metadata_reconciliation.py --roadmap-state-only"
+    },
+    {
+      "id": "audit-rerun-readiness",
+      "target_file": "build/ci-evidence/phase22/audit-rerun-readiness.json",
+      "correction_type": "audit-readiness-output",
+      "old_state": "The v1.1 audit records pre-Phase-19/20/21 gaps and metadata drift.",
+      "required_new_markers": [
+        "\"status\": \"passed\"",
+        "\"aggregate-ci-gap\": \"closed\"",
+        "\"upstream-result-consumption-gap\": \"closed\""
+      ],
+      "source_refs": [
+        ".planning/v1.1-MILESTONE-AUDIT.md#Recommended-Gap-Closure",
+        ".planning/phases/19-aggregate-cutover-evidence-ci/19-VERIFICATION.md#Result",
+        ".planning/phases/20-release-candidate-artifact-production/20-VERIFICATION.md#Goal-Achievement",
+        ".planning/phases/21-final-readiness-result-consumption/21-VERIFICATION.md#Goal-Achievement"
+      ],
+      "no_overclaim_rationale": "Reports audit rerun readiness from source-backed metadata and prior verification reports without creating new external evidence.",
+      "verification_command": "python3 tools/bazel/phase22_metadata_reconciliation.py --audit-readiness-only"
+    }
+  ],
+  "audit_gap_mappings": [
+    {
+      "id": "aggregate-ci-gap",
+      "original_audit_gap": "Aggregate CI stopped at Phase 13 and did not retain Phase 14-18 outputs.",
+      "mapped_status": "closed",
+      "source_refs": [
+        ".planning/phases/19-aggregate-cutover-evidence-ci/19-VERIFICATION.md#Result",
+        "tools/bazel/manifests/phase19_aggregate_ci_evidence_contract.json#phase14-real-simulator-input"
+      ],
+      "correction_ids": [
+        "requirements-sim-03",
+        "validation-phase14",
+        "validation-phase15",
+        "validation-phase16",
+        "validation-phase17",
+        "validation-phase18"
+      ],
+      "no_overclaim_rationale": "Aggregate retention is closed for locally runnable gates while external evidence rows remain pending inputs."
+    },
+    {
+      "id": "release-identity-gap",
+      "original_audit_gap": "The release artifact identity target was empty before Phase 20.",
+      "mapped_status": "closed",
+      "source_refs": [
+        ".planning/phases/20-release-candidate-artifact-production/20-VERIFICATION.md#Goal-Achievement",
+        "tools/bazel/manifests/phase20_release_candidate_artifacts_contract.json#rel-contract-traceability-redaction-boundary"
+      ],
+      "correction_ids": [
+        "validation-phase20-adjacent-drift"
+      ],
+      "no_overclaim_rationale": "Release identity wiring is source-backed while release-environment result evidence remains separately governed."
+    },
+    {
+      "id": "upstream-result-consumption-gap",
+      "original_audit_gap": "Final review consumed contract refs without independently validating upstream result manifests.",
+      "mapped_status": "closed",
+      "source_refs": [
+        ".planning/phases/21-final-readiness-result-consumption/21-VERIFICATION.md#Goal-Achievement",
+        "tools/bazel/manifests/phase18_cutover_review_contract.json#upstream_result_requirements"
+      ],
+      "correction_ids": [
+        "requirements-rev-02",
+        "requirements-rev-03"
+      ],
+      "no_overclaim_rationale": "Upstream result consumption is enforced; demotion remains blocked without valid upstream rows and maintainer decisions."
+    },
+    {
+      "id": "requirements-status-gap",
+      "original_audit_gap": "Requirement checklist and traceability rows lagged phase verification reports.",
+      "mapped_status": "metadata-correction-required",
+      "source_refs": [
+        ".planning/REQUIREMENTS.md#Traceability",
+        ".planning/phases/14-simulator-evidence-gates/14-VERIFICATION.md#Requirements-Coverage",
+        ".planning/phases/21-final-readiness-result-consumption/21-VERIFICATION.md#Requirements-Coverage"
+      ],
+      "correction_ids": [
+        "requirements-sim-03",
+        "requirements-rev-02",
+        "requirements-rev-03"
+      ],
+      "no_overclaim_rationale": "Requirement status can be reconciled only with explicit caveat markers."
+    },
+    {
+      "id": "validation-metadata-gap",
+      "original_audit_gap": "Validation files retained Wave 0 placeholders after verifier files and verification reports existed.",
+      "mapped_status": "metadata-correction-required",
+      "source_refs": [
+        ".planning/phases/14-simulator-evidence-gates/14-VERIFICATION.md#Required-Artifacts",
+        ".planning/phases/19-aggregate-cutover-evidence-ci/19-VERIFICATION.md#Automated-Checks",
+        ".planning/phases/20-release-candidate-artifact-production/20-VERIFICATION.md#Behavioral-Spot-Checks"
+      ],
+      "correction_ids": [
+        "validation-phase14",
+        "validation-phase15",
+        "validation-phase16",
+        "validation-phase17",
+        "validation-phase18",
+        "validation-phase20-adjacent-drift"
+      ],
+      "no_overclaim_rationale": "Validation metadata updates describe local verifier artifacts only and preserve manual/external evidence boundaries."
+    }
+  ],
+  "non_blocking_debt": []
+}
