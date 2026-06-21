@@ -182,8 +182,13 @@ class Phase17ReleaseCandidateEvidenceTest(unittest.TestCase):
             for path in SOURCE_REF_FILES
         )
         tools_build = maybe_tools_build or f"""filegroup(
+    name = "phase20_release_environment_input_manifest",
+    srcs = ["manifests/phase20_release_environment_inputs.template.json"],
+)
+
+filegroup(
     name = "phase17_release_candidate_artifacts",
-    srcs = [],
+    srcs = [":phase20_release_environment_input_manifest"],
 )
 
 filegroup(
@@ -691,6 +696,67 @@ filegroup(
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("cannot wrap local smoke dependencies", result.stdout)
+
+    def test_release_candidate_target_rejects_empty_filegroup(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            self.write_wiring(root)
+            tools_build = (root / "tools/bazel/BUILD.bazel").read_text(encoding="utf-8").replace(
+                'srcs = [":phase20_release_environment_input_manifest"]',
+                "srcs = []",
+                1,
+            )
+            self.write_wiring(root, maybe_tools_build=tools_build)
+
+            # Act
+            result = self.run_verifier(["--wiring-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("phase20_release_environment_input_manifest", result.stdout)
+
+    def test_release_candidate_target_accepts_phase20_release_input_manifest(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_complete_surface(root)
+            self.write_wiring(root)
+
+            # Act
+            result = self.run_verifier(["--wiring-only"], maybe_root=root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_release_candidate_target_rejects_representative_smoke_wrapping(self) -> None:
+        for bad_label in [
+            ":phase17_representative_release_smoke",
+            ":representative_release_artifacts",
+            "//tools/bazel:phase17_representative_release_smoke",
+            "//tools/bazel:representative_release_artifacts",
+            "//tools/bazel:phase3_verify",
+        ]:
+            with self.subTest(bad_label=bad_label):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    self.copy_complete_surface(root)
+                    self.write_wiring(root)
+                    tools_build = (root / "tools/bazel/BUILD.bazel").read_text(encoding="utf-8").replace(
+                        'srcs = [":phase20_release_environment_input_manifest"]',
+                        f'srcs = ["{bad_label}"]',
+                        1,
+                    )
+                    self.write_wiring(root, maybe_tools_build=tools_build)
+
+                    # Act
+                    result = self.run_verifier(["--wiring-only"], maybe_root=root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(bad_label, result.stdout)
 
 
 if __name__ == "__main__":
