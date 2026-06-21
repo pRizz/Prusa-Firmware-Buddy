@@ -1,12 +1,12 @@
 ---
 phase: 22-evidence-metadata-reconciliation
-verified: 2026-06-21T18:43:29Z
+verified: 2026-06-21T18:56:35Z
 status: passed
 score: "5/5 Phase 22 verification surfaces passed"
 generated_by: gsd-executor
 lifecycle_mode: yolo
 phase_lifecycle_id: 22-2026-06-21T16-59-18
-generated_at: 2026-06-21T18:43:29Z
+generated_at: 2026-06-21T18:56:35Z
 lifecycle_validated: true
 requirements:
   - Metadata debt from v1.1 audit
@@ -15,12 +15,14 @@ requirements:
 # Phase 22: Evidence Metadata Reconciliation Verification Report
 
 **Phase Goal:** Reconcile v1.1 requirement, validation, roadmap, state, and audit-readiness metadata after gap closure work lands.
-**Verified:** 2026-06-21T18:43:29Z
+**Verified:** 2026-06-21T18:56:35Z
 **Status:** passed
 
 ## Result
 
 Phase 22 passed. The source-backed reconciliation contract, Python verifier, Bazel/root labels, `rust_workflow.sh` dispatch, `just phase22-verify`, validation signoff, and ignored audit-readiness output all exist and pass local verification.
+
+This refresh was recorded after the final Wave 1, Wave 2, and Wave 3 summaries landed and after Phase 22 completion updated ROADMAP and STATE.
 
 This report is metadata evidence only. Hardware, live-service, release signing, upstream result pass evidence, maintainer decisions, final demotion, and milestone archival remain governed by their validated inputs.
 
@@ -41,6 +43,7 @@ Passed:
 - `bazel run //tools/bazel:phase22_verify_tests`
 - `bazel run //tools/bazel:phase22_verify`
 - `just phase22-verify`
+- `node /Users/peterryszkiewicz/.codex/get-shit-done/bin/gsd-tools.cjs verify lifecycle 22 --expect-id 22-2026-06-21T16-59-18 --expect-mode yolo --require-plans --require-verification`
 - `git diff --check`
 
 ## Artifact Checks
@@ -51,7 +54,9 @@ Passed:
 | `tools/bazel/BUILD.bazel` | passed | Defines `phase22_source_ref_manifests`, `phase22_verify`, and `phase22_verify_tests` with Phase 22 contract and docs runfiles. |
 | `tools/bazel/rust_workflow.sh` | passed | Dispatches `phase22_verify_tests` to the stdlib test file and `phase22_verify` to wiring plus quick output under `build/ci-evidence/phase22`. |
 | `justfile` | passed | `phase22-verify` runs Bazel tests before the verifier. |
+| `ROADMAP.md` and `STATE.md` | passed | Phase 22 is complete with 3/3 plans and the milestone progress metadata is at 100%. |
 | `22-VALIDATION.md` | passed | `wave_0_complete: true`, task rows are green, Wave 0 checklist is complete, and approval records passed verifier/Bazel/just/lifecycle/audit-readiness checks. |
+| `22-01-SUMMARY.md`, `22-02-SUMMARY.md`, `22-03-SUMMARY.md` | passed | All summaries carry Phase 22 lifecycle metadata and are older than this refreshed verification report. |
 | `build/ci-evidence/phase22/audit-rerun-readiness.json` | passed | JSON-valid, `status: passed`, maps all historical audit gaps to closed source-backed corrections, and remains ignored under `/build*`. |
 
 ## Audit Rerun Input

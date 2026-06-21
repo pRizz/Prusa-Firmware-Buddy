@@ -42,7 +42,7 @@ Full phase details are archived in `.planning/milestones/v1.0-ROADMAP.md`.
 - [x] **Phase 19: Aggregate Cutover Evidence CI** - Run and retain Phase 14-18 cutover gate evidence through a single CI-owned manifest and artifact bundle. (completed 2026-06-21)
 - [x] **Phase 20: Release Candidate Artifact Production** - Replace the empty release-candidate artifact identity target with real Bazel-owned release outputs and retained signing/provenance/comparison evidence. (completed 2026-06-21)
 - [x] **Phase 21: Final Readiness Result Consumption** - Require final cutover review to consume machine-readable upstream result manifests before any demotion decision can pass. (completed 2026-06-21)
-- [ ] **Phase 22: Evidence Metadata Reconciliation** - Reconcile requirement traceability, validation metadata, roadmap progress, and milestone audit state after functional gap closure.
+- [x] **Phase 22: Evidence Metadata Reconciliation** - Reconcile requirement traceability, validation metadata, roadmap progress, and milestone audit state after functional gap closure. (completed 2026-06-21)
 
 ## Phase Details
 
@@ -201,8 +201,8 @@ Plans:
 
 Plans:
 - [x] 22-01-PLAN.md - Source-backed reconciliation contract, verifier, and tests.
-- [ ] 22-02-PLAN.md - Requirement, validation, roadmap, and state metadata reconciliation.
-- [ ] 22-03-PLAN.md - Bazel/just wiring, validation signoff, and audit-readiness verification.
+- [x] 22-02-PLAN.md - Requirement, validation, roadmap, and state metadata reconciliation.
+- [x] 22-03-PLAN.md - Bazel/just wiring, validation signoff, and audit-readiness verification.
 
 ## Progress
 
@@ -220,4 +220,4 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17 -> 18 -> 19 -> 20 ->
 | 19. Aggregate Cutover Evidence CI | v1.1 | 1/1 | Complete    | 2026-06-21 |
 | 20. Release Candidate Artifact Production | v1.1 | 2/2 | Complete    | 2026-06-21 |
 | 21. Final Readiness Result Consumption | v1.1 | 1/1 | Complete | 2026-06-21 |
-| 22. Evidence Metadata Reconciliation | v1.1 | 1/3 | In Progress | - |
+| 22. Evidence Metadata Reconciliation | v1.1 | 3/3 | Complete    | 2026-06-21 |
