@@ -17,7 +17,7 @@ These requirements convert the non-local v1.0 cutover blockers into durable evid
 
 - [x] **SIM-01**: Maintainer can run simulator evidence flows for startup, task readiness, watchdog-visible startup behavior, and representative G-code execution against the Rust+Bazel evidence surface.
 - [x] **SIM-02**: Maintainer can run simulator evidence flows for GUI navigation, storage/resource access, transfers, and selected failure flows with reference-compatible pass/fail semantics.
-- [ ] **SIM-03**: Maintainer can map simulator evidence results back to the v1.0 requirement IDs and cutover criteria without marking hardware-only behavior as simulator-proven.
+- [x] **SIM-03**: Maintainer can map simulator evidence results back to the v1.0 requirement IDs and cutover criteria without marking hardware-only behavior as simulator-proven; hardware-only behavior remains outside simulator proof.
 
 ### Hardware and Safety Evidence
 
@@ -40,8 +40,8 @@ These requirements convert the non-local v1.0 cutover blockers into durable evid
 ### Cutover Review
 
 - [x] **REV-01**: Maintainer can review retained-code acceptance packets for every C, C++, ASM, generated, vendor, HAL, RTOS, network, filesystem, and signing surface that remains at cutover.
-- [ ] **REV-02**: Maintainer can approve or reject final reference-demotion criteria through an explicit checklist that links CI, simulator, hardware, live-service, release, retained-code, and residual-risk evidence.
-- [ ] **REV-03**: Maintainer can produce a final cutover readiness report that marks reference demotion allowed only when all required gates pass or have documented maintainer-approved exceptions.
+- [x] **REV-02**: Maintainer can approve or reject final reference-demotion criteria through an explicit checklist that links CI, simulator, hardware, live-service, release, retained-code, and residual-risk evidence; upstream result status is required before approval can pass.
+- [x] **REV-03**: Maintainer can produce a final cutover readiness report that marks reference demotion allowed only when all required gates pass or have documented maintainer-approved exceptions; demotion_allowed remains blocked without valid upstream results and maintainer decisions.
 
 ## Future Requirements
 
@@ -69,26 +69,28 @@ Explicitly excluded. Documented to prevent scope creep.
 
 Which phases cover which requirements. Updated during roadmap creation.
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| CIEV-01 | Phase 19 | Complete |
-| CIEV-02 | Phase 19 | Complete |
-| CIEV-03 | Phase 19 | Complete |
-| SIM-01 | Phase 19 | Complete |
-| SIM-02 | Phase 19 | Complete |
-| SIM-03 | Phase 14 | Pending |
-| HARD-01 | Phase 19 | Complete |
-| HARD-02 | Phase 19 | Complete |
-| HARD-03 | Phase 19 | Complete |
-| LIVE-01 | Phase 19 | Complete |
-| LIVE-02 | Phase 19 | Complete |
-| LIVE-03 | Phase 19 | Complete |
-| REL-01 | Phase 20 | Complete |
-| REL-02 | Phase 20 | Complete |
-| REL-03 | Phase 20 | Complete |
-| REV-01 | Phase 18 | Complete |
-| REV-02 | Phase 21 | Pending |
-| REV-03 | Phase 21 | Pending |
+Checked rows in v1.1 indicate source-backed gate capability, not that every external simulator, hardware, live-service, release, signing, upstream-result, maintainer-decision, or final demotion input has passed.
+
+| Requirement | Phase | Status | Caveat |
+|-------------|-------|--------|--------|
+| CIEV-01 | Phase 19 | Complete | |
+| CIEV-02 | Phase 19 | Complete | |
+| CIEV-03 | Phase 19 | Complete | |
+| SIM-01 | Phase 19 | Complete | |
+| SIM-02 | Phase 19 | Complete | |
+| SIM-03 | Phase 14 | Complete - gate verified; hardware-only behavior not simulator-proven | hardware-only behavior is not simulator-proven |
+| HARD-01 | Phase 19 | Complete | |
+| HARD-02 | Phase 19 | Complete | |
+| HARD-03 | Phase 19 | Complete | |
+| LIVE-01 | Phase 19 | Complete | |
+| LIVE-02 | Phase 19 | Complete | |
+| LIVE-03 | Phase 19 | Complete | |
+| REL-01 | Phase 20 | Complete | |
+| REL-02 | Phase 20 | Complete | |
+| REL-03 | Phase 20 | Complete | |
+| REV-01 | Phase 18 | Complete | |
+| REV-02 | Phase 21 | Complete - upstream-result gate verified; demotion_allowed blocked without valid upstream results and maintainer decisions | demotion_allowed remains blocked without valid upstream results and maintainer decisions |
+| REV-03 | Phase 21 | Complete - final report gate verified; demotion_allowed blocked without valid upstream results and maintainer decisions | demotion_allowed remains blocked without valid upstream results and maintainer decisions |
 
 **Coverage:**
 
