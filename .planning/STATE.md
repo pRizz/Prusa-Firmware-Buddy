@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Cutover Evidence Hardening
-status: verifying
-stopped_at: Phase 20 context gathered
-last_updated: "2026-06-21T12:47:39.279Z"
+status: executing
+stopped_at: Completed 20-01-PLAN.md
+last_updated: "2026-06-21T13:35:26.716Z"
 last_activity: 2026-06-21
 progress:
   total_phases: 10
   completed_phases: 7
-  total_plans: 7
-  completed_plans: 7
-  percent: 100
+  total_plans: 9
+  completed_plans: 8
+  percent: 89
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-15)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Phase 19 — Aggregate Cutover Evidence CI
+**Current focus:** Phase 20 — release-candidate-artifact-production
 
 ## Current Position
 
-Phase: 20
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 20 (release-candidate-artifact-production) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-06-21
 
 Progress: [██████████] 100%
@@ -73,6 +73,7 @@ Progress: [██████████] 100%
 | Phase 15 P01 | 23m31s | 3 tasks | 7 files |
 | Phase 18 P01 | 30m 21s | 3 tasks | 7 files |
 | Phase 19 P01 | 18 min | 4 tasks | 9 files |
+| Phase 20 P01 | 12 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -121,6 +122,9 @@ Recent decisions affecting current work:
 - [Phase 18]: Quick-mode output is review material only; demotion_allowed remains false without maintainer decision input.
 - [Phase 18]: Phase 18 source refs resolve against approved prior-phase manifests instead of prose-only evidence references.
 - [Phase 18]: Security scanning rejects secret, payload, crash-dump, credential, and cutover-approval overclaim markers across inputs and generated artifacts.
+- [Phase 20]: Phase 20 Plan 01 keeps release rows pending in quick mode unless approved release input is supplied.
+- [Phase 20]: Phase 20 release refs are limited to external://phase20/... or repo-relative build/ci-evidence/phase20 paths.
+- [Phase 20]: Phase 20 rejects private key, credential, token, password, raw payload, and crash-dump field names at the release input boundary.
 
 ### Pending Todos
 
@@ -134,6 +138,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-21T12:47:39.274Z
-Stopped at: Phase 20 context gathered
-Resume file: .planning/phases/20-release-candidate-artifact-production/20-CONTEXT.md
+Last session: 2026-06-21T13:35:26.713Z
+Stopped at: Completed 20-01-PLAN.md
+Resume file: None

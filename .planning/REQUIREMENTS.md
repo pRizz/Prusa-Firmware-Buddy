@@ -33,9 +33,9 @@ These requirements convert the non-local v1.0 cutover blockers into durable evid
 
 ### Release Candidate Evidence
 
-- [ ] **REL-01**: Release manager can build release-candidate `.bin`, `.bbf`, `.dfu`, map/provenance, resource, language, WUI, ESP, MMU, and auxiliary firmware artifacts through Bazel-owned workflows.
-- [ ] **REL-02**: Release manager can verify release-candidate signing, provenance, build input identity, and artifact retention while keeping private signing keys outside the repository and planning artifacts.
-- [ ] **REL-03**: Maintainer can compare release-candidate artifact surfaces against the archived v1.0 reference evidence and classify every mismatch as pass, intentional delta, blocker, or deferred retained-code issue.
+- [x] **REL-01**: Release manager can build release-candidate `.bin`, `.bbf`, `.dfu`, map/provenance, resource, language, WUI, ESP, MMU, and auxiliary firmware artifacts through Bazel-owned workflows.
+- [x] **REL-02**: Release manager can verify release-candidate signing, provenance, build input identity, and artifact retention while keeping private signing keys outside the repository and planning artifacts.
+- [x] **REL-03**: Maintainer can compare release-candidate artifact surfaces against the archived v1.0 reference evidence and classify every mismatch as pass, intentional delta, blocker, or deferred retained-code issue.
 
 ### Cutover Review
 
@@ -83,9 +83,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LIVE-01 | Phase 19 | Complete |
 | LIVE-02 | Phase 19 | Complete |
 | LIVE-03 | Phase 19 | Complete |
-| REL-01 | Phase 20 | Pending |
-| REL-02 | Phase 20 | Pending |
-| REL-03 | Phase 20 | Pending |
+| REL-01 | Phase 20 | Complete |
+| REL-02 | Phase 20 | Complete |
+| REL-03 | Phase 20 | Complete |
 | REV-01 | Phase 18 | Complete |
 | REV-02 | Phase 21 | Pending |
 | REV-03 | Phase 21 | Pending |
