@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Cutover Evidence Hardening
-status: verifying
-stopped_at: Phase 22 context gathered
-last_updated: "2026-06-21T17:04:59.932Z"
-last_activity: 2026-06-21
+status: executing
+stopped_at: Executing 22-02-PLAN.md
+last_updated: "2026-06-21T18:26:31.034Z"
+last_activity: 2026-06-21 -- Phase 22 Wave 2 metadata reconciliation executing
 progress:
   total_phases: 10
   completed_phases: 9
-  total_plans: 10
-  completed_plans: 10
-  percent: 100
+  total_plans: 13
+  completed_plans: 11
+  percent: 85
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-15)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Phase 20 — release-candidate-artifact-production
+**Current focus:** Phase 22 — evidence-metadata-reconciliation
 
 ## Current Position
 
-Phase: 21
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-06-21
+Phase: 22 (evidence-metadata-reconciliation) — EXECUTING
+Plan: 2 of 3
+Status: Executing Phase 22 Plan 02 metadata reconciliation
+Last activity: 2026-06-21 -- Phase 22 Wave 2 metadata reconciliation executing
 
-Progress: [██████████] 100%
+Progress: [█████████░] 85%
 
 ## Performance Metrics
 

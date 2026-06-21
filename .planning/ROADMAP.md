@@ -41,7 +41,7 @@ Full phase details are archived in `.planning/milestones/v1.0-ROADMAP.md`.
 - [x] **Phase 18: Retained-Code Acceptance and Cutover Review** - Make retained-code acceptance, final reference-demotion criteria, and maintainer approval explicit and auditable. (completed 2026-06-20)
 - [x] **Phase 19: Aggregate Cutover Evidence CI** - Run and retain Phase 14-18 cutover gate evidence through a single CI-owned manifest and artifact bundle. (completed 2026-06-21)
 - [x] **Phase 20: Release Candidate Artifact Production** - Replace the empty release-candidate artifact identity target with real Bazel-owned release outputs and retained signing/provenance/comparison evidence. (completed 2026-06-21)
-- [ ] **Phase 21: Final Readiness Result Consumption** - Require final cutover review to consume machine-readable upstream result manifests before any demotion decision can pass.
+- [x] **Phase 21: Final Readiness Result Consumption** - Require final cutover review to consume machine-readable upstream result manifests before any demotion decision can pass. (completed 2026-06-21)
 - [ ] **Phase 22: Evidence Metadata Reconciliation** - Reconcile requirement traceability, validation metadata, roadmap progress, and milestone audit state after functional gap closure.
 
 ## Phase Details
@@ -180,7 +180,10 @@ Plans:
 1. `demotion_allowed` remains false when required upstream manifests are missing, failed, stale, redaction-failed, or not covered by approved exceptions.
 1. Maintainer decision input can approve, reject, or exception criteria only after upstream result status and evidence refs have passed schema, lifecycle, source-ref, and redaction checks.
 1. Final readiness artifacts explain every blocked, pending, failed, exception-approved, and passed criterion with requirement IDs and retained evidence refs.
-   **Plans**: Not created yet.
+   **Plans:** 1 plan
+
+Plans:
+- [x] 21-01-PLAN.md - Upstream result consumption gate and demotion_allowed hardening.
 
 ### Phase 22: Evidence Metadata Reconciliation
 
@@ -197,7 +200,7 @@ Plans:
    **Plans**: 3 plans
 
 Plans:
-- [ ] 22-01-PLAN.md - Source-backed reconciliation contract, verifier, and tests.
+- [x] 22-01-PLAN.md - Source-backed reconciliation contract, verifier, and tests.
 - [ ] 22-02-PLAN.md - Requirement, validation, roadmap, and state metadata reconciliation.
 - [ ] 22-03-PLAN.md - Bazel/just wiring, validation signoff, and audit-readiness verification.
 
@@ -216,5 +219,5 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17 -> 18 -> 19 -> 20 ->
 | 18. Retained-Code Acceptance and Cutover Review | v1.1 | 1/1 | Complete    | 2026-06-20 |
 | 19. Aggregate Cutover Evidence CI | v1.1 | 1/1 | Complete    | 2026-06-21 |
 | 20. Release Candidate Artifact Production | v1.1 | 2/2 | Complete    | 2026-06-21 |
-| 21. Final Readiness Result Consumption | v1.1 | 0/0 | Planned    | - |
-| 22. Evidence Metadata Reconciliation | v1.1 | 0/3 | Planned    | - |
+| 21. Final Readiness Result Consumption | v1.1 | 1/1 | Complete | 2026-06-21 |
+| 22. Evidence Metadata Reconciliation | v1.1 | 1/3 | In Progress | - |
