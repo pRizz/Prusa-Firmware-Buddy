@@ -1,9 +1,9 @@
 ---
 phase: 20
 slug: release-candidate-artifact-production
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: approved
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-06-21
 ---
 
@@ -38,22 +38,22 @@ created: 2026-06-21
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 20-01-01 | 01 | 1 | REL-01 | T-20-01 | Release identity target is non-empty and rejects smoke labels | unit/wiring | `python3 tools/bazel/phase20_release_candidate_artifacts_test.py` | no W0 | pending |
-| 20-01-02 | 01 | 1 | REL-01 | T-20-02 | Contract covers all required release artifact surfaces | contract | `python3 tools/bazel/phase20_release_candidate_artifacts.py --contract-only` | no W0 | pending |
-| 20-01-03 | 01 | 1 | REL-02 | T-20-03 | Signing/provenance evidence rejects private key, payload, token, and credential markers | unit/security | `python3 tools/bazel/phase20_release_candidate_artifacts_test.py` | no W0 | pending |
-| 20-01-04 | 01 | 1 | REL-03 | T-20-04 | Comparison rows require allowed mismatch classes with reasons and residual risk | unit/contract | `python3 tools/bazel/phase20_release_candidate_artifacts_test.py` | no W0 | pending |
-| 20-01-05 | 01 | 1 | REL-01, REL-02, REL-03 | T-20-05 | Bazel, root aliases, workflow dispatch, and `just` run tests before verifier | integration/wiring | `just phase20-verify` | no W0 | pending |
+| 20-01-01 | 01 | 1 | REL-01 | T-20-01 | Release identity target is non-empty and rejects smoke labels | unit/wiring | `python3 tools/bazel/phase20_release_candidate_artifacts_test.py` | yes - Wave 0 files exist | green |
+| 20-01-02 | 01 | 1 | REL-01 | T-20-02 | Contract covers all required release artifact surfaces | contract | `python3 tools/bazel/phase20_release_candidate_artifacts.py --contract-only` | yes - Wave 0 files exist | green |
+| 20-01-03 | 01 | 1 | REL-02 | T-20-03 | Signing/provenance evidence rejects private key, payload, token, and credential markers | unit/security | `python3 tools/bazel/phase20_release_candidate_artifacts_test.py` | yes - Wave 0 files exist | green |
+| 20-01-04 | 01 | 1 | REL-03 | T-20-04 | Comparison rows require allowed mismatch classes with reasons and residual risk | unit/contract | `python3 tools/bazel/phase20_release_candidate_artifacts_test.py` | yes - Wave 0 files exist | green |
+| 20-01-05 | 01 | 1 | REL-01, REL-02, REL-03 | T-20-05 | Bazel, root aliases, workflow dispatch, and `just` run tests before verifier | integration/wiring | `just phase20-verify` | yes - Wave 0 files exist | green |
 
 ---
 
 ## Wave 0 Requirements
 
-- [ ] `tools/bazel/manifests/phase20_release_candidate_artifacts_contract.json` - Phase 20 release identity, proof classes, result manifest, signing/provenance, retention, and comparison rows.
-- [ ] `tools/bazel/manifests/phase20_release_environment_inputs.template.json` - explicit release-environment input template included in the production-safe release identity target.
-- [ ] `tools/bazel/phase20_release_candidate_artifacts.py` - stdlib verifier and result writer with contract, wiring, security, and quick modes.
-- [ ] `tools/bazel/phase20_release_candidate_artifacts_test.py` - regression tests for empty target, smoke target, placeholder, redaction, proof class, and comparison classification rejection.
-- [ ] `tools/bazel/BUILD.bazel`, `BUILD.bazel`, `tools/bazel/rust_workflow.sh`, and `justfile` - Phase 20 labels, aliases, docs filegroup, dispatch, and facade.
-- [ ] Phase 17 verifier/test fixtures updated if needed so Phase 17 still rejects smoke labels while Phase 20 makes the release target non-empty.
+- [x] `tools/bazel/manifests/phase20_release_candidate_artifacts_contract.json` - Phase 20 release identity, proof classes, result manifest, signing/provenance, retention, and comparison rows.
+- [x] `tools/bazel/manifests/phase20_release_environment_inputs.template.json` - explicit release-environment input template included in the production-safe release identity target.
+- [x] `tools/bazel/phase20_release_candidate_artifacts.py` - stdlib verifier and result writer with contract, wiring, security, and quick modes.
+- [x] `tools/bazel/phase20_release_candidate_artifacts_test.py` - regression tests for empty target, smoke target, placeholder, redaction, proof class, and comparison classification rejection.
+- [x] `tools/bazel/BUILD.bazel`, `BUILD.bazel`, `tools/bazel/rust_workflow.sh`, and `justfile` - Phase 20 labels, aliases, docs filegroup, dispatch, and facade.
+- [x] Phase 17 verifier/test fixtures updated if needed so Phase 17 still rejects smoke labels while Phase 20 makes the release target non-empty.
 
 ---
 
@@ -68,11 +68,11 @@ created: 2026-06-21
 
 ## Validation Sign-Off
 
-- [ ] All tasks have automated verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all missing references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 60s for direct Python checks
-- [ ] `nyquist_compliant: true` set in frontmatter after Wave 0 artifacts exist and direct checks pass
+- [x] All tasks have automated verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all missing references
+- [x] No watch-mode flags
+- [x] Feedback latency < 60s for direct Python checks
+- [x] `nyquist_compliant: true` set in frontmatter after Wave 0 artifacts exist and direct checks pass
 
-**Approval:** pending
+**Approval:** approved 2026-06-21 after Phase 20 verification; full production release signing and release-environment evidence remain external.

@@ -3,7 +3,7 @@ phase: 15
 slug: hardware-safety-and-media-qualification
 status: approved
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-06-17
 lifecycle_mode: yolo
 phase_lifecycle_id: 15-2026-06-17T22-53-45
@@ -40,10 +40,10 @@ phase_lifecycle_id: 15-2026-06-17T22-53-45
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 15-01-01 | 01 | 1 | HARD-01 | T-15-01 | Hardware matrix rows cannot pass without explicit hardware/operator evidence. | unit / contract | `python3 tools/bazel/phase15_hardware_evidence_test.py` | no - Wave 0 creates file | pending |
-| 15-01-02 | 01 | 1 | HARD-02 | T-15-02 | Safety rows keep physical proof separate from source-backed or simulator checks. | contract / security | `python3 tools/bazel/phase15_hardware_evidence.py --contract-only` | no - Wave 0 creates file | pending |
-| 15-01-03 | 01 | 1 | HARD-03 | T-15-03 | Generated and operator evidence reject secrets, raw dumps, unsafe payloads, path traversal, and overclaim wording. | unit / security | `python3 tools/bazel/phase15_hardware_evidence.py --security-only` | no - Wave 0 creates file | pending |
-| 15-01-04 | 01 | 1 | HARD-01,HARD-02,HARD-03 | T-15-04 | Bazel and just wiring run tests before the verifier and produce deterministic local evidence only. | integration / wiring | `just phase15-verify` | no - Wave 0 creates file | pending |
+| 15-01-01 | 01 | 1 | HARD-01 | T-15-01 | Hardware matrix rows cannot pass without explicit hardware/operator evidence. | unit / contract | `python3 tools/bazel/phase15_hardware_evidence_test.py` | yes - Wave 0 files exist | green |
+| 15-01-02 | 01 | 1 | HARD-02 | T-15-02 | Safety rows keep physical proof separate from source-backed or simulator checks. | contract / security | `python3 tools/bazel/phase15_hardware_evidence.py --contract-only` | yes - Wave 0 files exist | green |
+| 15-01-03 | 01 | 1 | HARD-03 | T-15-03 | Generated and operator evidence reject secrets, raw dumps, unsafe payloads, path traversal, and overclaim wording. | unit / security | `python3 tools/bazel/phase15_hardware_evidence.py --security-only` | yes - Wave 0 files exist | green |
+| 15-01-04 | 01 | 1 | HARD-01,HARD-02,HARD-03 | T-15-04 | Bazel and just wiring run tests before the verifier and produce deterministic local evidence only. | integration / wiring | `just phase15-verify` | yes - Wave 0 files exist | green |
 
 *Status: pending, green, red, flaky*
 
@@ -51,10 +51,10 @@ phase_lifecycle_id: 15-2026-06-17T22-53-45
 
 ## Wave 0 Requirements
 
-- [ ] `tools/bazel/manifests/phase15_hardware_evidence_contract.json` - checked-in row-level hardware, safety, media, UI input, MMU, RS485, and toolchanger evidence contract.
-- [ ] `tools/bazel/phase15_hardware_evidence.py` - contract/security/wiring/quick/operator validation for `HARD-01`, `HARD-02`, and `HARD-03`.
-- [ ] `tools/bazel/phase15_hardware_evidence_test.py` - stdlib tests for required rows, source refs, statuses, path guards, metadata, secrets, overclaims, generated artifacts, and wiring.
-- [ ] `tools/bazel/BUILD.bazel`, `BUILD.bazel`, `tools/bazel/rust_workflow.sh`, and `justfile` - Phase 15 labels, root aliases, docs filegroup, dispatch, and facade.
+- [x] `tools/bazel/manifests/phase15_hardware_evidence_contract.json` - checked-in row-level hardware, safety, media, UI input, MMU, RS485, and toolchanger evidence contract.
+- [x] `tools/bazel/phase15_hardware_evidence.py` - contract/security/wiring/quick/operator validation for `HARD-01`, `HARD-02`, and `HARD-03`.
+- [x] `tools/bazel/phase15_hardware_evidence_test.py` - stdlib tests for required rows, source refs, statuses, path guards, metadata, secrets, overclaims, generated artifacts, and wiring.
+- [x] `tools/bazel/BUILD.bazel`, `BUILD.bazel`, `tools/bazel/rust_workflow.sh`, and `justfile` - Phase 15 labels, root aliases, docs filegroup, dispatch, and facade.
 
 ---
 

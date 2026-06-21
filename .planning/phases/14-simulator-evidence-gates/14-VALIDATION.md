@@ -3,7 +3,7 @@ phase: 14
 slug: simulator-evidence-gates
 status: ready
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-06-17
 ---
 
@@ -38,9 +38,9 @@ created: 2026-06-17
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 14-01-01 | 01 | 1 | SIM-01, SIM-02, SIM-03 | T-14-01 | Contract rows reject overclaim and secret-bearing artifacts | unit/contract | `python3 tools/bazel/phase14_simulator_evidence_test.py` | no - Wave 0 creates it | pending |
-| 14-01-02 | 01 | 1 | SIM-01, SIM-02, SIM-03 | T-14-02 | Dry-run artifacts stay under `build/ci-evidence/phase14` and record residual gates | unit/artifact | `python3 tools/bazel/phase14_simulator_evidence.py --quick` | no - Wave 0 creates it | pending |
-| 14-01-03 | 01 | 1 | SIM-01, SIM-02, SIM-03 | T-14-03 | Bazel/just wiring runs tests before verifier | wiring | `just phase14-verify` | no - Wave 0 wires it | pending |
+| 14-01-01 | 01 | 1 | SIM-01, SIM-02, SIM-03 | T-14-01 | Contract rows reject overclaim and secret-bearing artifacts | unit/contract | `python3 tools/bazel/phase14_simulator_evidence_test.py` | yes - Wave 0 files exist | green |
+| 14-01-02 | 01 | 1 | SIM-01, SIM-02, SIM-03 | T-14-02 | Dry-run artifacts stay under `build/ci-evidence/phase14` and record residual gates | unit/artifact | `python3 tools/bazel/phase14_simulator_evidence.py --quick` | yes - Wave 0 files exist | green |
+| 14-01-03 | 01 | 1 | SIM-01, SIM-02, SIM-03 | T-14-03 | Bazel/just wiring runs tests before verifier | wiring | `just phase14-verify` | yes - Wave 0 files exist | green |
 
 *Status: pending, green, red, flaky*
 
@@ -48,10 +48,10 @@ created: 2026-06-17
 
 ## Wave 0 Requirements
 
-- [ ] `tools/bazel/manifests/phase14_simulator_evidence_contract.json` - scenario rows for startup, task readiness, watchdog-visible startup, G-code, GUI, storage/resource, transfer, and selected failure flows.
-- [ ] `tools/bazel/phase14_simulator_evidence.py` - contract verifier, deterministic dry-run artifact writer, optional simulator command builder, redaction/overclaim scanner, and wiring checks.
-- [ ] `tools/bazel/phase14_simulator_evidence_test.py` - stdlib regression tests for SIM coverage, source refs, skipped-node handling, artifacts, wiring, path guards, and security scans.
-- [ ] `tools/bazel/BUILD.bazel`, root `BUILD.bazel`, `tools/bazel/rust_workflow.sh`, and `justfile` - Phase 14 verifier/test labels, aliases, dispatch, and developer recipe.
+- [x] `tools/bazel/manifests/phase14_simulator_evidence_contract.json` - scenario rows for startup, task readiness, watchdog-visible startup, G-code, GUI, storage/resource, transfer, and selected failure flows.
+- [x] `tools/bazel/phase14_simulator_evidence.py` - contract verifier, deterministic dry-run artifact writer, optional simulator command builder, redaction/overclaim scanner, and wiring checks.
+- [x] `tools/bazel/phase14_simulator_evidence_test.py` - stdlib regression tests for SIM coverage, source refs, skipped-node handling, artifacts, wiring, path guards, and security scans.
+- [x] `tools/bazel/BUILD.bazel`, root `BUILD.bazel`, `tools/bazel/rust_workflow.sh`, and `justfile` - Phase 14 verifier/test labels, aliases, dispatch, and developer recipe.
 
 ---
 

@@ -3,7 +3,7 @@ phase: 17
 slug: release-candidate-artifact-and-signing-gates
 status: approved
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-06-19
 lifecycle_mode: yolo
 phase_lifecycle_id: 17-2026-06-19T13-57-17
@@ -40,10 +40,10 @@ phase_lifecycle_id: 17-2026-06-19T13-57-17
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 17-01-01 | 01 | 1 | REL-01 | T-17-01 | Required rows cover `.bin`, `.bbf`, `.dfu`, map/provenance, resource, language, WUI, ESP, MMU, and auxiliary firmware surfaces without treating local smoke as release proof. | unit / contract | `python3 tools/bazel/phase17_release_candidate_evidence_test.py` | no - Wave 0 creates file | pending |
-| 17-01-02 | 01 | 1 | REL-02 | T-17-02 | Signing and provenance rows require key identity, signing mode, build input identity, artifact digest, timestamp, retention path, and verification outcome while rejecting private keys and payload markers. | unit / security | `python3 tools/bazel/phase17_release_candidate_evidence.py --security-only` | no - Wave 0 creates file | pending |
-| 17-01-03 | 01 | 1 | REL-03 | T-17-03 | Comparison rows cite archived v1.0/Phase 11 refs and classify every mismatch as `pass`, `intentional-delta`, `blocker`, or `deferred-retained-code-issue`. | unit / contract | `python3 tools/bazel/phase17_release_candidate_evidence.py --contract-only` | no - Wave 0 creates file | pending |
-| 17-01-04 | 01 | 1 | REL-01,REL-02,REL-03 | T-17-04 | Bazel, `rust_workflow.sh`, root aliases, and `just phase17-verify` execute the verifier tests before the verifier. | integration / wiring | `just phase17-verify` | no - Wave 0 creates file | pending |
+| 17-01-01 | 01 | 1 | REL-01 | T-17-01 | Required rows cover `.bin`, `.bbf`, `.dfu`, map/provenance, resource, language, WUI, ESP, MMU, and auxiliary firmware surfaces without treating local smoke as release proof. | unit / contract | `python3 tools/bazel/phase17_release_candidate_evidence_test.py` | yes - Wave 0 files exist | green |
+| 17-01-02 | 01 | 1 | REL-02 | T-17-02 | Signing and provenance rows require key identity, signing mode, build input identity, artifact digest, timestamp, retention path, and verification outcome while rejecting private keys and payload markers. | unit / security | `python3 tools/bazel/phase17_release_candidate_evidence.py --security-only` | yes - Wave 0 files exist | green |
+| 17-01-03 | 01 | 1 | REL-03 | T-17-03 | Comparison rows cite archived v1.0/Phase 11 refs and classify every mismatch as `pass`, `intentional-delta`, `blocker`, or `deferred-retained-code-issue`. | unit / contract | `python3 tools/bazel/phase17_release_candidate_evidence.py --contract-only` | yes - Wave 0 files exist | green |
+| 17-01-04 | 01 | 1 | REL-01,REL-02,REL-03 | T-17-04 | Bazel, `rust_workflow.sh`, root aliases, and `just phase17-verify` execute the verifier tests before the verifier. | integration / wiring | `just phase17-verify` | yes - Wave 0 files exist | green |
 
 *Status: pending, green, red, flaky*
 
@@ -51,10 +51,10 @@ phase_lifecycle_id: 17-2026-06-19T13-57-17
 
 ## Wave 0 Requirements
 
-- [ ] `tools/bazel/manifests/phase17_release_candidate_evidence_contract.json` - checked-in row-level release artifact, signing/provenance, and comparison evidence contract.
-- [ ] `tools/bazel/phase17_release_candidate_evidence.py` - contract, security, wiring, quick, and release evidence validation for `REL-01`, `REL-02`, and `REL-03`.
-- [ ] `tools/bazel/phase17_release_candidate_evidence_test.py` - stdlib tests for required rows, source refs, statuses, path guards, signing metadata, secrets, overclaims, mismatch classifications, generated artifacts, and wiring.
-- [ ] `tools/bazel/BUILD.bazel`, `BUILD.bazel`, `tools/bazel/rust_workflow.sh`, and `justfile` - Phase 17 labels, root aliases, docs filegroup, dispatch, and facade.
+- [x] `tools/bazel/manifests/phase17_release_candidate_evidence_contract.json` - checked-in row-level release artifact, signing/provenance, and comparison evidence contract.
+- [x] `tools/bazel/phase17_release_candidate_evidence.py` - contract, security, wiring, quick, and release evidence validation for `REL-01`, `REL-02`, and `REL-03`.
+- [x] `tools/bazel/phase17_release_candidate_evidence_test.py` - stdlib tests for required rows, source refs, statuses, path guards, signing metadata, secrets, overclaims, mismatch classifications, generated artifacts, and wiring.
+- [x] `tools/bazel/BUILD.bazel`, `BUILD.bazel`, `tools/bazel/rust_workflow.sh`, and `justfile` - Phase 17 labels, root aliases, docs filegroup, dispatch, and facade.
 
 ---
 

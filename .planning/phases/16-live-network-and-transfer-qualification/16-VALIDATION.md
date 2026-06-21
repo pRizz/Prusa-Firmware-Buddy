@@ -3,7 +3,7 @@ phase: 16
 slug: live-network-and-transfer-qualification
 status: approved
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-06-18
 phase_lifecycle_id: 16-2026-06-18T01-09-34
 ---
@@ -39,10 +39,10 @@ phase_lifecycle_id: 16-2026-06-18T01-09-34
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 16-01-01 | 01 | 1 | LIVE-01 | T-16-01 | Connect rows cover registration, telemetry, WebSocket commands, token/fingerprint behavior, and proxy limitations without storing secrets. | unit + contract | `python3 tools/bazel/phase16_live_network_evidence_test.py` | No - Wave 0 creates | pending |
-| 16-01-02 | 01 | 1 | LIVE-02 | T-16-02 | WUI rows cover HTTP API, digest/API-key auth, SNTP, mDNS, syslog, metrics, and transfer behavior with pending defaults for missing live input. | unit + contract | `python3 tools/bazel/phase16_live_network_evidence_test.py` | No - Wave 0 creates | pending |
-| 16-01-03 | 01 | 1 | LIVE-03 | T-16-03 | TLS, certificate, redaction, negative protocol, long-transfer, and crash-dump rows reject forbidden secrets and overclaim wording. | unit + security negative | `python3 tools/bazel/phase16_live_network_evidence_test.py` | No - Wave 0 creates | pending |
-| 16-01-04 | 01 | 1 | LIVE-01/LIVE-02/LIVE-03 | T-16-04 | Bazel, `rust_workflow.sh`, root aliases, and `just phase16-verify` execute the verifier tests before the verifier. | wiring | `just phase16-verify` | No - Wave 0 creates | pending |
+| 16-01-01 | 01 | 1 | LIVE-01 | T-16-01 | Connect rows cover registration, telemetry, WebSocket commands, token/fingerprint behavior, and proxy limitations without storing secrets. | unit + contract | `python3 tools/bazel/phase16_live_network_evidence_test.py` | yes - Wave 0 files exist | green |
+| 16-01-02 | 01 | 1 | LIVE-02 | T-16-02 | WUI rows cover HTTP API, digest/API-key auth, SNTP, mDNS, syslog, metrics, and transfer behavior with pending defaults for missing live input. | unit + contract | `python3 tools/bazel/phase16_live_network_evidence_test.py` | yes - Wave 0 files exist | green |
+| 16-01-03 | 01 | 1 | LIVE-03 | T-16-03 | TLS, certificate, redaction, negative protocol, long-transfer, and crash-dump rows reject forbidden secrets and overclaim wording. | unit + security negative | `python3 tools/bazel/phase16_live_network_evidence_test.py` | yes - Wave 0 files exist | green |
+| 16-01-04 | 01 | 1 | LIVE-01/LIVE-02/LIVE-03 | T-16-04 | Bazel, `rust_workflow.sh`, root aliases, and `just phase16-verify` execute the verifier tests before the verifier. | wiring | `just phase16-verify` | yes - Wave 0 files exist | green |
 
 *Status: pending, green, red, flaky*
 
@@ -50,10 +50,10 @@ phase_lifecycle_id: 16-2026-06-18T01-09-34
 
 ## Wave 0 Requirements
 
-- [ ] `tools/bazel/manifests/phase16_live_network_evidence_contract.json` - required row coverage for `LIVE-01`, `LIVE-02`, and `LIVE-03`.
-- [ ] `tools/bazel/phase16_live_network_evidence.py` - contract, security, wiring, quick, and operator-evidence modes.
-- [ ] `tools/bazel/phase16_live_network_evidence_test.py` - tests for required rows, redaction, overclaim rejection, source refs, path safety, operator evidence, and workflow wiring.
-- [ ] `tools/bazel/BUILD.bazel`, root `BUILD.bazel`, `tools/bazel/rust_workflow.sh`, and `justfile` - Phase 16 Bazel/just exposure.
+- [x] `tools/bazel/manifests/phase16_live_network_evidence_contract.json` - required row coverage for `LIVE-01`, `LIVE-02`, and `LIVE-03`.
+- [x] `tools/bazel/phase16_live_network_evidence.py` - contract, security, wiring, quick, and operator-evidence modes.
+- [x] `tools/bazel/phase16_live_network_evidence_test.py` - tests for required rows, redaction, overclaim rejection, source refs, path safety, operator evidence, and workflow wiring.
+- [x] `tools/bazel/BUILD.bazel`, root `BUILD.bazel`, `tools/bazel/rust_workflow.sh`, and `justfile` - Phase 16 Bazel/just exposure.
 
 ---
 
