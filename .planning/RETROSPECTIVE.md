@@ -51,6 +51,54 @@
 
 ---
 
+## Milestone: v1.1 — Cutover Evidence Hardening
+
+**Shipped:** 2026-06-22
+**Phases:** 10 | **Plans:** 13 | **Tasks:** 30
+
+### What Was Built
+
+- CI-owned aggregate cutover evidence workflow, manifest output, artifact retention, and Bazel/just verifier facades.
+- Simulator, hardware/safety/media, live-service, and release-candidate evidence contracts with quick artifacts, explicit real-input paths, and no-overclaim guards.
+- Release artifact identity backed by Phase 20 release-environment input and result manifests instead of an empty placeholder target.
+- Retained-code and final cutover review gates that consume machine-readable upstream results and keep `demotion_allowed` blocked without valid inputs.
+- Phase 22 reconciliation across requirements, validation metadata, roadmap state, and audit readiness, followed by a passed milestone audit rerun.
+
+### What Worked
+
+- Keeping quick evidence separate from real external proof prevented CI, smoke fixtures, and template rows from passing release or hardware gates.
+- Reusing phase-owned contracts and small Python verifiers made later aggregation and audit reruns practical.
+- Redaction, path-containment, and secret-field checks caught the most likely evidence-retention mistakes before artifacts could be trusted.
+- The Phase 19/21/22 gap-closure sequence converted the audit findings into verifiable gates instead of prose-only assurances.
+
+### What Was Inefficient
+
+- Early v1.1 metadata still needed a dedicated reconciliation phase because requirement traceability, validation records, and roadmap progress drifted independently.
+- Some milestone summaries pulled low-level review-fix notes into user-facing accomplishment lists, requiring manual curation at archive time.
+- The evidence framework is now broad enough that future milestones should avoid adding more gate categories without first proving how they feed aggregate readiness.
+
+### Patterns Established
+
+- Represent external proof as pending input rows with strict schemas, artifact refs, and secret/path guards.
+- Allow local quick modes to create reviewable scaffolding only when they cannot satisfy production evidence.
+- Require final cutover decisions to consume upstream machine-readable results instead of trusting source-contract links alone.
+- Run a source-backed audit readiness check before archival so the milestone audit can be rerun from durable evidence.
+
+### Key Lessons
+
+1. A checked requirement can mean "gate capability exists"; final cutover still needs separate evidence-result and approval inputs.
+2. Aggregate evidence needs both retained artifacts and clear pending/blocked rows, otherwise external dependencies disappear from review.
+3. Release identity targets must reject smoke proof and template rows explicitly; naming alone is not a sufficient guard.
+4. Milestone archive summaries need curated engineering outcomes, not raw review-fix or audit-note lines.
+
+### Cost Observations
+
+- Model mix: not measured in repo-local metadata.
+- Sessions: multiple GSD phase sessions across 10 phases.
+- Notable: small verifier and manifest changes stayed cheap to rerun, but cross-phase metadata reconciliation carried a visible coordination cost.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -58,14 +106,17 @@
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
 | v1.0 | Multiple | 12 | Established source-backed parity evidence and archived a clean requirements/roadmap baseline. |
+| v1.1 | Multiple | 10 | Converted non-local cutover blockers into durable evidence gates and archived a passed audit rerun. |
 
 ### Cumulative Quality
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
 | v1.0 | Phase verifier suites plus 34 Phase 11 regression tests at archival | 30/30 v1 requirements mapped and complete | Standard-library verifier scripts and manifest checks for evidence gates. |
+| v1.1 | Phase verifier suites plus aggregate, release, final-readiness, and metadata reconciliation tests | 18/18 v1.1 gate-capability requirements mapped and complete | Standard-library evidence contracts, redaction/path guards, result manifests, and audit-readiness checks. |
 
 ### Top Lessons (Verified Across Milestones)
 
 1. Evidence status must distinguish local deterministic proof from non-local release approval.
 2. Requirement, roadmap, validation, and manifest metadata should be reconciled before milestone archival, not after the next milestone starts.
+3. Final cutover approval should consume upstream machine-readable results, not prose links to contract files.

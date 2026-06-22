@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Cutover Evidence Hardening
-status: complete
-stopped_at: Phase 22 complete
-last_updated: "2026-06-21T18:55:50Z"
-last_activity: 2026-06-21
+status: completed
+stopped_at: Milestone v1.1 archived
+last_updated: "2026-06-22T19:36:38Z"
+last_activity: 2026-06-22
 progress:
   total_phases: 10
   completed_phases: 10
@@ -18,17 +18,18 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-15)
+See: .planning/PROJECT.md (updated 2026-06-22)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Phase 22 — evidence-metadata-reconciliation
+**Current focus:** Between milestones — v1.1 archived; next milestone not defined
 
 ## Current Position
 
-Phase: 22 (evidence-metadata-reconciliation) — COMPLETE
-Plan: 3 of 3
-Status: Phase 22 complete — milestone audit passed
-Last activity: 2026-06-21
+Milestone: v1.1 Cutover Evidence Hardening — COMPLETE
+Phase: none active
+Plan: none active
+Status: Milestone v1.1 archived; next milestone not defined
+Last activity: 2026-06-22
 
 Progress: [██████████] 100%
 
@@ -52,12 +53,13 @@ Progress: [██████████] 100%
 | 18 | 1 | - | - |
 | 19 | 1 | - | - |
 | 20 | 2 | - | - |
+| 21 | 1 | - | - |
 | 22 | 3 | - | - |
 
 **Recent Trend:**
 
-- Last 5 plans: None for v1.1 yet
-- Trend: v1.0 archived; v1.1 will harden non-local cutover evidence into enforceable gates
+- Last 5 plans: Phase 20 P02, Phase 21 P01, Phase 22 P01, Phase 22 P02, Phase 22 P03
+- Trend: v1.1 archived with cutover evidence gates validated; next milestone should start from clean requirements
 
 *Updated after each plan completion*
 | Phase 07 P01 | 11min | 3 tasks | 4 files |
@@ -144,6 +146,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-21T18:55:50Z
-Stopped at: Phase 22 complete
-Resume file: .planning/phases/22-evidence-metadata-reconciliation/22-VERIFICATION.md
+Last session: 2026-06-22T19:36:38Z
+Stopped at: Milestone v1.1 archived
+Resume file: .planning/milestones/v1.1-MILESTONE-AUDIT.md
