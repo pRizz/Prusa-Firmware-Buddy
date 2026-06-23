@@ -1,37 +1,37 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Cutover Evidence Hardening
-status: completed
-stopped_at: Milestone v1.1 archived
-last_updated: "2026-06-22T19:36:38Z"
-last_activity: 2026-06-22
+milestone: v1.2
+milestone_name: Cutover Evidence Execution and Acceptance
+status: defining_requirements
+stopped_at: Milestone v1.2 started
+last_updated: "2026-06-23T00:00:00Z"
+last_activity: 2026-06-23
 progress:
-  total_phases: 10
-  completed_phases: 10
-  total_plans: 13
-  completed_plans: 13
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-22)
+See: .planning/PROJECT.md (updated 2026-06-23)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Between milestones — v1.1 archived; next milestone not defined
+**Current focus:** v1.2 Cutover Evidence Execution and Acceptance — defining requirements
 
 ## Current Position
 
-Milestone: v1.1 Cutover Evidence Hardening — COMPLETE
-Phase: none active
-Plan: none active
-Status: Milestone v1.1 archived; next milestone not defined
-Last activity: 2026-06-22
+Milestone: v1.2 Cutover Evidence Execution and Acceptance — ACTIVE
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-06-23 — Milestone v1.2 started
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -59,7 +59,7 @@ Progress: [██████████] 100%
 **Recent Trend:**
 
 - Last 5 plans: Phase 20 P02, Phase 21 P01, Phase 22 P01, Phase 22 P02, Phase 22 P03
-- Trend: v1.1 archived with cutover evidence gates validated; next milestone should start from clean requirements
+- Trend: v1.2 started to execute real cutover evidence gates and acceptance decisions from a clean requirements surface
 
 *Updated after each plan completion*
 | Phase 07 P01 | 11min | 3 tasks | 4 files |
@@ -146,6 +146,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-22T19:36:38Z
-Stopped at: Milestone v1.1 archived
-Resume file: .planning/milestones/v1.1-MILESTONE-AUDIT.md
+Last session: 2026-06-23T00:00:00Z
+Stopped at: Milestone v1.2 started
+Resume file: .planning/PROJECT.md

@@ -18,15 +18,15 @@ Milestone v1.1 Cutover Evidence Hardening shipped on 2026-06-22. It turned the r
 
 The replacement firmware is not yet cut over. Final reference demotion remains intentionally blocked until the validated external simulator, hardware, live-service, release, signing, upstream-result, retained-code, residual-risk, and maintainer-decision inputs are supplied and accepted under the v1.1 contracts.
 
-## Next Milestone Goals
+## Current Milestone: v1.2 Cutover Evidence Execution and Acceptance
 
-No active milestone is defined. Start the next milestone with `/gsd-new-milestone` so the next requirements surface begins from clean scope.
+**Goal:** Execute the real external cutover evidence gates created in v1.1 and produce a maintainer-reviewable final readiness packet.
 
-Likely next milestone options:
+**Target features:**
 
-- Execute and retain real external evidence packets for the v1.1 simulator, hardware, live-service, release, signing, and upstream-result gates.
-- Drive maintainer acceptance or exception decisions for retained-code, residual-risk, and final reference-demotion criteria.
-- Scope additional hardening before cutover if any external evidence row fails, remains unavailable, or requires product/operations policy decisions.
+- Collect and retain full external evidence packets for simulator, hardware/media/safety, live services, release/signing, and upstream results.
+- Drive retained-code, residual-risk, exception, and maintainer acceptance decisions through machine-readable inputs.
+- Produce a final cutover readiness report that is decision-ready while keeping reference demotion blocked unless maintainers explicitly approve.
 
 ## Requirements
 
@@ -62,7 +62,9 @@ Likely next milestone options:
 
 <!-- Current scope. Building toward these. -->
 
-- [ ] No active requirements. Start the next milestone with `/gsd-new-milestone`.
+- [ ] Execute and retain real simulator, hardware/media/safety, live-service, release/signing, and upstream-result evidence packets through the v1.1 gate contracts.
+- [ ] Drive retained-code, residual-risk, exception, and maintainer acceptance decisions with machine-readable inputs.
+- [ ] Produce a final cutover readiness report that remains blocked by default unless explicit maintainer approval allows reference demotion.
 
 ### Out of Scope
 
@@ -146,4 +148,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ______________________________________________________________________
 
-*Last updated: 2026-06-22 after v1.1 milestone completion*
+*Last updated: 2026-06-23 after starting v1.2 milestone*
