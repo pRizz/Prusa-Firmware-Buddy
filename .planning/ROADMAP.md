@@ -58,7 +58,7 @@ Full phase details are archived in `.planning/milestones/v1.1-ROADMAP.md`.
 
 - [x] **Phase 23: Simulator Evidence Execution** - Maintainers supply and retain real simulator results for startup, G-code, GUI, storage, transfer, and selected failure flows. (completed 2026-06-23)
 - [x] **Phase 24: Hardware, Media, and Safety Evidence Execution** - Maintainers supply and retain real hardware, storage-media, UI-input, auxiliary, and safety evidence. (completed 2026-06-23)
-- [ ] **Phase 25: Live-Service Evidence Execution** - Maintainers supply and retain real Connect, PrusaLink/WUI, TLS, telemetry, proxy, transfer, and crash-dump evidence.
+- [x] **Phase 25: Live-Service Evidence Execution** - Maintainers supply and retain real Connect, PrusaLink/WUI, TLS, telemetry, proxy, transfer, and crash-dump evidence. (completed 2026-06-23)
 - [ ] **Phase 26: Release, Signing, and Upstream Result Evidence** - Release managers supply secret-safe release outputs while maintainers receive upstream result rows for every cutover gate.
 - [ ] **Phase 27: Retained-Code and Maintainer Acceptance Decisions** - Maintainers record retained-code, residual-risk, exception, and final-readiness decisions as machine-readable inputs.
 - [ ] **Phase 28: Final Readiness Packet and Demotion Gate** - Maintainers generate the final readiness packet while reference demotion stays blocked unless explicitly approved.
@@ -100,7 +100,8 @@ Plans:
   2. Each service flow records service environment, firmware identity, sanitized result refs, and pass, fail, blocked, or exception-requested status.
   3. Secret-bearing inputs are redacted or externally referenced, and evidence validation rejects tokens, private certificates, credentials, and raw payloads.
   4. Live-service evidence links to acceptance rows consumed by final readiness.
-**Plans**: TBD
+Plans:
+- [x] 25-01-PLAN.md - Phase 25 live-service evidence execution wrapper
 **UI hint**: yes
 
 ### Phase 26: Release, Signing, and Upstream Result Evidence
@@ -142,7 +143,7 @@ Plans:
 |-------------|-------|--------|
 | EVID-01 | Phase 23 | Complete |
 | EVID-02 | Phase 24 | Complete |
-| EVID-03 | Phase 25 | Pending |
+| EVID-03 | Phase 25 | Complete |
 | EVID-04 | Phase 26 | Pending |
 | ACPT-01 | Phase 26 | Pending |
 | ACPT-02 | Phase 27 | Pending |
@@ -162,7 +163,7 @@ Phases execute in numeric order: 23 -> 24 -> 25 -> 26 -> 27 -> 28
 |-------|-----------|----------------|--------|-----------|
 | 23. Simulator Evidence Execution | v1.2 | 1/1 | Complete    | 2026-06-23 |
 | 24. Hardware, Media, and Safety Evidence Execution | v1.2 | 1/1 | Complete    | 2026-06-23 |
-| 25. Live-Service Evidence Execution | v1.2 | 0/TBD | Not started | - |
+| 25. Live-Service Evidence Execution | v1.2 | 1/1 | Complete    | 2026-06-23 |
 | 26. Release, Signing, and Upstream Result Evidence | v1.2 | 0/TBD | Not started | - |
 | 27. Retained-Code and Maintainer Acceptance Decisions | v1.2 | 0/TBD | Not started | - |
 | 28. Final Readiness Packet and Demotion Gate | v1.2 | 0/TBD | Not started | - |

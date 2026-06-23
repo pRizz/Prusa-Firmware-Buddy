@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Cutover Evidence Execution and Acceptance
-status: executing
-stopped_at: Phase 24 complete; Phase 25 ready to plan
-last_updated: "2026-06-23T20:55:26Z"
-last_activity: 2026-06-23 -- Phase 24 complete
+status: planning
+stopped_at: Phase 25 complete; Phase 26 ready to plan
+last_updated: "2026-06-23T21:28:28.795Z"
+last_activity: 2026-06-23 -- Phase 25 complete
 progress:
   total_phases: 6
-  completed_phases: 2
-  total_plans: 2
-  completed_plans: 2
-  percent: 100
+  completed_phases: 3
+  total_plans: 3
+  completed_plans: 3
+  percent: 50
 ---
 
 # Project State
@@ -21,24 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-23)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** v1.2 Cutover Evidence Execution and Acceptance - Phase 24 complete, Phase 25 ready to plan
+**Current focus:** v1.2 Cutover Evidence Execution and Acceptance - Phase 25 complete, Phase 26 ready to plan
 
 ## Current Position
 
 Milestone: v1.2 Cutover Evidence Execution and Acceptance - ACTIVE
-Phase: 25 of 28 (live-service evidence execution)
+Phase: 26 of 28 (release, signing, and upstream result evidence)
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-06-23 -- Phase 24 complete
+Last activity: 2026-06-23 -- Phase 25 complete
 
-Progress: [###       ] 33%
+Progress: [#####     ] 50%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- v1.2 plans completed: 2
-- v1.2 phases completed: 2/6
+- v1.2 plans completed: 3
+- v1.2 phases completed: 3/6
 - Previous milestone baseline: v1.1 completed 13 plans across 10 phases
 
 **By Phase:**
@@ -47,14 +47,14 @@ Progress: [###       ] 33%
 |-------|-------|-------|----------|
 | 23 | 1 | - | - |
 | 24 | 1 | - | - |
-| 25 | TBD | - | - |
+| 25 | 1 | - | - |
 | 26 | TBD | - | - |
 | 27 | TBD | - | - |
 | 28 | TBD | - | - |
 
 **Recent Trend:**
 
-- Last 5 completed plans: Phase 20 P02, Phase 21 P01, Phase 22 P01, Phase 22 P02, Phase 22 P03
+- Last 5 completed plans: Phase 22 P02, Phase 22 P03, Phase 23 P01, Phase 24 P01, Phase 25 P01
 - Trend: v1.2 begins execution of real evidence and acceptance gates after v1.1 gate-capability hardening
 
 ## Accumulated Context
@@ -81,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-23T20:55:26Z
-Stopped at: Phase 24 complete; Phase 25 ready to plan
+Last session: 2026-06-23T21:28:28.546Z
+Stopped at: Phase 25 complete; Phase 26 ready to plan
 Resume file: .planning/ROADMAP.md

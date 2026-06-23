@@ -201,6 +201,16 @@ filegroup(
 )
 
 filegroup(
+    name = "phase25_live_service_evidence_execution_docs",
+    srcs = [
+        ".planning/phases/25-live-service-evidence-execution/25-CONTEXT.md",
+        ".planning/phases/25-live-service-evidence-execution/25-RESEARCH.md",
+        ".planning/phases/25-live-service-evidence-execution/25-VALIDATION.md",
+        ".planning/phases/25-live-service-evidence-execution/25-01-PLAN.md",
+    ],
+)
+
+filegroup(
     name = "phase22_metadata_reconciliation_docs",
     srcs = [
         ".planning/REQUIREMENTS.md",
@@ -457,6 +467,16 @@ alias(
 alias(
     name = "phase24_verify_tests",
     actual = "//tools/bazel:phase24_verify_tests",
+)
+
+alias(
+    name = "phase25_verify",
+    actual = "//tools/bazel:phase25_verify",
+)
+
+alias(
+    name = "phase25_verify_tests",
+    actual = "//tools/bazel:phase25_verify_tests",
 )
 
 alias(

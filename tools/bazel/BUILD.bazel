@@ -668,6 +668,41 @@ shell_binary(
 )
 
 filegroup(
+    name = "phase25_source_ref_manifests",
+    srcs = [
+        "manifests/phase16_live_network_evidence_contract.json",
+        "manifests/phase18_cutover_review_contract.json",
+        "manifests/phase19_aggregate_ci_evidence_contract.json",
+        "manifests/phase23_simulator_evidence_execution_contract.json",
+        "manifests/phase24_hardware_media_safety_evidence_execution_contract.json",
+        "manifests/phase25_live_service_evidence_execution_contract.json",
+        ":phase16_source_ref_manifests",
+    ],
+)
+
+shell_binary(
+    name = "phase25_verify",
+    src = "rust_workflow.sh",
+    data = [
+        "phase25_live_service_evidence_execution.py",
+        "manifests/phase25_live_service_evidence_execution_contract.json",
+        ":phase25_source_ref_manifests",
+        "//:phase25_live_service_evidence_execution_docs",
+    ],
+)
+
+shell_binary(
+    name = "phase25_verify_tests",
+    src = "rust_workflow.sh",
+    data = [
+        "phase25_live_service_evidence_execution.py",
+        "phase25_live_service_evidence_execution_test.py",
+        "manifests/phase25_live_service_evidence_execution_contract.json",
+        ":phase25_source_ref_manifests",
+    ],
+)
+
+filegroup(
     name = "unsafe_boundary_audit",
     srcs = ["manifests/unsafe_boundary_audit.json"],
 )

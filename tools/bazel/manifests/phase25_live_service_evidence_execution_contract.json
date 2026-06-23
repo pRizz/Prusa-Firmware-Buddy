@@ -1,0 +1,114 @@
+{
+  "allowed_artifact_roots": [
+    "build/ci-evidence/phase25/",
+    "external://phase25/"
+  ],
+  "artifact_name": "phase25-live-service-evidence-execution",
+  "blocking_source_statuses": [
+    "pending-live-input",
+    "manual-live-service-required",
+    "controlled-service-required",
+    "blocked-credentials-unavailable",
+    "blocked-endpoint-unavailable",
+    "not-applicable-with-justification"
+  ],
+  "evidence_packet_required_fields": [
+    "evidence_run_id",
+    "phase_lifecycle_id",
+    "firmware_identity",
+    "operator",
+    "started_at",
+    "completed_at",
+    "source_contract_ref",
+    "scenario_results"
+  ],
+  "exception_required_fields": [
+    "owner",
+    "rationale",
+    "evidence_ref",
+    "revisit_condition"
+  ],
+  "id": "phase25_live_service_evidence_execution_contract",
+  "output_root": "build/ci-evidence/phase25",
+  "phase": "25-live-service-evidence-execution",
+  "phase_lifecycle_id": "25-2026-06-23T21-12-42",
+  "requirement_ids": [
+    "EVID-03"
+  ],
+  "required_artifact_kinds": [
+    "machine-readable-run-manifest",
+    "normalized-scenario-results",
+    "redacted-live-service-summary",
+    "source-contract-snapshot",
+    "live-log-reference",
+    "operator-evidence-input",
+    "external-artifact-reference",
+    "artifact-summary",
+    "upstream-result-row"
+  ],
+  "required_phase16_scenario_ids": [
+    "live-connect-registration-token-fingerprint",
+    "live-connect-telemetry-events",
+    "live-connect-websocket-command-channel",
+    "live-connect-proxy-limitation-tunnel",
+    "live-connect-transfer-download-command",
+    "live-wui-prusalink-api-v1",
+    "live-wui-digest-auth",
+    "live-wui-api-key-auth",
+    "live-network-sntp-client",
+    "live-network-mdns-announcement",
+    "live-network-syslog-metrics-udp",
+    "live-wui-upload-transfer",
+    "live-tls-certificate-verification",
+    "live-custom-ca-certificate-boundary",
+    "live-negative-protocol-wui-http",
+    "live-negative-protocol-connect-command",
+    "live-long-transfer-connect-download",
+    "live-long-transfer-wui-upload",
+    "live-crash-dump-upload-redaction",
+    "live-contract-traceability-redaction-boundary"
+  ],
+  "scenario_result_conditional_fields": [
+    "exception_request",
+    "runtime_metadata"
+  ],
+  "scenario_result_required_fields": [
+    "scenario_id",
+    "status",
+    "source_status",
+    "status_reason",
+    "artifact_refs",
+    "redaction_status",
+    "source_ref_status",
+    "device",
+    "firmware_build",
+    "operator",
+    "timestamp",
+    "residual_risk",
+    "evidence_type",
+    "service_surface",
+    "mode",
+    "redaction_summary"
+  ],
+  "schema_version": "1",
+  "source_contracts": [
+    "tools/bazel/manifests/phase16_live_network_evidence_contract.json",
+    "tools/bazel/manifests/phase18_cutover_review_contract.json",
+    "tools/bazel/manifests/phase19_aggregate_ci_evidence_contract.json",
+    "tools/bazel/manifests/phase23_simulator_evidence_execution_contract.json",
+    "tools/bazel/manifests/phase24_hardware_media_safety_evidence_execution_contract.json"
+  ],
+  "status_vocabulary": [
+    "passed",
+    "failed",
+    "blocked",
+    "exception-requested"
+  ],
+  "upstream_result_row": {
+    "criterion_id": "final-live-service-evidence",
+    "evidence_family": "live-service",
+    "requirement_ids": [
+      "EVID-03"
+    ]
+  }
+}
