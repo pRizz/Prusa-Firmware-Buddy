@@ -54,24 +54,25 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| EVID-01 | TBD | Pending |
-| EVID-02 | TBD | Pending |
-| EVID-03 | TBD | Pending |
-| EVID-04 | TBD | Pending |
-| ACPT-01 | TBD | Pending |
-| ACPT-02 | TBD | Pending |
-| ACPT-03 | TBD | Pending |
-| READ-01 | TBD | Pending |
-| READ-02 | TBD | Pending |
-| READ-03 | TBD | Pending |
+| EVID-01 | Phase 23 | Pending |
+| EVID-02 | Phase 24 | Pending |
+| EVID-03 | Phase 25 | Pending |
+| EVID-04 | Phase 26 | Pending |
+| ACPT-01 | Phase 26 | Pending |
+| ACPT-02 | Phase 27 | Pending |
+| ACPT-03 | Phase 27 | Pending |
+| READ-01 | Phase 28 | Pending |
+| READ-02 | Phase 28 | Pending |
+| READ-03 | Phase 28 | Pending |
 
 **Coverage:**
 
 - v1.2 requirements: 10 total
-- Mapped to phases: 0
-- Unmapped: 10
+- Mapped to phases: 10
+- Unmapped: 0
+- Duplicate mappings: 0
 
 ______________________________________________________________________
 
 *Requirements defined: 2026-06-23*
-*Last updated: 2026-06-23 after initial definition*
+*Last updated: 2026-06-23 after v1.2 roadmap creation*
