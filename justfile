@@ -76,6 +76,10 @@ phase22-verify:
     bazel run //tools/bazel:phase22_verify_tests
     bazel run //tools/bazel:phase22_verify
 
+phase23-verify:
+    bazel run //tools/bazel:phase23_verify_tests
+    bazel run //tools/bazel:phase23_verify
+
 phase17-release-artifacts-smoke:
     bazel build //tools/bazel:phase17_representative_release_smoke
 

@@ -9,7 +9,7 @@ These requirements execute the real external evidence and acceptance flows creat
 
 ### Evidence Execution
 
-- [ ] **EVID-01**: Maintainer can supply real simulator evidence results for startup, G-code, GUI, storage, transfer, and selected failure flows.
+- [x] **EVID-01**: Maintainer can supply real simulator evidence results for startup, G-code, GUI, storage, transfer, and selected failure flows.
 - [ ] **EVID-02**: Maintainer can supply real hardware/media/safety evidence for supported printer families, storage media, UI input, MMU, RS485, toolchanger, watchdog, thermal, motion, and safe-output scenarios.
 - [ ] **EVID-03**: Maintainer can supply real live-service evidence for Connect, WUI, TLS, telemetry, proxy, transfer, negative-protocol, long-transfer, and crash-dump flows.
 - [ ] **EVID-04**: Release manager can supply release/signing/provenance evidence from real release-environment outputs without exposing private keys or secrets.
@@ -54,7 +54,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| EVID-01 | Phase 23 | Pending |
+| EVID-01 | Phase 23 | Complete |
 | EVID-02 | Phase 24 | Pending |
 | EVID-03 | Phase 25 | Pending |
 | EVID-04 | Phase 26 | Pending |
@@ -75,4 +75,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 ______________________________________________________________________
 
 *Requirements defined: 2026-06-23*
-*Last updated: 2026-06-23 after v1.2 roadmap creation*
+*Last updated: 2026-06-23 after Phase 23 completion*

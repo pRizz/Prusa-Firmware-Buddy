@@ -1,0 +1,82 @@
+{
+  "allowed_artifact_ref_roots": [
+    "build/ci-evidence/phase23/",
+    "external://phase23/"
+  ],
+  "artifact_name": "phase23-simulator-evidence-execution",
+  "id": "phase23_simulator_evidence_execution_contract",
+  "normalization_policy": {
+    "accepted_statuses": [
+      "passed",
+      "failed",
+      "blocked",
+      "exception-requested"
+    ],
+    "exception_required_fields": [
+      "owner",
+      "rationale",
+      "evidence_ref",
+      "revisit_condition"
+    ],
+    "pending_source_status_policy": "pending-simulator-input and pending-simulator-dependency cannot normalize to passed"
+  },
+  "output_root": "build/ci-evidence/phase23",
+  "phase": "23-simulator-evidence-execution",
+  "phase_lifecycle_id": "23-2026-06-23T18-45-38",
+  "required_artifact_kinds": [
+    "machine-readable-run-manifest",
+    "normalized-scenario-summary",
+    "redacted-evidence-summary",
+    "upstream-result-row",
+    "contract-snapshot",
+    "simulator-log-reference"
+  ],
+  "required_packet_fields": [
+    "evidence_run_id",
+    "firmware_identity",
+    "simulator_identity",
+    "operator",
+    "started_at",
+    "completed_at",
+    "scenario_results"
+  ],
+  "required_phase14_scenario_ids": [
+    "sim-startup-bootstrap-ready",
+    "sim-task-readiness-home-wui",
+    "sim-watchdog-visible-startup-readiness",
+    "sim-gcode-file-print-telemetry",
+    "sim-gui-filebrowser-navigation",
+    "sim-storage-resource-wui-list-delete",
+    "sim-transfer-negative-and-conflict",
+    "sim-selected-thermal-failures",
+    "sim-traceability-non-simulator-boundaries"
+  ],
+  "required_scenario_result_fields": [
+    "scenario_id",
+    "status",
+    "source_status",
+    "status_reason",
+    "artifact_refs",
+    "redaction_status",
+    "source_ref_status"
+  ],
+  "schema_version": "1",
+  "source_contracts": [
+    "tools/bazel/manifests/phase14_simulator_evidence_contract.json",
+    "tools/bazel/manifests/phase19_aggregate_ci_evidence_contract.json",
+    "tools/bazel/manifests/phase18_cutover_review_contract.json"
+  ],
+  "status_vocabulary": [
+    "passed",
+    "failed",
+    "blocked",
+    "exception-requested"
+  ],
+  "upstream_result_row": {
+    "criterion_id": "final-simulator-evidence",
+    "evidence_family": "simulator",
+    "requirement_ids": [
+      "EVID-01"
+    ]
+  }
+}
