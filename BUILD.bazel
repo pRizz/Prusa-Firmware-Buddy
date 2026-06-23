@@ -190,6 +190,17 @@ filegroup(
 )
 
 filegroup(
+    name = "phase24_hardware_media_safety_evidence_execution_docs",
+    srcs = [
+        ".planning/phases/24-hardware-media-and-safety-evidence-execution/24-CONTEXT.md",
+        ".planning/phases/24-hardware-media-and-safety-evidence-execution/24-RESEARCH.md",
+        ".planning/phases/24-hardware-media-and-safety-evidence-execution/24-VALIDATION.md",
+        ".planning/phases/24-hardware-media-and-safety-evidence-execution/24-UI-SPEC.md",
+        ".planning/phases/24-hardware-media-and-safety-evidence-execution/24-01-PLAN.md",
+    ],
+)
+
+filegroup(
     name = "phase22_metadata_reconciliation_docs",
     srcs = [
         ".planning/REQUIREMENTS.md",
@@ -436,6 +447,16 @@ alias(
 alias(
     name = "phase23_verify_tests",
     actual = "//tools/bazel:phase23_verify_tests",
+)
+
+alias(
+    name = "phase24_verify",
+    actual = "//tools/bazel:phase24_verify",
+)
+
+alias(
+    name = "phase24_verify_tests",
+    actual = "//tools/bazel:phase24_verify_tests",
 )
 
 alias(

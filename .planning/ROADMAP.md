@@ -57,7 +57,7 @@ Full phase details are archived in `.planning/milestones/v1.1-ROADMAP.md`.
 **Milestone Goal:** Execute the real external evidence gates created in v1.1 and produce a maintainer-reviewable final readiness packet.
 
 - [x] **Phase 23: Simulator Evidence Execution** - Maintainers supply and retain real simulator results for startup, G-code, GUI, storage, transfer, and selected failure flows. (completed 2026-06-23)
-- [ ] **Phase 24: Hardware, Media, and Safety Evidence Execution** - Maintainers supply and retain real hardware, storage-media, UI-input, auxiliary, and safety evidence.
+- [x] **Phase 24: Hardware, Media, and Safety Evidence Execution** - Maintainers supply and retain real hardware, storage-media, UI-input, auxiliary, and safety evidence. (completed 2026-06-23)
 - [ ] **Phase 25: Live-Service Evidence Execution** - Maintainers supply and retain real Connect, PrusaLink/WUI, TLS, telemetry, proxy, transfer, and crash-dump evidence.
 - [ ] **Phase 26: Release, Signing, and Upstream Result Evidence** - Release managers supply secret-safe release outputs while maintainers receive upstream result rows for every cutover gate.
 - [ ] **Phase 27: Retained-Code and Maintainer Acceptance Decisions** - Maintainers record retained-code, residual-risk, exception, and final-readiness decisions as machine-readable inputs.
@@ -88,7 +88,7 @@ Full phase details are archived in `.planning/milestones/v1.1-ROADMAP.md`.
   4. Safety evidence cannot pass with missing scenario coverage, unredacted artifacts, or unresolved blocker rows.
 **Plans**: 1 plan
 Plans:
-- [ ] 24-01-PLAN.md - Phase 24 hardware/media/safety evidence execution wrapper
+- [x] 24-01-PLAN.md - Phase 24 hardware/media/safety evidence execution wrapper
 **UI hint**: yes
 
 ### Phase 25: Live-Service Evidence Execution
@@ -141,7 +141,7 @@ Plans:
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | EVID-01 | Phase 23 | Complete |
-| EVID-02 | Phase 24 | Pending |
+| EVID-02 | Phase 24 | Complete |
 | EVID-03 | Phase 25 | Pending |
 | EVID-04 | Phase 26 | Pending |
 | ACPT-01 | Phase 26 | Pending |
@@ -161,7 +161,7 @@ Phases execute in numeric order: 23 -> 24 -> 25 -> 26 -> 27 -> 28
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 23. Simulator Evidence Execution | v1.2 | 1/1 | Complete    | 2026-06-23 |
-| 24. Hardware, Media, and Safety Evidence Execution | v1.2 | 0/1 | Not started | - |
+| 24. Hardware, Media, and Safety Evidence Execution | v1.2 | 1/1 | Complete    | 2026-06-23 |
 | 25. Live-Service Evidence Execution | v1.2 | 0/TBD | Not started | - |
 | 26. Release, Signing, and Upstream Result Evidence | v1.2 | 0/TBD | Not started | - |
 | 27. Retained-Code and Maintainer Acceptance Decisions | v1.2 | 0/TBD | Not started | - |

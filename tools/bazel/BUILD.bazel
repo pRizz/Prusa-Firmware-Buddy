@@ -634,6 +634,40 @@ shell_binary(
 )
 
 filegroup(
+    name = "phase24_source_ref_manifests",
+    srcs = [
+        "manifests/phase15_hardware_evidence_contract.json",
+        "manifests/phase18_cutover_review_contract.json",
+        "manifests/phase19_aggregate_ci_evidence_contract.json",
+        "manifests/phase23_simulator_evidence_execution_contract.json",
+        "manifests/phase24_hardware_media_safety_evidence_execution_contract.json",
+        ":phase15_source_ref_manifests",
+    ],
+)
+
+shell_binary(
+    name = "phase24_verify",
+    src = "rust_workflow.sh",
+    data = [
+        "phase24_hardware_media_safety_evidence_execution.py",
+        "manifests/phase24_hardware_media_safety_evidence_execution_contract.json",
+        ":phase24_source_ref_manifests",
+        "//:phase24_hardware_media_safety_evidence_execution_docs",
+    ],
+)
+
+shell_binary(
+    name = "phase24_verify_tests",
+    src = "rust_workflow.sh",
+    data = [
+        "phase24_hardware_media_safety_evidence_execution.py",
+        "phase24_hardware_media_safety_evidence_execution_test.py",
+        "manifests/phase24_hardware_media_safety_evidence_execution_contract.json",
+        ":phase24_source_ref_manifests",
+    ],
+)
+
+filegroup(
     name = "unsafe_boundary_audit",
     srcs = ["manifests/unsafe_boundary_audit.json"],
 )

@@ -1,0 +1,116 @@
+{
+  "allowed_artifact_roots": [
+    "build/ci-evidence/phase24/",
+    "external://phase24/"
+  ],
+  "artifact_name": "phase24-hardware-media-safety-evidence-execution",
+  "blocking_source_statuses": [
+    "pending-hardware-input",
+    "manual-hardware-required",
+    "blocked-hardware-unavailable"
+  ],
+  "evidence_packet_required_fields": [
+    "evidence_run_id",
+    "phase_lifecycle_id",
+    "firmware_identity",
+    "operator",
+    "started_at",
+    "completed_at",
+    "source_contract_ref",
+    "scenario_results"
+  ],
+  "exception_required_fields": [
+    "owner",
+    "rationale",
+    "evidence_ref",
+    "revisit_condition"
+  ],
+  "id": "phase24_hardware_media_safety_evidence_execution_contract",
+  "output_root": "build/ci-evidence/phase24",
+  "phase": "24-hardware-media-and-safety-evidence-execution",
+  "phase_lifecycle_id": "24-2026-06-23T19-52-32",
+  "requirement_ids": [
+    "EVID-02"
+  ],
+  "required_artifact_kinds": [
+    "machine-readable-run-manifest",
+    "normalized-scenario-results",
+    "redacted-hardware-media-safety-summary",
+    "source-contract-snapshot",
+    "hardware-log-reference",
+    "operator-evidence-input",
+    "artifact-summary",
+    "upstream-result-row"
+  ],
+  "required_phase15_scenario_ids": [
+    "hard-supported-printer-smoke-coreone-xbuddy",
+    "hard-supported-printer-smoke-mini-buddy",
+    "hard-board-startup-readiness-mk4-xbuddy",
+    "hard-board-startup-readiness-xl-xlbuddy-puppies",
+    "hard-supported-printer-smoke-mk35-xbuddy",
+    "hard-supported-printer-smoke-ix-xbuddy",
+    "hard-supported-printer-smoke-xl-dev-kit-xlb",
+    "hard-board-startup-readiness-dwarf",
+    "hard-board-startup-readiness-modularbed",
+    "hard-board-startup-readiness-xl-dev-kit-xlb",
+    "hard-storage-usb-fatfs-removable-media",
+    "hard-storage-internal-flash-littlefs",
+    "hard-storage-bbf-littlefs-resource-image",
+    "hard-storage-eeprom-config-store",
+    "hard-storage-semihosting",
+    "hard-storage-root-libsysbase-dispatch",
+    "hard-ui-physical-input-encoder-touch",
+    "hard-safety-watchdog-crash-recovery",
+    "hard-safety-thermal-motion-emergency-stop",
+    "hard-safe-output-fatal-redscreen-bsod",
+    "hard-mmu-fault-handling",
+    "hard-rs485-modbus-fault-handling",
+    "hard-toolchanger-dock-offset-calibration",
+    "hard-auxiliary-controller-combination-coreone-xbe",
+    "hard-auxiliary-controller-combination-xl-dwarf-modularbed",
+    "hard-contract-traceability-and-redaction-boundary"
+  ],
+  "scenario_result_conditional_fields": [
+    "media_surface",
+    "auxiliary_surface",
+    "observed_behavior",
+    "failure_observations",
+    "exception_request"
+  ],
+  "scenario_result_required_fields": [
+    "scenario_id",
+    "status",
+    "source_status",
+    "status_reason",
+    "artifact_refs",
+    "redaction_status",
+    "source_ref_status",
+    "device",
+    "printer_family",
+    "board",
+    "firmware_build",
+    "operator",
+    "timestamp",
+    "residual_risk"
+  ],
+  "schema_version": "1",
+  "source_contracts": [
+    "tools/bazel/manifests/phase15_hardware_evidence_contract.json",
+    "tools/bazel/manifests/phase18_cutover_review_contract.json",
+    "tools/bazel/manifests/phase19_aggregate_ci_evidence_contract.json",
+    "tools/bazel/manifests/phase23_simulator_evidence_execution_contract.json"
+  ],
+  "status_vocabulary": [
+    "passed",
+    "failed",
+    "blocked",
+    "exception-requested"
+  ],
+  "upstream_result_row": {
+    "criterion_id": "final-hardware-safety-media-evidence",
+    "evidence_family": "hardware",
+    "requirement_ids": [
+      "EVID-02"
+    ]
+  }
+}

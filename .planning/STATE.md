@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Cutover Evidence Execution and Acceptance
 status: executing
-stopped_at: Phase 24 context gathered
-last_updated: "2026-06-23T20:33:31.105Z"
-last_activity: 2026-06-23 -- Phase 24 planning complete
+stopped_at: Phase 24 complete; Phase 25 ready to plan
+last_updated: "2026-06-23T20:55:26Z"
+last_activity: 2026-06-23 -- Phase 24 complete
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 2
-  completed_plans: 1
-  percent: 50
+  completed_plans: 2
+  percent: 100
 ---
 
 # Project State
@@ -21,24 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-23)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** v1.2 Cutover Evidence Execution and Acceptance - Phase 23 complete, Phase 24 ready to plan
+**Current focus:** v1.2 Cutover Evidence Execution and Acceptance - Phase 24 complete, Phase 25 ready to plan
 
 ## Current Position
 
 Milestone: v1.2 Cutover Evidence Execution and Acceptance - ACTIVE
-Phase: 24 of 28 (hardware, media, and safety evidence execution)
+Phase: 25 of 28 (live-service evidence execution)
 Plan: Not started
-Status: Ready to execute
-Last activity: 2026-06-23 -- Phase 24 planning complete
+Status: Ready to plan
+Last activity: 2026-06-23 -- Phase 24 complete
 
-Progress: [#         ] 17%
+Progress: [###       ] 33%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- v1.2 plans completed: 1
-- v1.2 phases completed: 1/6
+- v1.2 plans completed: 2
+- v1.2 phases completed: 2/6
 - Previous milestone baseline: v1.1 completed 13 plans across 10 phases
 
 **By Phase:**
@@ -46,7 +46,7 @@ Progress: [#         ] 17%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 23 | 1 | - | - |
-| 24 | TBD | - | - |
+| 24 | 1 | - | - |
 | 25 | TBD | - | - |
 | 26 | TBD | - | - |
 | 27 | TBD | - | - |
@@ -81,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-23T19:54:14.549Z
-Stopped at: Phase 24 context gathered
-Resume file: .planning/phases/24-hardware-media-and-safety-evidence-execution/24-CONTEXT.md
+Last session: 2026-06-23T20:55:26Z
+Stopped at: Phase 24 complete; Phase 25 ready to plan
+Resume file: .planning/ROADMAP.md

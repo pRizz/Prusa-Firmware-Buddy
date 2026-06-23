@@ -80,6 +80,10 @@ phase23-verify:
     bazel run //tools/bazel:phase23_verify_tests
     bazel run //tools/bazel:phase23_verify
 
+phase24-verify:
+    bazel run //tools/bazel:phase24_verify_tests
+    bazel run //tools/bazel:phase24_verify
+
 phase17-release-artifacts-smoke:
     bazel build //tools/bazel:phase17_representative_release_smoke
 
