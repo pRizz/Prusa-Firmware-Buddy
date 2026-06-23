@@ -86,7 +86,9 @@ Full phase details are archived in `.planning/milestones/v1.1-ROADMAP.md`.
   2. Watchdog, thermal, motion, safe-output, UI-input, MMU, RS485, and toolchanger scenarios have explicit result status and artifact refs.
   3. Storage-media evidence identifies media type, filesystem/resource behavior, failure observations, and residual risk.
   4. Safety evidence cannot pass with missing scenario coverage, unredacted artifacts, or unresolved blocker rows.
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 24-01-PLAN.md - Phase 24 hardware/media/safety evidence execution wrapper
 **UI hint**: yes
 
 ### Phase 25: Live-Service Evidence Execution
@@ -159,7 +161,7 @@ Phases execute in numeric order: 23 -> 24 -> 25 -> 26 -> 27 -> 28
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 23. Simulator Evidence Execution | v1.2 | 1/1 | Complete    | 2026-06-23 |
-| 24. Hardware, Media, and Safety Evidence Execution | v1.2 | 0/TBD | Not started | - |
+| 24. Hardware, Media, and Safety Evidence Execution | v1.2 | 0/1 | Not started | - |
 | 25. Live-Service Evidence Execution | v1.2 | 0/TBD | Not started | - |
 | 26. Release, Signing, and Upstream Result Evidence | v1.2 | 0/TBD | Not started | - |
 | 27. Retained-Code and Maintainer Acceptance Decisions | v1.2 | 0/TBD | Not started | - |

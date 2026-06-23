@@ -345,16 +345,14 @@ upstream_row = {
 
 One planning-horizon estimate is intentionally marked `[ASSUMED]`; all implementation-critical stack, architecture, and pitfall claims are verified from local files, command output, or cited planning context. [VERIFIED: research source audit]
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **No separate Phase 21 upstream-results manifest is present in this checkout.** [VERIFIED: rg --files tools/bazel/manifests | rg 'phase21|upstream']
    - What we know: Phase 18 contains the current upstream result vocabulary and validation logic. [VERIFIED: tools/bazel/manifests/phase18_cutover_review_contract.json] [VERIFIED: tools/bazel/phase18_cutover_review.py]
-   - What is still open: Phase 26-28 may introduce a new aggregate row contract, so Phase 24 should keep its upstream row explicit and easy to adapt. [CITED: .planning/ROADMAP.md]
-   - Recommendation: Plan against Phase 23's direct upstream row pattern and Phase 18's known row-field expectations, then add a TODO/test note if Phase 26 introduces a new aggregate row contract. [VERIFIED: tools/bazel/phase23_simulator_evidence_execution.py] [VERIFIED: tools/bazel/phase18_cutover_review.py]
+   - RESOLVED: Phase 24 will use the Phase 23 direct upstream row pattern, with `criterion_id=final-hardware-safety-media-evidence`, `evidence_family=hardware`, and `requirement_ids=["EVID-02"]`. Later Phase 26-28 aggregation can consume that row without changing Phase 24's retained packet contract. [VERIFIED: tools/bazel/phase23_simulator_evidence_execution.py] [VERIFIED: .planning/phases/24-hardware-media-and-safety-evidence-execution/24-01-PLAN.md]
 2. **Exact Phase 24 JSON filenames and field names are delegated to implementation.** [CITED: .planning/phases/24-hardware-media-and-safety-evidence-execution/24-CONTEXT.md]
    - What we know: Phase 23 output filenames are stable and machine-readable. [VERIFIED: tools/bazel/phase23_simulator_evidence_execution.py]
-   - What's unclear: Whether future phases prefer `hardware-media-safety-*` or shorter `hardware-*` filenames. [CITED: .planning/phases/24-hardware-media-and-safety-evidence-execution/24-CONTEXT.md]
-   - Recommendation: Use explicit `hardware-media-safety-*` filenames in Phase 24 and lock them with tests. [CITED: .planning/phases/24-hardware-media-and-safety-evidence-execution/24-CONTEXT.md]
+   - RESOLVED: Phase 24 will use explicit `hardware-media-safety-*` retained filenames and lock them with tests: `hardware-media-safety-result-manifest.json`, `normalized-hardware-media-safety-results.json`, `redacted-hardware-media-safety-summary.json`, `upstream-hardware-media-safety-result-row.json`, and `operator-hardware-media-safety-template.json`. [VERIFIED: .planning/phases/24-hardware-media-and-safety-evidence-execution/24-01-PLAN.md]
 
 ## Environment Availability
 
