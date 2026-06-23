@@ -85,7 +85,6 @@ This phase does not redesign the v1.0 parity contracts, does not treat simulator
 - `tools/bazel/phase18_cutover_review.py` - Upstream-result consumption, final-demotion blocking, exception coverage, and redaction/overclaim policy.
 - `tools/bazel/manifests/phase19_aggregate_ci_evidence_contract.json` - Aggregate evidence gate model and external-input placeholders for hardware/media/safety evidence.
 - `tools/bazel/phase19_aggregate_ci_evidence.py` - Aggregate evidence retention and external-input placeholder behavior.
-- `tools/bazel/manifests/phase21_final_readiness_upstream_results.json` - Upstream-result row model consumed by final readiness.
 - `tools/bazel/phase23_simulator_evidence_execution.py` - Current v1.2 execution-phase pattern for wrapping a v1.1 evidence contract with real evidence submission/retention semantics.
 - `tools/bazel/manifests/phase23_simulator_evidence_execution_contract.json` - Current v1.2 execution contract pattern and output root conventions.
 
