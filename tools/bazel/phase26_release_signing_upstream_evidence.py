@@ -117,6 +117,9 @@ PHASE20_REQUIRED_METADATA_GROUPS = [
     "provenance_metadata_required",
     "retention_metadata_required",
 ]
+PHASE20_OPTIONAL_METADATA_GROUPS = [
+    "comparison_metadata_required",
+]
 FORBIDDEN_FIELD_NAMES = {
     "binary_dump",
     "binary_dump_bytes",
@@ -463,6 +466,33 @@ def phase20_required_metadata_fields(contract_row: dict[str, Any]) -> list[str]:
     return list(dict.fromkeys(fields))
 
 
+def phase20_allowed_metadata_fields(contract_row: dict[str, Any]) -> list[str]:
+    fields = [
+        "id",
+        "artifact_surface",
+        "proof_class",
+        "status",
+        "mismatch_class",
+        *REQUIRED_PASS_METADATA,
+        *phase20_required_metadata_fields(contract_row),
+    ]
+    row_id = contract_row.get("id", "<unknown>")
+    for group in PHASE20_OPTIONAL_METADATA_GROUPS:
+        values = contract_row.get(group, [])
+        if not isinstance(values, list) or not all(isinstance(value, str) and value for value in values):
+            raise VerificationError(f"Phase 20 row {row_id} {group} must contain strings")
+        fields.extend(values)
+    return list(dict.fromkeys(fields))
+
+
+def sanitized_release_row(row: dict[str, Any], contract_row: dict[str, Any]) -> dict[str, Any]:
+    allowed_fields = set(phase20_allowed_metadata_fields(contract_row))
+    extra_fields = sorted(set(row) - allowed_fields)
+    if extra_fields:
+        raise VerificationError("release input contains unsupported fields: " + ", ".join(extra_fields))
+    return {field: row[field] for field in phase20_allowed_metadata_fields(contract_row) if field in row}
+
+
 def validate_required_phase20_metadata(
     row: dict[str, Any],
     contract_row: dict[str, Any],
@@ -584,7 +614,7 @@ def validate_release_input(root: Path, maybe_path: str | None) -> dict[str, dict
                 proof_class_vocabulary,
                 allowed_roots,
             )
-            parsed_rows[row_id] = dict(row)
+            parsed_rows[row_id] = sanitized_release_row(row, contract_by_id[row_id])
         except VerificationError as error:
             errors.append(str(error))
     missing = [row_id for row_id in expected_ids if row_id not in parsed_rows]

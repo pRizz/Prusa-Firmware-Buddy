@@ -377,6 +377,23 @@ class Phase26ReleaseSigningUpstreamEvidenceTest(unittest.TestCase):
             self.assertIn("forbidden release evidence marker", result.stdout)
             self.assertFalse(output_root.exists())
 
+    def test_unsupported_release_input_field_aborts_before_output_root_exists(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            rows = self.complete_release_rows(root)
+            rows[0]["apiToken"] = "operator-metadata-that-must-not-be-retained"
+            release_input = self.write_release_input(root, rows)
+            output_root = root / DEFAULT_OUTPUT_DIR
+
+            # Act
+            result = self.run_verifier(["--quick", "--release-input", release_input, "--output-dir", DEFAULT_OUTPUT_DIR], maybe_root=root)
+
+            # Assert
+            self.assertNotEqual(result.returncode, 0, result.stdout)
+            self.assertIn("release input contains unsupported fields: apiToken", result.stdout)
+            self.assertFalse(output_root.exists())
+
     def test_output_dir_rejects_absolute_parent_and_symlink_escapes(self) -> None:
         for bad_output_dir in ["/tmp/phase26", "../phase26"]:
             with self.subTest(output_dir=bad_output_dir):
