@@ -703,6 +703,43 @@ shell_binary(
 )
 
 filegroup(
+    name = "phase26_source_ref_manifests",
+    srcs = [
+        "manifests/phase17_release_candidate_evidence_contract.json",
+        "manifests/phase18_cutover_review_contract.json",
+        "manifests/phase19_aggregate_ci_evidence_contract.json",
+        "manifests/phase20_release_candidate_artifacts_contract.json",
+        "manifests/phase20_release_environment_inputs.template.json",
+        "manifests/phase23_simulator_evidence_execution_contract.json",
+        "manifests/phase24_hardware_media_safety_evidence_execution_contract.json",
+        "manifests/phase25_live_service_evidence_execution_contract.json",
+        "manifests/phase26_release_signing_upstream_evidence_contract.json",
+    ],
+)
+
+shell_binary(
+    name = "phase26_verify",
+    src = "rust_workflow.sh",
+    data = [
+        "phase26_release_signing_upstream_evidence.py",
+        "manifests/phase26_release_signing_upstream_evidence_contract.json",
+        ":phase26_source_ref_manifests",
+        "//:phase26_release_signing_upstream_evidence_docs",
+    ],
+)
+
+shell_binary(
+    name = "phase26_verify_tests",
+    src = "rust_workflow.sh",
+    data = [
+        "phase26_release_signing_upstream_evidence.py",
+        "phase26_release_signing_upstream_evidence_test.py",
+        "manifests/phase26_release_signing_upstream_evidence_contract.json",
+        ":phase26_source_ref_manifests",
+    ],
+)
+
+filegroup(
     name = "unsafe_boundary_audit",
     srcs = ["manifests/unsafe_boundary_audit.json"],
 )

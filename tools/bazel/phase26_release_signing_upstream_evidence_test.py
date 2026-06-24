@@ -61,6 +61,7 @@ RETAINED_OUTPUTS = [
     "contract-snapshots/phase20_release_candidate_artifacts_contract.json",
     "contract-snapshots/phase20_release_environment_inputs.template.json",
 ]
+WIRING_FILES = ["BUILD.bazel", "tools/bazel/BUILD.bazel", "tools/bazel/rust_workflow.sh", "justfile"]
 REQUIRED_ROW_IDS = [
     "rel-bin-firmware-image",
     "rel-bbf-firmware-package",
@@ -122,6 +123,17 @@ class Phase26ReleaseSigningUpstreamEvidenceTest(unittest.TestCase):
         input_path = root / path
         input_path.write_text(json.dumps({"evidence_rows": rows}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         return path
+
+    def write_file(self, root: Path, path: str, text: str) -> None:
+        full_path = root / path
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        full_path.write_text(text, encoding="utf-8")
+
+    def copy_wiring_files(self, root: Path) -> None:
+        for path in WIRING_FILES:
+            destination = root / path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ROOT / path, destination)
 
     def complete_release_rows(self, root: Path) -> list[dict[str, object]]:
         contract = self.read_json(root, PHASE20_CONTRACT)
@@ -504,6 +516,69 @@ class Phase26ReleaseSigningUpstreamEvidenceTest(unittest.TestCase):
             self.assertNotIn("final approval complete", lower_output)
             self.assertNotIn("retained-code accepted", lower_output)
             self.assertNotIn("accepted retained-code", lower_output)
+
+    def test_wiring_only_accepts_checked_in_phase26_wiring(self) -> None:
+        # Arrange
+        args = ["--wiring-only"]
+
+        # Act
+        result = self.run_verifier(args)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_wiring_only_rejects_missing_phase26_source_ref_filegroup(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_wiring_files(root)
+            tools_build = (root / "tools/bazel/BUILD.bazel").read_text(encoding="utf-8")
+            self.write_file(root, "tools/bazel/BUILD.bazel", tools_build.replace('name = "phase26_source_ref_manifests"', 'name = "phase26_source_refs_missing"'))
+
+            # Act
+            result = self.run_verifier(["--wiring-only"], maybe_root=root)
+
+            # Assert
+            self.assertNotEqual(result.returncode, 0, result.stdout)
+            self.assertIn("phase26_source_ref_manifests", result.stdout)
+
+    def test_wiring_only_rejects_workflow_order_drift(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_wiring_files(root)
+            workflow = (root / "tools/bazel/rust_workflow.sh").read_text(encoding="utf-8")
+            workflow = workflow.replace(
+                "python3 tools/bazel/phase26_release_signing_upstream_evidence.py --wiring-only\n    python3 tools/bazel/phase26_release_signing_upstream_evidence.py --quick --output-dir build/ci-evidence/phase26",
+                "python3 tools/bazel/phase26_release_signing_upstream_evidence.py --quick --output-dir build/ci-evidence/phase26\n    python3 tools/bazel/phase26_release_signing_upstream_evidence.py --wiring-only",
+            )
+            self.write_file(root, "tools/bazel/rust_workflow.sh", workflow)
+
+            # Act
+            result = self.run_verifier(["--wiring-only"], maybe_root=root)
+
+            # Assert
+            self.assertNotEqual(result.returncode, 0, result.stdout)
+            self.assertIn("must run --wiring-only before --quick", result.stdout)
+
+    def test_wiring_only_rejects_just_order_drift(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_wiring_files(root)
+            justfile = (root / "justfile").read_text(encoding="utf-8")
+            justfile = justfile.replace(
+                "phase26-verify:\n    bazel run //tools/bazel:phase26_verify_tests\n    bazel run //tools/bazel:phase26_verify",
+                "phase26-verify:\n    bazel run //tools/bazel:phase26_verify\n    bazel run //tools/bazel:phase26_verify_tests",
+            )
+            self.write_file(root, "justfile", justfile)
+
+            # Act
+            result = self.run_verifier(["--wiring-only"], maybe_root=root)
+
+            # Assert
+            self.assertNotEqual(result.returncode, 0, result.stdout)
+            self.assertIn("must run tests before verifier", result.stdout)
 
 
 if __name__ == "__main__":

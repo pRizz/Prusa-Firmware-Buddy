@@ -63,6 +63,28 @@ GENERATED_ARTIFACTS = [
     "contract-snapshots/phase20_release_environment_inputs.template.json",
 ]
 SNAPSHOT_CONTRACTS = [PHASE17_CONTRACT, PHASE18_CONTRACT, PHASE20_CONTRACT, PHASE20_RELEASE_INPUT_TEMPLATE]
+PHASE26_DOCS = [
+    ".planning/phases/26-release-signing-and-upstream-result-evidence/26-CONTEXT.md",
+    ".planning/phases/26-release-signing-and-upstream-result-evidence/26-RESEARCH.md",
+    ".planning/phases/26-release-signing-and-upstream-result-evidence/26-VALIDATION.md",
+    ".planning/phases/26-release-signing-and-upstream-result-evidence/26-01-PLAN.md",
+]
+PHASE26_SOURCE_REF_MANIFESTS = [
+    "manifests/phase17_release_candidate_evidence_contract.json",
+    "manifests/phase18_cutover_review_contract.json",
+    "manifests/phase19_aggregate_ci_evidence_contract.json",
+    "manifests/phase20_release_candidate_artifacts_contract.json",
+    "manifests/phase20_release_environment_inputs.template.json",
+    "manifests/phase23_simulator_evidence_execution_contract.json",
+    "manifests/phase24_hardware_media_safety_evidence_execution_contract.json",
+    "manifests/phase25_live_service_evidence_execution_contract.json",
+    "manifests/phase26_release_signing_upstream_evidence_contract.json",
+]
+PHASE26_VERIFY_COMMANDS = [
+    "python3 tools/bazel/phase26_release_signing_upstream_evidence.py --wiring-only",
+    "python3 tools/bazel/phase26_release_signing_upstream_evidence.py --quick --output-dir build/ci-evidence/phase26",
+]
+PHASE26_TEST_COMMAND = "python3 tools/bazel/phase26_release_signing_upstream_evidence_test.py"
 PASS_CAPABLE_PROOF_CLASSES = {"approved-release-run", "external-release-key-evidence"}
 NON_PASS_PROOF_CLASSES = {
     "template-only",
@@ -906,9 +928,138 @@ def check_security(root: Path) -> None:
         raise VerificationError("\n".join(errors))
 
 
+def require_file_contains(root: Path, path: Path, needles: list[str]) -> list[str]:
+    try:
+        text = read_text(root, path)
+    except VerificationError as error:
+        return [str(error)]
+    return [f"{path.as_posix()} missing required wiring text: {needle}" for needle in needles if needle not in text]
+
+
+def shell_case_commands(text: str, case_name: str) -> list[str] | None:
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if line.strip() != f"{case_name})":
+            continue
+        commands: list[str] = []
+        for body_line in lines[index + 1:]:
+            stripped = body_line.strip()
+            if stripped == ";;":
+                return commands
+            if stripped and not stripped.startswith("#"):
+                commands.append(stripped)
+        return commands
+    return None
+
+
+def just_recipe_commands(text: str, recipe_name: str) -> list[str] | None:
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if line.strip() != f"{recipe_name}:":
+            continue
+        commands: list[str] = []
+        for body_line in lines[index + 1:]:
+            if body_line and not body_line[0].isspace():
+                break
+            stripped = body_line.strip()
+            if stripped and not stripped.startswith("#"):
+                commands.append(stripped)
+        return commands
+    return None
+
+
+def missing_required_items(location: str, actual: list[str], expected: list[str]) -> list[str]:
+    actual_values = set(actual)
+    return [f"{location} missing required wiring item: {item}" for item in expected if item not in actual_values]
+
+
+def check_command_order(location: str, commands: list[str], first: str, second: str, message: str) -> list[str]:
+    if first not in commands or second not in commands:
+        return []
+    if commands.index(first) <= commands.index(second):
+        return []
+    return [f"{location} {message}"]
+
+
 def check_wiring(root: Path) -> None:
-    _ = root
-    print("Phase 26 wiring checks are added in the workflow wiring task")
+    errors: list[str] = []
+    errors.extend(
+        require_file_contains(
+            root,
+            Path("BUILD.bazel"),
+            [
+                'name = "phase26_release_signing_upstream_evidence_docs"',
+                'name = "phase26_verify"',
+                'actual = "//tools/bazel:phase26_verify"',
+                'name = "phase26_verify_tests"',
+                'actual = "//tools/bazel:phase26_verify_tests"',
+                *[f'"{doc}"' for doc in PHASE26_DOCS],
+            ],
+        )
+    )
+    errors.extend(
+        require_file_contains(
+            root,
+            Path("tools/bazel/BUILD.bazel"),
+            [
+                'name = "phase26_source_ref_manifests"',
+                'name = "phase26_verify"',
+                'name = "phase26_verify_tests"',
+                "phase26_release_signing_upstream_evidence.py",
+                "phase26_release_signing_upstream_evidence_test.py",
+                "phase26_release_signing_upstream_evidence_contract.json",
+                "//:phase26_release_signing_upstream_evidence_docs",
+                *[f'"{manifest}"' for manifest in PHASE26_SOURCE_REF_MANIFESTS],
+            ],
+        )
+    )
+    try:
+        workflow_text = read_text(root, Path("tools/bazel/rust_workflow.sh"))
+    except VerificationError as error:
+        errors.append(str(error))
+    else:
+        verify_commands = shell_case_commands(workflow_text, "phase26_verify")
+        test_commands = shell_case_commands(workflow_text, "phase26_verify_tests")
+        if verify_commands is None:
+            errors.append("tools/bazel/rust_workflow.sh phase26_verify case arm missing")
+        else:
+            errors.extend(missing_required_items("tools/bazel/rust_workflow.sh phase26_verify case arm", verify_commands, PHASE26_VERIFY_COMMANDS))
+            errors.extend(
+                check_command_order(
+                    "tools/bazel/rust_workflow.sh phase26_verify case arm",
+                    verify_commands,
+                    PHASE26_VERIFY_COMMANDS[0],
+                    PHASE26_VERIFY_COMMANDS[1],
+                    "must run --wiring-only before --quick",
+                )
+            )
+        if test_commands is None:
+            errors.append("tools/bazel/rust_workflow.sh phase26_verify_tests case arm missing")
+        else:
+            errors.extend(missing_required_items("tools/bazel/rust_workflow.sh phase26_verify_tests case arm", test_commands, [PHASE26_TEST_COMMAND]))
+    try:
+        just_text = read_text(root, Path("justfile"))
+    except VerificationError as error:
+        errors.append(str(error))
+    else:
+        just_commands = just_recipe_commands(just_text, "phase26-verify")
+        test_line = "bazel run //tools/bazel:phase26_verify_tests"
+        verify_line = "bazel run //tools/bazel:phase26_verify"
+        if just_commands is None:
+            errors.append("justfile phase26-verify recipe missing")
+        else:
+            errors.extend(missing_required_items("justfile phase26-verify recipe", just_commands, [test_line, verify_line]))
+            errors.extend(
+                check_command_order(
+                    "justfile phase26-verify recipe",
+                    just_commands,
+                    test_line,
+                    verify_line,
+                    "must run tests before verifier",
+                )
+            )
+    if errors:
+        raise VerificationError("\n".join(errors))
 
 
 def run_quick(root: Path, output_dir: Path, maybe_release_input: str | None) -> None:

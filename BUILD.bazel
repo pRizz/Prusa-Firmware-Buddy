@@ -211,6 +211,16 @@ filegroup(
 )
 
 filegroup(
+    name = "phase26_release_signing_upstream_evidence_docs",
+    srcs = [
+        ".planning/phases/26-release-signing-and-upstream-result-evidence/26-CONTEXT.md",
+        ".planning/phases/26-release-signing-and-upstream-result-evidence/26-RESEARCH.md",
+        ".planning/phases/26-release-signing-and-upstream-result-evidence/26-VALIDATION.md",
+        ".planning/phases/26-release-signing-and-upstream-result-evidence/26-01-PLAN.md",
+    ],
+)
+
+filegroup(
     name = "phase22_metadata_reconciliation_docs",
     srcs = [
         ".planning/REQUIREMENTS.md",
@@ -477,6 +487,16 @@ alias(
 alias(
     name = "phase25_verify_tests",
     actual = "//tools/bazel:phase25_verify_tests",
+)
+
+alias(
+    name = "phase26_verify",
+    actual = "//tools/bazel:phase26_verify",
+)
+
+alias(
+    name = "phase26_verify_tests",
+    actual = "//tools/bazel:phase26_verify_tests",
 )
 
 alias(
