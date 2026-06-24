@@ -111,6 +111,12 @@ REQUIRED_PASS_METADATA = [
     "residual_risk",
 ]
 REQUIRED_SIGNING_METADATA = ["key_identity_ref", "signing_mode"]
+PHASE20_REQUIRED_METADATA_GROUPS = [
+    "release_metadata_required",
+    "signing_metadata_required",
+    "provenance_metadata_required",
+    "retention_metadata_required",
+]
 FORBIDDEN_FIELD_NAMES = {
     "binary_dump",
     "binary_dump_bytes",
@@ -446,6 +452,41 @@ def validate_subject_digests(row: dict[str, Any], row_name: str, allowed_roots: 
             errors.append(f"{digest_name} sha256 must be lowercase SHA-256 hex")
 
 
+def phase20_required_metadata_fields(contract_row: dict[str, Any]) -> list[str]:
+    fields: list[str] = []
+    row_id = contract_row.get("id", "<unknown>")
+    for group in PHASE20_REQUIRED_METADATA_GROUPS:
+        values = contract_row.get(group, [])
+        if not isinstance(values, list) or not all(isinstance(value, str) and value for value in values):
+            raise VerificationError(f"Phase 20 row {row_id} {group} must contain strings")
+        fields.extend(values)
+    return list(dict.fromkeys(fields))
+
+
+def validate_required_phase20_metadata(
+    row: dict[str, Any],
+    contract_row: dict[str, Any],
+    row_name: str,
+    allowed_roots: list[str],
+    errors: list[str],
+) -> None:
+    try:
+        metadata_fields = phase20_required_metadata_fields(contract_row)
+    except VerificationError as error:
+        errors.append(str(error))
+        return
+    for field in metadata_fields:
+        try:
+            if field in {"artifact_refs", "retention_refs"}:
+                validate_ref_list(row, field, row_name, allowed_roots, require_nonempty=True)
+            elif field == "subject_digests":
+                validate_subject_digests(row, row_name, allowed_roots, errors)
+            else:
+                require_string(row, field, row_name)
+        except VerificationError as error:
+            errors.append(str(error))
+
+
 def release_input_rows(root: Path, maybe_path: str | None) -> list[dict[str, Any]]:
     input_path = Path(maybe_path) if maybe_path is not None else PHASE20_RELEASE_INPUT_TEMPLATE
     full_path = input_path if input_path.is_absolute() else root / input_path
@@ -504,12 +545,7 @@ def validate_release_row(
                     require_string(row, field, row_name)
             except VerificationError as error:
                 errors.append(str(error))
-        if contract_row.get("signing_metadata_required"):
-            for field in REQUIRED_SIGNING_METADATA:
-                try:
-                    require_string(row, field, row_name)
-                except VerificationError as error:
-                    errors.append(str(error))
+        validate_required_phase20_metadata(row, contract_row, row_name, allowed_roots, errors)
     mismatch_class = row.get("mismatch_class")
     mismatch_values = {"pass", "intentional-delta", "blocker", "deferred-retained-code-issue"}
     if mismatch_class is not None and mismatch_class not in mismatch_values:
@@ -773,29 +809,29 @@ def write_operator_template(root: Path, output_dir: Path, phase20_contract: dict
     rows = []
     for row in contract_rows(phase20_contract, PHASE20_CONTRACT):
         row_id = require_string(row, "id", "phase20 row")
-        rows.append(
-            {
-                "id": row_id,
-                "artifact_refs": [],
-                "artifact_surface": row.get("artifact_surface", ""),
-                "build_input_identity": "",
-                "key_identity_ref": "",
-                "mismatch_class": "",
-                "mismatch_reason": "",
-                "operator": "",
-                "owner_phase": "20-release-candidate-artifact-production",
-                "proof_class": "",
-                "release_run_id": "",
-                "residual_risk": "",
-                "retention_refs": [],
-                "signing_mode": "",
-                "status": "",
-                "subject_digests": [],
-                "timestamp": "",
-                "verification_outcome": "",
-                "affected_artifact_surface": row.get("artifact_surface", ""),
-            }
-        )
+        row_template = {
+            "id": row_id,
+            "artifact_refs": [],
+            "artifact_surface": row.get("artifact_surface", ""),
+            "build_input_identity": "",
+            "mismatch_class": "",
+            "mismatch_reason": "",
+            "operator": "",
+            "owner_phase": "20-release-candidate-artifact-production",
+            "proof_class": "",
+            "release_run_id": "",
+            "residual_risk": "",
+            "retention_refs": [],
+            "status": "",
+            "subject_digests": [],
+            "timestamp": "",
+            "verification_outcome": "",
+            "affected_artifact_surface": row.get("artifact_surface", ""),
+        }
+        for field in phase20_required_metadata_fields(row):
+            if field not in row_template:
+                row_template[field] = [] if field in {"artifact_refs", "retention_refs", "subject_digests"} else ""
+        rows.append(row_template)
     write_json(
         root,
         output_dir / "operator-release-input-template.json",

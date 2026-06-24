@@ -135,45 +135,74 @@ class Phase26ReleaseSigningUpstreamEvidenceTest(unittest.TestCase):
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(ROOT / path, destination)
 
+    def phase20_required_metadata_fields(self, contract_row: dict[str, object]) -> list[str]:
+        fields: list[str] = []
+        for group in [
+            "release_metadata_required",
+            "signing_metadata_required",
+            "provenance_metadata_required",
+            "retention_metadata_required",
+        ]:
+            values = contract_row.get(group, [])
+            if isinstance(values, list):
+                fields.extend(str(value) for value in values)
+        return list(dict.fromkeys(fields))
+
+    def release_metadata_value(self, field: str, row_id: str, artifact_ref: str) -> object:
+        if field == "artifact_refs":
+            return [artifact_ref]
+        if field == "retention_refs":
+            return ["external://phase20/retention/phase26-approved-run-001"]
+        if field == "subject_digests":
+            return [
+                {
+                    "artifact_ref": artifact_ref,
+                    "sha256": "a" * 64,
+                }
+            ]
+        if field == "key_identity_ref":
+            return "release-key-fingerprint:sha256:phase26-test"
+        if field == "signing_mode":
+            return "external-release-signing"
+        return f"phase26-test-{field.replace('_', '-')}:{row_id}"
+
     def complete_release_rows(self, root: Path) -> list[dict[str, object]]:
         contract = self.read_json(root, PHASE20_CONTRACT)
         contract_rows = contract["rows"]
-        artifact_surfaces = {
-            str(row["id"]): str(row["artifact_surface"])
-            for row in contract_rows
-            if isinstance(row, dict)
-        }
+        contract_by_id = {str(row["id"]): row for row in contract_rows if isinstance(row, dict)}
         rows: list[dict[str, object]] = []
         for row_id in REQUIRED_ROW_IDS:
+            contract_row = contract_by_id[row_id]
             artifact_ref = f"external://phase20/artifacts/{row_id}.json"
-            rows.append(
-                {
-                    "id": row_id,
-                    "artifact_refs": [artifact_ref],
-                    "artifact_surface": artifact_surfaces[row_id],
-                    "affected_artifact_surface": artifact_surfaces[row_id],
-                    "build_input_identity": "git:phase26-test-build;bazel:phase17_release_candidate_artifacts",
-                    "key_identity_ref": "release-key-fingerprint:sha256:phase26-test",
-                    "mismatch_class": "pass",
-                    "mismatch_reason": "Approved release metadata matched the archived reference classification.",
-                    "operator": "phase26-test-operator",
-                    "owner_phase": "20-release-candidate-artifact-production",
-                    "proof_class": "approved-release-run",
-                    "release_run_id": "phase26-approved-run-001",
-                    "residual_risk": "Limited to supplied release-environment evidence.",
-                    "retention_refs": ["external://phase20/retention/phase26-approved-run-001"],
-                    "signing_mode": "external-release-signing",
-                    "status": "passed",
-                    "subject_digests": [
-                        {
-                            "artifact_ref": artifact_ref,
-                            "sha256": "a" * 64,
-                        }
-                    ],
-                    "timestamp": "2026-06-24T14:00:00Z",
-                    "verification_outcome": "approved-release-metadata",
-                }
-            )
+            artifact_surface = str(contract_row["artifact_surface"])
+            row = {
+                "id": row_id,
+                "artifact_refs": [artifact_ref],
+                "artifact_surface": artifact_surface,
+                "affected_artifact_surface": artifact_surface,
+                "build_input_identity": "git:phase26-test-build;bazel:phase17_release_candidate_artifacts",
+                "mismatch_class": "pass",
+                "mismatch_reason": "Approved release metadata matched the archived reference classification.",
+                "operator": "phase26-test-operator",
+                "owner_phase": "20-release-candidate-artifact-production",
+                "proof_class": "approved-release-run",
+                "release_run_id": "phase26-approved-run-001",
+                "residual_risk": "Limited to supplied release-environment evidence.",
+                "retention_refs": ["external://phase20/retention/phase26-approved-run-001"],
+                "status": "passed",
+                "subject_digests": [
+                    {
+                        "artifact_ref": artifact_ref,
+                        "sha256": "a" * 64,
+                    }
+                ],
+                "timestamp": "2026-06-24T14:00:00Z",
+                "verification_outcome": "approved-release-metadata",
+            }
+            for field in self.phase20_required_metadata_fields(contract_row):
+                if field not in row:
+                    row[field] = self.release_metadata_value(field, row_id, artifact_ref)
+            rows.append(row)
         return rows
 
     def test_contract_lists_phase26_policy_and_phase20_rows(self) -> None:
@@ -279,6 +308,23 @@ class Phase26ReleaseSigningUpstreamEvidenceTest(unittest.TestCase):
             # Assert
             self.assertNotEqual(result.returncode, 0, result.stdout)
             self.assertIn("key_identity_ref must be a non-empty string", result.stdout)
+
+    def test_passed_redaction_boundary_requires_phase20_metadata(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            rows = self.complete_release_rows(root)
+            for row in rows:
+                if row["id"] == "rel-contract-traceability-redaction-boundary":
+                    del row["redaction_scan"]
+            release_input = self.write_release_input(root, rows)
+
+            # Act
+            result = self.run_verifier(["--quick", "--release-input", release_input], maybe_root=root)
+
+            # Assert
+            self.assertNotEqual(result.returncode, 0, result.stdout)
+            self.assertIn("redaction_scan must be a non-empty string", result.stdout)
 
     def test_release_candidate_cannot_pass_phase26(self) -> None:
         # Arrange
