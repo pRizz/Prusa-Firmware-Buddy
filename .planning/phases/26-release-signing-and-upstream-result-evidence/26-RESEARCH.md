@@ -402,17 +402,17 @@ Source pattern: Phase 23 quick mode writes blocked placeholder evidence with `re
 |---|-------|---------|---------------|
 | — | No unverified factual claims were intentionally included; recommendations are derived from repo contracts and context loaded in this research session. | All sections | — |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Should Phase 26 emit a Phase 18-compatible `upstream_result_packet` in addition to its Phase 26-native manifest?** [VERIFIED: `tools/bazel/phase18_cutover_review.py`; `tools/bazel/manifests/phase18_cutover_review_contract.json`]
+1. **RESOLVED: Phase 26 emits a Phase 26-native upstream manifest as the required output. A Phase 18-compatible view is optional only if it can pass validation without lying about owning phase, lifecycle, or approved roots.** [VERIFIED: `tools/bazel/phase18_cutover_review.py`; `tools/bazel/manifests/phase18_cutover_review_contract.json`]
    - What we know: Phase 18 requires `upstream_result_packet.phase` to equal `18-retained-code-acceptance-and-cutover-review`, requires the Phase 18 lifecycle ID, and validates artifact refs against roots from Phase 18 requirements. [VERIFIED: `tools/bazel/phase18_cutover_review.py`; `tools/bazel/manifests/phase18_cutover_review_contract.json`]
-   - What's unclear: Phase 26 is scoped to produce rows for Phase 27/28, but Phase 18's approved roots for simulator/hardware/live still point at Phase 19 aggregate outputs rather than Phase 23-25 v1.2 output roots. [VERIFIED: `.planning/phases/26-release-signing-and-upstream-result-evidence/26-CONTEXT.md`; `tools/bazel/manifests/phase18_cutover_review_contract.json`]
-   - Recommendation: Plan a Phase 26-native upstream manifest as the required output; add an optional compatibility view only if it can pass Phase 18 validation without lying about owning phase, lifecycle, or approved roots. [VERIFIED: `.planning/phases/26-release-signing-and-upstream-result-evidence/26-CONTEXT.md`; `tools/bazel/phase18_cutover_review.py`]
+   - Resolution basis: Phase 26 is scoped to produce rows for Phase 27/28, but Phase 18's approved roots for simulator/hardware/live still point at Phase 19 aggregate outputs rather than Phase 23-25 v1.2 output roots. [VERIFIED: `.planning/phases/26-release-signing-and-upstream-result-evidence/26-CONTEXT.md`; `tools/bazel/manifests/phase18_cutover_review_contract.json`]
+   - Planner decision: Plan the Phase 26-native upstream manifest as the mandatory output; avoid a required Phase 18 packet unless implementation can keep Phase 18 ownership, lifecycle, and approved-root semantics truthful. [VERIFIED: `.planning/phases/26-release-signing-and-upstream-result-evidence/26-01-PLAN.md`; `tools/bazel/phase18_cutover_review.py`]
 
-2. **Should Phase 26 import Phase 20/18 verifier functions or duplicate only the minimal contract checks?** [VERIFIED: `tools/bazel/phase20_release_candidate_artifacts.py`; `tools/bazel/phase18_cutover_review.py`]
+2. **RESOLVED: Phase 26 loads canonical Phase 18/20 JSON contracts and implements minimal Phase 26-local validation helpers instead of importing whole prior verifier scripts.** [VERIFIED: `tools/bazel/phase20_release_candidate_artifacts.py`; `tools/bazel/phase18_cutover_review.py`]
    - What we know: Existing tools are standalone scripts but have import-safe `if __name__ == "__main__"` guards. [VERIFIED: `tools/bazel/phase20_release_candidate_artifacts.py`; `tools/bazel/phase18_cutover_review.py`]
-   - What's unclear: The codebase does not currently expose these verifiers as a shared library package. [VERIFIED: `tools/bazel/phase20_release_candidate_artifacts.py`; `tools/bazel/BUILD.bazel`]
-   - Recommendation: Prefer loading canonical JSON contracts and reusing small local helpers/patterns over importing the whole Phase 18 script; tests should prevent drift from Phase 18/20 contracts. [VERIFIED: `standards/core/architecture.md`; `tools/bazel/phase20_release_candidate_artifacts_test.py`; `tools/bazel/phase18_cutover_review_test.py`]
+   - Resolution basis: The codebase does not currently expose these verifiers as a shared library package. [VERIFIED: `tools/bazel/phase20_release_candidate_artifacts.py`; `tools/bazel/BUILD.bazel`]
+   - Planner decision: Prefer loading canonical JSON contracts and reusing small local helpers/patterns over importing the whole Phase 18 script; tests should prevent drift from Phase 18/20 contracts. [VERIFIED: `standards/core/architecture.md`; `.planning/phases/26-release-signing-and-upstream-result-evidence/26-01-PLAN.md`; `tools/bazel/phase20_release_candidate_artifacts_test.py`; `tools/bazel/phase18_cutover_review_test.py`]
 
 ## Environment Availability
 
