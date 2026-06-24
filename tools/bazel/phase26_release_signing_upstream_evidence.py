@@ -4,7 +4,9 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -13,9 +15,54 @@ ROOT = Path(__file__).resolve().parents[2]
 PHASE = "26-release-signing-and-upstream-result-evidence"
 PHASE_LIFECYCLE_ID = "26-2026-06-24T13-36-46"
 CONTRACT_MANIFEST = Path("tools/bazel/manifests/phase26_release_signing_upstream_evidence_contract.json")
+PHASE17_CONTRACT = Path("tools/bazel/manifests/phase17_release_candidate_evidence_contract.json")
+PHASE18_CONTRACT = Path("tools/bazel/manifests/phase18_cutover_review_contract.json")
 PHASE20_CONTRACT = Path("tools/bazel/manifests/phase20_release_candidate_artifacts_contract.json")
 PHASE20_RELEASE_INPUT_TEMPLATE = Path("tools/bazel/manifests/phase20_release_environment_inputs.template.json")
 DEFAULT_OUTPUT_DIR = Path("build/ci-evidence/phase26")
+UPSTREAM_RESULT_ROW_FIELDS = [
+    "criterion_id",
+    "evidence_family",
+    "requirement_ids",
+    "source_requirement_ids",
+    "owning_phase",
+    "source_lifecycle_id",
+    "source_lifecycle_status",
+    "evidence_refs",
+    "artifact_refs",
+    "status",
+    "failure_reason",
+    "redaction_status",
+    "source_ref_status",
+    "exception_status",
+    "maintainer_state",
+    "generated_at_utc",
+]
+CANONICAL_PHASE18_CRITERIA = [
+    "final-ci-evidence",
+    "final-simulator-evidence",
+    "final-hardware-safety-media-evidence",
+    "final-live-network-transfer-evidence",
+    "final-release-artifact-signing-evidence",
+    "final-retained-code-acceptance",
+    "final-residual-risk-review",
+    "final-maintainer-decision",
+    "final-reference-demotion-allowed",
+]
+GENERATED_ARTIFACTS = [
+    "release-upstream-run-manifest.json",
+    "normalized-release-evidence-summary.json",
+    "upstream-result-row-table.json",
+    "upstream-result-manifest.json",
+    "redaction-provenance-summary.json",
+    "artifact-reference-summary.json",
+    "operator-release-input-template.json",
+    "contract-snapshots/phase17_release_candidate_evidence_contract.json",
+    "contract-snapshots/phase18_cutover_review_contract.json",
+    "contract-snapshots/phase20_release_candidate_artifacts_contract.json",
+    "contract-snapshots/phase20_release_environment_inputs.template.json",
+]
+SNAPSHOT_CONTRACTS = [PHASE17_CONTRACT, PHASE18_CONTRACT, PHASE20_CONTRACT, PHASE20_RELEASE_INPUT_TEMPLATE]
 PASS_CAPABLE_PROOF_CLASSES = {"approved-release-run", "external-release-key-evidence"}
 NON_PASS_PROOF_CLASSES = {
     "template-only",
@@ -85,6 +132,10 @@ class VerificationError(Exception):
     pass
 
 
+def utc_now() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
 def read_text(root: Path, path: Path) -> str:
     full_path = root / path
     if not full_path.exists():
@@ -100,6 +151,12 @@ def load_json(root: Path, path: Path) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise VerificationError(f"{path.as_posix()} must contain a top-level object")
     return data
+
+
+def write_json(root: Path, path: Path, data: Any) -> None:
+    full_path = root / path
+    full_path.parent.mkdir(parents=True, exist_ok=True)
+    full_path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def require_string(row: dict[str, Any], field: str, row_name: str) -> str:
@@ -186,13 +243,34 @@ def phase20_proof_class_vocabulary(phase20_contract: dict[str, Any]) -> set[str]
     return set(values)
 
 
+def phase18_upstream_requirements(phase18_contract: dict[str, Any]) -> list[dict[str, Any]]:
+    requirements = phase18_contract.get("upstream_result_requirements")
+    if not isinstance(requirements, list):
+        raise VerificationError(f"{PHASE18_CONTRACT.as_posix()} must contain upstream_result_requirements")
+    parsed: list[dict[str, Any]] = []
+    for index, requirement in enumerate(requirements):
+        if not isinstance(requirement, dict):
+            raise VerificationError(f"{PHASE18_CONTRACT.as_posix()} upstream_result_requirements[{index}] must be an object")
+        parsed.append(requirement)
+    return parsed
+
+
+def phase18_upstream_status_vocabulary(phase18_contract: dict[str, Any]) -> set[str]:
+    values = phase18_contract.get("upstream_result_status_vocabulary")
+    if not isinstance(values, list) or not all(isinstance(value, str) and value for value in values):
+        raise VerificationError(f"{PHASE18_CONTRACT.as_posix()} upstream_result_status_vocabulary must contain strings")
+    return set(values)
+
+
 def check_contract(root: Path) -> dict[str, Any]:
     contract_text = read_text(root, CONTRACT_MANIFEST)
     reject_forbidden_text(CONTRACT_MANIFEST, contract_text)
     contract = load_json(root, CONTRACT_MANIFEST)
     reject_forbidden_field_names(contract, CONTRACT_MANIFEST.as_posix())
     phase20_contract = load_json(root, PHASE20_CONTRACT)
+    phase18_contract = load_json(root, PHASE18_CONTRACT)
     phase20_row_ids = phase20_release_row_ids(phase20_contract)
+    phase18_criteria = [str(row.get("criterion_id")) for row in phase18_upstream_requirements(phase18_contract)]
     errors: list[str] = []
     expected_top_level = {
         "schema_version": "1",
@@ -239,6 +317,26 @@ def check_contract(root: Path) -> dict[str, Any]:
             errors.append("release_policy required_pass_metadata must match Phase 26 pass metadata")
         if release_policy.get("required_signing_metadata_when_phase20_requires_signing") != REQUIRED_SIGNING_METADATA:
             errors.append("release_policy required signing metadata must require key_identity_ref and signing_mode")
+    upstream_policy = contract.get("upstream_policy")
+    if not isinstance(upstream_policy, dict):
+        errors.append(f"{CONTRACT_MANIFEST.as_posix()} upstream_policy must be an object")
+    else:
+        if upstream_policy.get("phase18_contract") != PHASE18_CONTRACT.as_posix():
+            errors.append("upstream_policy phase18_contract must name the Phase 18 contract")
+        if upstream_policy.get("canonical_phase18_criteria") != phase18_criteria:
+            errors.append("upstream_policy canonical_phase18_criteria must match Phase 18 upstream criteria exactly")
+        if upstream_policy.get("row_required_fields") != UPSTREAM_RESULT_ROW_FIELDS:
+            errors.append("upstream_policy row_required_fields must match the Phase 26 upstream row schema")
+        if upstream_policy.get("release_requirement_ids") != ["EVID-04", "ACPT-01"]:
+            errors.append("upstream_policy release_requirement_ids must be EVID-04 and ACPT-01")
+        if upstream_policy.get("default_requirement_ids") != ["ACPT-01"]:
+            errors.append("upstream_policy default_requirement_ids must be ACPT-01")
+        mappings = upstream_policy.get("compatibility_mappings")
+        phase25_mapping = mappings.get("phase25_compact_criterion_id") if isinstance(mappings, dict) else None
+        if not isinstance(phase25_mapping, dict) or phase25_mapping.get("to") != "final-live-network-transfer-evidence":
+            errors.append("upstream_policy must map Phase 25 compact live-service rows to the Phase 18 live-network criterion")
+    if contract.get("generated_artifacts") != GENERATED_ARTIFACTS:
+        errors.append("generated_artifacts must list the Phase 26 retained output files exactly")
     if errors:
         raise VerificationError("\n".join(errors))
     return contract
@@ -442,6 +540,359 @@ def validate_release_input(root: Path, maybe_path: str | None) -> dict[str, dict
     return parsed_rows
 
 
+def release_status_counts(rows: dict[str, dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in rows.values():
+        status = str(row["status"])
+        counts[status] = counts.get(status, 0) + 1
+    return counts
+
+
+def aggregate_release_status(rows: dict[str, dict[str, Any]]) -> str:
+    statuses = {str(row["status"]) for row in rows.values()}
+    for status in [
+        "rejected-redaction",
+        "rejected-overclaim",
+        "failed",
+        "blocked",
+        "blocked-signing-key-unavailable",
+        "external-signing-required",
+        "release-run-required",
+        "pending-release-input",
+        "source-contract-passed",
+    ]:
+        if status in statuses:
+            return status
+    if statuses == {"passed"}:
+        return "passed"
+    return "blocked"
+
+
+def release_failure_reason(status: str, real_release_evidence_supplied: bool) -> str:
+    if status == "passed":
+        return "none"
+    if not real_release_evidence_supplied:
+        return "Release-manager evidence input was not supplied; quick mode used the checked-in Phase 20 template."
+    return f"Release evidence aggregate status is {status}; all Phase 20 rows must pass with Phase 26-approved proof classes."
+
+
+def phase26_requirement_ids(criterion_id: str) -> list[str]:
+    if criterion_id == "final-release-artifact-signing-evidence":
+        return ["EVID-04", "ACPT-01"]
+    return ["ACPT-01"]
+
+
+def default_upstream_status(criterion_id: str, release_status: str) -> str:
+    return {
+        "final-ci-evidence": "pending-ci-input",
+        "final-simulator-evidence": "pending-simulator-input",
+        "final-hardware-safety-media-evidence": "pending-hardware-input",
+        "final-live-network-transfer-evidence": "pending-live-input",
+        "final-release-artifact-signing-evidence": release_status,
+        "final-retained-code-acceptance": "blocked",
+        "final-residual-risk-review": "not-required",
+        "final-maintainer-decision": "pending",
+        "final-reference-demotion-allowed": "blocked",
+    }[criterion_id]
+
+
+def default_maintainer_state(criterion_id: str) -> str:
+    if criterion_id in {"final-retained-code-acceptance", "final-reference-demotion-allowed"}:
+        return "blocked"
+    if criterion_id == "final-residual-risk-review":
+        return "not-required"
+    return "pending"
+
+
+def default_failure_reason(criterion_id: str, status: str, release_reason: str) -> str:
+    if criterion_id == "final-release-artifact-signing-evidence":
+        return release_reason
+    if criterion_id == "final-ci-evidence":
+        return "Aggregate CI cutover evidence is outside Phase 26 quick input and remains pending."
+    if criterion_id == "final-simulator-evidence":
+        return "Simulator evidence is owned by Phase 23 and remains pending for final cutover review."
+    if criterion_id == "final-hardware-safety-media-evidence":
+        return "Hardware, media, and safety evidence is owned by Phase 24 and remains pending for final cutover review."
+    if criterion_id == "final-live-network-transfer-evidence":
+        return "Live-service evidence is owned by Phase 25 and maps to the Phase 18 live-network criterion."
+    if criterion_id == "final-retained-code-acceptance":
+        return "Retained-code acceptance is deferred to Phase 27 and cannot be approved by Phase 26."
+    if criterion_id == "final-residual-risk-review":
+        return "Residual-risk review is not required in Phase 26; Phase 27 owns acceptance input."
+    if criterion_id == "final-maintainer-decision":
+        return "Maintainer final readiness decision is pending and belongs to Phase 28."
+    if criterion_id == "final-reference-demotion-allowed":
+        return "Reference demotion requires explicit Phase 28 maintainer approval and is blocked by default."
+    return f"Upstream criterion remains {status}."
+
+
+def evidence_refs_for_criterion(criterion_id: str) -> list[str]:
+    return {
+        "final-ci-evidence": [
+            ".planning/phases/23-simulator-evidence-execution/23-01-SUMMARY.md",
+            ".planning/phases/24-hardware-media-and-safety-evidence-execution/24-01-SUMMARY.md",
+            ".planning/phases/25-live-service-evidence-execution/25-01-SUMMARY.md",
+        ],
+        "final-simulator-evidence": [
+            ".planning/phases/23-simulator-evidence-execution/23-01-SUMMARY.md",
+            "tools/bazel/manifests/phase23_simulator_evidence_execution_contract.json",
+        ],
+        "final-hardware-safety-media-evidence": [
+            ".planning/phases/24-hardware-media-and-safety-evidence-execution/24-01-SUMMARY.md",
+            "tools/bazel/manifests/phase24_hardware_media_safety_evidence_execution_contract.json",
+        ],
+        "final-live-network-transfer-evidence": [
+            ".planning/phases/25-live-service-evidence-execution/25-01-SUMMARY.md",
+            "tools/bazel/manifests/phase25_live_service_evidence_execution_contract.json",
+        ],
+        "final-release-artifact-signing-evidence": [
+            (DEFAULT_OUTPUT_DIR / "normalized-release-evidence-summary.json").as_posix(),
+            (DEFAULT_OUTPUT_DIR / "redaction-provenance-summary.json").as_posix(),
+        ],
+        "final-retained-code-acceptance": [
+            "tools/bazel/manifests/phase18_cutover_review_contract.json#final-retained-code-acceptance",
+        ],
+        "final-residual-risk-review": [
+            "tools/bazel/manifests/phase18_cutover_review_contract.json#final-residual-risk-review",
+        ],
+        "final-maintainer-decision": [
+            "tools/bazel/manifests/phase18_cutover_review_contract.json#final-maintainer-decision",
+        ],
+        "final-reference-demotion-allowed": [
+            "tools/bazel/manifests/phase18_cutover_review_contract.json#final-reference-demotion-allowed",
+        ],
+    }[criterion_id]
+
+
+def artifact_refs_for_criterion(output_dir: Path, criterion_id: str) -> list[str]:
+    if criterion_id == "final-release-artifact-signing-evidence":
+        return [
+            (output_dir / "normalized-release-evidence-summary.json").as_posix(),
+            (output_dir / "artifact-reference-summary.json").as_posix(),
+        ]
+    return [
+        (output_dir / "upstream-result-row-table.json").as_posix(),
+        (output_dir / "upstream-result-manifest.json").as_posix(),
+    ]
+
+
+def normalize_upstream_row(row: dict[str, Any], requirement: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(row)
+    status = require_string(normalized, "status", f"upstream row {row.get('criterion_id', '<missing>')}")
+    exception_coverable = set(requirement.get("exception_coverable_statuses", []))
+    hard_blocking_statuses = set(requirement.get("hard_blocking_statuses", []))
+    acceptable_statuses = set(requirement.get("acceptable_statuses", []))
+    if normalized.get("redaction_status") != "passed":
+        normalized["status"] = "blocked"
+        normalized["failure_reason"] = "redaction-failed: redaction_status must be passed before upstream review"
+        normalized["maintainer_state"] = "blocked"
+    elif normalized.get("source_ref_status") != "passed":
+        normalized["status"] = "blocked"
+        normalized["failure_reason"] = "source-ref-failed: source_ref_status must be passed before upstream review"
+        normalized["maintainer_state"] = "blocked"
+    elif normalized.get("source_lifecycle_status") not in {"current", "not-required"}:
+        normalized["status"] = "blocked"
+        normalized["failure_reason"] = "lifecycle-mismatch: source lifecycle is not current"
+        normalized["maintainer_state"] = "blocked"
+    elif status in hard_blocking_statuses:
+        normalized["maintainer_state"] = "blocked"
+    elif status not in acceptable_statuses and status not in exception_coverable:
+        normalized["maintainer_state"] = "blocked"
+    return normalized
+
+
+def build_upstream_rows(
+    root: Path,
+    output_dir: Path,
+    release_rows: dict[str, dict[str, Any]],
+    real_release_evidence_supplied: bool,
+    generated_at: str,
+) -> list[dict[str, Any]]:
+    phase18_contract = load_json(root, PHASE18_CONTRACT)
+    status_vocabulary = phase18_upstream_status_vocabulary(phase18_contract)
+    release_status = aggregate_release_status(release_rows)
+    release_reason = release_failure_reason(release_status, real_release_evidence_supplied)
+    rows: list[dict[str, Any]] = []
+    for requirement in phase18_upstream_requirements(phase18_contract):
+        criterion_id = require_string(requirement, "criterion_id", "upstream_result_requirement")
+        status = default_upstream_status(criterion_id, release_status)
+        if status not in status_vocabulary:
+            raise VerificationError(f"{criterion_id} produced unknown upstream status: {status}")
+        row = {
+            "artifact_refs": artifact_refs_for_criterion(output_dir, criterion_id),
+            "criterion_id": criterion_id,
+            "evidence_family": require_string(requirement, "evidence_family", criterion_id),
+            "evidence_refs": evidence_refs_for_criterion(criterion_id),
+            "exception_status": "none",
+            "failure_reason": default_failure_reason(criterion_id, status, release_reason),
+            "generated_at_utc": generated_at,
+            "maintainer_state": default_maintainer_state(criterion_id),
+            "owning_phase": require_string(requirement, "source_phase", criterion_id),
+            "redaction_status": "passed",
+            "requirement_ids": phase26_requirement_ids(criterion_id),
+            "source_lifecycle_id": require_string(requirement, "source_lifecycle_id", criterion_id),
+            "source_lifecycle_status": "current",
+            "source_ref_status": "passed",
+            "source_requirement_ids": require_list(requirement, "requirement_ids", criterion_id),
+            "status": status,
+        }
+        normalized = normalize_upstream_row(row, requirement)
+        missing = [field for field in UPSTREAM_RESULT_ROW_FIELDS if field not in normalized]
+        if missing:
+            raise VerificationError(f"{criterion_id} normalized upstream row missing fields: {', '.join(missing)}")
+        rows.append(normalized)
+    row_ids = [str(row["criterion_id"]) for row in rows]
+    if row_ids != CANONICAL_PHASE18_CRITERIA:
+        raise VerificationError("normalized upstream rows must match the nine canonical Phase 18 criteria")
+    return rows
+
+
+def write_operator_template(root: Path, output_dir: Path, phase20_contract: dict[str, Any]) -> None:
+    rows = []
+    for row in contract_rows(phase20_contract, PHASE20_CONTRACT):
+        row_id = require_string(row, "id", "phase20 row")
+        rows.append(
+            {
+                "id": row_id,
+                "artifact_refs": [],
+                "artifact_surface": row.get("artifact_surface", ""),
+                "build_input_identity": "",
+                "key_identity_ref": "",
+                "mismatch_class": "",
+                "mismatch_reason": "",
+                "operator": "",
+                "owner_phase": "20-release-candidate-artifact-production",
+                "proof_class": "",
+                "release_run_id": "",
+                "residual_risk": "",
+                "retention_refs": [],
+                "signing_mode": "",
+                "status": "",
+                "subject_digests": [],
+                "timestamp": "",
+                "verification_outcome": "",
+                "affected_artifact_surface": row.get("artifact_surface", ""),
+            }
+        )
+    write_json(
+        root,
+        output_dir / "operator-release-input-template.json",
+        {
+            "schema_version": "1",
+            "phase": PHASE,
+            "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
+            "evidence_rows": rows,
+        },
+    )
+
+
+def write_contract_snapshots(root: Path, output_dir: Path) -> None:
+    snapshots_dir = root / output_dir / "contract-snapshots"
+    snapshots_dir.mkdir(parents=True, exist_ok=True)
+    for snapshot in SNAPSHOT_CONTRACTS:
+        shutil.copy2(root / snapshot, snapshots_dir / snapshot.name)
+
+
+def reset_output_root(root: Path, output_dir: Path) -> Path:
+    relative_output_dir, full_output_dir = validate_output_dir(root, output_dir)
+    if full_output_dir.exists():
+        shutil.rmtree(full_output_dir)
+    full_output_dir.mkdir(parents=True, exist_ok=True)
+    return relative_output_dir
+
+
+def write_retained_outputs(
+    root: Path,
+    output_dir: Path,
+    release_rows: dict[str, dict[str, Any]],
+    real_release_evidence_supplied: bool,
+) -> None:
+    generated_at = utc_now()
+    phase20_contract = load_json(root, PHASE20_CONTRACT)
+    upstream_rows = build_upstream_rows(root, output_dir, release_rows, real_release_evidence_supplied, generated_at)
+    release_status = aggregate_release_status(release_rows)
+    release_counts = release_status_counts(release_rows)
+    release_summary = {
+        "phase": PHASE,
+        "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
+        "generated_at_utc": generated_at,
+        "real_release_evidence_supplied": real_release_evidence_supplied,
+        "release_status": release_status,
+        "status_counts": release_counts,
+        "row_count": len(release_rows),
+        "rows": list(release_rows.values()),
+    }
+    artifact_refs = sorted(
+        {
+            ref
+            for row in release_rows.values()
+            for field in ["artifact_refs", "retention_refs"]
+            for ref in row.get(field, [])
+            if isinstance(ref, str) and ref
+        }
+    )
+    digest_refs = [
+        digest
+        for row in release_rows.values()
+        for digest in row.get("subject_digests", [])
+        if isinstance(digest, dict)
+    ]
+    write_json(
+        root,
+        output_dir / "release-upstream-run-manifest.json",
+        {
+            "artifact_name": "phase26-release-signing-upstream-evidence",
+            "generated_at_utc": generated_at,
+            "output_root": output_dir.as_posix(),
+            "phase": PHASE,
+            "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
+            "real_release_evidence_supplied": real_release_evidence_supplied,
+            "release_status": release_status,
+            "upstream_criteria_count": len(upstream_rows),
+            "generated_artifacts": GENERATED_ARTIFACTS,
+        },
+    )
+    write_json(root, output_dir / "normalized-release-evidence-summary.json", release_summary)
+    write_json(root, output_dir / "upstream-result-row-table.json", {"rows": upstream_rows})
+    write_json(
+        root,
+        output_dir / "upstream-result-manifest.json",
+        {
+            "generated_at_utc": generated_at,
+            "phase": PHASE,
+            "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
+            "rows": upstream_rows,
+            "source_contract": PHASE18_CONTRACT.as_posix(),
+        },
+    )
+    write_json(
+        root,
+        output_dir / "redaction-provenance-summary.json",
+        {
+            "generated_at_utc": generated_at,
+            "phase": PHASE,
+            "redaction_status": "passed",
+            "retained_private_key_material": False,
+            "retained_raw_payloads": False,
+            "retained_credentials": False,
+            "signing_identity_mode": "reference-only",
+        },
+    )
+    write_json(
+        root,
+        output_dir / "artifact-reference-summary.json",
+        {
+            "artifact_refs": artifact_refs,
+            "digest_refs": digest_refs,
+            "generated_at_utc": generated_at,
+            "phase": PHASE,
+            "real_release_evidence_supplied": real_release_evidence_supplied,
+        },
+    )
+    write_operator_template(root, output_dir, phase20_contract)
+    write_contract_snapshots(root, output_dir)
+
+
 def check_security(root: Path) -> None:
     errors: list[str] = []
     for path in [CONTRACT_MANIFEST, PHASE20_RELEASE_INPUT_TEMPLATE]:
@@ -463,8 +914,9 @@ def check_wiring(root: Path) -> None:
 def run_quick(root: Path, output_dir: Path, maybe_release_input: str | None) -> None:
     check_contract(root)
     check_security(root)
-    validate_output_dir(root, output_dir)
-    validate_release_input(root, maybe_release_input)
+    release_rows = validate_release_input(root, maybe_release_input)
+    relative_output_dir = reset_output_root(root, output_dir)
+    write_retained_outputs(root, relative_output_dir, release_rows, maybe_release_input is not None)
 
 
 def main() -> int:

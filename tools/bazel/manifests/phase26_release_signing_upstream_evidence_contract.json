@@ -86,5 +86,63 @@
       "build/ci-evidence/phase20/",
       "external://phase20/"
     ]
-  }
+  },
+  "upstream_policy": {
+    "phase18_contract": "tools/bazel/manifests/phase18_cutover_review_contract.json",
+    "canonical_phase18_criteria": [
+      "final-ci-evidence",
+      "final-simulator-evidence",
+      "final-hardware-safety-media-evidence",
+      "final-live-network-transfer-evidence",
+      "final-release-artifact-signing-evidence",
+      "final-retained-code-acceptance",
+      "final-residual-risk-review",
+      "final-maintainer-decision",
+      "final-reference-demotion-allowed"
+    ],
+    "compatibility_mappings": {
+      "phase25_compact_criterion_id": {
+        "from": "final-live-service-evidence",
+        "to": "final-live-network-transfer-evidence"
+      }
+    },
+    "row_required_fields": [
+      "criterion_id",
+      "evidence_family",
+      "requirement_ids",
+      "source_requirement_ids",
+      "owning_phase",
+      "source_lifecycle_id",
+      "source_lifecycle_status",
+      "evidence_refs",
+      "artifact_refs",
+      "status",
+      "failure_reason",
+      "redaction_status",
+      "source_ref_status",
+      "exception_status",
+      "maintainer_state",
+      "generated_at_utc"
+    ],
+    "release_requirement_ids": [
+      "EVID-04",
+      "ACPT-01"
+    ],
+    "default_requirement_ids": [
+      "ACPT-01"
+    ]
+  },
+  "generated_artifacts": [
+    "release-upstream-run-manifest.json",
+    "normalized-release-evidence-summary.json",
+    "upstream-result-row-table.json",
+    "upstream-result-manifest.json",
+    "redaction-provenance-summary.json",
+    "artifact-reference-summary.json",
+    "operator-release-input-template.json",
+    "contract-snapshots/phase17_release_candidate_evidence_contract.json",
+    "contract-snapshots/phase18_cutover_review_contract.json",
+    "contract-snapshots/phase20_release_candidate_artifacts_contract.json",
+    "contract-snapshots/phase20_release_environment_inputs.template.json"
+  ]
 }

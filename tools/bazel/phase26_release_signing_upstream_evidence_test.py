@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import json
+import importlib.util
 import shutil
 import subprocess
 import tempfile
 import unittest
+from types import ModuleType
 from pathlib import Path
 
 
@@ -17,6 +19,48 @@ PHASE18_CONTRACT = "tools/bazel/manifests/phase18_cutover_review_contract.json"
 PHASE20_CONTRACT = "tools/bazel/manifests/phase20_release_candidate_artifacts_contract.json"
 PHASE20_TEMPLATE = "tools/bazel/manifests/phase20_release_environment_inputs.template.json"
 DEFAULT_OUTPUT_DIR = "build/ci-evidence/phase26"
+REQUIRED_UPSTREAM_CRITERIA = {
+    "final-ci-evidence",
+    "final-simulator-evidence",
+    "final-hardware-safety-media-evidence",
+    "final-live-network-transfer-evidence",
+    "final-release-artifact-signing-evidence",
+    "final-retained-code-acceptance",
+    "final-residual-risk-review",
+    "final-maintainer-decision",
+    "final-reference-demotion-allowed",
+}
+REQUIRED_UPSTREAM_FIELDS = {
+    "criterion_id",
+    "evidence_family",
+    "requirement_ids",
+    "source_requirement_ids",
+    "owning_phase",
+    "source_lifecycle_id",
+    "source_lifecycle_status",
+    "evidence_refs",
+    "artifact_refs",
+    "status",
+    "failure_reason",
+    "redaction_status",
+    "source_ref_status",
+    "exception_status",
+    "maintainer_state",
+    "generated_at_utc",
+}
+RETAINED_OUTPUTS = [
+    "release-upstream-run-manifest.json",
+    "normalized-release-evidence-summary.json",
+    "upstream-result-row-table.json",
+    "upstream-result-manifest.json",
+    "redaction-provenance-summary.json",
+    "artifact-reference-summary.json",
+    "operator-release-input-template.json",
+    "contract-snapshots/phase17_release_candidate_evidence_contract.json",
+    "contract-snapshots/phase18_cutover_review_contract.json",
+    "contract-snapshots/phase20_release_candidate_artifacts_contract.json",
+    "contract-snapshots/phase20_release_environment_inputs.template.json",
+]
 REQUIRED_ROW_IDS = [
     "rel-bin-firmware-image",
     "rel-bbf-firmware-package",
@@ -40,6 +84,15 @@ REQUIRED_ROW_IDS = [
 
 
 class Phase26ReleaseSigningUpstreamEvidenceTest(unittest.TestCase):
+    @classmethod
+    def load_verifier_module(cls) -> ModuleType:
+        spec = importlib.util.spec_from_file_location("phase26_release_signing_upstream_evidence", VERIFIER)
+        if spec is None or spec.loader is None:
+            raise RuntimeError("failed to load Phase 26 verifier module")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
     def make_temp_root(self) -> tuple[tempfile.TemporaryDirectory[str], Path]:
         temp_dir = tempfile.TemporaryDirectory()
         root = Path(temp_dir.name)
@@ -126,6 +179,8 @@ class Phase26ReleaseSigningUpstreamEvidenceTest(unittest.TestCase):
         self.assertEqual(release_policy["canonical_phase20_release_row_ids"], REQUIRED_ROW_IDS)
         self.assertIn("approved-release-run", release_policy["pass_capable_proof_classes"])
         self.assertIn("external-release-key-evidence", release_policy["pass_capable_proof_classes"])
+        self.assertEqual(set(contract["upstream_policy"]["canonical_phase18_criteria"]), REQUIRED_UPSTREAM_CRITERIA)
+        self.assertEqual(set(contract["upstream_policy"]["row_required_fields"]), REQUIRED_UPSTREAM_FIELDS)
 
     def test_security_only_accepts_checked_in_safe_inputs(self) -> None:
         # Arrange
@@ -292,6 +347,163 @@ class Phase26ReleaseSigningUpstreamEvidenceTest(unittest.TestCase):
             # Assert
             self.assertNotEqual(result.returncode, 0, result.stdout)
             self.assertIn("symlink escape risk", result.stdout)
+
+    def test_quick_writes_retained_outputs(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            output_root = root / DEFAULT_OUTPUT_DIR
+
+            # Act
+            result = self.run_verifier(["--quick", "--output-dir", DEFAULT_OUTPUT_DIR], maybe_root=root)
+
+            # Assert
+            self.assertEqual(result.returncode, 0, result.stdout)
+            for retained_output in RETAINED_OUTPUTS:
+                self.assertTrue((output_root / retained_output).exists(), retained_output)
+
+    def test_quick_upstream_rows_cover_phase18_schema(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            result = self.run_verifier(["--quick", "--output-dir", DEFAULT_OUTPUT_DIR], maybe_root=root)
+            self.assertEqual(result.returncode, 0, result.stdout)
+
+            # Act
+            rows = self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/upstream-result-row-table.json")["rows"]
+
+            # Assert
+            self.assertEqual({row["criterion_id"] for row in rows}, REQUIRED_UPSTREAM_CRITERIA)
+            self.assertTrue(all(REQUIRED_UPSTREAM_FIELDS <= set(row) for row in rows))
+            release_row = next(row for row in rows if row["criterion_id"] == "final-release-artifact-signing-evidence")
+            self.assertEqual(release_row["requirement_ids"], ["EVID-04", "ACPT-01"])
+            self.assertTrue(
+                all(row["requirement_ids"] == ["ACPT-01"] for row in rows if row["criterion_id"] != "final-release-artifact-signing-evidence")
+            )
+            self.assertTrue(all(row["maintainer_state"] in {"pending", "blocked", "not-required"} for row in rows))
+
+    def test_quick_marks_real_release_evidence_as_not_supplied(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            result = self.run_verifier(["--quick", "--output-dir", DEFAULT_OUTPUT_DIR], maybe_root=root)
+            self.assertEqual(result.returncode, 0, result.stdout)
+
+            # Act
+            manifest = self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/release-upstream-run-manifest.json")
+            rows = self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/upstream-result-row-table.json")["rows"]
+
+            # Assert
+            self.assertFalse(manifest["real_release_evidence_supplied"])
+            release_row = next(row for row in rows if row["criterion_id"] == "final-release-artifact-signing-evidence")
+            self.assertEqual(release_row["status"], "pending-release-input")
+            self.assertEqual(release_row["exception_status"], "none")
+            self.assertEqual(release_row["maintainer_state"], "pending")
+
+    def test_redaction_failure_is_hard_blocker(self) -> None:
+        # Arrange
+        module = self.load_verifier_module()
+        requirement = {
+            "acceptable_statuses": ["passed"],
+            "exception_coverable_statuses": ["failed", "blocked"],
+            "hard_blocking_statuses": ["rejected-redaction"],
+        }
+        row = {
+            "criterion_id": "final-release-artifact-signing-evidence",
+            "status": "passed",
+            "redaction_status": "failed",
+            "source_ref_status": "passed",
+            "source_lifecycle_status": "current",
+            "failure_reason": "none",
+            "maintainer_state": "pending",
+        }
+
+        # Act
+        normalized = module.normalize_upstream_row(row, requirement)
+
+        # Assert
+        self.assertEqual(normalized["status"], "blocked")
+        self.assertIn("redaction-failed", normalized["failure_reason"])
+        self.assertEqual(normalized["maintainer_state"], "blocked")
+
+    def test_lifecycle_and_source_ref_failures_block_rows(self) -> None:
+        module = self.load_verifier_module()
+        requirement = {
+            "acceptable_statuses": ["passed"],
+            "exception_coverable_statuses": ["failed", "blocked"],
+            "hard_blocking_statuses": ["rejected-redaction"],
+        }
+        cases = [
+            ("source_ref_status", "invalid", "source-ref-failed"),
+            ("source_lifecycle_status", "stale", "lifecycle-mismatch"),
+        ]
+        for field, value, expected_reason in cases:
+            with self.subTest(field=field):
+                # Arrange
+                row = {
+                    "criterion_id": "final-ci-evidence",
+                    "status": "passed",
+                    "redaction_status": "passed",
+                    "source_ref_status": "passed",
+                    "source_lifecycle_status": "current",
+                    "failure_reason": "none",
+                    "maintainer_state": "pending",
+                }
+                row[field] = value
+
+                # Act
+                normalized = module.normalize_upstream_row(row, requirement)
+
+                # Assert
+                self.assertEqual(normalized["status"], "blocked")
+                self.assertIn(expected_reason, normalized["failure_reason"])
+                self.assertEqual(normalized["maintainer_state"], "blocked")
+
+    def test_exception_coverable_status_does_not_become_passed(self) -> None:
+        # Arrange
+        module = self.load_verifier_module()
+        requirement = {
+            "acceptable_statuses": ["passed"],
+            "exception_coverable_statuses": ["failed"],
+            "hard_blocking_statuses": ["rejected-redaction"],
+        }
+        row = {
+            "criterion_id": "final-ci-evidence",
+            "status": "failed",
+            "redaction_status": "passed",
+            "source_ref_status": "passed",
+            "source_lifecycle_status": "current",
+            "exception_status": "exception-approved",
+            "failure_reason": "failed source row",
+            "maintainer_state": "pending",
+        }
+
+        # Act
+        normalized = module.normalize_upstream_row(row, requirement)
+
+        # Assert
+        self.assertEqual(normalized["status"], "failed")
+        self.assertEqual(normalized["exception_status"], "exception-approved")
+        self.assertNotEqual(normalized["status"], "passed")
+
+    def test_quick_outputs_do_not_overclaim_later_acceptance(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            result = self.run_verifier(["--quick", "--output-dir", DEFAULT_OUTPUT_DIR], maybe_root=root)
+            self.assertEqual(result.returncode, 0, result.stdout)
+            combined_output = "\n".join(
+                path.read_text(encoding="utf-8") for path in sorted((root / DEFAULT_OUTPUT_DIR).rglob("*.json"))
+            )
+
+            # Act
+            lower_output = combined_output.lower()
+
+            # Assert
+            self.assertNotIn("demotion_allowed\": true", lower_output)
+            self.assertNotIn("final approval complete", lower_output)
+            self.assertNotIn("retained-code accepted", lower_output)
+            self.assertNotIn("accepted retained-code", lower_output)
 
 
 if __name__ == "__main__":
