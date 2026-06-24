@@ -1,0 +1,90 @@
+{
+  "schema_version": "1",
+  "id": "phase26_release_signing_upstream_evidence_contract",
+  "artifact_name": "phase26-release-signing-upstream-evidence",
+  "phase": "26-release-signing-and-upstream-result-evidence",
+  "phase_lifecycle_id": "26-2026-06-24T13-36-46",
+  "output_root": "build/ci-evidence/phase26",
+  "source_contracts": [
+    {
+      "id": "phase17_release_candidate_evidence_contract",
+      "path": "tools/bazel/manifests/phase17_release_candidate_evidence_contract.json",
+      "purpose": "release artifact and signing evidence source rows"
+    },
+    {
+      "id": "phase20_release_candidate_artifacts_contract",
+      "path": "tools/bazel/manifests/phase20_release_candidate_artifacts_contract.json",
+      "purpose": "canonical release row IDs and pass metadata policy"
+    },
+    {
+      "id": "phase20_release_environment_inputs_template",
+      "path": "tools/bazel/manifests/phase20_release_environment_inputs.template.json",
+      "purpose": "secret-safe release-manager input packet shape"
+    },
+    {
+      "id": "phase18_cutover_review_contract",
+      "path": "tools/bazel/manifests/phase18_cutover_review_contract.json",
+      "purpose": "canonical upstream cutover review criteria"
+    }
+  ],
+  "release_policy": {
+    "phase20_contract": "tools/bazel/manifests/phase20_release_candidate_artifacts_contract.json",
+    "phase20_input_template": "tools/bazel/manifests/phase20_release_environment_inputs.template.json",
+    "canonical_phase20_release_row_ids": [
+      "rel-bin-firmware-image",
+      "rel-bbf-firmware-package",
+      "rel-dfu-update-package",
+      "rel-map-and-provenance",
+      "rel-resource-image-package",
+      "rel-language-bundles",
+      "rel-wui-assets",
+      "rel-esp-packages",
+      "rel-mmu-package",
+      "rel-auxiliary-dwarf-firmware",
+      "rel-auxiliary-modularbed-firmware",
+      "rel-auxiliary-xbuddy-extension-firmware",
+      "rel-package-manifests",
+      "rel-signing-key-identity",
+      "rel-build-input-identity",
+      "rel-artifact-retention",
+      "rel-reference-comparison-report",
+      "rel-contract-traceability-redaction-boundary"
+    ],
+    "pass_capable_proof_classes": [
+      "approved-release-run",
+      "external-release-key-evidence"
+    ],
+    "non_pass_proof_classes": [
+      "template-only",
+      "local-smoke",
+      "pending-release-input",
+      "release-run-required",
+      "external-signing-required",
+      "blocked-signing-key-unavailable",
+      "release-candidate"
+    ],
+    "required_pass_metadata": [
+      "release_run_id",
+      "artifact_refs",
+      "operator",
+      "timestamp",
+      "subject_digests",
+      "build_input_identity",
+      "retention_refs",
+      "verification_outcome",
+      "mismatch_class",
+      "mismatch_reason",
+      "owner_phase",
+      "affected_artifact_surface",
+      "residual_risk"
+    ],
+    "required_signing_metadata_when_phase20_requires_signing": [
+      "key_identity_ref",
+      "signing_mode"
+    ],
+    "allowed_ref_roots": [
+      "build/ci-evidence/phase20/",
+      "external://phase20/"
+    ]
+  }
+}
