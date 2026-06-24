@@ -120,6 +120,7 @@ PHASE20_REQUIRED_METADATA_GROUPS = [
 PHASE20_OPTIONAL_METADATA_GROUPS = [
     "comparison_metadata_required",
 ]
+DIGEST_FIELDS = {"artifact_ref", "sha256"}
 FORBIDDEN_FIELD_NAMES = {
     "binary_dump",
     "binary_dump_bytes",
@@ -432,15 +433,29 @@ def validate_ref_list(
     return refs
 
 
-def validate_subject_digests(row: dict[str, Any], row_name: str, allowed_roots: list[str], errors: list[str]) -> None:
+def validate_subject_digests(
+    row: dict[str, Any],
+    row_name: str,
+    allowed_roots: list[str],
+    errors: list[str],
+    require_nonempty: bool = True,
+) -> None:
     subject_digests = row.get("subject_digests")
-    if not isinstance(subject_digests, list) or not subject_digests:
-        errors.append(f"{row_name} subject_digests must be non-empty")
+    if not isinstance(subject_digests, list):
+        errors.append(f"{row_name} subject_digests must be a list")
+        return
+    if not subject_digests:
+        if require_nonempty:
+            errors.append(f"{row_name} subject_digests must be non-empty")
         return
     for index, digest_row in enumerate(subject_digests):
         digest_name = f"{row_name} subject_digests[{index}]"
         if not isinstance(digest_row, dict):
             errors.append(f"{digest_name} must be an object")
+            continue
+        extra_fields = sorted(set(digest_row) - DIGEST_FIELDS)
+        if extra_fields:
+            errors.append(f"{digest_name} contains unsupported fields: {', '.join(extra_fields)}")
             continue
         artifact_ref = digest_row.get("artifact_ref")
         if not isinstance(artifact_ref, str):
@@ -490,7 +505,14 @@ def sanitized_release_row(row: dict[str, Any], contract_row: dict[str, Any]) -> 
     extra_fields = sorted(set(row) - allowed_fields)
     if extra_fields:
         raise VerificationError("release input contains unsupported fields: " + ", ".join(extra_fields))
-    return {field: row[field] for field in phase20_allowed_metadata_fields(contract_row) if field in row}
+    sanitized = {field: row[field] for field in phase20_allowed_metadata_fields(contract_row) if field in row}
+    if "subject_digests" in sanitized:
+        sanitized["subject_digests"] = [
+            {"artifact_ref": digest["artifact_ref"], "sha256": digest["sha256"]}
+            for digest in sanitized["subject_digests"]
+            if isinstance(digest, dict) and DIGEST_FIELDS <= digest.keys()
+        ]
+    return sanitized
 
 
 def validate_required_phase20_metadata(
@@ -562,6 +584,8 @@ def validate_release_row(
             validate_ref_list(row, field, row_name, allowed_roots, require_nonempty=status == "passed")
         except VerificationError as error:
             errors.append(str(error))
+    if status != "passed" and "subject_digests" in row:
+        validate_subject_digests(row, row_name, allowed_roots, errors, require_nonempty=False)
     if status == "passed":
         if proof_class not in PASS_CAPABLE_PROOF_CLASSES:
             errors.append(f"{row_name} cannot pass with proof_class={proof_class!r}; release-candidate cannot pass Phase 26")
