@@ -4,14 +4,14 @@ milestone: v1.2
 milestone_name: Cutover Evidence Execution and Acceptance
 status: executing
 stopped_at: Phase 26 context gathered
-last_updated: "2026-06-24T14:11:41.521Z"
-last_activity: 2026-06-24 -- Phase 26 execution started
+last_updated: "2026-06-24T15:13:42.627Z"
+last_activity: 2026-06-24
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 4
-  completed_plans: 3
-  percent: 75
+  completed_plans: 4
+  percent: 67
 ---
 
 # Project State
@@ -21,24 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-23)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Phase 26 — Release, Signing, and Upstream Result Evidence
+**Current focus:** Phase 27 — Retained-Code and Maintainer Acceptance Decisions
 
 ## Current Position
 
 Milestone: v1.2 Cutover Evidence Execution and Acceptance - ACTIVE
-Phase: 26 (Release, Signing, and Upstream Result Evidence) — EXECUTING
-Plan: 1 of 1
-Status: Executing Phase 26
-Last activity: 2026-06-24 -- Phase 26 execution started
+Phase: 27
+Plan: Not started
+Status: Phase 26 complete; Phase 27 ready to plan
+Last activity: 2026-06-24
 
-Progress: [#####     ] 50%
+Progress: [#######   ] 67%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- v1.2 plans completed: 3
-- v1.2 phases completed: 3/6
+- v1.2 plans completed: 4
+- v1.2 phases completed: 4/6
 - Previous milestone baseline: v1.1 completed 13 plans across 10 phases
 
 **By Phase:**
@@ -48,13 +48,13 @@ Progress: [#####     ] 50%
 | 23 | 1 | - | - |
 | 24 | 1 | - | - |
 | 25 | 1 | - | - |
-| 26 | TBD | - | - |
+| 26 | 1 | - | - |
 | 27 | TBD | - | - |
 | 28 | TBD | - | - |
 
 **Recent Trend:**
 
-- Last 5 completed plans: Phase 22 P02, Phase 22 P03, Phase 23 P01, Phase 24 P01, Phase 25 P01
+- Last 5 completed plans: Phase 22 P03, Phase 23 P01, Phase 24 P01, Phase 25 P01, Phase 26 P01
 - Trend: v1.2 begins execution of real evidence and acceptance gates after v1.1 gate-capability hardening
 
 ## Accumulated Context

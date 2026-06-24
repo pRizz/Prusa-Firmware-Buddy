@@ -59,7 +59,7 @@ Full phase details are archived in `.planning/milestones/v1.1-ROADMAP.md`.
 - [x] **Phase 23: Simulator Evidence Execution** - Maintainers supply and retain real simulator results for startup, G-code, GUI, storage, transfer, and selected failure flows. (completed 2026-06-23)
 - [x] **Phase 24: Hardware, Media, and Safety Evidence Execution** - Maintainers supply and retain real hardware, storage-media, UI-input, auxiliary, and safety evidence. (completed 2026-06-23)
 - [x] **Phase 25: Live-Service Evidence Execution** - Maintainers supply and retain real Connect, PrusaLink/WUI, TLS, telemetry, proxy, transfer, and crash-dump evidence. (completed 2026-06-23)
-- [ ] **Phase 26: Release, Signing, and Upstream Result Evidence** - Release managers supply secret-safe release outputs while maintainers receive upstream result rows for every cutover gate.
+- [x] **Phase 26: Release, Signing, and Upstream Result Evidence** - Release managers supply secret-safe release outputs while maintainers receive upstream result rows for every cutover gate. (completed 2026-06-24)
 - [ ] **Phase 27: Retained-Code and Maintainer Acceptance Decisions** - Maintainers record retained-code, residual-risk, exception, and final-readiness decisions as machine-readable inputs.
 - [ ] **Phase 28: Final Readiness Packet and Demotion Gate** - Maintainers generate the final readiness packet while reference demotion stays blocked unless explicitly approved.
 
@@ -113,7 +113,8 @@ Plans:
   2. Maintainer can inspect upstream result rows for simulator, hardware/media/safety, live-service, release/signing, retained-code, and final-readiness gates.
   3. Every upstream row names requirement IDs, owning phase or gate, evidence ref, lifecycle status, exception status, and maintainer state.
   4. Missing, stale, failed, secret-tainted, or schema-invalid rows remain blocked until corrected or explicitly exception-approved.
-**Plans**: TBD
+Plans:
+- [x] 26-01-PLAN.md - Phase 26 release/signing/upstream evidence wrapper
 
 ### Phase 27: Retained-Code and Maintainer Acceptance Decisions
 **Goal**: Maintainers can record retained-code, residual-risk, exception, and final-readiness acceptance decisions as machine-readable inputs.
@@ -164,6 +165,6 @@ Phases execute in numeric order: 23 -> 24 -> 25 -> 26 -> 27 -> 28
 | 23. Simulator Evidence Execution | v1.2 | 1/1 | Complete    | 2026-06-23 |
 | 24. Hardware, Media, and Safety Evidence Execution | v1.2 | 1/1 | Complete    | 2026-06-23 |
 | 25. Live-Service Evidence Execution | v1.2 | 1/1 | Complete    | 2026-06-23 |
-| 26. Release, Signing, and Upstream Result Evidence | v1.2 | 0/TBD | Not started | - |
+| 26. Release, Signing, and Upstream Result Evidence | v1.2 | 1/1 | Complete    | 2026-06-24 |
 | 27. Retained-Code and Maintainer Acceptance Decisions | v1.2 | 0/TBD | Not started | - |
 | 28. Final Readiness Packet and Demotion Gate | v1.2 | 0/TBD | Not started | - |

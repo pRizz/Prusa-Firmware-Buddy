@@ -1,5 +1,9 @@
 ---
 phase: 26-release-signing-and-upstream-result-evidence
+generated_by: gsd-execute-phase
+lifecycle_mode: yolo
+phase_lifecycle_id: 26-2026-06-24T13-36-46
+generated_at: 2026-06-24T14:33:40Z
 plan: "01"
 subsystem: release-signing-upstream-evidence
 tags:
