@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Cutover Evidence Execution and Acceptance
-status: executing
+status: complete
 stopped_at: Phase 28 context gathered
-last_updated: "2026-06-25T04:09:53.913Z"
-last_activity: 2026-06-25 -- Phase 28 execution started
+last_updated: "2026-06-25T05:05:27.332Z"
+last_activity: 2026-06-25
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 6
-  completed_plans: 5
-  percent: 83
+  completed_plans: 6
+  percent: 100
 ---
 
 # Project State
@@ -21,24 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-23)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Phase 28 — final-readiness-packet-and-demotion-gate
+**Current focus:** v1.2 complete — final readiness packet and demotion gate verified
 
 ## Current Position
 
-Milestone: v1.2 Cutover Evidence Execution and Acceptance - ACTIVE
-Phase: 28 (final-readiness-packet-and-demotion-gate) — EXECUTING
-Plan: 1 of 1
-Status: Executing Phase 28
-Last activity: 2026-06-25 -- Phase 28 execution started
+Milestone: v1.2 Cutover Evidence Execution and Acceptance - COMPLETE
+Phase: 28
+Plan: 1 of 1 complete
+Status: Phase 28 complete; milestone ready for archival
+Last activity: 2026-06-25
 
-Progress: [########  ] 83%
+Progress: [##########] 100%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- v1.2 plans completed: 5
-- v1.2 phases completed: 5/6
+- v1.2 plans completed: 6
+- v1.2 phases completed: 6/6
 - Previous milestone baseline: v1.1 completed 13 plans across 10 phases
 
 **By Phase:**
@@ -50,12 +50,12 @@ Progress: [########  ] 83%
 | 25 | 1 | - | - |
 | 26 | 1 | - | - |
 | 27 | 1 | - | - |
-| 28 | TBD | - | - |
+| 28 | 1 | - | - |
 
 **Recent Trend:**
 
-- Last 5 completed plans: Phase 23 P01, Phase 24 P01, Phase 25 P01, Phase 26 P01, Phase 27 P01
-- Trend: v1.2 begins execution of real evidence and acceptance gates after v1.1 gate-capability hardening
+- Last 5 completed plans: Phase 24 P01, Phase 25 P01, Phase 26 P01, Phase 27 P01, Phase 28 P01
+- Trend: v1.2 completed execution and acceptance gate tooling through the final readiness packet and explicit reference-demotion gate
 
 ## Accumulated Context
 
@@ -81,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-25T03:39:43.808Z
-Stopped at: Phase 28 context gathered
-Resume file: .planning/phases/28-final-readiness-packet-and-demotion-gate/28-CONTEXT.md
+Last session: 2026-06-25T05:05:27.332Z
+Stopped at: Phase 28 complete
+Resume file: .planning/phases/28-final-readiness-packet-and-demotion-gate/28-VERIFICATION.md

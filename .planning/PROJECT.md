@@ -20,7 +20,7 @@ The replacement firmware is not yet cut over. Final reference demotion remains i
 
 Phase 23 of v1.2 is complete. Maintainers can now submit Phase 14-compatible simulator evidence packets for startup, G-code, GUI, storage, transfer, and selected failure flows, with v1.2 status normalization, secret/overclaim guards, retained redacted outputs, upstream result rows, Bazel labels, and `just phase23-verify`.
 
-Phase 27 of v1.2 is complete. Maintainers can now record retained-code, residual-risk, exception, and final-readiness acceptance decisions through machine-readable Phase 27 inputs and verifier outputs while reference demotion remains blocked for Phase 28 unless explicitly approved.
+Milestone v1.2 Cutover Evidence Execution and Acceptance is complete as of 2026-06-25. Maintainers can now generate the final cutover readiness packet from retained upstream rows, retained-code decisions, exceptions, residual risks, blockers, and artifact refs. Final readiness stays fail-closed, and reference demotion remains a separate explicit maintainer authorization that is blocked unless valid Phase 28 approval input is supplied after readiness is unblocked.
 
 ## Current Milestone: v1.2 Cutover Evidence Execution and Acceptance
 
@@ -62,14 +62,17 @@ Phase 27 of v1.2 is complete. Maintainers can now record retained-code, residual
 - ✓ Maintainers can evaluate retained-code acceptance and final reference-demotion decisions through Phase 18 review packets, Phase 21 upstream-result consumption, explicit maintainer decision inputs, and a blocked-by-default `demotion_allowed` gate
 - ✓ Reconcile v1.1 requirement traceability, validation metadata, roadmap state, and milestone audit readiness through Phase 22 verification and the passed 2026-06-22 audit rerun
 - ✓ Maintainers can supply and retain real simulator evidence results for startup, G-code, GUI, storage, transfer, and selected failure flows through the Phase 23 evidence packet schema, retained redacted outputs, v1.2 status vocabulary, secret/overclaim guards, upstream result row, Bazel labels, and `just phase23-verify`
+- ✓ Maintainers can supply and retain real hardware/media/safety evidence for supported printer families, storage media, UI input, MMU, RS485, toolchanger, watchdog, thermal, motion, and safe-output scenarios through the Phase 24 evidence contract, retained outputs, secret/overclaim guards, upstream rows, Bazel labels, and `just phase24-verify`
+- ✓ Maintainers can supply and retain real live-service evidence for Connect, WUI, TLS, telemetry, proxy, transfer, negative-protocol, long-transfer, and crash-dump flows through the Phase 25 evidence contract, retained outputs, secret/overclaim guards, upstream rows, Bazel labels, and `just phase25-verify`
+- ✓ Release managers can supply release/signing/provenance evidence and maintainers can review upstream result rows through the Phase 26 release, signing, upstream-row, retained-output, clean-review, Bazel, and `just phase26-verify` flow
 - ✓ Maintainers can accept, reject, or exception retained-code packets and approve or block final-readiness criteria through Phase 27 machine-readable decision inputs, Phase 18-compatible validation, retained outputs, clean review closure, and `just phase27-verify`
+- ✓ Maintainers can generate a final cutover readiness packet through Phase 28 that links evidence rows, acceptance decisions, exceptions, residual risks, blockers, and artifact refs while keeping final readiness fail-closed and reference demotion blocked unless an explicit valid maintainer approval is supplied
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-- [ ] Execute and retain real hardware/media/safety, live-service, release/signing, and upstream-result evidence packets through the v1.1 gate contracts.
-- [ ] Produce a final cutover readiness report that consumes retained-code decisions, exceptions, residual risks, upstream rows, and blockers while keeping reference demotion blocked by default unless explicit maintainer approval allows it.
+No active v1.2 requirements remain. The next planning step is milestone archival or a new milestone definition.
 
 ### Out of Scope
 
@@ -154,4 +157,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ______________________________________________________________________
 
-*Last updated: 2026-06-25 after Phase 27 completion*
+*Last updated: 2026-06-25 after Phase 28 completion*
