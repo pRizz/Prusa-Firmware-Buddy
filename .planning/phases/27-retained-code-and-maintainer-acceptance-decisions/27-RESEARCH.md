@@ -303,17 +303,17 @@ elif normalized.get("source_lifecycle_status") not in {"current", "not-required"
 
 All claims in this research were verified or cited in this session; no user confirmation is needed before planning. [VERIFIED: local file reads; cited official OWASP sources]
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Should Phase 27 encode an additional sensitive-surface reviewer role matrix beyond Phase 18 packet `approver_role`?**
+1. **Should Phase 27 encode an additional sensitive-surface reviewer role matrix beyond Phase 18 packet `approver_role`? (RESOLVED)**
    - What we know: Phase 18 retained packets already define per-packet approver roles, including `network-security-maintainer`, `release-maintainer`, and `safety-maintainer`. [VERIFIED: tools/bazel/manifests/phase18_cutover_review_contract.json]
-   - What's unclear: D-11 says to prefer stricter reviewer-role checks for sensitive surfaces, but it does not prescribe whether final-readiness criteria need a new role matrix. [VERIFIED: .planning/phases/27-retained-code-and-maintainer-acceptance-decisions/27-CONTEXT.md]
-   - Recommendation: Use Phase 18 retained packet roles for retained reviews, and add a small Phase 27 `sensitive_role_policy` only for final-readiness decisions that touch safety, release/signing, TLS, credential, crash-dump, or hardware-adjacent criteria. [VERIFIED: tools/bazel/manifests/phase18_cutover_review_contract.json; .planning/phases/27-retained-code-and-maintainer-acceptance-decisions/27-CONTEXT.md]
+   - Resolution rationale: D-11 says to prefer stricter reviewer-role checks for sensitive surfaces, and the narrow role matrix below resolves that without forking Phase 18 retained packet roles. [VERIFIED: .planning/phases/27-retained-code-and-maintainer-acceptance-decisions/27-CONTEXT.md]
+   - RESOLVED: Use Phase 18 retained packet roles for retained reviews, and add a small Phase 27 `sensitive_role_policy` for final-readiness decisions and exception surfaces that touch safety, hardware, watchdog, thermal, motion, safe-output, crash-dump, release, signing, provenance, TLS, credential, Connect, WUI, proxy, or transfer criteria. Reject mismatched approver roles in tests and verifier validation. [VERIFIED: tools/bazel/manifests/phase18_cutover_review_contract.json; .planning/phases/27-retained-code-and-maintainer-acceptance-decisions/27-CONTEXT.md]
 
-2. **Should Phase 27 generate Phase 26 quick outputs or require them as a pre-existing input?**
+2. **Should Phase 27 generate Phase 26 quick outputs or require them as a pre-existing input? (RESOLVED)**
    - What we know: Phase 26 generated rows live under `build/ci-evidence/phase26` and are not source-tracked. [VERIFIED: .planning/phases/26-release-signing-and-upstream-result-evidence/26-01-SUMMARY.md; git ls-files build/ci-evidence]
-   - What's unclear: The Phase 27 context requires consuming Phase 26 rows but does not specify command ordering. [VERIFIED: .planning/phases/27-retained-code-and-maintainer-acceptance-decisions/27-CONTEXT.md]
-   - Recommendation: Make `phase27_verify` run Phase 26 quick first, then Phase 27 quick with `--phase26-upstream-rows build/ci-evidence/phase26/upstream-result-row-table.json`. [VERIFIED: tools/bazel/rust_workflow.sh; tools/bazel/phase26_release_signing_upstream_evidence.py]
+   - Resolution rationale: The Phase 27 context requires consuming Phase 26 rows, and the repo-owned workflow should make that generated input available before Phase 27 reads it. [VERIFIED: .planning/phases/27-retained-code-and-maintainer-acceptance-decisions/27-CONTEXT.md]
+   - RESOLVED: Make `phase27_verify` run Phase 26 quick generation first, then Phase 27 quick with `--phase26-upstream-rows build/ci-evidence/phase26/upstream-result-row-table.json`. The direct Phase 27 CLI may still fail closed when rows are absent, but the repo-owned `just phase27-verify` path must create the Phase 26 quick output first so fresh checkouts work. [VERIFIED: tools/bazel/rust_workflow.sh; tools/bazel/phase26_release_signing_upstream_evidence.py]
 
 ## Environment Availability
 
