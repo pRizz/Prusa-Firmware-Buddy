@@ -1,0 +1,143 @@
+{
+  "schema_version": "1",
+  "id": "phase27_retained_code_acceptance_decisions_contract",
+  "phase": "27-retained-code-and-maintainer-acceptance-decisions",
+  "phase_lifecycle_id": "27-2026-06-25T01-06-06",
+  "artifact_name": "phase27-retained-code-acceptance-decisions",
+  "output_root": "build/ci-evidence/phase27",
+  "source_contracts": [
+    {
+      "id": "phase18_cutover_review_contract",
+      "path": "tools/bazel/manifests/phase18_cutover_review_contract.json",
+      "purpose": "canonical retained packet, final decision, exception, status vocabulary, upstream criteria, hard blocker, and demotion policy source"
+    },
+    {
+      "id": "phase26_release_signing_upstream_evidence_contract",
+      "path": "tools/bazel/manifests/phase26_release_signing_upstream_evidence_contract.json",
+      "purpose": "Phase 26 upstream result row producer and row schema source"
+    },
+    {
+      "id": "phase11_retained_code_justifications",
+      "path": "tools/bazel/manifests/phase11_retained_code_justifications.json",
+      "purpose": "retained-code source justification rows"
+    },
+    {
+      "id": "foreign_code_inventory",
+      "path": "tools/bazel/manifests/foreign_code_inventory.json",
+      "purpose": "foreign and retained code source rows"
+    },
+    {
+      "id": "unsafe_boundary_audit",
+      "path": "tools/bazel/manifests/unsafe_boundary_audit.json",
+      "purpose": "unsafe and runtime boundary source rows"
+    },
+    {
+      "id": "phase11_cutover_readiness",
+      "path": "tools/bazel/manifests/phase11_cutover_readiness.json",
+      "purpose": "cutover readiness and reference-demotion source criteria"
+    }
+  ],
+  "canonical_policy": {
+    "phase18_contract": "tools/bazel/manifests/phase18_cutover_review_contract.json",
+    "retained_packet_schema": "retained_code_acceptance_packet_schema.required_fields",
+    "final_decision_schema": "final_decision_schema.required_fields",
+    "exception_fields": "final_decision_schema.exception.required_fields",
+    "retained_packet_status_vocabulary": "retained_packet_status_vocabulary",
+    "final_criterion_status_vocabulary": "final_criterion_status_vocabulary",
+    "review_decision_vocabulary": "review_decision_vocabulary",
+    "upstream_criteria": "upstream_result_requirements[].criterion_id",
+    "hard_blocker_reasons": "upstream_result_requirements[].hard_blocker_reasons",
+    "demotion_blocking_rules": "allowed_demotion_statuses and final-reference-demotion-allowed policy",
+    "phase27_projection_rule": "Phase 27 may project Phase 18 decisions into v1.2 outputs, but Phase 18 remains the canonical authority."
+  },
+  "decision_axes": [
+    "evidence_state",
+    "maintainer_decision",
+    "exception_state",
+    "residual_risk_state",
+    "hard_failure_state",
+    "demotion_authorization"
+  ],
+  "hard_blocker_policy": {
+    "evaluate_before_exception": true,
+    "reasons": [
+      "redaction-failed",
+      "overclaim-failed",
+      "lifecycle-mismatch",
+      "source-ref-failed",
+      "unsafe-ref"
+    ],
+    "acceptance_effect": "Hard blockers remain blocked and cannot become accepted retained-code risk through exception handling."
+  },
+  "exception_policy": {
+    "phase18_required_fields": [
+      "scope",
+      "rationale",
+      "approver",
+      "approver_role",
+      "affected_printer_or_release_surface",
+      "mitigation_or_follow_up",
+      "expiry_or_review_trigger",
+      "evidence_refs"
+    ],
+    "phase27_required_fields": [
+      "scope",
+      "rationale",
+      "approver",
+      "approver_role",
+      "affected_printer_or_release_surface",
+      "mitigation_or_follow_up",
+      "expiry_or_review_trigger",
+      "evidence_refs",
+      "residual_risk",
+      "owner"
+    ],
+    "owner_policy": "Exception approvals require owner, or the verifier records the approver as owner when owner is omitted.",
+    "metadata_required_for_exception_decisions": true
+  },
+  "sensitive_role_policy": {
+    "safety-maintainer": [
+      "safety",
+      "hardware",
+      "watchdog",
+      "thermal",
+      "motion",
+      "safe-output",
+      "crash-dump"
+    ],
+    "release-maintainer": [
+      "release",
+      "signing",
+      "provenance"
+    ],
+    "network-security-maintainer": [
+      "tls",
+      "credential",
+      "connect",
+      "wui",
+      "proxy",
+      "transfer"
+    ]
+  },
+  "phase28_handoff_policy": {
+    "demotion_authorization": "blocked",
+    "phase27_may_authorize_demotion": false,
+    "phase28_required_decision": "explicit-maintainer-reference-demotion-decision"
+  },
+  "phase26_upstream_rows_path": "build/ci-evidence/phase26/upstream-result-row-table.json",
+  "phase26_generation_command": "python3 tools/bazel/phase26_release_signing_upstream_evidence.py --quick --output-dir build/ci-evidence/phase26",
+  "generated_artifacts": [
+    "acceptance-run-manifest.json",
+    "normalized-retained-code-decisions.json",
+    "residual-risk-register.json",
+    "exception-decision-register.json",
+    "final-readiness-decision-summary.json",
+    "phase28-handoff-manifest.json",
+    "decision-row-table.json",
+    "maintainer-acceptance-input-template.json",
+    "artifact-reference-summary.json",
+    "contract-snapshots/phase18_cutover_review_contract.json",
+    "contract-snapshots/phase26_release_signing_upstream_evidence_contract.json",
+    "contract-snapshots/phase26-upstream-result-row-table.json"
+  ]
+}
