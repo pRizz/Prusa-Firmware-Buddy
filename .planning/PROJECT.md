@@ -20,6 +20,8 @@ The replacement firmware is not yet cut over. Final reference demotion remains i
 
 Phase 23 of v1.2 is complete. Maintainers can now submit Phase 14-compatible simulator evidence packets for startup, G-code, GUI, storage, transfer, and selected failure flows, with v1.2 status normalization, secret/overclaim guards, retained redacted outputs, upstream result rows, Bazel labels, and `just phase23-verify`.
 
+Phase 27 of v1.2 is complete. Maintainers can now record retained-code, residual-risk, exception, and final-readiness acceptance decisions through machine-readable Phase 27 inputs and verifier outputs while reference demotion remains blocked for Phase 28 unless explicitly approved.
+
 ## Current Milestone: v1.2 Cutover Evidence Execution and Acceptance
 
 **Goal:** Execute the real external cutover evidence gates created in v1.1 and produce a maintainer-reviewable final readiness packet.
@@ -60,14 +62,14 @@ Phase 23 of v1.2 is complete. Maintainers can now submit Phase 14-compatible sim
 - ✓ Maintainers can evaluate retained-code acceptance and final reference-demotion decisions through Phase 18 review packets, Phase 21 upstream-result consumption, explicit maintainer decision inputs, and a blocked-by-default `demotion_allowed` gate
 - ✓ Reconcile v1.1 requirement traceability, validation metadata, roadmap state, and milestone audit readiness through Phase 22 verification and the passed 2026-06-22 audit rerun
 - ✓ Maintainers can supply and retain real simulator evidence results for startup, G-code, GUI, storage, transfer, and selected failure flows through the Phase 23 evidence packet schema, retained redacted outputs, v1.2 status vocabulary, secret/overclaim guards, upstream result row, Bazel labels, and `just phase23-verify`
+- ✓ Maintainers can accept, reject, or exception retained-code packets and approve or block final-readiness criteria through Phase 27 machine-readable decision inputs, Phase 18-compatible validation, retained outputs, clean review closure, and `just phase27-verify`
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
 - [ ] Execute and retain real hardware/media/safety, live-service, release/signing, and upstream-result evidence packets through the v1.1 gate contracts.
-- [ ] Drive retained-code, residual-risk, exception, and maintainer acceptance decisions with machine-readable inputs.
-- [ ] Produce a final cutover readiness report that remains blocked by default unless explicit maintainer approval allows reference demotion.
+- [ ] Produce a final cutover readiness report that consumes retained-code decisions, exceptions, residual risks, upstream rows, and blockers while keeping reference demotion blocked by default unless explicit maintainer approval allows it.
 
 ### Out of Scope
 
@@ -152,4 +154,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ______________________________________________________________________
 
-*Last updated: 2026-06-23 after Phase 23 completion*
+*Last updated: 2026-06-25 after Phase 27 completion*
