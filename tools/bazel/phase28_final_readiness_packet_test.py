@@ -577,6 +577,15 @@ class Phase28FinalReadinessPacketTest(unittest.TestCase):
             packet = self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/final-readiness-packet.json")
             self.assertEqual(packet["final_readiness_status"], "unblocked")
             self.assertEqual(packet["reference_demotion_authorization"], "approved")
+            demotion_row = next(row for row in packet["criteria"] if row["criterion_id"] == "final-reference-demotion-allowed")
+            self.assertEqual(demotion_row["readiness_effect"], "reference-demotion-authorized")
+            self.assertEqual(demotion_row["demotion_gate_effect"], "explicit-phase28-decision-approved")
+            blockers = self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/blocker-summary.json")
+            blocker_ids = {row["criterion_id"] for row in blockers["blockers"]}
+            self.assertNotIn("final-reference-demotion-allowed", blocker_ids)
+            report = (root / DEFAULT_OUTPUT_DIR / "redacted-readiness-report.md").read_text(encoding="utf-8")
+            self.assertIn("final-reference-demotion-allowed -> reference-demotion-authorized", report)
+            self.assertNotIn("blocked-pending-explicit-demotion-decision", report)
 
             # Act
             result = self.run_verifier(["--security-only", "--demotion-decision-input", decision_path], maybe_root=root)

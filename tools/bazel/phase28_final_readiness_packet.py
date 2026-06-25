@@ -775,9 +775,26 @@ def demotion_authorization_record(
     }
 
 
+def apply_demotion_authorization_to_criteria(criteria: list[dict[str, Any]], demotion_record: dict[str, Any]) -> None:
+    authorization = demotion_record["reference_demotion_authorization"]
+    for row in criteria:
+        if row["criterion_id"] != DEMOTION_CRITERION:
+            continue
+        if authorization == "approved":
+            row["readiness_effect"] = "reference-demotion-authorized"
+            row["demotion_gate_effect"] = "explicit-phase28-decision-approved"
+            row["rationale"] = demotion_record["rationale"]
+            row["evidence_refs"] = sorted(set([*row["evidence_refs"], *demotion_record["evidence_refs"]]))
+        else:
+            row["readiness_effect"] = "blocked-pending-explicit-demotion-decision"
+            row["demotion_gate_effect"] = "requires-explicit-phase28-decision"
+
+
 def build_blocker_rows(criteria: list[dict[str, Any]], readiness_status: str, demotion_record: dict[str, Any]) -> list[dict[str, Any]]:
     blockers = []
     for row in criteria:
+        if row["criterion_id"] == DEMOTION_CRITERION:
+            continue
         if row["readiness_effect"] in {"passed", "exception-covered"}:
             continue
         blockers.append(
@@ -975,6 +992,7 @@ def write_phase28_outputs(
     if demotion_decision_input is not None and demotion_decision_input["demotion_authorization"] == "approved" and readiness_status != "unblocked":
         raise VerificationError("approved reference demotion requires final_readiness_status unblocked")
     demotion_record = demotion_authorization_record(demotion_decision_input, readiness_status)
+    apply_demotion_authorization_to_criteria(criteria, demotion_record)
     blockers = build_blocker_rows(criteria, readiness_status, demotion_record)
     output_dir_relative = output_dir.relative_to(root)
     generated_at_utc = utc_now()
