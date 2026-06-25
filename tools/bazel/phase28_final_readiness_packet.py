@@ -42,17 +42,6 @@ SOURCE_CONTRACTS = [
     "tools/bazel/manifests/foreign_code_inventory.json",
     "tools/bazel/manifests/unsafe_boundary_audit.json",
 ]
-CANONICAL_CRITERIA = [
-    "final-ci-evidence",
-    "final-simulator-evidence",
-    "final-hardware-safety-media-evidence",
-    "final-live-network-transfer-evidence",
-    "final-release-artifact-signing-evidence",
-    "final-retained-code-acceptance",
-    "final-residual-risk-review",
-    "final-maintainer-decision",
-    "final-reference-demotion-allowed",
-]
 DEMOTION_CRITERION = "final-reference-demotion-allowed"
 HARD_BLOCKER_REASONS = [
     "redaction-failed",
@@ -407,7 +396,13 @@ def check_contract(root: Path) -> dict[str, Any]:
             "readiness_policy",
         )
         check_exact_string_list(readiness_policy, "hard_blocker_reasons", HARD_BLOCKER_REASONS, errors, "readiness_policy")
-        check_exact_string_list(readiness_policy, "canonical_phase18_criteria", CANONICAL_CRITERIA, errors, "readiness_policy")
+        check_exact_string_list(
+            readiness_policy,
+            "canonical_phase18_criteria",
+            phase18_canonical_criteria(root),
+            errors,
+            "readiness_policy",
+        )
 
         demotion_policy = require_dict(contract, "demotion_authorization_policy", "contract")
         if demotion_policy.get("default_authorization") != "blocked":
@@ -459,6 +454,10 @@ def phase18_upstream_requirements(root: Path) -> dict[str, dict[str, Any]]:
     return requirements
 
 
+def phase18_canonical_criteria(root: Path) -> list[str]:
+    return list(phase18_upstream_requirements(root).keys())
+
+
 def input_path_under(path_value: str, expected_root: Path, row_name: str) -> Path:
     return require_repo_relative_under(path_value, expected_root, row_name)
 
@@ -482,6 +481,7 @@ def load_phase26_rows(root: Path, path_value: str) -> tuple[Path, list[dict[str,
     if not isinstance(rows, list):
         raise VerificationError("--phase26-upstream-rows rows must be a list")
     requirements = phase18_upstream_requirements(root)
+    canonical_criteria = list(requirements.keys())
     normalized_rows: list[dict[str, Any]] = []
     seen: set[str] = set()
     for index, row in enumerate(rows):
@@ -489,7 +489,7 @@ def load_phase26_rows(root: Path, path_value: str) -> tuple[Path, list[dict[str,
             raise VerificationError(f"phase26 rows[{index}] must be an object")
         row_name = f"phase26 {row.get('criterion_id', index)}"
         criterion_id = require_string(row, "criterion_id", row_name)
-        if criterion_id not in CANONICAL_CRITERIA:
+        if criterion_id not in canonical_criteria:
             raise VerificationError(f"{row_name} criterion_id is not a canonical Phase 18 criterion")
         if criterion_id in seen:
             raise VerificationError(f"duplicate Phase 26 criterion row: {criterion_id}")
@@ -504,7 +504,7 @@ def load_phase26_rows(root: Path, path_value: str) -> tuple[Path, list[dict[str,
         if row.get("source_ref_status") != "passed":
             raise VerificationError(f"{row_name} source_ref_status must be passed")
         normalized_rows.append(row)
-    missing = sorted(set(CANONICAL_CRITERIA) - seen)
+    missing = sorted(set(canonical_criteria) - seen)
     if missing:
         raise VerificationError("Phase 26 upstream rows missing criteria: " + ", ".join(missing))
     return path, normalized_rows
@@ -568,18 +568,23 @@ def detect_hard_failure_reasons(phase26_row: dict[str, Any], phase27_row: dict[s
         reasons.add("redaction-failed")
     if "rejected-overclaim" in status_values:
         reasons.add("overclaim-failed")
+    overclaim_status = phase26_row.get("overclaim_status")
+    if isinstance(overclaim_status, str) and overclaim_status not in {"passed", "not-required"}:
+        reasons.add("overclaim-failed")
     if phase26_row.get("source_lifecycle_status") != "current":
         reasons.add("lifecycle-mismatch")
     if phase26_row.get("source_ref_status") != "passed":
         reasons.add("source-ref-failed")
+    unsafe_ref_status = phase26_row.get("unsafe_ref_status")
+    if isinstance(unsafe_ref_status, str) and unsafe_ref_status not in {"passed", "not-required"}:
+        reasons.add("unsafe-ref")
     for reason in phase27_row.get("hard_failure_reasons", []):
         if isinstance(reason, str) and reason:
             reasons.add(reason)
     failure_text = f"{phase26_row.get('failure_reason', '')} {phase27_row.get('rationale', '')}".lower()
-    if "unsafe-ref" in failure_text or "unsafe ref" in failure_text:
-        reasons.add("unsafe-ref")
-    if "secret-tainted" in failure_text or "secret tainted" in failure_text:
-        reasons.add("secret-tainted")
+    for reason in HARD_BLOCKER_REASONS:
+        if reason in failure_text or reason.replace("-", " ") in failure_text:
+            reasons.add(reason)
     return [reason for reason in HARD_BLOCKER_REASONS if reason in reasons]
 
 
@@ -620,6 +625,7 @@ def matching_rows(rows: list[dict[str, Any]], row_id: str) -> list[dict[str, Any
 def normalize_readiness_criteria(
     phase26_rows: list[dict[str, Any]],
     phase27_bundle: dict[str, Any],
+    canonical_criteria: list[str],
 ) -> list[dict[str, Any]]:
     phase26_by_id = {str(row["criterion_id"]): row for row in phase26_rows}
     phase27_by_id = rows_by_field(phase27_bundle["final_readiness"], "criterion_id", "Phase 27 final-readiness-decision-summary")
@@ -628,7 +634,7 @@ def normalize_readiness_criteria(
     if not isinstance(residual_rows, list) or not isinstance(exception_rows, list):
         raise VerificationError("Phase 27 residual risk and exception artifacts must contain rows lists")
     normalized: list[dict[str, Any]] = []
-    for criterion_id in CANONICAL_CRITERIA:
+    for criterion_id in canonical_criteria:
         phase26_row = phase26_by_id[criterion_id]
         phase27_row = phase27_by_id.get(criterion_id)
         if phase27_row is None:
@@ -886,7 +892,8 @@ def validate_generated_outputs(root: Path, output_dir: Path) -> None:
         if packet["real_maintainer_demotion_approval_supplied"] is not True:
             raise VerificationError("generated packet approved authorization requires maintainer approval flag")
     criteria = packet.get("criteria")
-    if not isinstance(criteria, list) or {row.get("criterion_id") for row in criteria if isinstance(row, dict)} != set(CANONICAL_CRITERIA):
+    canonical_criteria = phase18_canonical_criteria(root)
+    if not isinstance(criteria, list) or {row.get("criterion_id") for row in criteria if isinstance(row, dict)} != set(canonical_criteria):
         raise VerificationError("final-readiness-packet.json criteria must cover all canonical Phase 18 criteria")
     record_path = output_dir / "reference-demotion-authorization-record.json"
     if record_path.exists():
@@ -921,12 +928,18 @@ def run_security_scan(
             reject_forbidden_json_fields(load_json(root, path), path.as_posix())
         except VerificationError as error:
             errors.append(str(error))
+    scan_dir = output_dir or (root / DEFAULT_OUTPUT_DIR)
     if maybe_demotion_decision_input:
         try:
-            load_demotion_decision_input(root, maybe_demotion_decision_input, maybe_final_readiness_status="blocked")
+            maybe_status = None
+            packet_path = scan_dir / "final-readiness-packet.json"
+            if packet_path.exists():
+                packet = json.loads(packet_path.read_text(encoding="utf-8"))
+                if isinstance(packet, dict) and isinstance(packet.get("final_readiness_status"), str):
+                    maybe_status = packet["final_readiness_status"]
+            load_demotion_decision_input(root, maybe_demotion_decision_input, maybe_final_readiness_status=maybe_status)
         except VerificationError as error:
             errors.append(str(error))
-    scan_dir = output_dir or (root / DEFAULT_OUTPUT_DIR)
     if scan_dir.exists():
         try:
             validate_generated_outputs(root, scan_dir)
@@ -957,7 +970,7 @@ def write_phase28_outputs(
     output_dir_arg: str,
 ) -> dict[str, Any]:
     output_dir = contained_output_dir(root, output_dir_arg)
-    criteria = normalize_readiness_criteria(phase26_rows, phase27_bundle)
+    criteria = normalize_readiness_criteria(phase26_rows, phase27_bundle, phase18_canonical_criteria(root))
     readiness_status = final_readiness_status(criteria)
     if demotion_decision_input is not None and demotion_decision_input["demotion_authorization"] == "approved" and readiness_status != "unblocked":
         raise VerificationError("approved reference demotion requires final_readiness_status unblocked")
@@ -1131,7 +1144,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.quick:
             phase26_path, phase26_rows = load_phase26_rows(ROOT, args.phase26_upstream_rows)
             phase27_path, handoff, phase27_bundle = load_phase27_bundle(ROOT, args.phase27_handoff)
-            preliminary_criteria = normalize_readiness_criteria(phase26_rows, phase27_bundle)
+            preliminary_criteria = normalize_readiness_criteria(phase26_rows, phase27_bundle, phase18_canonical_criteria(ROOT))
             preliminary_status = final_readiness_status(preliminary_criteria)
             decision_input = load_demotion_decision_input(ROOT, args.demotion_decision_input, preliminary_status)
             run_manifest = write_phase28_outputs(

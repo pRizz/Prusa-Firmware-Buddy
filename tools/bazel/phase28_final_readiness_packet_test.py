@@ -354,6 +354,25 @@ class Phase28FinalReadinessPacketTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("canonical_phase18_criteria", result.stdout)
 
+    def test_contract_rejects_phase18_authority_drift(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            phase18_contract = self.read_json(root, PHASE18_CONTRACT)
+            phase18_contract["upstream_result_requirements"] = [
+                row
+                for row in phase18_contract["upstream_result_requirements"]
+                if row["criterion_id"] != "final-ci-evidence"
+            ]
+            self.write_json(root, PHASE18_CONTRACT, phase18_contract)
+
+            # Act
+            result = self.run_verifier(["--contract-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("canonical_phase18_criteria", result.stdout)
+
     def test_contract_rejects_generated_artifact_drift(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -436,6 +455,37 @@ class Phase28FinalReadinessPacketTest(unittest.TestCase):
             self.assertEqual(row["readiness_effect"], "blocked-hard-failure")
             self.assertIn("redaction-failed", row["hard_failure_reasons"])
 
+    def test_source_hard_blocker_status_fields_outrank_exception_coverage(self) -> None:
+        cases = [
+            ("overclaim_status", "failed", "overclaim-failed"),
+            ("unsafe_ref_status", "failed", "unsafe-ref"),
+        ]
+        for field, value, expected_reason in cases:
+            with self.subTest(field=field):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    phase26_rows = self.phase26_rows(root)
+                    phase26_rows[0]["status"] = "failed"
+                    phase26_rows[0][field] = value
+                    phase26_rows[0]["failure_reason"] = "approved exception metadata must not cover hard blockers"
+                    phase27_rows = self.phase27_final_rows(phase26_rows)
+                    phase27_rows[0]["status"] = "exception-approved"
+                    phase27_rows[0]["decision"] = "exception"
+                    phase27_rows[0]["exception_state"] = "approved-exception"
+                    phase27_rows[0]["exception"] = self.exception_metadata(str(phase26_rows[0]["criterion_id"]))
+                    self.write_phase_inputs(root, phase26_rows, phase27_rows)
+
+                    # Act
+                    result = self.run_verifier(["--quick"], maybe_root=root)
+
+                    # Assert
+                    self.assertEqual(result.returncode, 0, result.stdout)
+                    table = self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/normalized-readiness-criteria-table.json")
+                    row = next(row for row in table["rows"] if row["criterion_id"] == "final-ci-evidence")
+                    self.assertEqual(row["readiness_effect"], "blocked-hard-failure")
+                    self.assertIn(expected_reason, row["hard_failure_reasons"])
+
     def test_valid_exception_covers_coverable_failure(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -515,6 +565,24 @@ class Phase28FinalReadinessPacketTest(unittest.TestCase):
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("approver", result.stdout)
+
+    def test_security_scan_accepts_approved_demotion_input_after_unblocked_packet(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase_inputs(root)
+            decision_path = self.write_json(root, "demotion-decision.json", self.demotion_decision("approved"))
+            quick_result = self.run_verifier(["--quick", "--demotion-decision-input", decision_path], maybe_root=root)
+            self.assertEqual(quick_result.returncode, 0, quick_result.stdout)
+            packet = self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/final-readiness-packet.json")
+            self.assertEqual(packet["final_readiness_status"], "unblocked")
+            self.assertEqual(packet["reference_demotion_authorization"], "approved")
+
+            # Act
+            result = self.run_verifier(["--security-only", "--demotion-decision-input", decision_path], maybe_root=root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
 
     def test_report_is_derived_from_packet_and_names_review_boundary(self) -> None:
         # Arrange
