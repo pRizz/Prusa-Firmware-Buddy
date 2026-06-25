@@ -125,7 +125,9 @@ Plans:
   2. Maintainer can approve or block final-readiness criteria through machine-readable decision inputs, not prose-only notes.
   3. Exception approvals identify scope, owner, expiration or revisit condition, and why replacement or demotion can proceed or must stay blocked.
   4. Decision outputs distinguish evidence failures, accepted retained-code risks, unresolved residual risks, and demotion approval state.
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 27-01-PLAN.md - Phase 27 retained-code and maintainer acceptance decision wrapper
 
 ### Phase 28: Final Readiness Packet and Demotion Gate
 **Goal**: Maintainers can generate the final cutover readiness packet and decide whether to keep reference demotion blocked or explicitly approve it.
@@ -166,5 +168,5 @@ Phases execute in numeric order: 23 -> 24 -> 25 -> 26 -> 27 -> 28
 | 24. Hardware, Media, and Safety Evidence Execution | v1.2 | 1/1 | Complete    | 2026-06-23 |
 | 25. Live-Service Evidence Execution | v1.2 | 1/1 | Complete    | 2026-06-23 |
 | 26. Release, Signing, and Upstream Result Evidence | v1.2 | 1/1 | Complete    | 2026-06-24 |
-| 27. Retained-Code and Maintainer Acceptance Decisions | v1.2 | 0/TBD | Not started | - |
+| 27. Retained-Code and Maintainer Acceptance Decisions | v1.2 | 0/1 | Not started | - |
 | 28. Final Readiness Packet and Demotion Gate | v1.2 | 0/TBD | Not started | - |
