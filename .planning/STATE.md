@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Cutover Evidence Execution and Acceptance
-status: executing
-stopped_at: Phase 26 context gathered
-last_updated: "2026-06-24T15:13:42.627Z"
+status: planning
+stopped_at: Phase 27 context gathered
+last_updated: "2026-06-25T01:13:37.030Z"
 last_activity: 2026-06-24
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 4
   completed_plans: 4
-  percent: 67
+  percent: 100
 ---
 
 # Project State
@@ -81,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-24T13:38:45.427Z
-Stopped at: Phase 26 context gathered
-Resume file: .planning/phases/26-release-signing-and-upstream-result-evidence/26-CONTEXT.md
+Last session: 2026-06-25T01:13:37.025Z
+Stopped at: Phase 27 context gathered
+Resume file: .planning/phases/27-retained-code-and-maintainer-acceptance-decisions/27-CONTEXT.md
