@@ -143,6 +143,49 @@ class Phase28FinalReadinessPacketTest(unittest.TestCase):
             )
         return rows
 
+    def consumed_phase26_rows(self, root: Path) -> list[dict[str, object]]:
+        rows = self.phase26_rows(root)
+        consumed_rows = {
+            "final-simulator-evidence": {
+                "artifact_refs": [
+                    "external://phase23/simulator/startup-log.json",
+                    "build/ci-evidence/phase23/upstream-simulator-result-row.json",
+                ],
+                "evidence_refs": [
+                    "build/ci-evidence/phase23/simulator-result-manifest.json",
+                    "build/ci-evidence/phase23/upstream-simulator-result-row.json",
+                ],
+                "requirement_ids": ["EVID-01", "ACPT-01"],
+            },
+            "final-hardware-safety-media-evidence": {
+                "artifact_refs": [
+                    "external://phase24/hardware/safety-report.json",
+                    "build/ci-evidence/phase24/upstream-hardware-media-safety-result-row.json",
+                ],
+                "evidence_refs": [
+                    "build/ci-evidence/phase24/hardware-media-safety-result-manifest.json",
+                    "build/ci-evidence/phase24/upstream-hardware-media-safety-result-row.json",
+                ],
+                "requirement_ids": ["EVID-02", "ACPT-01"],
+            },
+            "final-live-network-transfer-evidence": {
+                "artifact_refs": [
+                    "external://phase25/live-service/connect-report.json",
+                    "build/ci-evidence/phase25/upstream-live-service-result-row.json",
+                ],
+                "evidence_refs": [
+                    "build/ci-evidence/phase25/live-service-result-manifest.json",
+                    "build/ci-evidence/phase25/upstream-live-service-result-row.json",
+                ],
+                "requirement_ids": ["EVID-03", "ACPT-01"],
+            },
+        }
+        for row in rows:
+            maybe_consumed = consumed_rows.get(str(row["criterion_id"]))
+            if maybe_consumed is not None:
+                row.update(maybe_consumed)
+        return rows
+
     def exception_metadata(self, criterion_id: str = "final-ci-evidence") -> dict[str, object]:
         return {
             "scope": f"phase28-test-{criterion_id}",
@@ -418,6 +461,82 @@ class Phase28FinalReadinessPacketTest(unittest.TestCase):
             self.assertFalse(packet["real_maintainer_demotion_approval_supplied"])
             self.assertEqual({row["criterion_id"] for row in packet["criteria"]}, set(REQUIRED_CRITERIA))
             self.assertIn("requirements", packet)
+
+    def test_packet_carries_consumed_phase23_24_25_refs_from_phase26_rows(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            phase26_rows = self.consumed_phase26_rows(root)
+            phase27_rows = self.phase27_final_rows(phase26_rows)
+            for row in phase27_rows:
+                criterion_id = str(row["criterion_id"])
+                if criterion_id in {
+                    "final-simulator-evidence",
+                    "final-hardware-safety-media-evidence",
+                    "final-live-network-transfer-evidence",
+                }:
+                    row["evidence_refs"] = [f"build/ci-evidence/phase27/final-readiness-decision-summary.json#{criterion_id}"]
+                    row["artifact_refs"] = [f"build/ci-evidence/phase27/decision-row-table.json#{criterion_id}"]
+            self.write_phase_inputs(root, phase26_rows, phase27_rows)
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+            # Assert
+            self.assertEqual(result.returncode, 0, result.stdout)
+            packet = self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/final-readiness-packet.json")
+            criteria = {row["criterion_id"]: row for row in packet["criteria"]}
+            expected_rows = {
+                "final-simulator-evidence": {
+                    "requirement_ids": ["EVID-01", "ACPT-01"],
+                    "manifest_ref": "build/ci-evidence/phase23/simulator-result-manifest.json",
+                    "input_row_ref": "build/ci-evidence/phase23/upstream-simulator-result-row.json",
+                    "external_ref": "external://phase23/simulator/startup-log.json",
+                },
+                "final-hardware-safety-media-evidence": {
+                    "requirement_ids": ["EVID-02", "ACPT-01"],
+                    "manifest_ref": "build/ci-evidence/phase24/hardware-media-safety-result-manifest.json",
+                    "input_row_ref": "build/ci-evidence/phase24/upstream-hardware-media-safety-result-row.json",
+                    "external_ref": "external://phase24/hardware/safety-report.json",
+                },
+                "final-live-network-transfer-evidence": {
+                    "requirement_ids": ["EVID-03", "ACPT-01"],
+                    "manifest_ref": "build/ci-evidence/phase25/live-service-result-manifest.json",
+                    "input_row_ref": "build/ci-evidence/phase25/upstream-live-service-result-row.json",
+                    "external_ref": "external://phase25/live-service/connect-report.json",
+                },
+            }
+            for criterion_id, expected in expected_rows.items():
+                with self.subTest(criterion_id=criterion_id):
+                    row = criteria[criterion_id]
+                    phase27_ref = f"build/ci-evidence/phase27/final-readiness-decision-summary.json#{criterion_id}"
+                    self.assertEqual(row["requirement_ids"], expected["requirement_ids"])
+                    self.assertIn(expected["manifest_ref"], row["source_refs"])
+                    self.assertIn(expected["input_row_ref"], row["source_refs"])
+                    self.assertIn(expected["manifest_ref"], row["evidence_refs"])
+                    self.assertIn(expected["input_row_ref"], row["evidence_refs"])
+                    self.assertIn(phase27_ref, row["evidence_refs"])
+                    self.assertIn(expected["external_ref"], row["artifact_refs"])
+                    self.assertIn(expected["input_row_ref"], row["artifact_refs"])
+
+    def test_consumed_upstream_rows_do_not_authorize_reference_demotion_without_decision(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase_inputs(root, self.consumed_phase26_rows(root))
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+            # Assert
+            self.assertEqual(result.returncode, 0, result.stdout)
+            packet = self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/final-readiness-packet.json")
+            demotion_row = next(row for row in packet["criteria"] if row["criterion_id"] == "final-reference-demotion-allowed")
+            self.assertEqual(packet["final_readiness_status"], "unblocked")
+            self.assertEqual(packet["reference_demotion_authorization"], "blocked")
+            self.assertFalse(packet["real_maintainer_demotion_approval_supplied"])
+            self.assertEqual(demotion_row["readiness_effect"], "blocked-pending-explicit-demotion-decision")
+            self.assertEqual(demotion_row["demotion_gate_effect"], "requires-explicit-phase28-decision")
 
     def test_missing_inputs_report_generation_commands(self) -> None:
         # Arrange

@@ -25,6 +25,21 @@
       "id": "phase18_cutover_review_contract",
       "path": "tools/bazel/manifests/phase18_cutover_review_contract.json",
       "purpose": "canonical upstream cutover review criteria"
+    },
+    {
+      "id": "phase23_simulator_evidence_execution_contract",
+      "path": "tools/bazel/manifests/phase23_simulator_evidence_execution_contract.json",
+      "purpose": "Phase 23 simulator upstream row input"
+    },
+    {
+      "id": "phase24_hardware_media_safety_evidence_execution_contract",
+      "path": "tools/bazel/manifests/phase24_hardware_media_safety_evidence_execution_contract.json",
+      "purpose": "Phase 24 hardware/media/safety upstream row input"
+    },
+    {
+      "id": "phase25_live_service_evidence_execution_contract",
+      "path": "tools/bazel/manifests/phase25_live_service_evidence_execution_contract.json",
+      "purpose": "Phase 25 live-service upstream row input"
     }
   ],
   "release_policy": {
@@ -130,6 +145,47 @@
     ],
     "default_requirement_ids": [
       "ACPT-01"
+    ],
+    "upstream_row_inputs": [
+      {
+        "flag": "--phase23-simulator-row",
+        "arg_name": "phase23_simulator_row",
+        "source_contract": "tools/bazel/manifests/phase23_simulator_evidence_execution_contract.json",
+        "source_phase": "23-simulator-evidence-execution",
+        "source_criterion_id": "final-simulator-evidence",
+        "canonical_criterion_id": "final-simulator-evidence",
+        "producer_requirement_ids": [
+          "EVID-01"
+        ],
+        "input_root": "build/ci-evidence/phase23/",
+        "external_root": "external://phase23/"
+      },
+      {
+        "flag": "--phase24-hardware-media-safety-row",
+        "arg_name": "phase24_hardware_media_safety_row",
+        "source_contract": "tools/bazel/manifests/phase24_hardware_media_safety_evidence_execution_contract.json",
+        "source_phase": "24-hardware-media-and-safety-evidence-execution",
+        "source_criterion_id": "final-hardware-safety-media-evidence",
+        "canonical_criterion_id": "final-hardware-safety-media-evidence",
+        "producer_requirement_ids": [
+          "EVID-02"
+        ],
+        "input_root": "build/ci-evidence/phase24/",
+        "external_root": "external://phase24/"
+      },
+      {
+        "flag": "--phase25-live-service-row",
+        "arg_name": "phase25_live_service_row",
+        "source_contract": "tools/bazel/manifests/phase25_live_service_evidence_execution_contract.json",
+        "source_phase": "25-live-service-evidence-execution",
+        "source_criterion_id": "final-live-service-evidence",
+        "canonical_criterion_id": "final-live-network-transfer-evidence",
+        "producer_requirement_ids": [
+          "EVID-03"
+        ],
+        "input_root": "build/ci-evidence/phase25/",
+        "external_root": "external://phase25/"
+      }
     ]
   },
   "generated_artifacts": [

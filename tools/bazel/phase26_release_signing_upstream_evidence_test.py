@@ -18,6 +18,9 @@ PHASE17_CONTRACT = "tools/bazel/manifests/phase17_release_candidate_evidence_con
 PHASE18_CONTRACT = "tools/bazel/manifests/phase18_cutover_review_contract.json"
 PHASE20_CONTRACT = "tools/bazel/manifests/phase20_release_candidate_artifacts_contract.json"
 PHASE20_TEMPLATE = "tools/bazel/manifests/phase20_release_environment_inputs.template.json"
+PHASE23_CONTRACT = "tools/bazel/manifests/phase23_simulator_evidence_execution_contract.json"
+PHASE24_CONTRACT = "tools/bazel/manifests/phase24_hardware_media_safety_evidence_execution_contract.json"
+PHASE25_CONTRACT = "tools/bazel/manifests/phase25_live_service_evidence_execution_contract.json"
 DEFAULT_OUTPUT_DIR = "build/ci-evidence/phase26"
 REQUIRED_UPSTREAM_CRITERIA = {
     "final-ci-evidence",
@@ -97,7 +100,17 @@ class Phase26ReleaseSigningUpstreamEvidenceTest(unittest.TestCase):
     def make_temp_root(self) -> tuple[tempfile.TemporaryDirectory[str], Path]:
         temp_dir = tempfile.TemporaryDirectory()
         root = Path(temp_dir.name)
-        for path in [VERIFIER, ROOT / CONTRACT, ROOT / PHASE17_CONTRACT, ROOT / PHASE18_CONTRACT, ROOT / PHASE20_CONTRACT, ROOT / PHASE20_TEMPLATE]:
+        for path in [
+            VERIFIER,
+            ROOT / CONTRACT,
+            ROOT / PHASE17_CONTRACT,
+            ROOT / PHASE18_CONTRACT,
+            ROOT / PHASE20_CONTRACT,
+            ROOT / PHASE20_TEMPLATE,
+            ROOT / PHASE23_CONTRACT,
+            ROOT / PHASE24_CONTRACT,
+            ROOT / PHASE25_CONTRACT,
+        ]:
             destination = root / path.relative_to(ROOT)
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(path, destination)
@@ -122,6 +135,12 @@ class Phase26ReleaseSigningUpstreamEvidenceTest(unittest.TestCase):
     def write_release_input(self, root: Path, rows: list[dict[str, object]], path: str = "release-input.json") -> str:
         input_path = root / path
         input_path.write_text(json.dumps({"evidence_rows": rows}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        return path
+
+    def write_json(self, root: Path, path: str, data: dict[str, object]) -> str:
+        full_path = root / path
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        full_path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         return path
 
     def write_file(self, root: Path, path: str, text: str) -> None:
@@ -204,6 +223,62 @@ class Phase26ReleaseSigningUpstreamEvidenceTest(unittest.TestCase):
                     row[field] = self.release_metadata_value(field, row_id, artifact_ref)
             rows.append(row)
         return rows
+
+    def upstream_row(self, phase: str, criterion_id: str, requirement_id: str, output_root: str, artifact_ref: str) -> dict[str, object]:
+        evidence_family = {
+            "EVID-01": "simulator",
+            "EVID-02": "hardware",
+            "EVID-03": "live-service",
+        }[requirement_id]
+        return {
+            "artifact_refs": [artifact_ref],
+            "criterion_id": criterion_id,
+            "evidence_family": evidence_family,
+            "manifest_ref": f"{output_root}/result-manifest.json",
+            "phase": phase,
+            "phase_lifecycle_id": f"{phase}-test-lifecycle",
+            "redaction_status": "passed",
+            "requirement_ids": [requirement_id],
+            "source_ref_status": "passed",
+            "status": "passed",
+        }
+
+    def write_valid_upstream_rows(self, root: Path) -> dict[str, str]:
+        return {
+            "phase23": self.write_json(
+                root,
+                "build/ci-evidence/phase23/upstream-simulator-result-row.json",
+                self.upstream_row(
+                    "23-simulator-evidence-execution",
+                    "final-simulator-evidence",
+                    "EVID-01",
+                    "build/ci-evidence/phase23",
+                    "external://phase23/simulator/startup-log.json",
+                ),
+            ),
+            "phase24": self.write_json(
+                root,
+                "build/ci-evidence/phase24/upstream-hardware-media-safety-result-row.json",
+                self.upstream_row(
+                    "24-hardware-media-and-safety-evidence-execution",
+                    "final-hardware-safety-media-evidence",
+                    "EVID-02",
+                    "build/ci-evidence/phase24",
+                    "external://phase24/hardware/safety-report.json",
+                ),
+            ),
+            "phase25": self.write_json(
+                root,
+                "build/ci-evidence/phase25/upstream-live-service-result-row.json",
+                self.upstream_row(
+                    "25-live-service-evidence-execution",
+                    "final-live-service-evidence",
+                    "EVID-03",
+                    "build/ci-evidence/phase25",
+                    "external://phase25/live-service/connect-report.json",
+                ),
+            ),
+        }
 
     def test_contract_lists_phase26_policy_and_phase20_rows(self) -> None:
         # Arrange
@@ -475,6 +550,155 @@ class Phase26ReleaseSigningUpstreamEvidenceTest(unittest.TestCase):
                 all(row["requirement_ids"] == ["ACPT-01"] for row in rows if row["criterion_id"] != "final-release-artifact-signing-evidence")
             )
             self.assertTrue(all(row["maintainer_state"] in {"pending", "blocked", "not-required"} for row in rows))
+
+    def test_consumed_upstream_rows_replace_default_pending_rows(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            row_paths = self.write_valid_upstream_rows(root)
+
+            # Act
+            result = self.run_verifier(
+                [
+                    "--quick",
+                    "--output-dir",
+                    DEFAULT_OUTPUT_DIR,
+                    "--phase23-simulator-row",
+                    row_paths["phase23"],
+                    "--phase24-hardware-media-safety-row",
+                    row_paths["phase24"],
+                    "--phase25-live-service-row",
+                    row_paths["phase25"],
+                ],
+                maybe_root=root,
+            )
+
+            # Assert
+            self.assertEqual(result.returncode, 0, result.stdout)
+            rows = {
+                row["criterion_id"]: row
+                for row in self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/upstream-result-row-table.json")["rows"]
+            }
+            self.assertEqual(rows["final-simulator-evidence"]["status"], "passed")
+            self.assertEqual(rows["final-simulator-evidence"]["requirement_ids"], ["EVID-01", "ACPT-01"])
+            self.assertIn(row_paths["phase23"], rows["final-simulator-evidence"]["artifact_refs"])
+            self.assertEqual(rows["final-hardware-safety-media-evidence"]["status"], "passed")
+            self.assertEqual(rows["final-hardware-safety-media-evidence"]["requirement_ids"], ["EVID-02", "ACPT-01"])
+            self.assertIn(row_paths["phase24"], rows["final-hardware-safety-media-evidence"]["artifact_refs"])
+            self.assertEqual(rows["final-live-network-transfer-evidence"]["status"], "passed")
+            self.assertEqual(rows["final-live-network-transfer-evidence"]["requirement_ids"], ["EVID-03", "ACPT-01"])
+            self.assertIn(row_paths["phase25"], rows["final-live-network-transfer-evidence"]["artifact_refs"])
+
+    def test_absent_upstream_rows_keep_fail_closed_defaults(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            result = self.run_verifier(["--quick", "--output-dir", DEFAULT_OUTPUT_DIR], maybe_root=root)
+            self.assertEqual(result.returncode, 0, result.stdout)
+
+            # Act
+            rows = {
+                row["criterion_id"]: row
+                for row in self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/upstream-result-row-table.json")["rows"]
+            }
+
+            # Assert
+            self.assertEqual(rows["final-simulator-evidence"]["status"], "pending-simulator-input")
+            self.assertEqual(rows["final-hardware-safety-media-evidence"]["status"], "pending-hardware-input")
+            self.assertEqual(rows["final-live-network-transfer-evidence"]["status"], "pending-live-input")
+            self.assertEqual(rows["final-simulator-evidence"]["requirement_ids"], ["ACPT-01"])
+
+    def test_phase25_compact_live_service_row_maps_to_phase18_live_network_criterion(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            row_paths = self.write_valid_upstream_rows(root)
+
+            # Act
+            result = self.run_verifier(
+                [
+                    "--quick",
+                    "--output-dir",
+                    DEFAULT_OUTPUT_DIR,
+                    "--phase25-live-service-row",
+                    row_paths["phase25"],
+                ],
+                maybe_root=root,
+            )
+
+            # Assert
+            self.assertEqual(result.returncode, 0, result.stdout)
+            rows = {
+                row["criterion_id"]: row
+                for row in self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/upstream-result-row-table.json")["rows"]
+            }
+            self.assertNotIn("final-live-service-evidence", rows)
+            live_row = rows["final-live-network-transfer-evidence"]
+            self.assertEqual(live_row["status"], "passed")
+            self.assertEqual(live_row["requirement_ids"], ["EVID-03", "ACPT-01"])
+            self.assertIn(row_paths["phase25"], live_row["evidence_refs"])
+
+    def test_invalid_upstream_row_guards_block_or_reject(self) -> None:
+        reject_cases = [
+            ("criterion_id", "final-ci-evidence", "criterion_id must be final-simulator-evidence"),
+            ("requirement_ids", ["EVID-02"], "requirement_ids must be ['EVID-01']"),
+            ("phase", "24-hardware-media-and-safety-evidence-execution", "phase must be 23-simulator-evidence-execution"),
+            ("phase_lifecycle_id", "", "phase_lifecycle_id must be a non-empty string"),
+            ("status", "exception-requested", "status is invalid"),
+            ("artifact_refs", ["../unsafe.json"], "ref escapes allowed roots"),
+        ]
+        for field, value, expected_message in reject_cases:
+            with self.subTest(field=field):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    row_paths = self.write_valid_upstream_rows(root)
+                    row = self.read_json(root, row_paths["phase23"])
+                    row[field] = value
+                    self.write_json(root, row_paths["phase23"], row)
+
+                    # Act
+                    result = self.run_verifier(
+                        ["--quick", "--phase23-simulator-row", row_paths["phase23"]],
+                        maybe_root=root,
+                    )
+
+                    # Assert
+                    self.assertNotEqual(result.returncode, 0, result.stdout)
+                    self.assertIn(expected_message, result.stdout)
+
+        block_cases = [
+            ("redaction_status", "failed", "redaction-failed"),
+            ("source_ref_status", "failed", "source-ref-failed"),
+        ]
+        for field, value, expected_reason in block_cases:
+            with self.subTest(field=field):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    row_paths = self.write_valid_upstream_rows(root)
+                    row = self.read_json(root, row_paths["phase23"])
+                    row[field] = value
+                    self.write_json(root, row_paths["phase23"], row)
+
+                    # Act
+                    result = self.run_verifier(
+                        [
+                            "--quick",
+                            "--output-dir",
+                            DEFAULT_OUTPUT_DIR,
+                            "--phase23-simulator-row",
+                            row_paths["phase23"],
+                        ],
+                        maybe_root=root,
+                    )
+
+                    # Assert
+                    self.assertEqual(result.returncode, 0, result.stdout)
+                    rows = self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/upstream-result-row-table.json")["rows"]
+                    simulator_row = next(row for row in rows if row["criterion_id"] == "final-simulator-evidence")
+                    self.assertEqual(simulator_row["status"], "blocked")
+                    self.assertIn(expected_reason, simulator_row["failure_reason"])
 
     def test_quick_marks_real_release_evidence_as_not_supplied(self) -> None:
         # Arrange

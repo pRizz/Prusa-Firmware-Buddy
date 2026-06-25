@@ -19,6 +19,9 @@ PHASE17_CONTRACT = Path("tools/bazel/manifests/phase17_release_candidate_evidenc
 PHASE18_CONTRACT = Path("tools/bazel/manifests/phase18_cutover_review_contract.json")
 PHASE20_CONTRACT = Path("tools/bazel/manifests/phase20_release_candidate_artifacts_contract.json")
 PHASE20_RELEASE_INPUT_TEMPLATE = Path("tools/bazel/manifests/phase20_release_environment_inputs.template.json")
+PHASE23_CONTRACT = Path("tools/bazel/manifests/phase23_simulator_evidence_execution_contract.json")
+PHASE24_CONTRACT = Path("tools/bazel/manifests/phase24_hardware_media_safety_evidence_execution_contract.json")
+PHASE25_CONTRACT = Path("tools/bazel/manifests/phase25_live_service_evidence_execution_contract.json")
 DEFAULT_OUTPUT_DIR = Path("build/ci-evidence/phase26")
 UPSTREAM_RESULT_ROW_FIELDS = [
     "criterion_id",
@@ -63,6 +66,41 @@ GENERATED_ARTIFACTS = [
     "contract-snapshots/phase20_release_environment_inputs.template.json",
 ]
 SNAPSHOT_CONTRACTS = [PHASE17_CONTRACT, PHASE18_CONTRACT, PHASE20_CONTRACT, PHASE20_RELEASE_INPUT_TEMPLATE]
+UPSTREAM_ROW_INPUTS = [
+    {
+        "flag": "--phase23-simulator-row",
+        "arg_name": "phase23_simulator_row",
+        "source_contract": PHASE23_CONTRACT.as_posix(),
+        "source_phase": "23-simulator-evidence-execution",
+        "source_criterion_id": "final-simulator-evidence",
+        "canonical_criterion_id": "final-simulator-evidence",
+        "producer_requirement_ids": ["EVID-01"],
+        "input_root": "build/ci-evidence/phase23/",
+        "external_root": "external://phase23/",
+    },
+    {
+        "flag": "--phase24-hardware-media-safety-row",
+        "arg_name": "phase24_hardware_media_safety_row",
+        "source_contract": PHASE24_CONTRACT.as_posix(),
+        "source_phase": "24-hardware-media-and-safety-evidence-execution",
+        "source_criterion_id": "final-hardware-safety-media-evidence",
+        "canonical_criterion_id": "final-hardware-safety-media-evidence",
+        "producer_requirement_ids": ["EVID-02"],
+        "input_root": "build/ci-evidence/phase24/",
+        "external_root": "external://phase24/",
+    },
+    {
+        "flag": "--phase25-live-service-row",
+        "arg_name": "phase25_live_service_row",
+        "source_contract": PHASE25_CONTRACT.as_posix(),
+        "source_phase": "25-live-service-evidence-execution",
+        "source_criterion_id": "final-live-service-evidence",
+        "canonical_criterion_id": "final-live-network-transfer-evidence",
+        "producer_requirement_ids": ["EVID-03"],
+        "input_root": "build/ci-evidence/phase25/",
+        "external_root": "external://phase25/",
+    },
+]
 PHASE26_DOCS = [
     ".planning/phases/26-release-signing-and-upstream-result-evidence/26-CONTEXT.md",
     ".planning/phases/26-release-signing-and-upstream-result-evidence/26-RESEARCH.md",
@@ -319,6 +357,7 @@ def check_contract(root: Path) -> dict[str, Any]:
     if not isinstance(source_contracts, list):
         errors.append(f"{CONTRACT_MANIFEST.as_posix()} source_contracts must be a list")
     else:
+        source_paths = set()
         for index, source_contract in enumerate(source_contracts):
             if not isinstance(source_contract, dict):
                 errors.append(f"source_contracts[{index}] must be an object")
@@ -333,6 +372,11 @@ def check_contract(root: Path) -> dict[str, Any]:
                 continue
             if not (root / relative_path).exists():
                 errors.append(f"source_contracts[{index}] path does not exist: {source_path}")
+            source_paths.add(source_path)
+        for descriptor in UPSTREAM_ROW_INPUTS:
+            source_contract = str(descriptor["source_contract"])
+            if source_contract not in source_paths:
+                errors.append(f"source_contracts must include upstream row source contract: {source_contract}")
     release_policy = contract.get("release_policy")
     if not isinstance(release_policy, dict):
         errors.append(f"{CONTRACT_MANIFEST.as_posix()} release_policy must be an object")
@@ -367,6 +411,8 @@ def check_contract(root: Path) -> dict[str, Any]:
         phase25_mapping = mappings.get("phase25_compact_criterion_id") if isinstance(mappings, dict) else None
         if not isinstance(phase25_mapping, dict) or phase25_mapping.get("to") != "final-live-network-transfer-evidence":
             errors.append("upstream_policy must map Phase 25 compact live-service rows to the Phase 18 live-network criterion")
+        if upstream_policy.get("upstream_row_inputs") != UPSTREAM_ROW_INPUTS:
+            errors.append("upstream_policy upstream_row_inputs must declare Phase 23, Phase 24, and Phase 25 input rows exactly")
     if contract.get("generated_artifacts") != GENERATED_ARTIFACTS:
         errors.append("generated_artifacts must list the Phase 26 retained output files exactly")
     if errors:
@@ -652,6 +698,191 @@ def validate_release_input(root: Path, maybe_path: str | None) -> dict[str, dict
     return parsed_rows
 
 
+def require_string_list(row: dict[str, Any], field: str, row_name: str) -> list[str]:
+    values = require_list(row, field, row_name)
+    if not all(isinstance(value, str) and value for value in values):
+        raise VerificationError(f"{row_name} {field} must contain non-empty strings")
+    return values
+
+
+def require_exact_string_list(row: dict[str, Any], field: str, expected: list[str], row_name: str) -> list[str]:
+    values = require_string_list(row, field, row_name)
+    if values != expected:
+        raise VerificationError(f"{row_name} {field} must be {expected}")
+    return values
+
+
+def unique_strings(values: list[str]) -> list[str]:
+    return list(dict.fromkeys(values))
+
+
+def validate_upstream_input_path(root: Path, descriptor: dict[str, Any], maybe_path: str) -> Path:
+    input_path = Path(maybe_path)
+    row_name = str(descriptor["flag"])
+    if input_path.is_absolute() or ".." in input_path.parts:
+        raise VerificationError(f"{row_name} input path must be repo-relative under {descriptor['input_root']}: {maybe_path}")
+    validate_ref(input_path.as_posix(), [str(descriptor["input_root"])], row_name, "input path")
+    if not (root / input_path).exists():
+        raise VerificationError(f"{row_name} input row file does not exist: {input_path.as_posix()}")
+    return input_path
+
+
+def load_upstream_input_row(root: Path, descriptor: dict[str, Any], maybe_path: str) -> tuple[Path, dict[str, Any]]:
+    input_path = validate_upstream_input_path(root, descriptor, maybe_path)
+    raw_text = (root / input_path).read_text(encoding="utf-8")
+    reject_forbidden_text(input_path, raw_text)
+    try:
+        data = json.loads(raw_text)
+    except json.JSONDecodeError as error:
+        raise VerificationError(f"{input_path.as_posix()} is not valid JSON: {error}") from error
+    reject_forbidden_field_names(data, input_path.as_posix())
+    if not isinstance(data, dict):
+        raise VerificationError(f"{input_path.as_posix()} must contain a top-level object")
+    return input_path, data
+
+
+def validate_compact_upstream_row(
+    descriptor: dict[str, Any],
+    input_path: Path,
+    row: dict[str, Any],
+    status_vocabulary: set[str],
+) -> tuple[str | None, list[str]]:
+    row_name = f"{descriptor['flag']} row"
+    errors: list[str] = []
+    try:
+        criterion_id = require_string(row, "criterion_id", row_name)
+        if criterion_id != descriptor["source_criterion_id"]:
+            errors.append(f"{row_name} criterion_id must be {descriptor['source_criterion_id']}")
+    except VerificationError as error:
+        errors.append(str(error))
+    try:
+        require_exact_string_list(row, "requirement_ids", list(descriptor["producer_requirement_ids"]), row_name)
+    except VerificationError as error:
+        errors.append(str(error))
+    try:
+        phase = require_string(row, "phase", row_name)
+        if phase != descriptor["source_phase"]:
+            errors.append(f"{row_name} phase must be {descriptor['source_phase']}")
+    except VerificationError as error:
+        errors.append(str(error))
+    try:
+        require_string(row, "phase_lifecycle_id", row_name)
+    except VerificationError as error:
+        errors.append(str(error))
+    status = None
+    try:
+        status = require_string(row, "status", row_name)
+        if status not in status_vocabulary:
+            errors.append(f"{row_name} status is invalid: {status}")
+    except VerificationError as error:
+        errors.append(str(error))
+    for field in ["redaction_status", "source_ref_status"]:
+        try:
+            require_string(row, field, row_name)
+        except VerificationError as error:
+            errors.append(str(error))
+    if "exception_status" in row:
+        try:
+            require_string(row, "exception_status", row_name)
+        except VerificationError as error:
+            errors.append(str(error))
+    allowed_roots = [str(descriptor["input_root"]), str(descriptor["external_root"])]
+    try:
+        validate_ref_list(row, "artifact_refs", row_name, allowed_roots, require_nonempty=True)
+    except VerificationError as error:
+        errors.append(str(error))
+    maybe_manifest_ref = row.get("manifest_ref")
+    if maybe_manifest_ref is not None:
+        if not isinstance(maybe_manifest_ref, str) or not maybe_manifest_ref:
+            errors.append(f"{row_name} manifest_ref must be a non-empty string when present")
+        else:
+            try:
+                validate_ref(maybe_manifest_ref, allowed_roots, row_name, "manifest_ref")
+            except VerificationError as error:
+                errors.append(str(error))
+    try:
+        validate_ref(input_path.as_posix(), [str(descriptor["input_root"])], row_name, "input path")
+    except VerificationError as error:
+        errors.append(str(error))
+    return status, errors
+
+
+def consumed_row_maintainer_state(status: str) -> str:
+    if status == "passed":
+        return "not-required"
+    if status in {"failed", "blocked", "rejected-redaction", "rejected-overclaim"}:
+        return "blocked"
+    return "pending"
+
+
+def canonicalize_compact_upstream_row(
+    descriptor: dict[str, Any],
+    input_path: Path,
+    row: dict[str, Any],
+    requirement: dict[str, Any],
+    generated_at: str,
+    status_vocabulary: set[str],
+) -> dict[str, Any]:
+    status, errors = validate_compact_upstream_row(descriptor, input_path, row, status_vocabulary)
+    if errors:
+        raise VerificationError("\n".join(errors))
+    assert status is not None
+    evidence_refs = [input_path.as_posix()]
+    maybe_manifest_ref = row.get("manifest_ref")
+    if isinstance(maybe_manifest_ref, str) and maybe_manifest_ref:
+        evidence_refs.insert(0, maybe_manifest_ref)
+    artifact_refs = [
+        *require_string_list(row, "artifact_refs", f"{descriptor['flag']} row"),
+        input_path.as_posix(),
+    ]
+    return {
+        "artifact_refs": unique_strings(artifact_refs),
+        "criterion_id": descriptor["canonical_criterion_id"],
+        "evidence_family": require_string(requirement, "evidence_family", str(descriptor["canonical_criterion_id"])),
+        "evidence_refs": unique_strings(evidence_refs),
+        "exception_status": row.get("exception_status", "none"),
+        "failure_reason": "none" if status == "passed" else f"Consumed upstream {descriptor['source_phase']} row status is {status}.",
+        "generated_at_utc": generated_at,
+        "maintainer_state": consumed_row_maintainer_state(status),
+        "owning_phase": require_string(requirement, "source_phase", str(descriptor["canonical_criterion_id"])),
+        "redaction_status": require_string(row, "redaction_status", f"{descriptor['flag']} row"),
+        "requirement_ids": [*descriptor["producer_requirement_ids"], "ACPT-01"],
+        "source_lifecycle_id": require_string(requirement, "source_lifecycle_id", str(descriptor["canonical_criterion_id"])),
+        "source_lifecycle_status": "current",
+        "source_ref_status": require_string(row, "source_ref_status", f"{descriptor['flag']} row"),
+        "source_requirement_ids": require_string_list(requirement, "requirement_ids", str(descriptor["canonical_criterion_id"])),
+        "status": status,
+    }
+
+
+def consumed_upstream_rows(
+    root: Path,
+    maybe_paths: dict[str, str | None],
+    requirements_by_id: dict[str, dict[str, Any]],
+    generated_at: str,
+    status_vocabulary: set[str],
+) -> dict[str, dict[str, Any]]:
+    rows: dict[str, dict[str, Any]] = {}
+    for descriptor in UPSTREAM_ROW_INPUTS:
+        maybe_path = maybe_paths.get(str(descriptor["arg_name"]))
+        if maybe_path is None:
+            continue
+        input_path, compact_row = load_upstream_input_row(root, descriptor, maybe_path)
+        canonical_criterion_id = str(descriptor["canonical_criterion_id"])
+        requirement = requirements_by_id.get(canonical_criterion_id)
+        if requirement is None:
+            raise VerificationError(f"{canonical_criterion_id} is not a canonical Phase 18 upstream criterion")
+        rows[canonical_criterion_id] = canonicalize_compact_upstream_row(
+            descriptor,
+            input_path,
+            compact_row,
+            requirement,
+            generated_at,
+            status_vocabulary,
+        )
+    return rows
+
+
 def release_status_counts(rows: dict[str, dict[str, Any]]) -> dict[str, int]:
     counts: dict[str, int] = {}
     for row in rows.values():
@@ -819,6 +1050,7 @@ def build_upstream_rows(
     release_rows: dict[str, dict[str, Any]],
     real_release_evidence_supplied: bool,
     generated_at: str,
+    consumed_rows: dict[str, dict[str, Any]],
 ) -> list[dict[str, Any]]:
     phase18_contract = load_json(root, PHASE18_CONTRACT)
     status_vocabulary = phase18_upstream_status_vocabulary(phase18_contract)
@@ -827,27 +1059,31 @@ def build_upstream_rows(
     rows: list[dict[str, Any]] = []
     for requirement in phase18_upstream_requirements(phase18_contract):
         criterion_id = require_string(requirement, "criterion_id", "upstream_result_requirement")
-        status = default_upstream_status(criterion_id, release_status)
-        if status not in status_vocabulary:
-            raise VerificationError(f"{criterion_id} produced unknown upstream status: {status}")
-        row = {
-            "artifact_refs": artifact_refs_for_criterion(output_dir, criterion_id),
-            "criterion_id": criterion_id,
-            "evidence_family": require_string(requirement, "evidence_family", criterion_id),
-            "evidence_refs": evidence_refs_for_criterion(criterion_id),
-            "exception_status": "none",
-            "failure_reason": default_failure_reason(criterion_id, status, release_reason),
-            "generated_at_utc": generated_at,
-            "maintainer_state": default_maintainer_state(criterion_id),
-            "owning_phase": require_string(requirement, "source_phase", criterion_id),
-            "redaction_status": "passed",
-            "requirement_ids": phase26_requirement_ids(criterion_id),
-            "source_lifecycle_id": require_string(requirement, "source_lifecycle_id", criterion_id),
-            "source_lifecycle_status": "current",
-            "source_ref_status": "passed",
-            "source_requirement_ids": require_list(requirement, "requirement_ids", criterion_id),
-            "status": status,
-        }
+        maybe_consumed_row = consumed_rows.get(criterion_id)
+        if maybe_consumed_row is None:
+            status = default_upstream_status(criterion_id, release_status)
+            if status not in status_vocabulary:
+                raise VerificationError(f"{criterion_id} produced unknown upstream status: {status}")
+            row = {
+                "artifact_refs": artifact_refs_for_criterion(output_dir, criterion_id),
+                "criterion_id": criterion_id,
+                "evidence_family": require_string(requirement, "evidence_family", criterion_id),
+                "evidence_refs": evidence_refs_for_criterion(criterion_id),
+                "exception_status": "none",
+                "failure_reason": default_failure_reason(criterion_id, status, release_reason),
+                "generated_at_utc": generated_at,
+                "maintainer_state": default_maintainer_state(criterion_id),
+                "owning_phase": require_string(requirement, "source_phase", criterion_id),
+                "redaction_status": "passed",
+                "requirement_ids": phase26_requirement_ids(criterion_id),
+                "source_lifecycle_id": require_string(requirement, "source_lifecycle_id", criterion_id),
+                "source_lifecycle_status": "current",
+                "source_ref_status": "passed",
+                "source_requirement_ids": require_list(requirement, "requirement_ids", criterion_id),
+                "status": status,
+            }
+        else:
+            row = maybe_consumed_row
         normalized = normalize_upstream_row(row, requirement)
         missing = [field for field in UPSTREAM_RESULT_ROW_FIELDS if field not in normalized]
         if missing:
@@ -918,10 +1154,23 @@ def write_retained_outputs(
     output_dir: Path,
     release_rows: dict[str, dict[str, Any]],
     real_release_evidence_supplied: bool,
+    maybe_upstream_paths: dict[str, str | None],
 ) -> None:
     generated_at = utc_now()
+    phase18_contract = load_json(root, PHASE18_CONTRACT)
+    requirements_by_id = {
+        require_string(requirement, "criterion_id", "upstream_result_requirement"): requirement
+        for requirement in phase18_upstream_requirements(phase18_contract)
+    }
+    consumed_rows = consumed_upstream_rows(
+        root,
+        maybe_upstream_paths,
+        requirements_by_id,
+        generated_at,
+        phase18_upstream_status_vocabulary(phase18_contract),
+    )
     phase20_contract = load_json(root, PHASE20_CONTRACT)
-    upstream_rows = build_upstream_rows(root, output_dir, release_rows, real_release_evidence_supplied, generated_at)
+    upstream_rows = build_upstream_rows(root, output_dir, release_rows, real_release_evidence_supplied, generated_at, consumed_rows)
     release_status = aggregate_release_status(release_rows)
     release_counts = release_status_counts(release_rows)
     release_summary = {
@@ -1152,12 +1401,17 @@ def check_wiring(root: Path) -> None:
         raise VerificationError("\n".join(errors))
 
 
-def run_quick(root: Path, output_dir: Path, maybe_release_input: str | None) -> None:
+def run_quick(
+    root: Path,
+    output_dir: Path,
+    maybe_release_input: str | None,
+    maybe_upstream_paths: dict[str, str | None],
+) -> None:
     check_contract(root)
     check_security(root)
     release_rows = validate_release_input(root, maybe_release_input)
     relative_output_dir = reset_output_root(root, output_dir)
-    write_retained_outputs(root, relative_output_dir, release_rows, maybe_release_input is not None)
+    write_retained_outputs(root, relative_output_dir, release_rows, maybe_release_input is not None, maybe_upstream_paths)
 
 
 def main() -> int:
@@ -1167,6 +1421,9 @@ def main() -> int:
     parser.add_argument("--wiring-only", action="store_true", help="validate Bazel and just workflow wiring")
     parser.add_argument("--quick", action="store_true", help="validate quick Phase 26 inputs and output containment")
     parser.add_argument("--release-input", help="optional sanitized release-manager input JSON")
+    parser.add_argument("--phase23-simulator-row", help="optional Phase 23 upstream simulator row JSON")
+    parser.add_argument("--phase24-hardware-media-safety-row", help="optional Phase 24 upstream hardware/media/safety row JSON")
+    parser.add_argument("--phase25-live-service-row", help="optional Phase 25 upstream live-service row JSON")
     parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR.as_posix(), help="Phase 26 evidence output directory")
     args = parser.parse_args()
     selected_modes = [args.contract_only, args.security_only, args.wiring_only, args.quick]
@@ -1174,6 +1431,13 @@ def main() -> int:
         parser.error("select exactly one verifier mode")
     if args.release_input and not args.quick:
         parser.error("--release-input is only valid with --quick")
+    maybe_upstream_paths = {
+        "phase23_simulator_row": args.phase23_simulator_row,
+        "phase24_hardware_media_safety_row": args.phase24_hardware_media_safety_row,
+        "phase25_live_service_row": args.phase25_live_service_row,
+    }
+    if any(maybe_upstream_paths.values()) and not args.quick:
+        parser.error("Phase 23, Phase 24, and Phase 25 upstream row inputs are only valid with --quick")
     try:
         if args.contract_only:
             check_contract(ROOT)
@@ -1185,7 +1449,7 @@ def main() -> int:
         elif args.wiring_only:
             check_wiring(ROOT)
         else:
-            run_quick(ROOT, Path(args.output_dir), args.release_input)
+            run_quick(ROOT, Path(args.output_dir), args.release_input, maybe_upstream_paths)
             print("Phase 26 release signing upstream evidence quick validation passed")
     except VerificationError as error:
         print(error, file=sys.stderr)

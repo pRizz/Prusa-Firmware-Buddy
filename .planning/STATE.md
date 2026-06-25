@@ -4,8 +4,8 @@ milestone: v1.2
 milestone_name: Cutover Evidence Execution and Acceptance
 status: executing
 stopped_at: Phase 29 context gathered
-last_updated: "2026-06-25T21:09:37.945Z"
-last_activity: 2026-06-25 -- Phase 29 planning complete
+last_updated: "2026-06-25T21:10:09.075Z"
+last_activity: 2026-06-25 -- Phase 29 execution started
 progress:
   total_phases: 7
   completed_phases: 6
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-23)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** v1.2 complete — final readiness packet and demotion gate verified
+**Current focus:** Phase 29 — upstream-evidence-flow-closure
 
 ## Current Position
 
 Milestone: v1.2 Cutover Evidence Execution and Acceptance - COMPLETE
-Phase: 28
-Plan: 1 of 1 complete
-Status: Ready to execute
-Last activity: 2026-06-25 -- Phase 29 planning complete
+Phase: 29 (upstream-evidence-flow-closure) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 29
+Last activity: 2026-06-25 -- Phase 29 execution started
 
 Progress: [##########] 100%
 

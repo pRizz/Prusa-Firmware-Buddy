@@ -663,6 +663,8 @@ def normalize_readiness_criteria(
             for row in matching_rows(exception_rows, criterion_id)
             if isinstance(row, dict)
         ]
+        phase26_evidence_refs = [str(ref) for ref in phase26_row.get("evidence_refs", []) if isinstance(ref, str)]
+        phase27_evidence_refs = [str(ref) for ref in phase27_row.get("evidence_refs", []) if isinstance(ref, str)]
         normalized.append(
             {
                 "criterion_id": criterion_id,
@@ -677,8 +679,8 @@ def normalize_readiness_criteria(
                 "exception_metadata": inline_exceptions,
                 "residual_risk": str(phase27_row.get("residual_risk", "Pending final readiness review.")),
                 "residual_risk_refs": residual_refs,
-                "source_refs": list(phase26_row.get("evidence_refs", [])),
-                "evidence_refs": list(phase27_row.get("evidence_refs", phase26_row.get("evidence_refs", []))),
+                "source_refs": phase26_evidence_refs,
+                "evidence_refs": sorted(set([*phase26_evidence_refs, *phase27_evidence_refs])),
                 "artifact_refs": sorted(
                     set(
                         [
