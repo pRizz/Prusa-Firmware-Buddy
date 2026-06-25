@@ -353,6 +353,22 @@ class Phase27RetainedCodeAcceptanceDecisionsTest(unittest.TestCase):
             self.assertFalse(handoff["phase27_may_authorize_demotion"])
             self.assertNotIn("demotion_allowed", json.dumps(handoff))
 
+    def test_quick_rejects_phase26_lifecycle_identity_drift(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase26_rows(root)
+            phase26_rows = self.read_json(root, PHASE26_ROWS)
+            phase26_rows["rows"][0]["source_lifecycle_id"] = "stale-phase-lifecycle"
+            self.write_json(root, PHASE26_ROWS, phase26_rows)
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("source_lifecycle_id must match Phase 18", result.stdout)
+
     def test_quick_normalizes_approve_reject_and_exception_decisions(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()

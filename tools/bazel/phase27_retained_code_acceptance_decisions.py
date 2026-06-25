@@ -453,6 +453,10 @@ def load_phase26_upstream_rows(root: Path, path: Path, phase18_contract: dict[st
         raise VerificationError(f"{path.as_posix()} must contain a rows list")
     required_fields = phase26_required_row_fields(phase26_contract)
     expected_ids = phase18_upstream_criterion_ids(phase18_contract)
+    requirement_by_id = {
+        require_string(requirement, "criterion_id", "Phase 18 upstream requirement"): requirement
+        for requirement in phase18_upstream_requirements(phase18_contract)
+    }
     parsed_rows: list[dict[str, Any]] = []
     errors: list[str] = []
     for index, row in enumerate(rows):
@@ -464,11 +468,21 @@ def load_phase26_upstream_rows(root: Path, path: Path, phase18_contract: dict[st
         if missing:
             errors.append(f"{row_name} missing required fields: {', '.join(missing)}")
         try:
-            require_string(row, "criterion_id", row_name)
+            criterion_id = require_string(row, "criterion_id", row_name)
             require_string(row, "status", row_name)
             require_string(row, "redaction_status", row_name)
             require_string(row, "source_ref_status", row_name)
             require_string(row, "source_lifecycle_status", row_name)
+            requirement = requirement_by_id.get(criterion_id)
+            if requirement is None:
+                errors.append(f"{row_name} uses unknown criterion_id: {criterion_id}")
+            else:
+                if row.get("evidence_family") != requirement.get("evidence_family"):
+                    errors.append(f"{row_name} evidence_family must match Phase 18")
+                if row.get("owning_phase") != requirement.get("source_phase"):
+                    errors.append(f"{row_name} owning_phase must match Phase 18")
+                if row.get("source_lifecycle_id") != requirement.get("source_lifecycle_id"):
+                    errors.append(f"{row_name} source_lifecycle_id must match Phase 18")
         except VerificationError as error:
             errors.append(str(error))
         parsed_rows.append(row)
