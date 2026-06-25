@@ -796,12 +796,16 @@ def normalize_retained_decisions(
             packet = packet_by_id[packet_id]
             hard_reasons = detect_hard_failure_reasons(row, allowed_hard_reasons, row_name)
             validate_decision_common(row, row_name, require_evidence_refs=decision in {"approve", "exception"} and not hard_reasons)
+            expected_role = require_string(packet, "approver_role", f"Phase 18 retained packet {packet_id}")
+            approver_role = require_string(row, "approver_role", row_name)
+            if approver_role != expected_role:
+                raise VerificationError(f"{row_name} approver_role must be {expected_role}")
             maybe_exception = row.get("exception")
             exception_surface = maybe_exception.get("affected_printer_or_release_surface") if isinstance(maybe_exception, dict) else ""
             validate_sensitive_role(
                 contract,
                 subject_text(packet_id, packet.get("title"), packet.get("taxonomy_tags"), exception_surface),
-                require_string(row, "approver_role", row_name),
+                approver_role,
                 row_name,
             )
             maybe_exception = normalize_exception(row, contract, row_name) if decision == "exception" and not hard_reasons else {"status": "none"}

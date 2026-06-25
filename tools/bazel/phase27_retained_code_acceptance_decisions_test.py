@@ -559,7 +559,9 @@ class Phase27RetainedCodeAcceptanceDecisionsTest(unittest.TestCase):
         with temp_dir:
             self.write_phase26_rows(root)
             maintainer_input = self.complete_maintainer_input(root)
-            network_row = next(row for row in maintainer_input["retained_code_decisions"] if row["packet_id"] == "packet-network-lwip-mbedtls-wui")
+            network_row = next(
+                row for row in maintainer_input["final_readiness_decisions"] if row["criterion_id"] == "final-live-network-transfer-evidence"
+            )
             network_row["approver_role"] = "release-maintainer"
             input_path = self.write_maintainer_input(root, maintainer_input)
 
@@ -569,6 +571,23 @@ class Phase27RetainedCodeAcceptanceDecisionsTest(unittest.TestCase):
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("sensitive_role_policy", result.stdout)
+
+    def test_retained_packet_approver_role_must_match_phase18_packet(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase26_rows(root)
+            maintainer_input = self.complete_maintainer_input(root)
+            runtime_row = next(row for row in maintainer_input["retained_code_decisions"] if row["packet_id"] == "packet-freertos-runtime")
+            runtime_row["approver_role"] = "cutover-maintainer"
+            input_path = self.write_maintainer_input(root, maintainer_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--maintainer-input", input_path], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("approver_role must be runtime-maintainer", result.stdout)
 
     def test_hard_blocker_runs_before_exception_handling(self) -> None:
         # Arrange
