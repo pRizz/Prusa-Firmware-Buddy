@@ -15,6 +15,9 @@ tags:
 requirements:
   - EVID-04
   - ACPT-01
+requirements_completed:
+  - EVID-04
+  - ACPT-01
 dependency_graph:
   requires:
     - phase17_release_candidate_evidence_contract

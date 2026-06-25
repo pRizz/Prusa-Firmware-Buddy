@@ -11,6 +11,8 @@ execution_mode: "yolo/autonomous"
 phase_lifecycle_id: "25-2026-06-23T21-12-42"
 plan_generated_at: "2026-06-23T21:12:46.652Z"
 generated_at: "2026-06-23T21:12:46.652Z"
+requirements:
+  - EVID-03
 requirements_completed:
   - EVID-03
 tags:

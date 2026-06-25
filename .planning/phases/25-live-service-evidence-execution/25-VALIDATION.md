@@ -1,3 +1,12 @@
+---
+phase: 25
+slug: live-service-evidence-execution
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
+created: 2026-06-23
+---
+
 # Phase 25: Live-Service Evidence Execution - Validation
 
 **Validated:** 2026-06-23

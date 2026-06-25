@@ -1,9 +1,9 @@
 ---
 phase: 27
 slug: retained-code-and-maintainer-acceptance-decisions
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-06-25T01:06:35.730Z
 ---
 
@@ -70,11 +70,11 @@ created: 2026-06-25T01:06:35.730Z
 
 ## Validation Sign-Off
 
-- [ ] All tasks have automated verify commands or Wave 0 dependencies.
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify.
-- [ ] Wave 0 covers all missing Phase 27 verifier/test/contract/wiring references.
-- [ ] No watch-mode flags.
-- [ ] Feedback latency under 60 seconds for direct Python tests.
-- [ ] `nyquist_compliant: true` set in frontmatter after plans and automated evidence are green.
+- [x] All tasks have automated verify commands or Wave 0 dependencies.
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify.
+- [x] Wave 0 covers all missing Phase 27 verifier/test/contract/wiring references.
+- [x] No watch-mode flags.
+- [x] Feedback latency under 60 seconds for direct Python tests.
+- [x] `nyquist_compliant: true` set in frontmatter after plans and automated evidence are green.
 
-**Approval:** pending
+**Approval:** complete

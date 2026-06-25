@@ -62,7 +62,7 @@ Full phase details are archived in `.planning/milestones/v1.1-ROADMAP.md`.
 - [x] **Phase 26: Release, Signing, and Upstream Result Evidence** - Release managers supply secret-safe release outputs while maintainers receive upstream result rows for every cutover gate. (completed 2026-06-24)
 - [x] **Phase 27: Retained-Code and Maintainer Acceptance Decisions** - Maintainers record retained-code, residual-risk, exception, and final-readiness decisions as machine-readable inputs. (completed 2026-06-25)
 - [x] **Phase 28: Final Readiness Packet and Demotion Gate** - Maintainers generate the final readiness packet while reference demotion stays blocked unless explicitly approved. (completed 2026-06-25)
-- [ ] **Phase 29: Upstream Evidence Flow Closure** - Phase 26 consumes Phase 23-25 upstream row artifacts, Phase 28 reflects real evidence flow, and audit metadata debt is reconciled.
+- [x] **Phase 29: Upstream Evidence Flow Closure** - Phase 26 consumes Phase 23-25 upstream row artifacts, Phase 28 reflects real evidence flow, and audit metadata debt is reconciled. (completed 2026-06-25)
 
 ## Phase Details
 
@@ -183,4 +183,4 @@ Phases execute in numeric order: 23 -> 24 -> 25 -> 26 -> 27 -> 28 -> 29
 | 26. Release, Signing, and Upstream Result Evidence | v1.2 | 1/1 | Complete    | 2026-06-24 |
 | 27. Retained-Code and Maintainer Acceptance Decisions | v1.2 | 1/1 | Complete    | 2026-06-25 |
 | 28. Final Readiness Packet and Demotion Gate | v1.2 | 1/1 | Complete    | 2026-06-25 |
-| 29. Upstream Evidence Flow Closure | v1.2 | 0/1 | Not started | -          |
+| 29. Upstream Evidence Flow Closure | v1.2 | 2/2 | Complete    | 2026-06-25 |
