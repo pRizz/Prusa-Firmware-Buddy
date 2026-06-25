@@ -22,6 +22,7 @@ SOURCE_REF_FILES = [
     "tools/bazel/manifests/unsafe_boundary_audit.json",
     "tools/bazel/manifests/phase11_cutover_readiness.json",
 ]
+WIRING_FILES = ["BUILD.bazel", "tools/bazel/BUILD.bazel", "tools/bazel/rust_workflow.sh", "justfile"]
 REQUIRED_RETAINED_PACKET_IDS = [
     "packet-hal-cmsis-startup-asm",
     "packet-freertos-runtime",
@@ -116,6 +117,17 @@ class Phase27RetainedCodeAcceptanceDecisionsTest(unittest.TestCase):
         full_path = root / path
         full_path.parent.mkdir(parents=True, exist_ok=True)
         full_path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    def write_text(self, root: Path, path: str, text: str) -> None:
+        full_path = root / path
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        full_path.write_text(text, encoding="utf-8")
+
+    def copy_wiring_files(self, root: Path) -> None:
+        for path in WIRING_FILES:
+            destination = root / path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ROOT / path, destination)
 
     def write_phase26_rows(self, root: Path) -> None:
         phase18_contract = self.read_json(root, PHASE18_CONTRACT)
@@ -507,6 +519,61 @@ class Phase27RetainedCodeAcceptanceDecisionsTest(unittest.TestCase):
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("demotion_allowed", result.stdout)
+
+    def test_wiring_only_validates_bazel_wrapper_and_just_targets(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_wiring_files(root)
+
+            # Act
+            result = self.run_verifier(["--wiring-only"], maybe_root=root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_wiring_only_rejects_missing_phase26_precondition(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_wiring_files(root)
+            workflow = (root / "tools/bazel/rust_workflow.sh").read_text(encoding="utf-8")
+            workflow = workflow.replace(
+                "  phase27_verify)\n"
+                "    python3 tools/bazel/phase27_retained_code_acceptance_decisions.py --wiring-only\n"
+                "    python3 tools/bazel/phase26_release_signing_upstream_evidence.py --quick --output-dir build/ci-evidence/phase26\n"
+                "    python3 tools/bazel/phase27_retained_code_acceptance_decisions.py --quick --phase26-upstream-rows build/ci-evidence/phase26/upstream-result-row-table.json --output-dir build/ci-evidence/phase27\n",
+                "  phase27_verify)\n"
+                "    python3 tools/bazel/phase27_retained_code_acceptance_decisions.py --wiring-only\n"
+                "    python3 tools/bazel/phase27_retained_code_acceptance_decisions.py --quick --phase26-upstream-rows build/ci-evidence/phase26/upstream-result-row-table.json --output-dir build/ci-evidence/phase27\n",
+            )
+            self.write_text(root, "tools/bazel/rust_workflow.sh", workflow)
+
+            # Act
+            result = self.run_verifier(["--wiring-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("phase26_release_signing_upstream_evidence.py --quick", result.stdout)
+
+    def test_wiring_only_rejects_just_recipe_order_drift(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_wiring_files(root)
+            just_text = (root / "justfile").read_text(encoding="utf-8")
+            just_text = just_text.replace(
+                "phase27-verify:\n    bazel run //tools/bazel:phase27_verify_tests\n    bazel run //tools/bazel:phase27_verify\n",
+                "phase27-verify:\n    bazel run //tools/bazel:phase27_verify\n    bazel run //tools/bazel:phase27_verify_tests\n",
+            )
+            self.write_text(root, "justfile", just_text)
+
+            # Act
+            result = self.run_verifier(["--wiring-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("must run tests before verifier", result.stdout)
 
 
 if __name__ == "__main__":

@@ -26,6 +26,31 @@ PHASE26_UPSTREAM_ROWS = Path("build/ci-evidence/phase26/upstream-result-row-tabl
 PHASE26_GENERATION_COMMAND = (
     "python3 tools/bazel/phase26_release_signing_upstream_evidence.py --quick --output-dir build/ci-evidence/phase26"
 )
+PHASE27_DOCS = [
+    ".planning/phases/27-retained-code-and-maintainer-acceptance-decisions/27-CONTEXT.md",
+    ".planning/phases/27-retained-code-and-maintainer-acceptance-decisions/27-RESEARCH.md",
+    ".planning/phases/27-retained-code-and-maintainer-acceptance-decisions/27-VALIDATION.md",
+    ".planning/phases/27-retained-code-and-maintainer-acceptance-decisions/27-01-PLAN.md",
+]
+PHASE27_SOURCE_REF_MANIFESTS = [
+    "manifests/phase11_cutover_readiness.json",
+    "manifests/phase11_retained_code_justifications.json",
+    "manifests/foreign_code_inventory.json",
+    "manifests/unsafe_boundary_audit.json",
+    "manifests/phase18_cutover_review_contract.json",
+    "manifests/phase26_release_signing_upstream_evidence_contract.json",
+    "manifests/phase27_retained_code_acceptance_decisions_contract.json",
+]
+PHASE27_VERIFY_COMMANDS = [
+    "python3 tools/bazel/phase27_retained_code_acceptance_decisions.py --wiring-only",
+    PHASE26_GENERATION_COMMAND,
+    (
+        "python3 tools/bazel/phase27_retained_code_acceptance_decisions.py --quick "
+        "--phase26-upstream-rows build/ci-evidence/phase26/upstream-result-row-table.json "
+        "--output-dir build/ci-evidence/phase27"
+    ),
+]
+PHASE27_TEST_COMMAND = "python3 tools/bazel/phase27_retained_code_acceptance_decisions_test.py"
 DECISION_AXES = [
     "evidence_state",
     "maintainer_decision",
@@ -1079,6 +1104,150 @@ def write_phase27_outputs(root: Path, output_dir: Path, maybe_maintainer_input: 
     run_security_scan(root, maybe_maintainer_input, relative_output_dir)
 
 
+def require_file_contains(root: Path, path: Path, needles: list[str]) -> list[str]:
+    try:
+        text = read_text(root, path)
+    except VerificationError as error:
+        return [str(error)]
+    return [f"{path.as_posix()} missing required wiring text: {needle}" for needle in needles if needle not in text]
+
+
+def shell_case_commands(text: str, case_name: str) -> list[str] | None:
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if line.strip() != f"{case_name})":
+            continue
+        commands: list[str] = []
+        for body_line in lines[index + 1:]:
+            stripped = body_line.strip()
+            if stripped == ";;":
+                return commands
+            if stripped and not stripped.startswith("#"):
+                commands.append(stripped)
+        return commands
+    return None
+
+
+def just_recipe_commands(text: str, recipe_name: str) -> list[str] | None:
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if line.strip() != f"{recipe_name}:":
+            continue
+        commands: list[str] = []
+        for body_line in lines[index + 1:]:
+            if body_line and not body_line[0].isspace():
+                break
+            stripped = body_line.strip()
+            if stripped and not stripped.startswith("#"):
+                commands.append(stripped)
+        return commands
+    return None
+
+
+def missing_required_items(location: str, actual: list[str], expected: list[str]) -> list[str]:
+    actual_values = set(actual)
+    return [f"{location} missing required wiring item: {item}" for item in expected if item not in actual_values]
+
+
+def check_command_order(location: str, commands: list[str], first: str, second: str, message: str) -> list[str]:
+    if first not in commands or second not in commands:
+        return []
+    if commands.index(first) <= commands.index(second):
+        return []
+    return [f"{location} {message}"]
+
+
+def check_wiring(root: Path) -> None:
+    errors: list[str] = []
+    errors.extend(
+        require_file_contains(
+            root,
+            Path("BUILD.bazel"),
+            [
+                'name = "phase27_retained_code_acceptance_decisions_docs"',
+                'name = "phase27_verify"',
+                'actual = "//tools/bazel:phase27_verify"',
+                'name = "phase27_verify_tests"',
+                'actual = "//tools/bazel:phase27_verify_tests"',
+                *[f'"{doc}"' for doc in PHASE27_DOCS],
+            ],
+        )
+    )
+    errors.extend(
+        require_file_contains(
+            root,
+            Path("tools/bazel/BUILD.bazel"),
+            [
+                'name = "phase27_source_ref_manifests"',
+                'name = "phase27_verify"',
+                'name = "phase27_verify_tests"',
+                "phase27_retained_code_acceptance_decisions.py",
+                "phase27_retained_code_acceptance_decisions_test.py",
+                "phase27_retained_code_acceptance_decisions_contract.json",
+                "phase26_release_signing_upstream_evidence.py",
+                "//:phase27_retained_code_acceptance_decisions_docs",
+                *[f'"{manifest}"' for manifest in PHASE27_SOURCE_REF_MANIFESTS],
+            ],
+        )
+    )
+    try:
+        workflow_text = read_text(root, Path("tools/bazel/rust_workflow.sh"))
+    except VerificationError as error:
+        errors.append(str(error))
+    else:
+        verify_commands = shell_case_commands(workflow_text, "phase27_verify")
+        test_commands = shell_case_commands(workflow_text, "phase27_verify_tests")
+        if verify_commands is None:
+            errors.append("tools/bazel/rust_workflow.sh phase27_verify case arm missing")
+        else:
+            errors.extend(missing_required_items("tools/bazel/rust_workflow.sh phase27_verify case arm", verify_commands, PHASE27_VERIFY_COMMANDS))
+            errors.extend(
+                check_command_order(
+                    "tools/bazel/rust_workflow.sh phase27_verify case arm",
+                    verify_commands,
+                    PHASE27_VERIFY_COMMANDS[0],
+                    PHASE27_VERIFY_COMMANDS[1],
+                    "must run --wiring-only before Phase 26 generation",
+                )
+            )
+            errors.extend(
+                check_command_order(
+                    "tools/bazel/rust_workflow.sh phase27_verify case arm",
+                    verify_commands,
+                    PHASE27_VERIFY_COMMANDS[1],
+                    PHASE27_VERIFY_COMMANDS[2],
+                    "must run Phase 26 quick before Phase 27 quick",
+                )
+            )
+        if test_commands is None:
+            errors.append("tools/bazel/rust_workflow.sh phase27_verify_tests case arm missing")
+        else:
+            errors.extend(missing_required_items("tools/bazel/rust_workflow.sh phase27_verify_tests case arm", test_commands, [PHASE27_TEST_COMMAND]))
+    try:
+        just_text = read_text(root, Path("justfile"))
+    except VerificationError as error:
+        errors.append(str(error))
+    else:
+        just_commands = just_recipe_commands(just_text, "phase27-verify")
+        test_line = "bazel run //tools/bazel:phase27_verify_tests"
+        verify_line = "bazel run //tools/bazel:phase27_verify"
+        if just_commands is None:
+            errors.append("justfile phase27-verify recipe missing")
+        else:
+            errors.extend(missing_required_items("justfile phase27-verify recipe", just_commands, [test_line, verify_line]))
+            errors.extend(
+                check_command_order(
+                    "justfile phase27-verify recipe",
+                    just_commands,
+                    test_line,
+                    verify_line,
+                    "must run tests before verifier",
+                )
+            )
+    if errors:
+        raise VerificationError("\n".join(errors))
+
+
 def run_security_scan(root: Path, maybe_maintainer_input: str | None = None, maybe_output_dir: Path | None = None) -> None:
     errors: list[str] = []
     paths = [CONTRACT_MANIFEST]
@@ -1119,7 +1288,9 @@ def main(argv: list[str] | None = None) -> int:
             print("Phase 27 retained-code acceptance decisions security scan passed")
             return 0
         if args.wiring_only:
-            raise VerificationError("Phase 27 wiring validation is implemented in Task 3")
+            check_wiring(ROOT)
+            print("Phase 27 retained-code acceptance decisions wiring passed")
+            return 0
         if args.quick:
             run_security_scan(ROOT, args.maintainer_input)
             write_phase27_outputs(ROOT, Path(args.output_dir), args.maintainer_input, args.phase26_upstream_rows)

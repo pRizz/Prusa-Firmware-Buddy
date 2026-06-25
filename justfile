@@ -92,6 +92,10 @@ phase26-verify:
     bazel run //tools/bazel:phase26_verify_tests
     bazel run //tools/bazel:phase26_verify
 
+phase27-verify:
+    bazel run //tools/bazel:phase27_verify_tests
+    bazel run //tools/bazel:phase27_verify
+
 phase17-release-artifacts-smoke:
     bazel build //tools/bazel:phase17_representative_release_smoke
 

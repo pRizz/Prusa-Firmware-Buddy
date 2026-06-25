@@ -159,6 +159,14 @@ case "$command_name" in
   phase26_verify_tests)
     python3 tools/bazel/phase26_release_signing_upstream_evidence_test.py
     ;;
+  phase27_verify)
+    python3 tools/bazel/phase27_retained_code_acceptance_decisions.py --wiring-only
+    python3 tools/bazel/phase26_release_signing_upstream_evidence.py --quick --output-dir build/ci-evidence/phase26
+    python3 tools/bazel/phase27_retained_code_acceptance_decisions.py --quick --phase26-upstream-rows build/ci-evidence/phase26/upstream-result-row-table.json --output-dir build/ci-evidence/phase27
+    ;;
+  phase27_verify_tests)
+    python3 tools/bazel/phase27_retained_code_acceptance_decisions_test.py
+    ;;
   *)
     printf 'Unknown Rust workflow target: %s\n' "$command_name" >&2
     exit 2

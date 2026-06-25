@@ -740,6 +740,44 @@ shell_binary(
 )
 
 filegroup(
+    name = "phase27_source_ref_manifests",
+    srcs = [
+        "manifests/phase11_cutover_readiness.json",
+        "manifests/phase11_retained_code_justifications.json",
+        "manifests/foreign_code_inventory.json",
+        "manifests/unsafe_boundary_audit.json",
+        "manifests/phase18_cutover_review_contract.json",
+        "manifests/phase26_release_signing_upstream_evidence_contract.json",
+        "manifests/phase27_retained_code_acceptance_decisions_contract.json",
+    ],
+)
+
+shell_binary(
+    name = "phase27_verify",
+    src = "rust_workflow.sh",
+    data = [
+        "phase26_release_signing_upstream_evidence.py",
+        "phase27_retained_code_acceptance_decisions.py",
+        "manifests/phase27_retained_code_acceptance_decisions_contract.json",
+        ":phase26_source_ref_manifests",
+        ":phase27_source_ref_manifests",
+        "//:phase26_release_signing_upstream_evidence_docs",
+        "//:phase27_retained_code_acceptance_decisions_docs",
+    ],
+)
+
+shell_binary(
+    name = "phase27_verify_tests",
+    src = "rust_workflow.sh",
+    data = [
+        "phase27_retained_code_acceptance_decisions.py",
+        "phase27_retained_code_acceptance_decisions_test.py",
+        "manifests/phase27_retained_code_acceptance_decisions_contract.json",
+        ":phase27_source_ref_manifests",
+    ],
+)
+
+filegroup(
     name = "unsafe_boundary_audit",
     srcs = ["manifests/unsafe_boundary_audit.json"],
 )
