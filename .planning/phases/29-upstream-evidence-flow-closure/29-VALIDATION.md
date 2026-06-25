@@ -40,8 +40,7 @@ created: 2026-06-25
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
 | 29-01-01 | 01 | 1 | ACPT-01 | T-29-01 | Invalid upstream row identity, requirement, lifecycle, source-ref, redaction, status, and artifact refs cannot become passing Phase 26 rows. | unit | `python3 tools/bazel/phase26_release_signing_upstream_evidence_test.py` | ✅ | ⬜ pending |
 | 29-01-02 | 01 | 1 | READ-01 | T-29-02 | Phase 28 packet rows expose Phase 23-25 requirement IDs, evidence refs, and artifact refs only through consumed Phase 26 rows. | unit | `python3 tools/bazel/phase28_final_readiness_packet_test.py` | ✅ | ⬜ pending |
-| 29-01-03 | 01 | 1 | READ-02 | T-29-03 | Missing upstream row inputs preserve fail-closed pending or blocked defaults and do not fabricate pass evidence. | unit | `python3 tools/bazel/phase26_release_signing_upstream_evidence_test.py` | ✅ | ⬜ pending |
-| 29-01-04 | 01 | 1 | ACPT-01, READ-01, READ-02 | — | GSD summary, requirements, and validation metadata reconcile only after focused tests and phase verification pass. | docs/check | `git diff --check && rg -n "ACPT-01|READ-01|READ-02" .planning/phases/29-upstream-evidence-flow-closure .planning/REQUIREMENTS.md` | ✅ | ⬜ pending |
+| 29-02-01 | 02 | 2 | ACPT-01, READ-01, READ-02 | T-29-05 / T-29-06 | GSD summary, requirements, validation, and verification metadata reconcile only after focused tests, phase verification, diff check, and Cargo verification pass. | docs/check | `git diff --check && rg -n "ACPT-01|READ-01|READ-02" .planning/phases/29-upstream-evidence-flow-closure .planning/REQUIREMENTS.md` | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 

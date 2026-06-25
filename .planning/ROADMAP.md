@@ -151,7 +151,7 @@ Plans:
   2. Phase 26 uses consumed Phase 23-25 row status for simulator, hardware/media/safety, and live-service upstream rows instead of unconditional pending defaults, while absent real inputs still fail closed.
   3. Phase 28 final readiness packets reflect consumed Phase 26 evidence rows and preserve explicit blocked reference-demotion authorization unless a valid maintainer demotion decision is supplied.
   4. Machine-readable traceability carries EVID-01, EVID-02, and EVID-03 through Phase 26/28 rows, and summary plus Nyquist validation metadata is reconciled for phases 25-29.
-**Plans**: 1 plan
+**Plans**: 2 plans
 
 ## Requirement Coverage
 
