@@ -1,0 +1,132 @@
+{
+  "schema_version": "1",
+  "id": "phase28_final_readiness_packet_contract",
+  "phase": "28-final-readiness-packet-and-demotion-gate",
+  "phase_lifecycle_id": "28-2026-06-25T03-31-49",
+  "artifact_name": "phase28-final-readiness-packet",
+  "output_root": "build/ci-evidence/phase28",
+  "requirements": [
+    {
+      "id": "READ-01",
+      "description": "Build one final readiness packet from Phase 26 upstream rows and the Phase 27 maintainer handoff."
+    },
+    {
+      "id": "READ-02",
+      "description": "Keep hard blockers, exception metadata, residual risks, and artifact references explicit and redacted."
+    },
+    {
+      "id": "READ-03",
+      "description": "Require an explicit maintainer decision before recording reference demotion authorization."
+    }
+  ],
+  "source_contracts": [
+    "tools/bazel/manifests/phase18_cutover_review_contract.json",
+    "tools/bazel/manifests/phase26_release_signing_upstream_evidence_contract.json",
+    "tools/bazel/manifests/phase27_retained_code_acceptance_decisions_contract.json",
+    "tools/bazel/manifests/phase11_cutover_readiness.json",
+    "tools/bazel/manifests/phase11_retained_code_justifications.json",
+    "tools/bazel/manifests/foreign_code_inventory.json",
+    "tools/bazel/manifests/unsafe_boundary_audit.json"
+  ],
+  "required_inputs": {
+    "phase26_upstream_rows": "build/ci-evidence/phase26/upstream-result-row-table.json",
+    "phase27_handoff": "build/ci-evidence/phase27/phase28-handoff-manifest.json",
+    "demotion_decision_input": "optional"
+  },
+  "readiness_policy": {
+    "default_status": "blocked",
+    "pass_statuses": [
+      "passed"
+    ],
+    "exception_statuses": [
+      "exception-approved"
+    ],
+    "exception_coverable_statuses": [
+      "failed",
+      "blocked",
+      "exception-requested"
+    ],
+    "hard_blocker_reasons": [
+      "redaction-failed",
+      "overclaim-failed",
+      "lifecycle-mismatch",
+      "source-ref-failed",
+      "unsafe-ref",
+      "secret-tainted"
+    ],
+    "hard_blockers_outrank_exceptions": true,
+    "canonical_phase18_criteria": [
+      "final-ci-evidence",
+      "final-simulator-evidence",
+      "final-hardware-safety-media-evidence",
+      "final-live-network-transfer-evidence",
+      "final-release-artifact-signing-evidence",
+      "final-retained-code-acceptance",
+      "final-residual-risk-review",
+      "final-maintainer-decision",
+      "final-reference-demotion-allowed"
+    ]
+  },
+  "demotion_authorization_policy": {
+    "default_authorization": "blocked",
+    "explicit_input_required": true,
+    "evidence_status_never_implies_approval": true,
+    "requires_final_readiness_unblocked": true,
+    "allowed_authorizations": [
+      "blocked",
+      "approved"
+    ]
+  },
+  "phase27_handoff_policy": {
+    "demotion_authorization": "blocked",
+    "phase27_may_authorize_demotion": false,
+    "phase28_required_decision": "explicit-maintainer-reference-demotion-decision"
+  },
+  "demotion_decision_schema": {
+    "required_fields": [
+      "phase",
+      "phase_lifecycle_id",
+      "demotion_authorization",
+      "approver",
+      "approver_role",
+      "decision_timestamp",
+      "rationale",
+      "scope",
+      "evidence_refs"
+    ]
+  },
+  "exception_schema": {
+    "required_fields": [
+      "scope",
+      "owner",
+      "approver",
+      "approver_role",
+      "rationale",
+      "affected_printer_or_release_surface",
+      "evidence_refs",
+      "residual_risk",
+      "mitigation_or_follow_up",
+      "expiry_or_review_trigger"
+    ]
+  },
+  "top_level_verdicts": [
+    "final_readiness_status",
+    "reference_demotion_authorization"
+  ],
+  "generated_artifacts": [
+    "final-readiness-run-manifest.json",
+    "final-readiness-packet.json",
+    "normalized-readiness-criteria-table.json",
+    "blocker-summary.json",
+    "exception-residual-risk-summary.json",
+    "reference-demotion-authorization-record.json",
+    "demotion-decision-input-template.json",
+    "redacted-readiness-report.md",
+    "artifact-reference-summary.json",
+    "contract-snapshots/phase18_cutover_review_contract.json",
+    "contract-snapshots/phase26_release_signing_upstream_evidence_contract.json",
+    "contract-snapshots/phase27_retained_code_acceptance_decisions_contract.json",
+    "contract-snapshots/phase26-upstream-result-row-table.json",
+    "contract-snapshots/phase27-phase28-handoff-manifest.json"
+  ]
+}
