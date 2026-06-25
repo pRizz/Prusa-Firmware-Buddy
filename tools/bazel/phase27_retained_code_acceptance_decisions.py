@@ -718,6 +718,19 @@ def validate_decision_common(row: dict[str, Any], row_name: str, require_status:
         raise VerificationError("\n".join(errors))
 
 
+def validate_final_decision_status(row_name: str, decision: str, status: str) -> None:
+    if status == "passed" and decision != "approve":
+        raise VerificationError(f"{row_name} status passed requires decision approve")
+    if status in {"exception-approved", "not-applicable"} and decision != "exception":
+        raise VerificationError(f"{row_name} status {status} requires decision exception")
+    if decision == "approve" and status != "passed":
+        raise VerificationError(f"{row_name} approve requires status passed")
+    if decision == "reject" and status in {"passed", "exception-approved", "not-applicable"}:
+        raise VerificationError(f"{row_name} reject cannot use accepting status {status}")
+    if decision == "exception" and status not in {"exception-approved", "not-applicable"}:
+        raise VerificationError(f"{row_name} exception requires status exception-approved or not-applicable")
+
+
 def normalize_retained_decisions(
     phase18_contract: dict[str, Any],
     contract: dict[str, Any],
@@ -923,6 +936,7 @@ def normalize_final_decisions(
                 raise VerificationError(f"{row_name} decision is invalid: {decision}")
             if status not in allowed_statuses:
                 raise VerificationError(f"{row_name} status is invalid: {status}")
+            validate_final_decision_status(row_name, decision, status)
             if criterion_id == "final-reference-demotion-allowed" and (decision == "approve" or status in {"passed", "exception-approved"}):
                 raise VerificationError(f"{row_name} cannot approve reference demotion in Phase 27")
             validate_decision_common(row, row_name, require_status=True)

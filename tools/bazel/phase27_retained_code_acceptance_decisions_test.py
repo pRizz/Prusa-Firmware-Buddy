@@ -439,6 +439,42 @@ class Phase27RetainedCodeAcceptanceDecisionsTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("duplicate decision_id", result.stdout)
 
+    def test_final_decision_reject_cannot_pass(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase26_rows(root)
+            maintainer_input = self.complete_maintainer_input(root)
+            final_row = maintainer_input["final_readiness_decisions"][0]
+            final_row["decision"] = "reject"
+            final_row["status"] = "passed"
+            input_path = self.write_maintainer_input(root, maintainer_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--maintainer-input", input_path], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("status passed requires decision approve", result.stdout)
+
+    def test_final_decision_approve_requires_passed_status(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase26_rows(root)
+            maintainer_input = self.complete_maintainer_input(root)
+            final_row = maintainer_input["final_readiness_decisions"][0]
+            final_row["decision"] = "approve"
+            final_row["status"] = "failed"
+            input_path = self.write_maintainer_input(root, maintainer_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--maintainer-input", input_path], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("approve requires status passed", result.stdout)
+
     def test_maintainer_input_lifecycle_metadata_drift_is_rejected(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
