@@ -10,7 +10,7 @@ The replacement firmware is not yet cut over. Final reference demotion remains b
 
 - **v1.0 Rust Port Evidence Foundation** - Phases 1-12, 38 plans, shipped 2026-06-15. Archives: [roadmap](milestones/v1.0-ROADMAP.md), [requirements](milestones/v1.0-REQUIREMENTS.md), [audit](milestones/v1.0-MILESTONE-AUDIT.md), [phase history](milestones/v1.0-phases/).
 - **v1.1 Cutover Evidence Hardening** - Phases 13-22, 13 plans, shipped 2026-06-22. Archives: [roadmap](milestones/v1.1-ROADMAP.md), [requirements](milestones/v1.1-REQUIREMENTS.md), [audit](milestones/v1.1-MILESTONE-AUDIT.md).
-- **v1.2 Cutover Evidence Execution and Acceptance** - Phases 23-28, active. Goal: execute real external evidence gates, record maintainer acceptance decisions, and produce a final readiness packet without automatic reference demotion.
+- **v1.2 Cutover Evidence Execution and Acceptance** - Phases 23-29, active. Goal: execute real external evidence gates, record maintainer acceptance decisions, and produce a final readiness packet without automatic reference demotion.
 
 ## Phases
 
@@ -62,6 +62,7 @@ Full phase details are archived in `.planning/milestones/v1.1-ROADMAP.md`.
 - [x] **Phase 26: Release, Signing, and Upstream Result Evidence** - Release managers supply secret-safe release outputs while maintainers receive upstream result rows for every cutover gate. (completed 2026-06-24)
 - [x] **Phase 27: Retained-Code and Maintainer Acceptance Decisions** - Maintainers record retained-code, residual-risk, exception, and final-readiness decisions as machine-readable inputs. (completed 2026-06-25)
 - [x] **Phase 28: Final Readiness Packet and Demotion Gate** - Maintainers generate the final readiness packet while reference demotion stays blocked unless explicitly approved. (completed 2026-06-25)
+- [ ] **Phase 29: Upstream Evidence Flow Closure** - Phase 26 consumes Phase 23-25 upstream row artifacts, Phase 28 reflects real evidence flow, and audit metadata debt is reconciled.
 
 ## Phase Details
 
@@ -140,6 +141,18 @@ Plans:
   4. The final packet is decision-ready, with requirement coverage, evidence status, exception rationale, and remaining blocker summary visible to maintainers.
 **Plans**: 28-01
 
+### Phase 29: Upstream Evidence Flow Closure
+**Goal**: Real Phase 23, Phase 24, and Phase 25 upstream evidence rows can flow through Phase 26 into the Phase 28 final readiness packet while fail-closed quick behavior and reference-demotion separation remain intact.
+**Depends on**: Phase 28
+**Requirements**: ACPT-01, READ-01, READ-02
+**Gap Closure**: Closes gaps from `.planning/v1.2-MILESTONE-AUDIT.md`: G1, F1, ACPT-01 partial, READ-01 partial, READ-02 partial, plus related traceability and validation metadata debt.
+**Success Criteria** (what must be TRUE):
+  1. Phase 26 accepts and validates Phase 23, Phase 24, and Phase 25 upstream row artifacts for criterion identity, requirement IDs, lifecycle/source refs, redaction status, source-ref status, artifact refs, and status vocabulary.
+  2. Phase 26 uses consumed Phase 23-25 row status for simulator, hardware/media/safety, and live-service upstream rows instead of unconditional pending defaults, while absent real inputs still fail closed.
+  3. Phase 28 final readiness packets reflect consumed Phase 26 evidence rows and preserve explicit blocked reference-demotion authorization unless a valid maintainer demotion decision is supplied.
+  4. Machine-readable traceability carries EVID-01, EVID-02, and EVID-03 through Phase 26/28 rows, and summary plus Nyquist validation metadata is reconciled for phases 25-29.
+**Plans**: 1 plan
+
 ## Requirement Coverage
 
 | Requirement | Phase | Status |
@@ -148,19 +161,19 @@ Plans:
 | EVID-02 | Phase 24 | Complete |
 | EVID-03 | Phase 25 | Complete |
 | EVID-04 | Phase 26 | Complete |
-| ACPT-01 | Phase 26 | Complete |
+| ACPT-01 | Phase 29 | Pending |
 | ACPT-02 | Phase 27 | Complete |
 | ACPT-03 | Phase 27 | Complete |
-| READ-01 | Phase 28 | Complete |
-| READ-02 | Phase 28 | Complete |
+| READ-01 | Phase 29 | Pending |
+| READ-02 | Phase 29 | Pending |
 | READ-03 | Phase 28 | Complete |
 
-**Coverage:** 10/10 v1.2 requirements mapped. No orphaned requirements. No duplicate requirement mappings.
+**Coverage:** 10/10 v1.2 requirements mapped. 7 complete, 3 pending gap closure. No orphaned requirements. No duplicate requirement mappings.
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 23 -> 24 -> 25 -> 26 -> 27 -> 28
+Phases execute in numeric order: 23 -> 24 -> 25 -> 26 -> 27 -> 28 -> 29
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -170,3 +183,4 @@ Phases execute in numeric order: 23 -> 24 -> 25 -> 26 -> 27 -> 28
 | 26. Release, Signing, and Upstream Result Evidence | v1.2 | 1/1 | Complete    | 2026-06-24 |
 | 27. Retained-Code and Maintainer Acceptance Decisions | v1.2 | 1/1 | Complete    | 2026-06-25 |
 | 28. Final Readiness Packet and Demotion Gate | v1.2 | 1/1 | Complete    | 2026-06-25 |
+| 29. Upstream Evidence Flow Closure | v1.2 | 0/1 | Not started | -          |

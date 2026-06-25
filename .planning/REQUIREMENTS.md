@@ -16,14 +16,14 @@ These requirements execute the real external evidence and acceptance flows creat
 
 ### Acceptance Decisions
 
-- [x] **ACPT-01**: Maintainer can review upstream result rows for every required cutover gate.
+- [ ] **ACPT-01**: Maintainer can review upstream result rows for every required cutover gate.
 - [x] **ACPT-02**: Maintainer can accept, reject, or exception retained-code packets with residual-risk rationale.
 - [x] **ACPT-03**: Maintainer can approve or block final readiness using machine-readable decision inputs.
 
 ### Final Readiness
 
-- [x] **READ-01**: Maintainer can generate a final cutover readiness packet that links all external evidence, acceptance decisions, exceptions, and residual risks.
-- [x] **READ-02**: Final readiness remains blocked by default unless all required evidence passes or has explicit approved exceptions.
+- [ ] **READ-01**: Maintainer can generate a final cutover readiness packet that links all external evidence, acceptance decisions, exceptions, and residual risks.
+- [ ] **READ-02**: Final readiness remains blocked by default unless all required evidence passes or has explicit approved exceptions.
 - [x] **READ-03**: Reference demotion remains a separate explicit maintainer approval and is not automatic.
 
 ## Future Requirements
@@ -58,21 +58,23 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EVID-02 | Phase 24 | Complete |
 | EVID-03 | Phase 25 | Complete |
 | EVID-04 | Phase 26 | Complete |
-| ACPT-01 | Phase 26 | Complete |
+| ACPT-01 | Phase 29 | Pending |
 | ACPT-02 | Phase 27 | Complete |
 | ACPT-03 | Phase 27 | Complete |
-| READ-01 | Phase 28 | Complete |
-| READ-02 | Phase 28 | Complete |
+| READ-01 | Phase 29 | Pending |
+| READ-02 | Phase 29 | Pending |
 | READ-03 | Phase 28 | Complete |
 
 **Coverage:**
 
 - v1.2 requirements: 10 total
 - Mapped to phases: 10
+- Complete: 7
+- Pending gap closure: 3
 - Unmapped: 0
 - Duplicate mappings: 0
 
 ______________________________________________________________________
 
 *Requirements defined: 2026-06-23*
-*Last updated: 2026-06-25 after Phase 28 completion*
+*Last updated: 2026-06-25 after v1.2 milestone audit gap planning*
