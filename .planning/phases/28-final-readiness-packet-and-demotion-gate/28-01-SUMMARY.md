@@ -2,6 +2,10 @@
 phase: 28-final-readiness-packet-and-demotion-gate
 plan: 28-01
 subsystem: final-readiness-packet-and-demotion-gate
+generated_by: gsd-executor
+lifecycle_mode: yolo
+phase_lifecycle_id: 28-2026-06-25T03-31-49
+generated_at: 2026-06-25T04:32:07Z
 tags:
   - final-readiness
   - demotion-gate
