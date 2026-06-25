@@ -40,6 +40,7 @@ Passed before metadata closure:
 - `cargo clippy --all-targets --all-features -- -D warnings`
 - `cargo build --all-targets --all-features`
 - `cargo test --all-features`
+- `gsd-code-review` followed by `29-REVIEW-FIX.md` closure for one critical and two warning findings.
 
 ## Residual Risks
 

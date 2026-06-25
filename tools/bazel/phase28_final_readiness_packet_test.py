@@ -747,6 +747,23 @@ class Phase28FinalReadinessPacketTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("symlink escape", result.stdout)
 
+    def test_output_root_regular_file_is_rejected_without_traceback(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase_inputs(root)
+            output_root = root / DEFAULT_OUTPUT_DIR
+            output_root.parent.mkdir(parents=True, exist_ok=True)
+            output_root.write_text("not a directory\n", encoding="utf-8")
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--output-dir exists and is not a directory", result.stdout)
+        self.assertNotIn("Traceback", result.stdout)
+
     def test_security_scan_rejects_secret_fields_and_generated_overclaims(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()

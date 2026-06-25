@@ -299,6 +299,8 @@ def reset_output_root(path: Path) -> None:
     if path.exists():
         if path.is_symlink():
             raise VerificationError(f"--output-dir symlink escape risk: {path.as_posix()}")
+        if not path.is_dir():
+            raise VerificationError(f"--output-dir exists and is not a directory: {path.as_posix()}")
         shutil.rmtree(path)
     path.mkdir(parents=True)
 

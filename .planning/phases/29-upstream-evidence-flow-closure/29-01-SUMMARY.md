@@ -36,8 +36,8 @@ Phase 28 now preserves Phase 26 evidence lineage in packet criteria by merging P
 
 Passed:
 
-- `python3 tools/bazel/phase26_release_signing_upstream_evidence_test.py` - 29 tests passed.
-- `python3 tools/bazel/phase28_final_readiness_packet_test.py` - 27 tests passed.
+- `python3 tools/bazel/phase26_release_signing_upstream_evidence_test.py` - 31 tests passed after code-review fixes.
+- `python3 tools/bazel/phase28_final_readiness_packet_test.py` - 28 tests passed after code-review fixes.
 - `python3 tools/bazel/phase26_release_signing_upstream_evidence.py --contract-only`
 - `python3 tools/bazel/phase28_final_readiness_packet.py --contract-only`
 - `python3 tools/bazel/phase26_release_signing_upstream_evidence.py --quick --output-dir build/ci-evidence/phase26`

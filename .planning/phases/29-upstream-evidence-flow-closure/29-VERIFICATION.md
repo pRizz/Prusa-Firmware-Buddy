@@ -21,8 +21,8 @@ Phase 29 closes the v1.2 upstream evidence-flow audit gap. Verification passed a
 
 | Command | Result |
 |---------|--------|
-| `python3 tools/bazel/phase26_release_signing_upstream_evidence_test.py` | Passed: 29 tests. |
-| `python3 tools/bazel/phase28_final_readiness_packet_test.py` | Passed: 27 tests. |
+| `python3 tools/bazel/phase26_release_signing_upstream_evidence_test.py` | Passed: 31 tests. |
+| `python3 tools/bazel/phase28_final_readiness_packet_test.py` | Passed: 28 tests. |
 | `just phase26-verify` | Passed: Bazel Phase 26 tests and quick verifier. |
 | `just phase28-verify` | Passed: Bazel Phase 28 tests and quick Phase 26 -> Phase 27 -> Phase 28 verifier chain. |
 | `git diff --check` | Passed: no whitespace errors. |
@@ -30,6 +30,7 @@ Phase 29 closes the v1.2 upstream evidence-flow audit gap. Verification passed a
 | `cargo clippy --all-targets --all-features -- -D warnings` | Passed. |
 | `cargo build --all-targets --all-features` | Passed. |
 | `cargo test --all-features` | Passed: Cargo workspace unit and doc tests. |
+| `gsd-code-review` / `29-REVIEW-FIX.md` | Passed: one critical and two warning findings fixed with regression tests. |
 
 ## Requirement Closure
 

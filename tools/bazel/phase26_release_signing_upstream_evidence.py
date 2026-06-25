@@ -251,7 +251,10 @@ def require_non_empty_list(row: dict[str, Any], field: str, row_name: str) -> li
 
 
 def normalized_field_name(field_name: str) -> str:
-    return field_name.replace("-", "_").casefold()
+    return re.sub(r"[^a-z0-9]", "", field_name.casefold())
+
+
+FORBIDDEN_NORMALIZED_FIELD_NAMES = {normalized_field_name(field_name) for field_name in FORBIDDEN_FIELD_NAMES}
 
 
 def reject_forbidden_text(path: Path, text: str) -> None:
@@ -266,7 +269,7 @@ def reject_forbidden_text(path: Path, text: str) -> None:
 
 def reject_forbidden_field_names(value: Any, path: str) -> None:
     if isinstance(value, dict):
-        forbidden = sorted(key for key in value if normalized_field_name(key) in FORBIDDEN_FIELD_NAMES)
+        forbidden = sorted(key for key in value if normalized_field_name(key) in FORBIDDEN_NORMALIZED_FIELD_NAMES)
         if forbidden:
             raise VerificationError(f"{path} contains forbidden evidence fields: {', '.join(forbidden)}")
         for key, child in value.items():
@@ -1144,6 +1147,8 @@ def write_contract_snapshots(root: Path, output_dir: Path) -> None:
 def reset_output_root(root: Path, output_dir: Path) -> Path:
     relative_output_dir, full_output_dir = validate_output_dir(root, output_dir)
     if full_output_dir.exists():
+        if not full_output_dir.is_dir():
+            raise VerificationError(f"--output-dir exists and is not a directory: {relative_output_dir.as_posix()}")
         shutil.rmtree(full_output_dir)
     full_output_dir.mkdir(parents=True, exist_ok=True)
     return relative_output_dir

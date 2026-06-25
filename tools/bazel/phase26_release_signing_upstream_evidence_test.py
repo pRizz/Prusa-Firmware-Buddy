@@ -452,6 +452,21 @@ class Phase26ReleaseSigningUpstreamEvidenceTest(unittest.TestCase):
             self.assertIn("forbidden release evidence marker", result.stdout)
             self.assertFalse(output_root.exists())
 
+    def test_camel_case_forbidden_security_field_is_rejected(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            template = self.read_json(root, PHASE20_TEMPLATE)
+            template["privateKey"] = "redacted-placeholder"
+            self.write_json(root, PHASE20_TEMPLATE, template)
+
+            # Act
+            result = self.run_verifier(["--security-only"], maybe_root=root)
+
+            # Assert
+            self.assertNotEqual(result.returncode, 0, result.stdout)
+            self.assertIn("privateKey", result.stdout)
+
     def test_unsupported_release_input_field_aborts_before_output_root_exists(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -516,6 +531,22 @@ class Phase26ReleaseSigningUpstreamEvidenceTest(unittest.TestCase):
             # Assert
             self.assertNotEqual(result.returncode, 0, result.stdout)
             self.assertIn("symlink escape risk", result.stdout)
+
+    def test_output_dir_regular_file_is_rejected_without_traceback(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            output_root = root / DEFAULT_OUTPUT_DIR
+            output_root.parent.mkdir(parents=True, exist_ok=True)
+            output_root.write_text("not a directory\n", encoding="utf-8")
+
+            # Act
+            result = self.run_verifier(["--quick", "--output-dir", DEFAULT_OUTPUT_DIR], maybe_root=root)
+
+            # Assert
+            self.assertNotEqual(result.returncode, 0, result.stdout)
+            self.assertIn("--output-dir exists and is not a directory", result.stdout)
+            self.assertNotIn("Traceback", result.stdout)
 
     def test_quick_writes_retained_outputs(self) -> None:
         # Arrange
