@@ -12,6 +12,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 VERIFIER = ROOT / "tools/bazel/phase28_final_readiness_packet.py"
 CONTRACT = "tools/bazel/manifests/phase28_final_readiness_packet_contract.json"
+PHASE18_CONTRACT = "tools/bazel/manifests/phase18_cutover_review_contract.json"
+PHASE26_CONTRACT = "tools/bazel/manifests/phase26_release_signing_upstream_evidence_contract.json"
+PHASE27_CONTRACT = "tools/bazel/manifests/phase27_retained_code_acceptance_decisions_contract.json"
+PHASE26_ROWS = "build/ci-evidence/phase26/upstream-result-row-table.json"
+PHASE27_HANDOFF = "build/ci-evidence/phase27/phase28-handoff-manifest.json"
+DEFAULT_OUTPUT_DIR = "build/ci-evidence/phase28"
 REQUIRED_REQUIREMENTS = ["READ-01", "READ-02", "READ-03"]
 REQUIRED_CRITERIA = [
     "final-ci-evidence",
@@ -42,11 +48,17 @@ GENERATED_ARTIFACTS = [
 ]
 
 
-class Phase28FinalReadinessPacketContractTest(unittest.TestCase):
+class Phase28FinalReadinessPacketTest(unittest.TestCase):
     def make_temp_root(self) -> tuple[tempfile.TemporaryDirectory[str], Path]:
         temp_dir = tempfile.TemporaryDirectory()
         root = Path(temp_dir.name)
-        for path in [VERIFIER, ROOT / CONTRACT]:
+        for path in [
+            VERIFIER,
+            ROOT / CONTRACT,
+            ROOT / PHASE18_CONTRACT,
+            ROOT / PHASE26_CONTRACT,
+            ROOT / PHASE27_CONTRACT,
+        ]:
             destination = root / path.relative_to(ROOT)
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(path, destination)
@@ -68,10 +80,190 @@ class Phase28FinalReadinessPacketContractTest(unittest.TestCase):
     def read_json(self, root: Path, path: str) -> dict[str, object]:
         return json.loads((root / path).read_text(encoding="utf-8"))
 
-    def write_json(self, root: Path, path: str, data: dict[str, object]) -> None:
+    def write_json(self, root: Path, path: str, data: dict[str, object]) -> str:
         full_path = root / path
         full_path.parent.mkdir(parents=True, exist_ok=True)
         full_path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        return path
+
+    def write_text(self, root: Path, path: str, text: str) -> None:
+        full_path = root / path
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        full_path.write_text(text, encoding="utf-8")
+
+    def phase18_requirements(self, root: Path) -> dict[str, dict[str, object]]:
+        contract = self.read_json(root, PHASE18_CONTRACT)
+        return {row["criterion_id"]: row for row in contract["upstream_result_requirements"]}
+
+    def phase26_rows(self, root: Path) -> list[dict[str, object]]:
+        requirements = self.phase18_requirements(root)
+        rows = []
+        for criterion_id in REQUIRED_CRITERIA:
+            requirement = requirements[criterion_id]
+            status = "blocked" if criterion_id == "final-reference-demotion-allowed" else "passed"
+            failure_reason = (
+                "Reference demotion requires explicit Phase 28 maintainer input."
+                if criterion_id == "final-reference-demotion-allowed"
+                else "none"
+            )
+            rows.append(
+                {
+                    "criterion_id": criterion_id,
+                    "evidence_family": requirement["evidence_family"],
+                    "requirement_ids": requirement["requirement_ids"],
+                    "source_requirement_ids": ["REV-01"],
+                    "owning_phase": requirement["source_phase"],
+                    "source_lifecycle_id": requirement["source_lifecycle_id"],
+                    "source_lifecycle_status": "current",
+                    "evidence_refs": requirement["required_manifest_refs"],
+                    "artifact_refs": [
+                        "build/ci-evidence/phase26/upstream-result-row-table.json",
+                        "build/ci-evidence/phase26/upstream-result-manifest.json",
+                    ],
+                    "status": status,
+                    "failure_reason": failure_reason,
+                    "redaction_status": "passed",
+                    "source_ref_status": "passed",
+                    "exception_status": "none",
+                    "maintainer_state": "blocked" if status == "blocked" else "not-required",
+                    "generated_at_utc": "2026-06-25T04:00:00Z",
+                }
+            )
+        return rows
+
+    def exception_metadata(self, criterion_id: str = "final-ci-evidence") -> dict[str, object]:
+        return {
+            "scope": f"phase28-test-{criterion_id}",
+            "owner": "phase28-test-maintainer",
+            "approver": "phase28-test-maintainer",
+            "approver_role": "release-maintainer",
+            "rationale": "A documented temporary exception covers this Phase 28 test row.",
+            "affected_printer_or_release_surface": "supported-release-surface",
+            "evidence_refs": [f"build/ci-evidence/phase27/exception-decision-register.json#{criterion_id}"],
+            "residual_risk": "Exception residual risk is explicitly documented.",
+            "mitigation_or_follow_up": "Review before final release signoff.",
+            "expiry_or_review_trigger": "before-reference-demotion-decision",
+        }
+
+    def phase27_final_rows(self, phase26_rows: list[dict[str, object]]) -> list[dict[str, object]]:
+        rows = []
+        for row in phase26_rows:
+            criterion_id = str(row["criterion_id"])
+            status = "blocked" if criterion_id == "final-reference-demotion-allowed" else "passed"
+            rows.append(
+                {
+                    "criterion_id": criterion_id,
+                    "decision_id": f"phase27-final-readiness-{criterion_id}",
+                    "decision": "pending" if status == "blocked" else "approve",
+                    "status": status,
+                    "demotion_authorization": "blocked",
+                    "evidence_state": row["status"],
+                    "evidence_refs": row["evidence_refs"],
+                    "artifact_refs": row["artifact_refs"],
+                    "exception": {"status": "none"},
+                    "exception_state": "none",
+                    "hard_failure_reasons": [],
+                    "hard_failure_state": "none",
+                    "maintainer_decision": "pending" if status == "blocked" else "approve",
+                    "approver": "phase27-test-maintainer" if status == "passed" else "",
+                    "approver_role": "release-maintainer" if status == "passed" else "",
+                    "decision_timestamp": "2026-06-25T04:00:00Z" if status == "passed" else "",
+                    "rationale": str(row["failure_reason"]),
+                    "redaction_summary": "redaction_status=passed",
+                    "residual_risk": "Reviewed by Phase 27 test fixture." if status == "passed" else "Pending Phase 28 demotion decision.",
+                    "residual_risk_state": "reviewed" if status == "passed" else "unreviewed",
+                }
+            )
+        return rows
+
+    def write_phase_inputs(
+        self,
+        root: Path,
+        phase26_rows: list[dict[str, object]] | None = None,
+        phase27_rows: list[dict[str, object]] | None = None,
+    ) -> None:
+        phase26_rows = phase26_rows or self.phase26_rows(root)
+        phase27_rows = phase27_rows or self.phase27_final_rows(phase26_rows)
+        self.write_json(root, PHASE26_ROWS, {"rows": phase26_rows})
+        self.write_json(
+            root,
+            PHASE27_HANDOFF,
+            {
+                "phase": "27-retained-code-and-maintainer-acceptance-decisions",
+                "phase_lifecycle_id": "27-2026-06-25T01-06-06",
+                "demotion_authorization": "blocked",
+                "phase27_may_authorize_demotion": False,
+                "phase28_required_decision": "explicit-maintainer-reference-demotion-decision",
+                "blocked_criteria": ["final-reference-demotion-allowed"],
+            },
+        )
+        residual_rows = [
+            {
+                "row_id": row["criterion_id"],
+                "row_type": "final_readiness_decision",
+                "owner": row.get("approver", ""),
+                "residual_risk": row.get("residual_risk", "Pending review."),
+                "residual_risk_state": row.get("residual_risk_state", "unreviewed"),
+            }
+            for row in phase27_rows
+        ]
+        exception_rows = [
+            {
+                "row_id": row["criterion_id"],
+                "row_type": "final_readiness_decision",
+                "owner": "phase28-test-maintainer",
+                "exception": row["exception"],
+            }
+            for row in phase27_rows
+            if row.get("exception_state") in {"approved-exception", "exception-approved"}
+        ]
+        self.write_json(root, "build/ci-evidence/phase27/final-readiness-decision-summary.json", {"rows": phase27_rows})
+        self.write_json(root, "build/ci-evidence/phase27/residual-risk-register.json", {"rows": residual_rows})
+        self.write_json(root, "build/ci-evidence/phase27/exception-decision-register.json", {"rows": exception_rows})
+        self.write_json(
+            root,
+            "build/ci-evidence/phase27/artifact-reference-summary.json",
+            {
+                "phase26_upstream_rows": PHASE26_ROWS,
+                "artifact_refs": [
+                    {
+                        "path": "build/ci-evidence/phase27/final-readiness-decision-summary.json",
+                        "purpose": "phase27-final-readiness-decision-evidence",
+                    }
+                ],
+            },
+        )
+        self.write_json(
+            root,
+            "build/ci-evidence/phase27/decision-row-table.json",
+            {
+                "rows": [
+                    {
+                        "row_id": row["criterion_id"],
+                        "row_type": "final_readiness_decision",
+                        "decision": row["decision"],
+                        "status": row["status"],
+                        "demotion_authorization": "blocked",
+                        "hard_failure_state": row["hard_failure_state"],
+                        "maintainer_decision": row["maintainer_decision"],
+                    }
+                    for row in phase27_rows
+                ]
+            },
+        )
+
+    def demotion_decision(self, authorization: str = "approved") -> dict[str, object]:
+        return {
+            "phase": "28-final-readiness-packet-and-demotion-gate",
+            "phase_lifecycle_id": "28-2026-06-25T03-31-49",
+            "demotion_authorization": authorization,
+            "approver": "phase28-test-maintainer",
+            "approver_role": "release-maintainer",
+            "decision_timestamp": "2026-06-25T05:00:00Z",
+            "rationale": "Maintainer explicitly reviewed the Phase 28 packet.",
+            "scope": "supported-printer-release-surface",
+            "evidence_refs": ["build/ci-evidence/phase28/final-readiness-packet.json#reference-demotion-gate"],
+        }
 
     def test_contract_only_accepts_checked_in_contract(self) -> None:
         # Arrange
@@ -175,6 +367,234 @@ class Phase28FinalReadinessPacketContractTest(unittest.TestCase):
         self.assertNotIn(approval_pair, contract_text)
         self.assertNotIn(approval_pair, test_text)
         self.assertIn('"evidence_status_never_implies_approval": true', contract_text)
+
+    def test_quick_generates_all_outputs_and_keeps_demotion_blocked_without_decision(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase_inputs(root)
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+            # Assert
+            self.assertEqual(result.returncode, 0, result.stdout)
+            for artifact in GENERATED_ARTIFACTS:
+                self.assertTrue((root / DEFAULT_OUTPUT_DIR / artifact).exists(), artifact)
+            packet = self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/final-readiness-packet.json")
+            self.assertEqual(packet["final_readiness_status"], "unblocked")
+            self.assertEqual(packet["reference_demotion_authorization"], "blocked")
+            self.assertFalse(packet["real_maintainer_demotion_approval_supplied"])
+            self.assertEqual({row["criterion_id"] for row in packet["criteria"]}, set(REQUIRED_CRITERIA))
+            self.assertIn("requirements", packet)
+
+    def test_missing_inputs_report_generation_commands(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("phase26_release_signing_upstream_evidence.py --quick", result.stdout)
+
+    def test_hard_blocker_runs_before_exception_coverage(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            phase26_rows = self.phase26_rows(root)
+            phase26_rows[0]["status"] = "failed"
+            phase26_rows[0]["redaction_status"] = "failed"
+            phase26_rows[0]["failure_reason"] = "redaction-failed while exception metadata exists"
+            phase27_rows = self.phase27_final_rows(phase26_rows)
+            phase27_rows[0]["status"] = "exception-approved"
+            phase27_rows[0]["decision"] = "exception"
+            phase27_rows[0]["exception_state"] = "approved-exception"
+            phase27_rows[0]["exception"] = self.exception_metadata(str(phase26_rows[0]["criterion_id"]))
+            self.write_phase_inputs(root, phase26_rows, phase27_rows)
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+            # Assert
+            self.assertEqual(result.returncode, 0, result.stdout)
+            table = self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/normalized-readiness-criteria-table.json")
+            row = next(row for row in table["rows"] if row["criterion_id"] == "final-ci-evidence")
+            self.assertEqual(row["readiness_effect"], "blocked-hard-failure")
+            self.assertIn("redaction-failed", row["hard_failure_reasons"])
+
+    def test_valid_exception_covers_coverable_failure(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            phase26_rows = self.phase26_rows(root)
+            phase26_rows[0]["status"] = "failed"
+            phase26_rows[0]["failure_reason"] = "Operator documented a coverable exception."
+            phase27_rows = self.phase27_final_rows(phase26_rows)
+            phase27_rows[0]["status"] = "exception-approved"
+            phase27_rows[0]["decision"] = "exception"
+            phase27_rows[0]["exception_state"] = "approved-exception"
+            phase27_rows[0]["exception"] = self.exception_metadata(str(phase26_rows[0]["criterion_id"]))
+            self.write_phase_inputs(root, phase26_rows, phase27_rows)
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+            # Assert
+            self.assertEqual(result.returncode, 0, result.stdout)
+            table = self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/normalized-readiness-criteria-table.json")
+            row = next(row for row in table["rows"] if row["criterion_id"] == "final-ci-evidence")
+            self.assertEqual(row["readiness_effect"], "exception-covered")
+            self.assertEqual(row["exception_state"], "covered")
+
+    def test_explicit_demotion_approval_is_rejected_when_readiness_blocked(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            phase26_rows = self.phase26_rows(root)
+            phase26_rows[0]["status"] = "blocked"
+            phase26_rows[0]["failure_reason"] = "CI remains blocked for test."
+            phase27_rows = self.phase27_final_rows(phase26_rows)
+            phase27_rows[0]["status"] = "blocked"
+            self.write_phase_inputs(root, phase26_rows, phase27_rows)
+            decision_path = self.write_json(root, "demotion-decision.json", self.demotion_decision("approved"))
+
+            # Act
+            result = self.run_verifier(["--quick", "--demotion-decision-input", decision_path], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("final_readiness_status unblocked", result.stdout)
+
+    def test_lifecycle_and_source_ref_drift_are_rejected(self) -> None:
+        cases = [
+            ("source_lifecycle_status", "stale", "source_lifecycle_status must be current"),
+            ("source_ref_status", "invalid", "source_ref_status must be passed"),
+        ]
+        for field, value, expected in cases:
+            with self.subTest(field=field):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                with temp_dir:
+                    phase26_rows = self.phase26_rows(root)
+                    phase26_rows[0][field] = value
+                    self.write_phase_inputs(root, phase26_rows)
+
+                    # Act
+                    result = self.run_verifier(["--quick"], maybe_root=root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(expected, result.stdout)
+
+    def test_incomplete_demotion_metadata_is_rejected(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase_inputs(root)
+            decision = self.demotion_decision("blocked")
+            del decision["approver"]
+            decision_path = self.write_json(root, "demotion-decision.json", decision)
+
+            # Act
+            result = self.run_verifier(["--quick", "--demotion-decision-input", decision_path], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("approver", result.stdout)
+
+    def test_report_is_derived_from_packet_and_names_review_boundary(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase_inputs(root)
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+            # Assert
+            self.assertEqual(result.returncode, 0, result.stdout)
+            report = (root / DEFAULT_OUTPUT_DIR / "redacted-readiness-report.md").read_text(encoding="utf-8")
+            packet = self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/final-readiness-packet.json")
+            self.assertIn("Review material only", report)
+            self.assertIn(f"final_readiness_status: {packet['final_readiness_status']}", report)
+            self.assertIn("reference_demotion_authorization: blocked", report)
+
+    def test_output_root_symlink_escape_is_rejected(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase_inputs(root)
+            outside = root / "outside-output"
+            outside.mkdir()
+            output_root = root / DEFAULT_OUTPUT_DIR
+            output_root.parent.mkdir(parents=True, exist_ok=True)
+            output_root.symlink_to(outside, target_is_directory=True)
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("symlink escape", result.stdout)
+
+    def test_security_scan_rejects_secret_fields_and_generated_overclaims(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            contract = self.read_json(root, CONTRACT)
+            contract["private_key"] = "redacted-test-value"
+            self.write_json(root, CONTRACT, contract)
+
+            # Act
+            result = self.run_verifier(["--security-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("private_key", result.stdout)
+
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase_inputs(root)
+            quick_result = self.run_verifier(["--quick"], maybe_root=root)
+            self.assertEqual(quick_result.returncode, 0, quick_result.stdout)
+            self.write_text(root, f"{DEFAULT_OUTPUT_DIR}/redacted-readiness-report.md", "reference demotion approved\n")
+
+            # Act
+            result = self.run_verifier(["--security-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("reference demotion approved", result.stdout)
+
+    def test_security_scan_rejects_generated_demotion_overclaim_field(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase_inputs(root)
+            quick_result = self.run_verifier(["--quick"], maybe_root=root)
+            self.assertEqual(quick_result.returncode, 0, quick_result.stdout)
+            packet = self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/final-readiness-packet.json")
+            packet["demotion_allowed"] = True
+            self.write_json(root, f"{DEFAULT_OUTPUT_DIR}/final-readiness-packet.json", packet)
+
+            # Act
+            result = self.run_verifier(["--security-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("demotion_allowed", result.stdout)
+
+    def test_verifier_does_not_use_shell_or_inline_interpreters(self) -> None:
+        # Arrange
+        source = VERIFIER.read_text(encoding="utf-8")
+
+        # Act / Assert
+        for forbidden in ["shell=True", "bash -c", "python -c", "node -e"]:
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, source)
 
 
 if __name__ == "__main__":
