@@ -1037,9 +1037,14 @@ def shell_case_commands(text: str, case_name: str) -> list[str]:
     case_index = text.find(f"  {case_name})")
     if case_index == -1:
         return []
-    next_case = text.find("\n  ", case_index + 1)
-    body = text[case_index:] if next_case == -1 else text[case_index:next_case]
-    return [line.strip() for line in body.splitlines() if line.strip().startswith("python3 ")]
+    commands: list[str] = []
+    for line in text[case_index:].splitlines()[1:]:
+        if line.startswith("  ") and not line.startswith("    ") and line.strip().endswith(")"):
+            break
+        stripped = line.strip()
+        if stripped.startswith("python3 "):
+            commands.append(stripped)
+    return commands
 
 
 def just_recipe_commands(text: str, recipe_name: str) -> list[str]:

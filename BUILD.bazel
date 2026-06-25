@@ -231,6 +231,16 @@ filegroup(
 )
 
 filegroup(
+    name = "phase28_final_readiness_packet_docs",
+    srcs = [
+        ".planning/phases/28-final-readiness-packet-and-demotion-gate/28-CONTEXT.md",
+        ".planning/phases/28-final-readiness-packet-and-demotion-gate/28-RESEARCH.md",
+        ".planning/phases/28-final-readiness-packet-and-demotion-gate/28-VALIDATION.md",
+        ".planning/phases/28-final-readiness-packet-and-demotion-gate/28-01-PLAN.md",
+    ],
+)
+
+filegroup(
     name = "phase22_metadata_reconciliation_docs",
     srcs = [
         ".planning/REQUIREMENTS.md",
@@ -517,6 +527,16 @@ alias(
 alias(
     name = "phase27_verify_tests",
     actual = "//tools/bazel:phase27_verify_tests",
+)
+
+alias(
+    name = "phase28_verify",
+    actual = "//tools/bazel:phase28_verify",
+)
+
+alias(
+    name = "phase28_verify_tests",
+    actual = "//tools/bazel:phase28_verify_tests",
 )
 
 alias(

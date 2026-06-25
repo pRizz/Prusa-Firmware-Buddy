@@ -18,6 +18,12 @@ PHASE27_CONTRACT = "tools/bazel/manifests/phase27_retained_code_acceptance_decis
 PHASE26_ROWS = "build/ci-evidence/phase26/upstream-result-row-table.json"
 PHASE27_HANDOFF = "build/ci-evidence/phase27/phase28-handoff-manifest.json"
 DEFAULT_OUTPUT_DIR = "build/ci-evidence/phase28"
+WIRING_FILES = [
+    "BUILD.bazel",
+    "tools/bazel/BUILD.bazel",
+    "tools/bazel/rust_workflow.sh",
+    "justfile",
+]
 REQUIRED_REQUIREMENTS = ["READ-01", "READ-02", "READ-03"]
 REQUIRED_CRITERIA = [
     "final-ci-evidence",
@@ -90,6 +96,12 @@ class Phase28FinalReadinessPacketTest(unittest.TestCase):
         full_path = root / path
         full_path.parent.mkdir(parents=True, exist_ok=True)
         full_path.write_text(text, encoding="utf-8")
+
+    def copy_wiring_files(self, root: Path) -> None:
+        for path in WIRING_FILES:
+            destination = root / path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ROOT / path, destination)
 
     def phase18_requirements(self, root: Path) -> dict[str, dict[str, object]]:
         contract = self.read_json(root, PHASE18_CONTRACT)
@@ -595,6 +607,58 @@ class Phase28FinalReadinessPacketTest(unittest.TestCase):
         for forbidden in ["shell=True", "bash -c", "python -c", "node -e"]:
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, source)
+
+    def test_wiring_only_validates_bazel_wrapper_and_just_targets(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_wiring_files(root)
+
+            # Act
+            result = self.run_verifier(["--wiring-only"], maybe_root=root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_wiring_only_rejects_phase28_workflow_order_drift(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_wiring_files(root)
+            workflow = (root / "tools/bazel/rust_workflow.sh").read_text(encoding="utf-8")
+            workflow = workflow.replace(
+                "    python3 tools/bazel/phase28_final_readiness_packet.py --wiring-only\n"
+                "    python3 tools/bazel/phase26_release_signing_upstream_evidence.py --quick --output-dir build/ci-evidence/phase26\n",
+                "    python3 tools/bazel/phase26_release_signing_upstream_evidence.py --quick --output-dir build/ci-evidence/phase26\n"
+                "    python3 tools/bazel/phase28_final_readiness_packet.py --wiring-only\n",
+            )
+            self.write_text(root, "tools/bazel/rust_workflow.sh", workflow)
+
+            # Act
+            result = self.run_verifier(["--wiring-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("phase28_verify command order", result.stdout)
+
+    def test_wiring_only_rejects_just_recipe_order_drift(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_wiring_files(root)
+            just_text = (root / "justfile").read_text(encoding="utf-8")
+            just_text = just_text.replace(
+                "phase28-verify:\n    bazel run //tools/bazel:phase28_verify_tests\n    bazel run //tools/bazel:phase28_verify\n",
+                "phase28-verify:\n    bazel run //tools/bazel:phase28_verify\n    bazel run //tools/bazel:phase28_verify_tests\n",
+            )
+            self.write_text(root, "justfile", just_text)
+
+            # Act
+            result = self.run_verifier(["--wiring-only"], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("must run tests before verifier", result.stdout)
 
 
 if __name__ == "__main__":
