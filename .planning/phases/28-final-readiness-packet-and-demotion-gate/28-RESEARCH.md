@@ -356,12 +356,12 @@ Quick mode should write a blocked template like this; approval mode should requi
 
 All claims in this research are tagged as verified or cited from local files, command outputs, or official OWASP documentation. [VERIFIED: this research source log]
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should Phase 28 accept an explicit approval input in the first implementation or only emit the blocked authorization template?**
    - What we know: D-08 says Phase 28 may expose approval input or authorization record, while READ-03 requires explicit approval and default blocked behavior. [VERIFIED: `.planning/phases/28-final-readiness-packet-and-demotion-gate/28-CONTEXT.md`; `.planning/REQUIREMENTS.md`]
    - What's unclear: The context does not require that a real approval path be exercised during local quick verification. [VERIFIED: `.planning/phases/28-final-readiness-packet-and-demotion-gate/28-CONTEXT.md`]
-   - Recommendation: Implement both `--demotion-decision` validation and a blocked quick template, but keep quick mode blocked unless the explicit input is supplied and readiness is not blocked. [VERIFIED: D-08 discretion and Phase 27 maintainer-input pattern]
+   - RESOLVED: Implement both `--demotion-decision` validation and a blocked quick template, but keep quick mode blocked unless the explicit input is supplied and readiness is not blocked. [VERIFIED: D-08 discretion and Phase 27 maintainer-input pattern; `.planning/phases/28-final-readiness-packet-and-demotion-gate/28-01-PLAN.md`]
 
 ## Environment Availability
 
