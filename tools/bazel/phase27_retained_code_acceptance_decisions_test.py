@@ -439,6 +439,22 @@ class Phase27RetainedCodeAcceptanceDecisionsTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("duplicate decision_id", result.stdout)
 
+    def test_maintainer_input_lifecycle_metadata_drift_is_rejected(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase26_rows(root)
+            maintainer_input = self.complete_maintainer_input(root)
+            maintainer_input["phase_lifecycle_id"] = "27-stale-lifecycle"
+            input_path = self.write_maintainer_input(root, maintainer_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--maintainer-input", input_path], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("phase_lifecycle_id", result.stdout)
+
     def test_sensitive_role_mismatch_is_rejected(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()

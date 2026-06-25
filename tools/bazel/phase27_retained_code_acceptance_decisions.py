@@ -573,6 +573,26 @@ def load_maintainer_input(root: Path, maybe_path: str | None) -> dict[str, Any] 
     reject_forbidden_field_names(data, path.as_posix())
     if not isinstance(data, dict):
         raise VerificationError("--maintainer-input must contain a top-level object")
+    expected_metadata = {
+        "schema_version": "1",
+        "phase": PHASE,
+        "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
+    }
+    errors = [
+        f"--maintainer-input {field} must be {expected_value!r}"
+        for field, expected_value in expected_metadata.items()
+        if data.get(field) != expected_value
+    ]
+    demotion = data.get("reference_demotion_decision")
+    if not isinstance(demotion, dict):
+        errors.append("--maintainer-input reference_demotion_decision must be an object")
+    else:
+        if demotion.get("demotion_authorization") != "blocked":
+            errors.append("reference_demotion_decision demotion_authorization must stay blocked")
+        if demotion.get("phase27_may_authorize_demotion") is not False:
+            errors.append("reference_demotion_decision phase27_may_authorize_demotion must be false")
+    if errors:
+        raise VerificationError("\n".join(errors))
     return data
 
 
