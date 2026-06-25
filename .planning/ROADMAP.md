@@ -60,7 +60,7 @@ Full phase details are archived in `.planning/milestones/v1.1-ROADMAP.md`.
 - [x] **Phase 24: Hardware, Media, and Safety Evidence Execution** - Maintainers supply and retain real hardware, storage-media, UI-input, auxiliary, and safety evidence. (completed 2026-06-23)
 - [x] **Phase 25: Live-Service Evidence Execution** - Maintainers supply and retain real Connect, PrusaLink/WUI, TLS, telemetry, proxy, transfer, and crash-dump evidence. (completed 2026-06-23)
 - [x] **Phase 26: Release, Signing, and Upstream Result Evidence** - Release managers supply secret-safe release outputs while maintainers receive upstream result rows for every cutover gate. (completed 2026-06-24)
-- [ ] **Phase 27: Retained-Code and Maintainer Acceptance Decisions** - Maintainers record retained-code, residual-risk, exception, and final-readiness decisions as machine-readable inputs.
+- [x] **Phase 27: Retained-Code and Maintainer Acceptance Decisions** - Maintainers record retained-code, residual-risk, exception, and final-readiness decisions as machine-readable inputs. (completed 2026-06-25)
 - [ ] **Phase 28: Final Readiness Packet and Demotion Gate** - Maintainers generate the final readiness packet while reference demotion stays blocked unless explicitly approved.
 
 ## Phase Details
@@ -127,7 +127,7 @@ Plans:
   4. Decision outputs distinguish evidence failures, accepted retained-code risks, unresolved residual risks, and demotion approval state.
 **Plans**: 1 plan
 Plans:
-- [ ] 27-01-PLAN.md - Phase 27 retained-code and maintainer acceptance decision wrapper
+- [x] 27-01-PLAN.md - Phase 27 retained-code and maintainer acceptance decision wrapper
 
 ### Phase 28: Final Readiness Packet and Demotion Gate
 **Goal**: Maintainers can generate the final cutover readiness packet and decide whether to keep reference demotion blocked or explicitly approve it.
@@ -149,8 +149,8 @@ Plans:
 | EVID-03 | Phase 25 | Complete |
 | EVID-04 | Phase 26 | Pending |
 | ACPT-01 | Phase 26 | Pending |
-| ACPT-02 | Phase 27 | Pending |
-| ACPT-03 | Phase 27 | Pending |
+| ACPT-02 | Phase 27 | Complete |
+| ACPT-03 | Phase 27 | Complete |
 | READ-01 | Phase 28 | Pending |
 | READ-02 | Phase 28 | Pending |
 | READ-03 | Phase 28 | Pending |
@@ -168,5 +168,5 @@ Phases execute in numeric order: 23 -> 24 -> 25 -> 26 -> 27 -> 28
 | 24. Hardware, Media, and Safety Evidence Execution | v1.2 | 1/1 | Complete    | 2026-06-23 |
 | 25. Live-Service Evidence Execution | v1.2 | 1/1 | Complete    | 2026-06-23 |
 | 26. Release, Signing, and Upstream Result Evidence | v1.2 | 1/1 | Complete    | 2026-06-24 |
-| 27. Retained-Code and Maintainer Acceptance Decisions | v1.2 | 0/1 | Not started | - |
+| 27. Retained-Code and Maintainer Acceptance Decisions | v1.2 | 1/1 | Complete    | 2026-06-25 |
 | 28. Final Readiness Packet and Demotion Gate | v1.2 | 0/TBD | Not started | - |

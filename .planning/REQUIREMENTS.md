@@ -17,8 +17,8 @@ These requirements execute the real external evidence and acceptance flows creat
 ### Acceptance Decisions
 
 - [ ] **ACPT-01**: Maintainer can review upstream result rows for every required cutover gate.
-- [ ] **ACPT-02**: Maintainer can accept, reject, or exception retained-code packets with residual-risk rationale.
-- [ ] **ACPT-03**: Maintainer can approve or block final readiness using machine-readable decision inputs.
+- [x] **ACPT-02**: Maintainer can accept, reject, or exception retained-code packets with residual-risk rationale.
+- [x] **ACPT-03**: Maintainer can approve or block final readiness using machine-readable decision inputs.
 
 ### Final Readiness
 
@@ -59,8 +59,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EVID-03 | Phase 25 | Pending |
 | EVID-04 | Phase 26 | Pending |
 | ACPT-01 | Phase 26 | Pending |
-| ACPT-02 | Phase 27 | Pending |
-| ACPT-03 | Phase 27 | Pending |
+| ACPT-02 | Phase 27 | Complete |
+| ACPT-03 | Phase 27 | Complete |
 | READ-01 | Phase 28 | Pending |
 | READ-02 | Phase 28 | Pending |
 | READ-03 | Phase 28 | Pending |
@@ -75,4 +75,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 ______________________________________________________________________
 
 *Requirements defined: 2026-06-23*
-*Last updated: 2026-06-23 after Phase 23 completion*
+*Last updated: 2026-06-25 after Phase 27 completion*

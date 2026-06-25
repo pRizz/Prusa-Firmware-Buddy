@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Cutover Evidence Execution and Acceptance
 status: planning
-stopped_at: Phase 27 context gathered
-last_updated: "2026-06-25T01:13:37.030Z"
-last_activity: 2026-06-24
+stopped_at: Phase 27 complete
+last_updated: "2026-06-25T03:03:18.324Z"
+last_activity: 2026-06-25
 progress:
   total_phases: 6
-  completed_phases: 4
-  total_plans: 4
-  completed_plans: 4
-  percent: 100
+  completed_phases: 5
+  total_plans: 5
+  completed_plans: 5
+  percent: 83
 ---
 
 # Project State
@@ -21,24 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-23)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Phase 27 — Retained-Code and Maintainer Acceptance Decisions
+**Current focus:** Phase 28 — Final Readiness Packet and Demotion Gate
 
 ## Current Position
 
 Milestone: v1.2 Cutover Evidence Execution and Acceptance - ACTIVE
-Phase: 27
+Phase: 28
 Plan: Not started
-Status: Phase 26 complete; Phase 27 ready to plan
-Last activity: 2026-06-24
+Status: Phase 27 complete; Phase 28 ready to plan
+Last activity: 2026-06-25
 
-Progress: [#######   ] 67%
+Progress: [########  ] 83%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- v1.2 plans completed: 4
-- v1.2 phases completed: 4/6
+- v1.2 plans completed: 5
+- v1.2 phases completed: 5/6
 - Previous milestone baseline: v1.1 completed 13 plans across 10 phases
 
 **By Phase:**
@@ -49,12 +49,12 @@ Progress: [#######   ] 67%
 | 24 | 1 | - | - |
 | 25 | 1 | - | - |
 | 26 | 1 | - | - |
-| 27 | TBD | - | - |
+| 27 | 1 | - | - |
 | 28 | TBD | - | - |
 
 **Recent Trend:**
 
-- Last 5 completed plans: Phase 22 P03, Phase 23 P01, Phase 24 P01, Phase 25 P01, Phase 26 P01
+- Last 5 completed plans: Phase 23 P01, Phase 24 P01, Phase 25 P01, Phase 26 P01, Phase 27 P01
 - Trend: v1.2 begins execution of real evidence and acceptance gates after v1.1 gate-capability hardening
 
 ## Accumulated Context
@@ -81,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-25T01:13:37.025Z
-Stopped at: Phase 27 context gathered
-Resume file: .planning/phases/27-retained-code-and-maintainer-acceptance-decisions/27-CONTEXT.md
+Last session: 2026-06-25T03:03:18.324Z
+Stopped at: Phase 27 complete
+Resume file: .planning/phases/27-retained-code-and-maintainer-acceptance-decisions/27-VERIFICATION.md
