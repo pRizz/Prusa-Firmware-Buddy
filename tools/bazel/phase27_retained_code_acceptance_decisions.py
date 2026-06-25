@@ -667,6 +667,11 @@ def validate_sensitive_role(contract: dict[str, Any], text: str, approver_role: 
                 )
 
 
+def require_iso_utc(value: str, row_name: str) -> None:
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", value):
+        raise VerificationError(f"{row_name} decision_timestamp must be ISO UTC")
+
+
 def normalize_exception(row: dict[str, Any], contract: dict[str, Any], row_name: str) -> dict[str, Any]:
     exception = row.get("exception")
     if not isinstance(exception, dict):
@@ -677,7 +682,9 @@ def normalize_exception(row: dict[str, Any], contract: dict[str, Any], row_name:
     for field in required_fields:
         try:
             if field == "evidence_refs":
-                require_string_list(normalized, field, f"{row_name} exception")
+                evidence_refs = require_string_list(normalized, field, f"{row_name} exception")
+                if not evidence_refs:
+                    errors.append(f"{row_name} exception evidence_refs must not be empty")
             else:
                 require_string(normalized, field, f"{row_name} exception")
         except VerificationError as error:
@@ -700,8 +707,8 @@ def normalize_exception(row: dict[str, Any], contract: dict[str, Any], row_name:
     return normalized
 
 
-def validate_decision_common(row: dict[str, Any], row_name: str, require_status: bool = False) -> None:
-    fields = ["decision", "approver", "approver_role", "decision_timestamp", "rationale", "residual_risk", "redaction_summary"]
+def validate_decision_common(row: dict[str, Any], row_name: str, require_status: bool = False, require_evidence_refs: bool = False) -> None:
+    fields = ["decision", "approver", "approver_role", "rationale", "residual_risk", "redaction_summary"]
     if require_status:
         fields.append("status")
     errors: list[str] = []
@@ -711,7 +718,13 @@ def validate_decision_common(row: dict[str, Any], row_name: str, require_status:
         except VerificationError as error:
             errors.append(str(error))
     try:
-        require_string_list(row, "evidence_refs", row_name)
+        require_iso_utc(require_string(row, "decision_timestamp", row_name), row_name)
+    except VerificationError as error:
+        errors.append(str(error))
+    try:
+        evidence_refs = require_string_list(row, "evidence_refs", row_name)
+        if require_evidence_refs and not evidence_refs:
+            errors.append(f"{row_name} evidence_refs must not be empty")
     except VerificationError as error:
         errors.append(str(error))
     if errors:
@@ -780,8 +793,9 @@ def normalize_retained_decisions(
             decision = require_string(row, "decision", row_name)
             if decision not in allowed_decisions:
                 raise VerificationError(f"{row_name} decision is invalid: {decision}")
-            validate_decision_common(row, row_name)
             packet = packet_by_id[packet_id]
+            hard_reasons = detect_hard_failure_reasons(row, allowed_hard_reasons, row_name)
+            validate_decision_common(row, row_name, require_evidence_refs=decision in {"approve", "exception"} and not hard_reasons)
             maybe_exception = row.get("exception")
             exception_surface = maybe_exception.get("affected_printer_or_release_surface") if isinstance(maybe_exception, dict) else ""
             validate_sensitive_role(
@@ -790,7 +804,6 @@ def normalize_retained_decisions(
                 require_string(row, "approver_role", row_name),
                 row_name,
             )
-            hard_reasons = detect_hard_failure_reasons(row, allowed_hard_reasons, row_name)
             maybe_exception = normalize_exception(row, contract, row_name) if decision == "exception" and not hard_reasons else {"status": "none"}
             if hard_reasons:
                 status = status_for_hard_failure(hard_reasons)
@@ -939,16 +952,21 @@ def normalize_final_decisions(
             validate_final_decision_status(row_name, decision, status)
             if criterion_id == "final-reference-demotion-allowed" and (decision == "approve" or status in {"passed", "exception-approved"}):
                 raise VerificationError(f"{row_name} cannot approve reference demotion in Phase 27")
-            validate_decision_common(row, row_name, require_status=True)
+            upstream_row = upstream_by_id[criterion_id]
+            hard_reasons = detect_hard_failure_reasons(upstream_row, allowed_hard_reasons, row_name)
+            hard_reasons.extend(reason for reason in detect_hard_failure_reasons(row, allowed_hard_reasons, row_name) if reason not in hard_reasons)
+            validate_decision_common(
+                row,
+                row_name,
+                require_status=True,
+                require_evidence_refs=status in {"passed", "exception-approved", "not-applicable"} and not hard_reasons,
+            )
             validate_sensitive_role(
                 contract,
                 subject_text(criterion_id, requirement_by_id[criterion_id].get("evidence_family"), row.get("rationale")),
                 require_string(row, "approver_role", row_name),
                 row_name,
             )
-            upstream_row = upstream_by_id[criterion_id]
-            hard_reasons = detect_hard_failure_reasons(upstream_row, allowed_hard_reasons, row_name)
-            hard_reasons.extend(reason for reason in detect_hard_failure_reasons(row, allowed_hard_reasons, row_name) if reason not in hard_reasons)
             maybe_exception = normalize_exception(row, contract, row_name) if decision == "exception" and not hard_reasons else {"status": "none"}
             if hard_reasons:
                 normalized_status = status_for_hard_failure(hard_reasons)

@@ -406,6 +406,68 @@ class Phase27RetainedCodeAcceptanceDecisionsTest(unittest.TestCase):
             self.assertEqual(len(exceptions["rows"]), 1)
             self.assertEqual(exceptions["rows"][0]["owner"], "phase27-test-maintainer")
 
+    def test_accepted_retained_decision_requires_evidence_refs(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase26_rows(root)
+            maintainer_input = self.complete_maintainer_input(root)
+            retained_row = maintainer_input["retained_code_decisions"][0]
+            retained_row["evidence_refs"] = []
+            input_path = self.write_maintainer_input(root, maintainer_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--maintainer-input", input_path], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("evidence_refs must not be empty", result.stdout)
+
+    def test_passed_final_decision_requires_iso_utc_timestamp(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase26_rows(root)
+            maintainer_input = self.complete_maintainer_input(root)
+            final_row = maintainer_input["final_readiness_decisions"][0]
+            final_row["decision_timestamp"] = "not-a-timestamp"
+            input_path = self.write_maintainer_input(root, maintainer_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--maintainer-input", input_path], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("decision_timestamp must be ISO UTC", result.stdout)
+
+    def test_approved_exception_requires_evidence_refs(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_phase26_rows(root)
+            maintainer_input = self.complete_maintainer_input(root)
+            retained_row = maintainer_input["retained_code_decisions"][2]
+            retained_row["decision"] = "exception"
+            retained_row["exception"] = {
+                "scope": "phase27 test exception scope",
+                "rationale": "Temporary exception is explicitly documented for maintainer review.",
+                "approver": "phase27-test-maintainer",
+                "approver_role": retained_row["approver_role"],
+                "affected_printer_or_release_surface": "print core retained packet",
+                "mitigation_or_follow_up": "Track exception in Phase 28 readiness review.",
+                "expiry_or_review_trigger": "Phase 28 reference-demotion decision",
+                "evidence_refs": [],
+                "residual_risk": "Exception residual risk accepted for test input.",
+            }
+            input_path = self.write_maintainer_input(root, maintainer_input)
+
+            # Act
+            result = self.run_verifier(["--quick", "--maintainer-input", input_path], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("exception evidence_refs must not be empty", result.stdout)
+
     def test_final_decision_required_fields_include_decision_id(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
