@@ -164,7 +164,9 @@ Plans:
   2. The documented `summary-extract --fields requirements_completed` workflow returns the completed requirement IDs from current summary frontmatter or the milestone documents explicitly stop relying on that helper as the sole source.
   3. Phase 25 verification has requirement coverage evidence in the same audit-friendly shape as the other v1.2 phase verification reports, or the audit documents a durable local exception.
   4. A fresh milestone audit reports no critical gaps and no contradictory stale metadata before archival.
-**Plans**: 0 plans
+**Plans**: 1 plan
+Plans:
+- [ ] 30-01-PLAN.md - Milestone metadata cleanup
 
 ## Requirement Coverage
 
@@ -199,4 +201,4 @@ Phases execute in numeric order: 23 -> 24 -> 25 -> 26 -> 27 -> 28 -> 29 -> 30
 | 27. Retained-Code and Maintainer Acceptance Decisions | v1.2 | 1/1 | Complete    | 2026-06-25 |
 | 28. Final Readiness Packet and Demotion Gate | v1.2 | 1/1 | Complete    | 2026-06-25 |
 | 29. Upstream Evidence Flow Closure | v1.2 | 2/2 | Complete    | 2026-06-25 |
-| 30. Milestone Metadata Cleanup | v1.2 | 0/0 | Planned | - |
+| 30. Milestone Metadata Cleanup | v1.2 | 0/1 | Planned | - |
