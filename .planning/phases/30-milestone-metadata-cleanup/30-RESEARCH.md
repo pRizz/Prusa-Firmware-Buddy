@@ -327,12 +327,12 @@ These commands cover roadmap state, milestone state, Phase 25 evidence tooling, 
 |---|---|---|---|
 | — | None. All recommendations are based on local files or command output gathered in this session. | — | — |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should Phase 30 mark the audit `passed` or `tech_debt` with durable exceptions if a cleanup item is intentionally left open?** [VERIFIED: .planning/ROADMAP.md]
    - What we know: The roadmap success criterion allows a durable local exception for Phase 25 verification shape, but the context prefers closing TD-1 through TD-4. [VERIFIED: .planning/ROADMAP.md; .planning/phases/30-milestone-metadata-cleanup/30-CONTEXT.md]
-   - What's unclear: The final wording depends on whether implementation uses the dual-key bridge or documents direct parsing only. [VERIFIED: Phase 30 context discretion]
-   - Recommendation: Use the dual-key bridge and expanded Phase 25 report so the audit can be `passed` without a local exception. [VERIFIED: helper source; current verification report patterns]
+   - Resolution: Phase 30 will use the dual-key summary frontmatter bridge and expanded Phase 25 report so the fresh milestone audit can use the passed audit path. [VERIFIED: helper source; current verification report patterns]
+   - Durable exception posture: Do not plan a durable local exception. Only document one during execution if the dual-key bridge or audit-friendly Phase 25 report cannot be completed without changing out-of-scope global GSD helper code or overclaiming external evidence. [VERIFIED: .planning/phases/30-milestone-metadata-cleanup/30-CONTEXT.md]
 
 ## Environment Availability
 
