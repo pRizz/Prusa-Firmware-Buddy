@@ -73,8 +73,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 - Pending gap closure: 0
 - Unmapped: 0
 - Duplicate mappings: 0
+- Metadata cleanup: Phase 30 is requirement-neutral and closes audit tech debt without reopening satisfied v1.2 requirements.
 
 ______________________________________________________________________
 
 *Requirements defined: 2026-06-23*
-*Last updated: 2026-06-25 after Phase 29 evidence-flow closure verification*
+*Last updated: 2026-06-26 after Phase 30 metadata cleanup planning*

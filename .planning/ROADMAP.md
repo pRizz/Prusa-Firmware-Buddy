@@ -10,7 +10,7 @@ The replacement firmware is not yet cut over. Final reference demotion remains b
 
 - **v1.0 Rust Port Evidence Foundation** - Phases 1-12, 38 plans, shipped 2026-06-15. Archives: [roadmap](milestones/v1.0-ROADMAP.md), [requirements](milestones/v1.0-REQUIREMENTS.md), [audit](milestones/v1.0-MILESTONE-AUDIT.md), [phase history](milestones/v1.0-phases/).
 - **v1.1 Cutover Evidence Hardening** - Phases 13-22, 13 plans, shipped 2026-06-22. Archives: [roadmap](milestones/v1.1-ROADMAP.md), [requirements](milestones/v1.1-REQUIREMENTS.md), [audit](milestones/v1.1-MILESTONE-AUDIT.md).
-- **v1.2 Cutover Evidence Execution and Acceptance** - Phases 23-29, active. Goal: execute real external evidence gates, record maintainer acceptance decisions, and produce a final readiness packet without automatic reference demotion.
+- **v1.2 Cutover Evidence Execution and Acceptance** - Phases 23-30, active. Goal: execute real external evidence gates, record maintainer acceptance decisions, and produce a final readiness packet without automatic reference demotion.
 
 ## Phases
 
@@ -63,6 +63,7 @@ Full phase details are archived in `.planning/milestones/v1.1-ROADMAP.md`.
 - [x] **Phase 27: Retained-Code and Maintainer Acceptance Decisions** - Maintainers record retained-code, residual-risk, exception, and final-readiness decisions as machine-readable inputs. (completed 2026-06-25)
 - [x] **Phase 28: Final Readiness Packet and Demotion Gate** - Maintainers generate the final readiness packet while reference demotion stays blocked unless explicitly approved. (completed 2026-06-25)
 - [x] **Phase 29: Upstream Evidence Flow Closure** - Phase 26 consumes Phase 23-25 upstream row artifacts, Phase 28 reflects real evidence flow, and audit metadata debt is reconciled. (completed 2026-06-25)
+- [ ] **Phase 30: Milestone Metadata Cleanup** - Refresh state, extraction, and verification-report metadata so v1.2 can be archived without contradictory planning artifacts.
 
 ## Phase Details
 
@@ -153,6 +154,18 @@ Plans:
   4. Machine-readable traceability carries EVID-01, EVID-02, and EVID-03 through Phase 26/28 rows, and summary plus Nyquist validation metadata is reconciled for phases 25-29.
 **Plans**: 2 plans
 
+### Phase 30: Milestone Metadata Cleanup
+**Goal**: v1.2 planning metadata, helper extraction, and verification-report shapes are internally consistent so milestone archival does not preserve contradictory audit or state artifacts.
+**Depends on**: Phase 29
+**Requirements**: None - requirement coverage is already complete; this is audit metadata cleanup.
+**Gap Closure**: Closes tech debt from `.planning/v1.2-MILESTONE-AUDIT.md`: TD-1 stale audit supersession, TD-2 stale `.planning/STATE.md` prose/metrics, TD-3 `summary-extract` requirements parsing drift, and TD-4 compact Phase 25 verification shape.
+**Success Criteria** (what must be TRUE):
+  1. `.planning/STATE.md` reports v1.2 progress, current position, and recent trend consistently with the roadmap and phase artifacts.
+  2. The documented `summary-extract --fields requirements_completed` workflow returns the completed requirement IDs from current summary frontmatter or the milestone documents explicitly stop relying on that helper as the sole source.
+  3. Phase 25 verification has requirement coverage evidence in the same audit-friendly shape as the other v1.2 phase verification reports, or the audit documents a durable local exception.
+  4. A fresh milestone audit reports no critical gaps and no contradictory stale metadata before archival.
+**Plans**: 0 plans
+
 ## Requirement Coverage
 
 | Requirement | Phase | Status |
@@ -161,19 +174,21 @@ Plans:
 | EVID-02 | Phase 24 | Complete |
 | EVID-03 | Phase 25 | Complete |
 | EVID-04 | Phase 26 | Complete |
-| ACPT-01 | Phase 29 | Pending |
+| ACPT-01 | Phase 29 | Complete |
 | ACPT-02 | Phase 27 | Complete |
 | ACPT-03 | Phase 27 | Complete |
-| READ-01 | Phase 29 | Pending |
-| READ-02 | Phase 29 | Pending |
+| READ-01 | Phase 29 | Complete |
+| READ-02 | Phase 29 | Complete |
 | READ-03 | Phase 28 | Complete |
 
-**Coverage:** 10/10 v1.2 requirements mapped. 7 complete, 3 pending gap closure. No orphaned requirements. No duplicate requirement mappings.
+**Coverage:** 10/10 v1.2 requirements mapped. 10 complete, 0 pending gap closure. No orphaned requirements. No duplicate requirement mappings.
+
+**Metadata gap closure:** Phase 30 is requirement-neutral and closes audit tech debt only; v1.2 requirement coverage remains 10/10 complete.
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 23 -> 24 -> 25 -> 26 -> 27 -> 28 -> 29
+Phases execute in numeric order: 23 -> 24 -> 25 -> 26 -> 27 -> 28 -> 29 -> 30
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -184,3 +199,4 @@ Phases execute in numeric order: 23 -> 24 -> 25 -> 26 -> 27 -> 28 -> 29
 | 27. Retained-Code and Maintainer Acceptance Decisions | v1.2 | 1/1 | Complete    | 2026-06-25 |
 | 28. Final Readiness Packet and Demotion Gate | v1.2 | 1/1 | Complete    | 2026-06-25 |
 | 29. Upstream Evidence Flow Closure | v1.2 | 2/2 | Complete    | 2026-06-25 |
+| 30. Milestone Metadata Cleanup | v1.2 | 0/0 | Planned | - |
