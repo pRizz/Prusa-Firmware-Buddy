@@ -37,8 +37,8 @@ Progress: [##########] 100% (8 of 8 v1.2 phases complete)
 
 **Velocity:**
 
-- v1.2 plans completed: 8/9
-- v1.2 phases completed: 7/8
+- v1.2 plans completed: 9/9
+- v1.2 phases completed: 8/8
 - Previous milestone baseline: v1.1 completed 13 plans across 10 phases
 
 **By Phase:**
@@ -52,11 +52,11 @@ Progress: [##########] 100% (8 of 8 v1.2 phases complete)
 | 27 | 1 | - | - |
 | 28 | 1 | - | - |
 | 29 | 2 | - | - |
-| 30 | 0/1 | - | - |
+| 30 | 1/1 | - | - |
 
 **Recent Trend:**
 
-- Last 5 completed plans: Phase 25 P01, Phase 26 P01, Phase 27 P01, Phase 28 P01, Phase 29 P02
+- Last 5 completed plans: Phase 27 P01, Phase 28 P01, Phase 29 P01, Phase 29 P02, Phase 30 P01
 - Trend: v1.2 external-evidence execution, acceptance, final-readiness, upstream evidence-flow closure, and Phase 30 metadata cleanup are complete; milestone archival remains a later completion workflow.
 
 | Phase 30-milestone-metadata-cleanup P01 | 16m | 3 tasks | 12 files |
