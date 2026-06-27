@@ -31,6 +31,10 @@ requirements_completed:
   - READ-01
   - READ-02
   - READ-03
+requirements-completed:
+  - READ-01
+  - READ-02
+  - READ-03
 tech-stack:
   added:
     - Python Phase 28 verifier

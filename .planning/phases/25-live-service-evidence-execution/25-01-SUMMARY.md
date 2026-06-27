@@ -15,6 +15,8 @@ requirements:
   - EVID-03
 requirements_completed:
   - EVID-03
+requirements-completed:
+  - EVID-03
 tags:
   - live-service
   - connect

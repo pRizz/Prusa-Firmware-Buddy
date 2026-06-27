@@ -14,6 +14,10 @@ requirements_completed:
   - ACPT-01
   - READ-01
   - READ-02
+requirements-completed:
+  - ACPT-01
+  - READ-01
+  - READ-02
 ---
 
 # Phase 29 Plan 02: Metadata Reconciliation Summary

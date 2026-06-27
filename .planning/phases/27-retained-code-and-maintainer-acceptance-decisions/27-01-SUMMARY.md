@@ -8,6 +8,9 @@ tags:
   - retained-code
   - maintainer-decisions
   - bazel
+requirements_completed:
+  - ACPT-02
+  - ACPT-03
 requirements-completed:
   - ACPT-02
   - ACPT-03

@@ -13,6 +13,8 @@ plan_generated_at: "2026-06-23T20:19:41Z"
 generated_at: "2026-06-23T20:42:45Z"
 requirements_completed:
   - EVID-02
+requirements-completed:
+  - EVID-02
 tags:
   - hardware
   - media

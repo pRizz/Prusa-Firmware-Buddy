@@ -13,6 +13,8 @@ plan_generated_at: "2026-06-23T18:45:38Z"
 generated_at: "2026-06-23T19:15:03Z"
 requirements_completed:
   - EVID-01
+requirements-completed:
+  - EVID-01
 tags:
   - simulator
   - cutover-evidence
