@@ -63,7 +63,7 @@ Full phase details are archived in `.planning/milestones/v1.1-ROADMAP.md`.
 - [x] **Phase 27: Retained-Code and Maintainer Acceptance Decisions** - Maintainers record retained-code, residual-risk, exception, and final-readiness decisions as machine-readable inputs. (completed 2026-06-25)
 - [x] **Phase 28: Final Readiness Packet and Demotion Gate** - Maintainers generate the final readiness packet while reference demotion stays blocked unless explicitly approved. (completed 2026-06-25)
 - [x] **Phase 29: Upstream Evidence Flow Closure** - Phase 26 consumes Phase 23-25 upstream row artifacts, Phase 28 reflects real evidence flow, and audit metadata debt is reconciled. (completed 2026-06-25)
-- [ ] **Phase 30: Milestone Metadata Cleanup** - Refresh state, extraction, and verification-report metadata so v1.2 can be archived without contradictory planning artifacts.
+- [x] **Phase 30: Milestone Metadata Cleanup** - Refresh state, extraction, and verification-report metadata so v1.2 can be archived without contradictory planning artifacts. (completed 2026-06-27)
 
 ## Phase Details
 
@@ -166,7 +166,7 @@ Plans:
   4. A fresh milestone audit reports no critical gaps and no contradictory stale metadata before archival.
 **Plans**: 1 plan
 Plans:
-- [ ] 30-01-PLAN.md - Milestone metadata cleanup
+- [x] 30-01-PLAN.md - Milestone metadata cleanup
 
 ## Requirement Coverage
 
@@ -201,4 +201,4 @@ Phases execute in numeric order: 23 -> 24 -> 25 -> 26 -> 27 -> 28 -> 29 -> 30
 | 27. Retained-Code and Maintainer Acceptance Decisions | v1.2 | 1/1 | Complete    | 2026-06-25 |
 | 28. Final Readiness Packet and Demotion Gate | v1.2 | 1/1 | Complete    | 2026-06-25 |
 | 29. Upstream Evidence Flow Closure | v1.2 | 2/2 | Complete    | 2026-06-25 |
-| 30. Milestone Metadata Cleanup | v1.2 | 0/1 | Planned | - |
+| 30. Milestone Metadata Cleanup | v1.2 | 1/1 | Complete   | 2026-06-27 |
