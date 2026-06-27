@@ -201,4 +201,4 @@ Phases execute in numeric order: 23 -> 24 -> 25 -> 26 -> 27 -> 28 -> 29 -> 30
 | 27. Retained-Code and Maintainer Acceptance Decisions | v1.2 | 1/1 | Complete    | 2026-06-25 |
 | 28. Final Readiness Packet and Demotion Gate | v1.2 | 1/1 | Complete    | 2026-06-25 |
 | 29. Upstream Evidence Flow Closure | v1.2 | 2/2 | Complete    | 2026-06-25 |
-| 30. Milestone Metadata Cleanup | v1.2 | 1/1 | Complete   | 2026-06-27 |
+| 30. Milestone Metadata Cleanup | v1.2 | 1/1 | Complete    | 2026-06-27 |

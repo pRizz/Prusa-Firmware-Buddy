@@ -10,7 +10,7 @@ generated_at: 2026-06-27T00:30:59Z
 lifecycle_validated: true
 overrides_applied: 0
 re_verification:
-  previous_status: gaps_found
+  previous_status: state_metrics_gap_closed
   previous_score: "8/9"
   gaps_closed:
     - ".planning/STATE.md Performance Metrics now match the roadmap and phase artifacts: 9/9 plans, 8/8 phases, Phase 30 1/1, and the recent completed-plan trend includes Phase 30 P01."
