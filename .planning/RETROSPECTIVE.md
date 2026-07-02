@@ -99,6 +99,55 @@
 
 ---
 
+## Milestone: v1.2 — Cutover Evidence Execution and Acceptance
+
+**Shipped:** 2026-07-02
+**Phases:** 8 | **Plans:** 9 | **Tasks:** 9 task groups
+
+### What Was Built
+
+- Simulator, hardware/media/safety, and live-service evidence execution contracts that validate real operator packets while keeping quick outputs blocked placeholders.
+- Release/signing/provenance evidence handling and canonical upstream result rows for every cutover gate.
+- Retained-code acceptance, residual-risk, exception, and final-readiness decision inputs with hard-blocker precedence and secret-safe retained outputs.
+- Final readiness packet generation that links upstream rows, decisions, exceptions, residual risks, blockers, and artifact refs.
+- Upstream evidence flow closure from Phase 23-25 rows through Phase 26 into Phase 28 readiness packets.
+- Requirement-neutral metadata cleanup that reconciled summary extraction, validation metadata, Phase 25 verification shape, state metadata, and the v1.2 milestone audit.
+
+### What Worked
+
+- Separating quick/default placeholders from real evidence packets prevented local verifier runs from becoming false release approval.
+- Carrying upstream rows through Phase 26 and Phase 28 made cross-phase evidence flow inspectable instead of prose-only.
+- Machine-readable maintainer inputs kept retained-code acceptance, final readiness, exceptions, residual risk, and reference demotion as explicit decisions.
+- The Phase 30 metadata pass caught audit and summary-extraction drift before archival.
+
+### What Was Inefficient
+
+- v1.2 still needed a dedicated Phase 30 because helper extraction keys, validation metadata, state prose, and audit wording drifted across phases.
+- The milestone entry auto-extractor pulled one low-level review note into accomplishments, which required manual archive curation.
+- Real external evidence remains outside the repository, so the milestone proves execution surfaces and fail-closed behavior rather than final production approval.
+
+### Patterns Established
+
+- Treat evidence execution as retained input proof with strict schema, artifact, source-ref, redaction, and lifecycle validation.
+- Preserve final readiness as an aggregation and decision surface, not a replacement for maintainer approval.
+- Keep reference demotion separate from readiness and blocked unless explicit valid demotion input is supplied after readiness is otherwise unblocked.
+- Run a final metadata cleanup and audit refresh before milestone archival when many phase artifacts evolved independently.
+
+### Key Lessons
+
+1. Cross-phase evidence rows need first-class tests and archive evidence; otherwise old pending defaults can hide real upstream state.
+2. Summary metadata should expose a stable machine-readable completion key from the start of a milestone.
+3. Milestone archive generation still needs human curation for accomplishments and project evolution sections.
+4. Final cutover remains a decision process: even complete evidence plumbing must not imply reference demotion approval.
+
+### Cost Observations
+
+- Model mix: not measured in repo-local metadata.
+- Sessions: multiple GSD phase sessions across 8 phases.
+- Notable: verifier code stayed deterministic and cheap to reason about, but full pre-commit Rust verification remains expensive enough to plan around milestone commits.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -107,6 +156,7 @@
 |-----------|----------|--------|------------|
 | v1.0 | Multiple | 12 | Established source-backed parity evidence and archived a clean requirements/roadmap baseline. |
 | v1.1 | Multiple | 10 | Converted non-local cutover blockers into durable evidence gates and archived a passed audit rerun. |
+| v1.2 | Multiple | 8 | Executed evidence and acceptance flows, closed upstream row propagation into final readiness, and archived a passed audit. |
 
 ### Cumulative Quality
 
@@ -114,9 +164,11 @@
 |-----------|-------|----------|-------------------|
 | v1.0 | Phase verifier suites plus 34 Phase 11 regression tests at archival | 30/30 v1 requirements mapped and complete | Standard-library verifier scripts and manifest checks for evidence gates. |
 | v1.1 | Phase verifier suites plus aggregate, release, final-readiness, and metadata reconciliation tests | 18/18 v1.1 gate-capability requirements mapped and complete | Standard-library evidence contracts, redaction/path guards, result manifests, and audit-readiness checks. |
+| v1.2 | Phase verifier suites plus focused Phase 23-29 evidence, decision, final-readiness, and metadata cleanup checks | 10/10 v1.2 execution and acceptance requirements mapped and complete | Standard-library evidence execution validators, retained output writers, upstream row ingestion, and final readiness packet generation. |
 
 ### Top Lessons (Verified Across Milestones)
 
 1. Evidence status must distinguish local deterministic proof from non-local release approval.
 2. Requirement, roadmap, validation, and manifest metadata should be reconciled before milestone archival, not after the next milestone starts.
 3. Final cutover approval should consume upstream machine-readable results, not prose links to contract files.
+4. Milestone archive summaries need curated outcome language because raw extractors can surface implementation-detail bug notes.

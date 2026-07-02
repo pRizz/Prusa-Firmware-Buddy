@@ -16,21 +16,21 @@ Milestone v1.0 Rust Port Evidence Foundation shipped on 2026-06-15. The project 
 
 Milestone v1.1 Cutover Evidence Hardening shipped on 2026-06-22. It turned the remaining non-local cutover blockers into durable gate capabilities: CI aggregate evidence, simulator evidence, hardware/safety/media evidence, live network/TLS/WUI/transfer/proxy evidence, release-candidate signing/provenance/comparison evidence, retained-code acceptance, upstream-result consumption, validation metadata reconciliation, and a passed audit rerun.
 
-The replacement firmware is not yet cut over. Final reference demotion remains intentionally blocked until the validated external simulator, hardware, live-service, release, signing, upstream-result, retained-code, residual-risk, and maintainer-decision inputs are supplied and accepted under the v1.1 contracts.
+Milestone v1.2 Cutover Evidence Execution and Acceptance shipped on 2026-07-02. It executed the v1.1 evidence gates with real-input packet schemas, retained secret-safe outputs, upstream result row propagation, retained-code and final-readiness decision inputs, a final readiness packet, helper-compatible metadata, and a passed milestone audit. Archives live under `.planning/milestones/`.
 
-Phase 23 of v1.2 is complete. Maintainers can now submit Phase 14-compatible simulator evidence packets for startup, G-code, GUI, storage, transfer, and selected failure flows, with v1.2 status normalization, secret/overclaim guards, retained redacted outputs, upstream result rows, Bazel labels, and `just phase23-verify`.
+The replacement firmware is not yet cut over. Final reference demotion remains intentionally blocked until the validated external simulator, hardware, live-service, release, signing, upstream-result, retained-code, residual-risk, and maintainer-decision inputs are supplied, accepted, and followed by an explicit valid demotion approval.
 
-Milestone v1.2 Cutover Evidence Execution and Acceptance is complete as of 2026-06-25. Maintainers can now generate the final cutover readiness packet from retained upstream rows, retained-code decisions, exceptions, residual risks, blockers, and artifact refs. Final readiness stays fail-closed, and reference demotion remains a separate explicit maintainer authorization that is blocked unless valid Phase 28 approval input is supplied after readiness is unblocked.
+No active milestone is defined. The next step is `/gsd-new-milestone`, which should create a fresh `.planning/REQUIREMENTS.md` and roadmap section.
 
-## Current Milestone: v1.2 Cutover Evidence Execution and Acceptance
+## Next Milestone: Not Defined
 
-**Goal:** Execute the real external cutover evidence gates created in v1.1 and produce a maintainer-reviewable final readiness packet.
+**Goal:** To be defined through `/gsd-new-milestone`.
 
-**Target features:**
+**Likely decision areas:**
 
-- Collect and retain full external evidence packets for simulator, hardware/media/safety, live services, release/signing, and upstream results.
-- Drive retained-code, residual-risk, exception, and maintainer acceptance decisions through machine-readable inputs.
-- Produce a final cutover readiness report that is decision-ready while keeping reference demotion blocked unless maintainers explicitly approve.
+- Whether the next milestone should collect and accept final real-world maintainer/operator evidence packets toward cutover approval.
+- Whether to plan post-cutover hardening such as replacing retained vendor/HAL components with Rust alternatives.
+- Whether to add long-run soak dashboards and trend analytics after durable hardware and simulator evidence exists.
 
 ## Requirements
 
@@ -67,12 +67,15 @@ Milestone v1.2 Cutover Evidence Execution and Acceptance is complete as of 2026-
 - ✓ Release managers can supply release/signing/provenance evidence and maintainers can review upstream result rows through the Phase 26 release, signing, upstream-row, retained-output, clean-review, Bazel, and `just phase26-verify` flow
 - ✓ Maintainers can accept, reject, or exception retained-code packets and approve or block final-readiness criteria through Phase 27 machine-readable decision inputs, Phase 18-compatible validation, retained outputs, clean review closure, and `just phase27-verify`
 - ✓ Maintainers can generate a final cutover readiness packet through Phase 28 that links evidence rows, acceptance decisions, exceptions, residual risks, blockers, and artifact refs while keeping final readiness fail-closed and reference demotion blocked unless an explicit valid maintainer approval is supplied
+- ✓ Maintainers can review upstream result rows for every required cutover gate through Phase 29 row ingestion that carries Phase 23 simulator, Phase 24 hardware/media/safety, and Phase 25 live-service rows into Phase 26 and Phase 28
+- ✓ Final readiness packets can reflect consumed upstream evidence flow while preserving fail-closed quick behavior and separate reference-demotion authorization through Phase 29 closure
+- ✓ v1.2 planning metadata, summary extraction, validation metadata, Phase 25 verification shape, and milestone audit state are archival-ready through Phase 30 metadata cleanup and the passed v1.2 audit
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-No active v1.2 requirements remain. The next planning step is milestone archival or a new milestone definition.
+No active requirements remain. The next planning step is a new milestone definition, which should create a fresh `.planning/REQUIREMENTS.md`.
 
 ### Out of Scope
 
@@ -90,7 +93,9 @@ The existing repository is a large embedded firmware codebase for Original Prusa
 
 Phase 1 established the reference baseline package for the rewrite: supported matrix, reference-capture catalog, intentional-delta concern ledger, safety envelope, phase-local verifier, and verification report under `.planning/phases/01-reference-baseline-and-safety-envelope/`. Phase 2 established the root Bazel module, product platform labels, registered firmware toolchain labels, Bazel workflow targets, checked `justfile`, and Phase 2 verifier under `.planning/phases/02-bazel-authority-and-developer-facade/`. Phase 3 established artifact and generator parity scaffolding. Phase 4 established the Rust workspace and invariant model. Phase 5 established explicit retained-code, unsafe, board-runtime, and FreeRTOS boundary contracts plus aggregate verification. Phase 6 established typed printing-core, safety/recovery/fatal, and ProductProfile-keyed feature-gate contracts with manifest-backed verification. Phase 7 established source-backed persistence, storage media, generated resource, concern disposition, redacted migration fixture, Rust storage/resource domain, and Bazel/just verification contracts with manual hardware/media/release proof explicitly deferred. Phase 8 established source-backed local GUI workflow, display-layout, warning/error, print-control, setup, Connect-entry, PrusaLink credential-display, localization, and concern-disposition contracts with typed Rust GUI domain invariants, verifier regression tests, Bazel/just labels, clean review closure, and physical/simulator/touch/network/auxiliary/cutover proof explicitly deferred. Phase 9 established source-backed Connect, WUI/PrusaLink, network-service, transfer, TLS/secret, proxy, telemetry, command-channel, negative-fixture, and concern-disposition contracts with typed Rust network domain invariants, verifier regression tests, Bazel/just labels, clean review closure, and live cloud/simulator/physical network/TLS/media/cutover proof explicitly deferred. Phase 10 established source-backed auxiliary-controller, MMU, Modbus/RS485, toolchanger, build/update, and concern-disposition contracts with typed Rust auxiliary invariants, verifier regression tests, Bazel/just labels, clean review closure, and physical/simulator/live-transport/cutover proof explicitly deferred. Phase 11 established the parity pyramid, all-requirement evidence, reference comparison rows, cutover readiness, retained-code justifications, aggregate verifier, and final reference-demotion blockers. Phase 12 closed the v1.0 milestone metadata drift, and v1.0 is now archived as the Rust port evidence foundation.
 
-v1.1 used the archived v1.0 source-backed evidence baseline without redefining parity contracts. Phase 13 added CI evidence orchestration, Phase 14 added simulator evidence gates, Phase 15 added hardware evidence gates, Phase 16 added live-network evidence gates, Phase 17 added release-candidate evidence gates, Phase 18 added retained-code acceptance review, Phase 19 added aggregate cutover evidence CI, Phase 20 added release artifact production identity and verification, Phase 21 forced final readiness to consume machine-readable upstream result rows, and Phase 22 reconciled requirement, validation, roadmap, and audit metadata before the passed milestone audit rerun. Phase 23 started v1.2 execution with the simulator evidence execution contract, real evidence input validator, retained output writer, upstream result row, regression tests, Bazel/root/just wiring, and a clean post-fix review while keeping hardware-only behaviors outside simulator proof.
+v1.1 used the archived v1.0 source-backed evidence baseline without redefining parity contracts. Phase 13 added CI evidence orchestration, Phase 14 added simulator evidence gates, Phase 15 added hardware evidence gates, Phase 16 added live-network evidence gates, Phase 17 added release-candidate evidence gates, Phase 18 added retained-code acceptance review, Phase 19 added aggregate cutover evidence CI, Phase 20 added release artifact production identity and verification, Phase 21 forced final readiness to consume machine-readable upstream result rows, and Phase 22 reconciled requirement, validation, roadmap, and audit metadata before the passed milestone audit rerun.
+
+v1.2 executed those gate capabilities. Phases 23, 24, and 25 added real-input execution contracts for simulator, hardware/media/safety, and live-service evidence while retaining quick/default outputs as blocked placeholders. Phase 26 added release/signing/provenance evidence handling and upstream result rows. Phase 27 added retained-code, residual-risk, exception, and final-readiness decision inputs. Phase 28 generated the final readiness packet while keeping readiness fail-closed and reference demotion separate. Phase 29 closed the upstream evidence flow from Phase 23-25 rows through Phase 26 into Phase 28. Phase 30 reconciled summary extraction, validation metadata, Phase 25 verification shape, state metadata, and the v1.2 milestone audit before archival.
 
 The current architecture is a CMake-composed firmware target with board/printer feature gates, a FreeRTOS imperative shell, Marlin as the printing core, and application layers for GUI, Connect, WUI, transfers, persistent stores, puppies/MMU, resources, and packaging. The Rust rewrite should deliberately separate pure firmware/domain decisions from hardware, RTOS, filesystem, networking, UI, and packaging adapters where practical.
 
@@ -135,6 +140,10 @@ Known concerns to prioritize during planning include global build target couplin
 | Treat final readiness as result-consuming review, not prose-link approval | Final reference demotion can only be meaningful if it consumes machine-readable upstream result manifests and maintainer decision inputs. | Phase 21 blocks `demotion_allowed` when upstream manifests are missing, failed, stale, redaction-failed, or not covered by approved exceptions. |
 | Treat milestone archival as source-backed only after metadata reconciliation | Requirement status, validation metadata, roadmap progress, and audit state must agree before the milestone can be closed. | Phase 22 produced a validation signoff, audit-readiness artifact, and passed 2026-06-22 audit rerun before v1.1 archival. |
 | Treat simulator execution evidence as retained input proof, not hardware proof | Phase 23 can validate and retain real simulator result packets, but hardware-only behavior must stay outside simulator claims until Phase 24 supplies hardware/media/safety evidence. | Phase 23 added the v1.2 simulator evidence execution contract, verifier, retained output writer, upstream row, secret/overclaim guards, and clean review closure. |
+| Treat external evidence execution as retained input proof, not release approval | Phases 23-25 can validate and retain real simulator, hardware/media/safety, and live-service packets, but quick/default runs must remain blocked placeholders until maintainers supply sanitized evidence. | v1.2 added evidence execution contracts, retained outputs, upstream rows, secret/path guards, Bazel labels, and `just` facades for simulator, hardware/media/safety, and live-service evidence. |
+| Treat upstream evidence rows as the final readiness integration boundary | Phase 26 and Phase 28 should consume canonical row data instead of hardcoded pending defaults when real Phase 23-25 rows are supplied. | Phase 29 added consumed-row ingestion, status propagation, requirement traceability, and Phase 28 packet lineage preservation while keeping absent inputs fail-closed. |
+| Keep retained-code acceptance and final readiness as explicit maintainer decisions | Evidence rows and generated reports cannot authorize retained-code acceptance, final readiness approval, exceptions, residual-risk acceptance, or reference demotion on their own. | Phases 27 and 28 require machine-readable maintainer inputs and keep demotion blocked unless readiness is otherwise unblocked and a valid explicit demotion decision is supplied. |
+| Treat Phase 30 as requirement-neutral archival cleanup | Metadata reconciliation should close contradictory planning artifacts without creating new requirement IDs or changing firmware/evidence behavior. | Phase 30 updated state, summary extraction aliases, Phase 25 verification shape, validation metadata, and the v1.2 audit while preserving external evidence boundaries. |
 
 ## Evolution
 
@@ -157,4 +166,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ______________________________________________________________________
 
-*Last updated: 2026-06-25 after Phase 28 completion*
+*Last updated: 2026-07-02 after v1.2 milestone archival*

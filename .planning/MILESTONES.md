@@ -1,5 +1,33 @@
 # Project Milestones: Prusa Firmware Buddy Rust Port
 
+## v1.2 Cutover Evidence Execution and Acceptance (Shipped: 2026-07-02)
+
+**Delivered:** External cutover evidence execution and acceptance flows, with secret-safe retained outputs, upstream result flow closure, final readiness packet generation, and an explicit blocked reference-demotion gate.
+
+**Phases completed:** 23-30 (9 plans total)
+
+**Key accomplishments:**
+
+- Added simulator, hardware/media/safety, and live-service evidence execution gates with v1.2 status normalization, secret/path guards, retained outputs, upstream rows, Bazel labels, and `just` facades.
+- Added release/signing/provenance evidence handling and canonical upstream result rows for every cutover gate.
+- Added retained-code acceptance, residual-risk, exception, and final-readiness decision inputs that stay machine-readable and preserve hard blockers.
+- Added final readiness packet generation while keeping readiness fail-closed and reference demotion blocked unless explicit valid maintainer approval is supplied.
+- Closed upstream evidence flow so Phase 23-25 rows can feed Phase 26 and appear in Phase 28 readiness packets without converting quick placeholders into real proof.
+- Closed metadata/audit debt with helper-compatible summary extraction, Nyquist-compliant validation metadata, and a passed milestone audit.
+
+**Stats:**
+
+- 196 files changed
+- 23,176 insertions and 17,528 deletions across planning artifacts, verifier scripts, manifests, Bazel/just wiring, and standards updates
+- 8 phases, 9 plans, 9 task groups
+- 10 days from milestone roadmap creation to archive (2026-06-23 -> 2026-07-02)
+
+**Git range:** `ff7343dff` -> `b4e412ef3`
+
+**What's next:** Start the next milestone from a fresh requirements surface. The next planning decision is whether to execute final maintainer/operator evidence packets toward cutover approval or to schedule post-cutover hardening and replacement of retained vendor/HAL components.
+
+---
+
 ## v1.1 Cutover Evidence Hardening (Shipped: 2026-06-22)
 
 **Delivered:** Durable cutover-evidence gate capability across CI, simulator, hardware, live-service, release-candidate, retained-code, upstream-result, and maintainer-review surfaces without promoting external proof or final demotion before valid inputs exist.

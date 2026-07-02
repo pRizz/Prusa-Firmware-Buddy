@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Cutover Evidence Execution and Acceptance
 status: complete
-stopped_at: Completed 30-01-PLAN.md
-last_updated: "2026-06-27T00:34:42.605Z"
-last_activity: 2026-06-27
+stopped_at: Archived v1.2 milestone
+last_updated: "2026-07-02T21:13:17.979Z"
+last_activity: 2026-07-02
 progress:
   total_phases: 8
   completed_phases: 8
@@ -18,18 +18,18 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-23)
+See: .planning/PROJECT.md (updated 2026-07-02)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Phase 30 — Milestone Metadata Cleanup
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Milestone: v1.2 Cutover Evidence Execution and Acceptance - metadata cleanup complete
+Milestone: v1.2 Cutover Evidence Execution and Acceptance - archived
 Phase: 30 (Milestone Metadata Cleanup) - COMPLETE
 Plan: 1 of 1
-Status: Milestone complete - Phase 30 verification passed
-Last activity: 2026-06-27
+Status: Milestone archived; next milestone not yet defined
+Last activity: 2026-07-02
 
 Progress: [##########] 100% (8 of 8 v1.2 phases complete)
 
@@ -57,7 +57,7 @@ Progress: [##########] 100% (8 of 8 v1.2 phases complete)
 **Recent Trend:**
 
 - Last 5 completed plans: Phase 27 P01, Phase 28 P01, Phase 29 P01, Phase 29 P02, Phase 30 P01
-- Trend: v1.2 external-evidence execution, acceptance, final-readiness, upstream evidence-flow closure, and Phase 30 metadata cleanup are complete; milestone archival remains a later completion workflow.
+- Trend: v1.2 external-evidence execution, acceptance, final-readiness, upstream evidence-flow closure, Phase 30 metadata cleanup, and milestone archival are complete; next milestone planning should create fresh requirements.
 
 | Phase 30-milestone-metadata-cleanup P01 | 16m | 3 tasks | 12 files |
 
@@ -76,6 +76,7 @@ Recent decisions affecting current work:
 - [Phase 30-milestone-metadata-cleanup]: Phase 30 remained requirement-neutral: no new requirement IDs, no REQUIREMENTS.md updates, and archival deferred to the milestone completion workflow.
 - [Phase 30-milestone-metadata-cleanup]: Used repo-local dual summary frontmatter keys instead of editing the global GSD helper.
 - [Phase 30-milestone-metadata-cleanup]: Recorded the v1.2 audit as workflow-equivalent local GSD audit commands because this executor cannot dispatch slash commands.
+- [v1.2-complete]: Archived v1.2 roadmap, requirements, and audit artifacts under `.planning/milestones/`; live requirements will be removed so `/gsd-new-milestone` starts from a fresh scope.
 
 ### Pending Todos
 
@@ -87,10 +88,10 @@ None yet.
 - Evidence artifacts must avoid private signing keys, tokens, certificates, service payloads, raw crash dumps, and other secret-bearing data.
 - Hardware availability and failure-injection scope can block final readiness if required scenarios cannot be observed or exception-approved.
 - Reference demotion stays blocked unless a valid explicit maintainer decision supplies approval after readiness is otherwise unblocked.
-- Milestone archival is allowed only after Phase 30 verification and the refreshed audit pass.
+- Next milestone requirements are intentionally absent until `/gsd-new-milestone` defines the next scope.
 
 ## Session Continuity
 
-Last session: 2026-06-27T00:12:46.891Z
-Stopped at: Completed 30-01-PLAN.md
+Last session: 2026-07-02T21:13:17.979Z
+Stopped at: Archived v1.2 milestone
 Resume file: None
