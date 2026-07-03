@@ -436,6 +436,23 @@ esac
         self.assertEqual(manifest["finality_status"], "quarantined-non-final")
         self.assertTrue(all(row["finality_status"] == "quarantined-non-final" for row in rejected["rejected_submissions"]))
 
+    def test_quick_rejects_symlinked_output_parent(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        outside_dir = tempfile.TemporaryDirectory()
+        with temp_dir, outside_dir:
+            outside_root = Path(outside_dir.name)
+            (root / "build").mkdir(parents=True)
+            (root / "build/ci-evidence").symlink_to(outside_root, target_is_directory=True)
+
+            # Act
+            result = self.run_verifier(["--quick", "--output-dir", DEFAULT_OUTPUT_DIR], maybe_root=root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertIn("--output-dir cannot contain symlink path component", result.stdout)
+        self.assertFalse((outside_root / "phase31").exists())
+
     def test_raw_inputs_invoke_source_validators_and_write_receipts(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -538,7 +555,7 @@ esac
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
-            self.write_retained_stream(root, extra_manifest={"private_key": "external secret should not be retained"})
+            self.write_retained_stream(root, extra_manifest={"access_token": "external secret should not be retained"})
 
             # Act
             result = self.run_verifier(
@@ -556,6 +573,52 @@ esac
         self.assertNotEqual(result.returncode, 0, result.stdout)
         self.assertEqual(manifest["accepted_count"], 0)
         self.assertIn("forbidden evidence fields", result.stdout)
+
+    def test_symlinked_retained_output_root_is_rejected(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        outside_dir = tempfile.TemporaryDirectory()
+        with temp_dir, outside_dir:
+            outside_root = Path(outside_dir.name)
+            self.write_json(
+                outside_root,
+                "simulator-result-manifest.json",
+                {
+                    "artifact_name": "phase23-simulator-evidence-execution",
+                    "command_mode": "evidence-input",
+                    "output_root": "build/ci-evidence/phase23",
+                    "phase": "23-simulator-evidence-execution",
+                    "phase_lifecycle_id": "23-2026-06-23T18-45-38",
+                    "real_simulator_evidence_supplied": True,
+                    "status": "passed",
+                },
+            )
+            self.write_json(
+                outside_root,
+                "upstream-simulator-result-row.json",
+                {
+                    "artifact_refs": ["external://phase23/logs/run.json"],
+                    "redaction_status": "passed",
+                    "source_ref_status": "passed",
+                },
+            )
+            (root / "build/ci-evidence").mkdir(parents=True)
+            (root / "build/ci-evidence/phase23").symlink_to(outside_root, target_is_directory=True)
+
+            # Act
+            result = self.run_verifier(
+                [
+                    "--phase23-retained-output",
+                    "build/ci-evidence/phase23",
+                    "--submitter-identity-ref",
+                    SUBMITTER,
+                ],
+                maybe_root=root,
+            )
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertIn("cannot contain symlink path component", result.stdout)
 
     def test_unsafe_artifact_ref_is_rejected(self) -> None:
         # Arrange
@@ -577,6 +640,166 @@ esac
         # Assert
         self.assertNotEqual(result.returncode, 0, result.stdout)
         self.assertIn("ref must stay within allowed roots", result.stdout)
+
+    def test_external_artifact_ref_traversal_is_rejected(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_retained_stream(root, artifact_ref="external://phase23/../raw-output.log")
+
+            # Act
+            result = self.run_verifier(
+                [
+                    "--phase23-retained-output",
+                    "build/ci-evidence/phase23",
+                    "--submitter-identity-ref",
+                    SUBMITTER,
+                ],
+                maybe_root=root,
+            )
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertIn("ref must stay within allowed roots", result.stdout)
+
+    def test_release_evidence_refs_are_containment_checked(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_json(
+                root,
+                "build/ci-evidence/phase26/release-upstream-run-manifest.json",
+                {
+                    "artifact_name": "phase26-release-signing-upstream-evidence",
+                    "output_root": "build/ci-evidence/phase26",
+                    "phase": "26-release-signing-and-upstream-result-evidence",
+                    "phase_lifecycle_id": "26-2026-06-24T13-36-46",
+                    "real_release_evidence_supplied": True,
+                    "release_status": "passed",
+                },
+            )
+            self.write_json(
+                root,
+                "build/ci-evidence/phase26/upstream-result-row-table.json",
+                {
+                    "rows": [
+                        {
+                            "artifact_refs": ["external://phase26/artifacts/release.json"],
+                            "criterion_id": "final-release-artifact-signing-evidence",
+                            "evidence_refs": ["/tmp/raw-release-log.txt"],
+                            "redaction_status": "passed",
+                            "source_lifecycle_status": "current",
+                            "source_ref_status": "passed",
+                            "status": "passed",
+                        }
+                    ]
+                },
+            )
+
+            # Act
+            result = self.run_verifier(
+                [
+                    "--phase26-retained-output",
+                    "build/ci-evidence/phase26",
+                    "--submitter-identity-ref",
+                    SUBMITTER,
+                ],
+                maybe_root=root,
+            )
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertIn("evidence_refs ref must stay within allowed roots", result.stdout)
+
+    def test_release_row_table_accepts_consumed_phase23_to_phase25_refs(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.write_json(
+                root,
+                "build/ci-evidence/phase26/release-upstream-run-manifest.json",
+                {
+                    "artifact_name": "phase26-release-signing-upstream-evidence",
+                    "output_root": "build/ci-evidence/phase26",
+                    "phase": "26-release-signing-and-upstream-result-evidence",
+                    "phase_lifecycle_id": "26-2026-06-24T13-36-46",
+                    "real_release_evidence_supplied": True,
+                    "release_status": "passed",
+                },
+            )
+            self.write_json(
+                root,
+                "build/ci-evidence/phase26/upstream-result-row-table.json",
+                {
+                    "rows": [
+                        {
+                            "artifact_refs": ["external://phase23/logs/simulator.json"],
+                            "criterion_id": "final-simulator-evidence",
+                            "evidence_refs": ["external://phase23/evidence/simulator.json"],
+                            "redaction_status": "passed",
+                            "source_lifecycle_status": "current",
+                            "source_ref_status": "passed",
+                            "status": "passed",
+                        },
+                        {
+                            "artifact_refs": ["external://phase24/logs/hardware.json"],
+                            "criterion_id": "final-hardware-safety-media-evidence",
+                            "evidence_refs": ["external://phase24/evidence/hardware.json"],
+                            "redaction_status": "passed",
+                            "source_lifecycle_status": "current",
+                            "source_ref_status": "passed",
+                            "status": "passed",
+                        },
+                        {
+                            "artifact_refs": ["external://phase25/logs/live.json"],
+                            "criterion_id": "final-live-network-transfer-evidence",
+                            "evidence_refs": ["external://phase25/evidence/live.json"],
+                            "redaction_status": "passed",
+                            "source_lifecycle_status": "current",
+                            "source_ref_status": "passed",
+                            "status": "passed",
+                        },
+                        {
+                            "artifact_refs": ["external://phase26/artifacts/release.json"],
+                            "criterion_id": "final-release-artifact-signing-evidence",
+                            "evidence_refs": ["external://phase26/evidence/release.json"],
+                            "redaction_status": "passed",
+                            "source_lifecycle_status": "current",
+                            "source_ref_status": "passed",
+                            "status": "passed",
+                        },
+                    ]
+                },
+            )
+            self.write_json(
+                root,
+                "build/ci-evidence/phase26/artifact-reference-summary.json",
+                {
+                    "artifact_refs": ["external://phase20/artifacts/firmware.bbf"],
+                    "digest_refs": [
+                        {
+                            "artifact_ref": "external://phase20/artifacts/firmware.bbf",
+                            "sha256": "b" * 64,
+                        }
+                    ],
+                },
+            )
+
+            # Act
+            result = self.run_verifier(
+                [
+                    "--phase26-retained-output",
+                    "build/ci-evidence/phase26",
+                    "--submitter-identity-ref",
+                    SUBMITTER,
+                ],
+                maybe_root=root,
+            )
+            manifest = self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/final-intake-manifest.json")
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertEqual(manifest["accepted_count"], 1)
 
     def test_stale_lifecycle_is_rejected(self) -> None:
         # Arrange
@@ -639,7 +862,7 @@ esac
 
         # Assert
         self.assertNotEqual(result.returncode, 0, result.stdout)
-        self.assertIn("missing required file", result.stdout)
+        self.assertIn("missing required path", result.stdout)
 
     def test_prose_raw_submission_is_rejected(self) -> None:
         # Arrange

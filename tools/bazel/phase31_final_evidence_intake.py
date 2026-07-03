@@ -9,7 +9,7 @@ import shutil
 import subprocess
 import sys
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 
@@ -38,15 +38,33 @@ PHASE31_VERIFY_COMMANDS = [
     "python3 tools/bazel/phase31_final_evidence_intake.py --quick --output-dir build/ci-evidence/phase31",
 ]
 PHASE31_TEST_COMMAND = "python3 tools/bazel/phase31_final_evidence_intake_test.py"
-REF_LIST_FIELDS = {"artifact_refs", "retention_refs", "validator_output_refs"}
+REF_LIST_FIELDS = {"artifact_refs", "evidence_refs", "retention_refs", "validator_output_refs"}
 REF_STRING_FIELDS = {"artifact_ref", "manifest_ref"}
+PHASE31_ALLOWED_SOURCE_REF_ROOTS = [
+    "build/ci-evidence/phase20/",
+    "build/ci-evidence/phase23/",
+    "build/ci-evidence/phase24/",
+    "build/ci-evidence/phase25/",
+    "build/ci-evidence/phase26/",
+    "external://phase20/",
+    "external://phase23/",
+    "external://phase24/",
+    "external://phase25/",
+    "external://phase26/",
+]
 FORBIDDEN_FIELD_NAMES = {
+    "access_token",
     "api_key",
     "api_key_value",
+    "auth_header",
+    "authorization_header",
     "binary_dump",
     "binary_dump_bytes",
     "certificate_bytes",
     "certificate_pem",
+    "client_secret",
+    "connect_token",
+    "cookie_header",
     "credential",
     "credential_value",
     "crash_dump_bytes",
@@ -73,6 +91,7 @@ FORBIDDEN_FIELD_NAMES = {
     "token",
     "token_value",
     "wifi_credential",
+    "wifi_password",
 }
 FORBIDDEN_TEXT_PATTERNS = (
     ("private-key-block", re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----", re.IGNORECASE)),
@@ -80,10 +99,13 @@ FORBIDDEN_TEXT_PATTERNS = (
     (
         "forbidden-evidence-marker",
         re.compile(
-            r"\b(api[_-]?key[_-]?value|certificate[_-]?pem|credential[_-]?value|password[_-]?value|"
+            r"\b(access[_-]?token|api[_-]?key[_-]?value|auth(?:orization)?[_-]?header|"
+            r"certificate[_-]?pem|client[_-]?secret|connect[_-]?token|cookie[_-]?header|"
+            r"credential[_-]?value|password[_-]?value|"
             r"private[_-]?certificate|private[_-]?key|raw[_-]?crash[_-]?dump|raw[_-]?logs?|"
             r"secret[_-]?value|service[_-]?payload|signing[_-]?key[_-]?value|"
-            r"signing[_-]?payload[_-]?bytes|tls[_-]?keylog|token[_-]?value|wi[-_ ]?fi credential)\b",
+            r"signing[_-]?payload[_-]?bytes|tls[_-]?keylog|token[_-]?value|"
+            r"wi[-_ ]?fi credential|wifi[_-]?password)\b",
             re.IGNORECASE,
         ),
     ),
@@ -174,10 +196,50 @@ def require_path_under(path_value: str | Path, root_path: Path, row_name: str) -
     return relative_path
 
 
-def require_existing_file(root: Path, path_value: str | Path, row_name: str) -> Path:
-    relative_path = require_repo_relative_path(path_value, row_name)
+def require_no_symlink_components(root: Path, relative_path: Path, row_name: str) -> None:
+    current = root
+    for part in relative_path.parts:
+        current = current / part
+        if current.is_symlink():
+            raise VerificationError(f"{row_name} cannot contain symlink path component: {relative_path.as_posix()}")
+
+
+def require_resolved_under(root: Path, path_value: str | Path, allowed_root: Path, row_name: str) -> Path:
+    if allowed_root == Path("."):
+        relative_path = require_repo_relative_path(path_value, row_name)
+    else:
+        relative_path = require_path_under(path_value, allowed_root, row_name)
+    require_no_symlink_components(root, relative_path, row_name)
+    full_path = root / relative_path
+    if not full_path.exists():
+        raise VerificationError(f"missing required path: {relative_path.as_posix()}")
+    try:
+        resolved_path = full_path.resolve(strict=True)
+        resolved_root = (root / allowed_root).resolve(strict=True)
+    except FileNotFoundError as error:
+        raise VerificationError(f"missing required path: {relative_path.as_posix()}") from error
+    try:
+        resolved_path.relative_to(resolved_root)
+    except ValueError as error:
+        raise VerificationError(f"{row_name} resolves outside {allowed_root.as_posix()}: {relative_path.as_posix()}") from error
+    return relative_path
+
+
+def require_existing_file_under(root: Path, path_value: str | Path, allowed_root: Path, row_name: str) -> Path:
+    relative_path = require_resolved_under(root, path_value, allowed_root, row_name)
     if not (root / relative_path).is_file():
         raise VerificationError(f"{row_name} file not found: {relative_path.as_posix()}")
+    return relative_path
+
+
+def require_existing_file(root: Path, path_value: str | Path, row_name: str) -> Path:
+    return require_existing_file_under(root, path_value, Path("."), row_name)
+
+
+def require_existing_dir_under(root: Path, path_value: str | Path, allowed_root: Path, row_name: str) -> Path:
+    relative_path = require_resolved_under(root, path_value, allowed_root, row_name)
+    if not (root / relative_path).is_dir():
+        raise VerificationError(f"{row_name} directory not found: {relative_path.as_posix()}")
     return relative_path
 
 
@@ -188,6 +250,21 @@ def output_dir_under_default(path_value: str | Path) -> Path:
 
 def reset_output_root(root: Path, output_dir: Path) -> Path:
     relative_output_dir = output_dir_under_default(output_dir)
+    require_no_symlink_components(root, relative_output_dir, "--output-dir")
+    current = root
+    for part in relative_output_dir.parent.parts:
+        current = current / part
+        if current.exists():
+            if current.is_symlink() or not current.is_dir():
+                raise VerificationError(f"--output-dir parent is not a normal directory: {relative_output_dir.parent.as_posix()}")
+            continue
+        current.mkdir()
+    resolved_parent = (root / relative_output_dir.parent).resolve(strict=True)
+    resolved_allowed_parent = (root / DEFAULT_OUTPUT_DIR.parent).resolve(strict=True)
+    try:
+        resolved_parent.relative_to(resolved_allowed_parent)
+    except ValueError as error:
+        raise VerificationError(f"--output-dir resolves outside {DEFAULT_OUTPUT_DIR.as_posix()}") from error
     full_output_dir = root / relative_output_dir
     if full_output_dir.exists():
         if full_output_dir.is_symlink() or not full_output_dir.is_dir():
@@ -198,12 +275,18 @@ def reset_output_root(root: Path, output_dir: Path) -> Path:
 
 
 def normalized_field_name(field_name: str) -> str:
-    return field_name.replace("-", "_").casefold()
+    return re.sub(r"[^a-z0-9]", "", field_name.casefold())
 
 
 def reject_forbidden_field_names(value: Any, path: str) -> None:
     if isinstance(value, dict):
-        forbidden = sorted(key for key in value if normalized_field_name(key) in FORBIDDEN_FIELD_NAMES)
+        forbidden = sorted({
+            key
+            for key in value
+            for forbidden_name in FORBIDDEN_FIELD_NAMES
+            if normalized_field_name(key) == normalized_field_name(forbidden_name)
+            or normalized_field_name(forbidden_name) in normalized_field_name(key)
+        })
         if forbidden:
             raise VerificationError(f"{path} contains forbidden evidence fields: {', '.join(forbidden)}")
         for key, child in value.items():
@@ -248,14 +331,23 @@ def validate_artifact_ref(ref: str, adapter: dict[str, Any], row_name: str) -> N
     allowed_roots = require_list_of_strings(adapter, "allowed_ref_roots", f"{adapter['stream']} adapter")
     for allowed_root in allowed_roots:
         if allowed_root.startswith("external://"):
-            if ref.startswith(allowed_root) and len(ref) > len(allowed_root):
-                return
+            if ref.startswith(allowed_root):
+                suffix = ref[len(allowed_root):]
+                suffix_parts = PurePosixPath(suffix).parts
+                if suffix and ".." not in suffix_parts and not suffix.startswith("/"):
+                    return
             continue
         if ref.startswith(allowed_root):
             relative_ref = require_repo_relative_path(ref, row_name)
             require_path_under(relative_ref, Path(allowed_root), row_name)
             return
     raise VerificationError(f"{row_name} ref must stay within allowed roots {allowed_roots}: {ref}")
+
+
+def adapter_with_allowed_ref_roots(adapter: dict[str, Any], allowed_roots: list[str]) -> dict[str, Any]:
+    scoped_adapter = dict(adapter)
+    scoped_adapter["allowed_ref_roots"] = allowed_roots
+    return scoped_adapter
 
 
 def validate_refs_in_json(value: Any, adapter: dict[str, Any], row_name: str) -> None:
@@ -587,10 +679,7 @@ def run_source_validator(root: Path, adapter: dict[str, Any], raw_input_path: Pa
 
 def retained_output_dir(root: Path, adapter: dict[str, Any], path_value: str | Path) -> Path:
     output_root = Path(require_string(adapter, "output_root", f"{adapter['stream']} adapter"))
-    relative_path = require_path_under(path_value, output_root, f"{adapter['stream']} retained output")
-    if not (root / relative_path).is_dir():
-        raise VerificationError(f"{adapter['stream']} retained output directory not found: {relative_path.as_posix()}")
-    return relative_path
+    return require_existing_dir_under(root, path_value, output_root, f"{adapter['stream']} retained output")
 
 
 def status_field(rows: list[dict[str, Any]], field: str, default: str) -> str:
@@ -645,6 +734,7 @@ def validate_stream_output(
 ) -> tuple[dict[str, Any], Path]:
     stream = require_string(adapter, "stream", "adapter")
     manifest_path = output_dir / require_string(adapter, "manifest", f"{stream} adapter")
+    require_existing_file_under(root, manifest_path, output_dir, f"{stream} manifest")
     manifest = load_json(root, manifest_path)
     reject_secret_bearing_json(manifest_path, manifest)
     validate_refs_in_json(manifest, adapter, f"{stream} manifest")
@@ -659,12 +749,14 @@ def validate_stream_output(
 
     if stream == "release-signing":
         upstream_path = output_dir / require_string(adapter, "upstream_row_table", f"{stream} adapter")
+        require_existing_file_under(root, upstream_path, output_dir, f"{stream} upstream row table")
         row_table = load_json(root, upstream_path)
         rows = require_list(row_table, "rows", "release-signing upstream row table")
         if not rows or not all(isinstance(row, dict) for row in rows):
             raise VerificationError("release-signing upstream row table rows must contain objects")
+        release_ref_adapter = adapter_with_allowed_ref_roots(adapter, PHASE31_ALLOWED_SOURCE_REF_ROOTS)
         for row in rows:
-            validate_source_row(row, adapter, f"{stream} upstream row {row.get('criterion_id', '<missing>')}")
+            validate_source_row(row, release_ref_adapter, f"{stream} upstream row {row.get('criterion_id', '<missing>')}")
         redaction_status = status_field(rows, "redaction_status", "passed")
         source_ref_status = status_field(rows, "source_ref_status", "passed")
         exception_status = status_field(rows, "exception_status", "none")
@@ -675,13 +767,20 @@ def validate_stream_output(
         )
         artifact_reference_summary_path = output_dir / "artifact-reference-summary.json"
         if (root / artifact_reference_summary_path).is_file():
+            require_existing_file_under(
+                root,
+                artifact_reference_summary_path,
+                output_dir,
+                "release-signing artifact reference summary",
+            )
             artifact_reference_summary = load_json(root, artifact_reference_summary_path)
             reject_secret_bearing_json(artifact_reference_summary_path, artifact_reference_summary)
-            validate_refs_in_json(artifact_reference_summary, adapter, "release-signing artifact reference summary")
+            validate_refs_in_json(artifact_reference_summary, release_ref_adapter, "release-signing artifact reference summary")
         else:
             artifact_reference_summary = {"artifact_refs": collect_artifact_refs(rows)}
     else:
         upstream_path = output_dir / require_string(adapter, "upstream_row", f"{stream} adapter")
+        require_existing_file_under(root, upstream_path, output_dir, f"{stream} upstream row")
         row = load_json(root, upstream_path)
         redaction_status, source_ref_status, exception_status = validate_source_row(row, adapter, f"{stream} upstream row")
         failure_reason = str(row.get("failure_reason", ""))
@@ -827,7 +926,12 @@ def process_submission(root: Path, args: argparse.Namespace) -> None:
         ("phase25_live_service_row", args.phase25_live_service_row),
     ]:
         if path_value:
-            upstream_rows[key] = require_existing_file(root, path_value, key)
+            allowed_root = {
+                "phase23_simulator_row": Path("build/ci-evidence/phase23"),
+                "phase24_hardware_media_safety_row": Path("build/ci-evidence/phase24"),
+                "phase25_live_service_row": Path("build/ci-evidence/phase25"),
+            }[key]
+            upstream_rows[key] = require_existing_file_under(root, path_value, allowed_root, key)
 
     receipts: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
@@ -856,8 +960,7 @@ def process_submission(root: Path, args: argparse.Namespace) -> None:
                 else:
                     row_path = source_output_dir / require_string(adapter, "upstream_row", f"{stream} adapter")
                 for required_path in [manifest_path, row_path]:
-                    if not (root / required_path).is_file():
-                        raise VerificationError(f"missing required file: {required_path.as_posix()}")
+                    require_existing_file_under(root, required_path, source_output_dir, "retained source output")
                 packet_hash = paths_sha256(root, [manifest_path, row_path])
                 command = ["registered-retained-output", source_output_dir.as_posix()]
             receipt, upstream_path = validate_stream_output(root, adapter, source_output_dir, submitter_identity_ref, command, packet_hash)

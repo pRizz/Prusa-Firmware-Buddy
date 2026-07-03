@@ -2,6 +2,10 @@
 phase: 31-final-evidence-intake
 plan: 01
 status: complete
+generated_by: gsd-execute-phase
+lifecycle_mode: yolo
+phase_lifecycle_id: 31-2026-07-03T02-04-07
+generated_at: 2026-07-03T02:51:24Z
 completed_at: 2026-07-03T02:51:24Z
 ---
 
