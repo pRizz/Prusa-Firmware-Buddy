@@ -68,30 +68,33 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INTAKE-01 | TBD | Pending roadmap |
-| INTAKE-02 | TBD | Pending roadmap |
-| INTAKE-03 | TBD | Pending roadmap |
-| INTAKE-04 | TBD | Pending roadmap |
-| TRIAGE-01 | TBD | Pending roadmap |
-| TRIAGE-02 | TBD | Pending roadmap |
-| TRIAGE-03 | TBD | Pending roadmap |
-| DECIDE-01 | TBD | Pending roadmap |
-| DECIDE-02 | TBD | Pending roadmap |
-| DECIDE-03 | TBD | Pending roadmap |
-| READY-01 | TBD | Pending roadmap |
-| READY-02 | TBD | Pending roadmap |
-| READY-03 | TBD | Pending roadmap |
-| CUTOVER-01 | TBD | Pending roadmap |
-| CUTOVER-02 | TBD | Pending roadmap |
-| CUTOVER-03 | TBD | Pending roadmap |
+| INTAKE-01 | Phase 31 | Pending |
+| INTAKE-02 | Phase 31 | Pending |
+| INTAKE-03 | Phase 31 | Pending |
+| INTAKE-04 | Phase 31 | Pending |
+| TRIAGE-01 | Phase 32 | Pending |
+| TRIAGE-02 | Phase 32 | Pending |
+| TRIAGE-03 | Phase 32 | Pending |
+| DECIDE-01 | Phase 33 | Pending |
+| DECIDE-02 | Phase 33 | Pending |
+| DECIDE-03 | Phase 33 | Pending |
+| READY-01 | Phase 34 | Pending |
+| READY-02 | Phase 34 | Pending |
+| READY-03 | Phase 34 | Pending |
+| CUTOVER-01 | Phase 35 | Pending |
+| CUTOVER-02 | Phase 35 | Pending |
+| CUTOVER-03 | Phase 35 | Pending |
 
 **Coverage:**
 
 - v1.3 requirements: 16 total
-- Mapped to phases: 0
-- Unmapped: 16
+- Mapped to phases: 16
+- Complete: 0
+- Pending: 16
+- Unmapped: 0
+- Duplicate mappings: 0
 
 ______________________________________________________________________
 
 *Requirements defined: 2026-07-02*
-*Last updated: 2026-07-02 after initial v1.3 requirement definition*
+*Last updated: 2026-07-02 after v1.3 roadmap creation*
