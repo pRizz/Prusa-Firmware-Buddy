@@ -853,6 +853,46 @@ shell_binary(
 )
 
 filegroup(
+    name = "phase32_source_ref_manifests",
+    srcs = [
+        "manifests/phase23_simulator_evidence_execution_contract.json",
+        "manifests/phase24_hardware_media_safety_evidence_execution_contract.json",
+        "manifests/phase25_live_service_evidence_execution_contract.json",
+        "manifests/phase26_release_signing_upstream_evidence_contract.json",
+        "manifests/phase27_retained_code_acceptance_decisions_contract.json",
+        "manifests/phase28_final_readiness_packet_contract.json",
+        "manifests/phase31_final_evidence_intake_contract.json",
+        "manifests/phase32_blocker_register_triage_contract.json",
+    ],
+)
+
+shell_binary(
+    name = "phase32_verify",
+    src = "rust_workflow.sh",
+    data = [
+        "phase31_final_evidence_intake.py",
+        "phase26_release_signing_upstream_evidence.py",
+        "phase27_retained_code_acceptance_decisions.py",
+        "phase28_final_readiness_packet.py",
+        "phase32_blocker_register_triage.py",
+        "manifests/phase32_blocker_register_triage_contract.json",
+        ":phase32_source_ref_manifests",
+        "//:phase32_blocker_register_triage_docs",
+    ],
+)
+
+shell_binary(
+    name = "phase32_verify_tests",
+    src = "rust_workflow.sh",
+    data = [
+        "phase32_blocker_register_triage.py",
+        "phase32_blocker_register_triage_test.py",
+        "manifests/phase32_blocker_register_triage_contract.json",
+        ":phase32_source_ref_manifests",
+    ],
+)
+
+filegroup(
     name = "unsafe_boundary_audit",
     srcs = ["manifests/unsafe_boundary_audit.json"],
 )
