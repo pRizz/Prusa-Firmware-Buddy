@@ -360,17 +360,15 @@ Derived views should not add independent blocker semantics that are absent from 
 |---|-------|---------|---------------|
 | - | No `[ASSUMED]` claims were used. | All sections | No user confirmation needed from this research alone. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should Phase 32 add structured rejection codes back to Phase 31?**
    - What we know: Phase 32 D-15 says not to reopen Phase 31 unless actual final-intake rejection reason text and finality metadata cannot be classified. [VERIFIED: .planning/phases/32-blocker-register-and-evidence-triage/32-CONTEXT.md]
-   - What's unclear: No real unclassifiable Phase 31 final-intake rejection was found during research. [VERIFIED: build/ci-evidence/phase31/rejected-submissions.json; VERIFIED: tools/bazel/phase31_final_evidence_intake.py]
-   - Recommendation: Plan Phase 32 without Phase 31 edits, but include a failing test fixture for an unclassified rejection reason that fails closed. [VERIFIED: .planning/phases/32-blocker-register-and-evidence-triage/32-CONTEXT.md; VERIFIED: standards/core/testing.md]
+   - Resolution: Plan Phase 32 without Phase 31 edits. Classify current Phase 31 reason text and finality metadata first, and include a fail-closed unknown-rejection fixture. Reopen Phase 31 only if an actual final-intake rejection cannot be classified from existing reason/finality metadata. [VERIFIED: .planning/phases/32-blocker-register-and-evidence-triage/32-CONTEXT.md; VERIFIED: standards/core/testing.md]
 
 2. **What exact `owner_ref` strings should the policy map emit?**
    - What we know: Phase 27 has owner strings for retained-code residual-risk rows, and Phase 27 contract has sensitive-role values including `safety-maintainer`, `release-maintainer`, and `network-security-maintainer`. [VERIFIED: build/ci-evidence/phase27/residual-risk-register.json; VERIFIED: tools/bazel/manifests/phase27_retained_code_acceptance_decisions_contract.json]
-   - What's unclear: No global Phase 32 `owner_ref` schema exists yet. [VERIFIED: `rg -n "owner_ref" tools/bazel .planning/phases/32-blocker-register-and-evidence-triage`]
-   - Recommendation: Define the owner policy in `phase32_blocker_register_triage_contract.json`, use existing Phase 27 owner values when present, and use stream/gate owner defaults for Phase 31 and upstream rows. [VERIFIED: .planning/phases/32-blocker-register-and-evidence-triage/32-CONTEXT.md; VERIFIED: build/ci-evidence/phase27/residual-risk-register.json]
+   - Resolution: Define the owner policy in `phase32_blocker_register_triage_contract.json`, use existing Phase 27 owner values when present, and use these Phase 32 stream/gate defaults for Phase 31 and upstream rows: `simulator -> simulator-maintainer`, `hardware-media-safety -> safety-maintainer`, `live-service -> network-security-maintainer`, `release-signing -> release-maintainer`, `upstream-result -> release-maintainer`, `retained-code -> retained-code-maintainer`, `readiness -> readiness-maintainer`, and `unknown -> cutover-maintainer`. [VERIFIED: .planning/phases/32-blocker-register-and-evidence-triage/32-CONTEXT.md; VERIFIED: build/ci-evidence/phase27/residual-risk-register.json]
 
 ## Environment Availability
 
