@@ -353,6 +353,32 @@ class Phase32BlockerRegisterTriageTest(unittest.TestCase):
                 # Assert
                 self.assert_ineligible_policy(classification, expected_problem_kind, "repair_item")
 
+    def test_explicit_security_and_source_statuses_override_reason_taxonomy(self) -> None:
+        # Arrange
+        module = self.load_module()
+        cases = [
+            ({"redaction_status": "failed"}, "redaction_failed"),
+            ({"redaction_status": "secret-tainted"}, "secret_tainted"),
+            ({"source_ref_status": "unsafe-ref"}, "unsafe_ref"),
+            ({"source_ref_status": "source-ref-failed"}, "source_ref_failed"),
+            ({"source_lifecycle_status": "stale"}, "lifecycle_mismatch"),
+        ]
+
+        for status_fields, expected_problem_kind in cases:
+            with self.subTest(expected_problem_kind=expected_problem_kind):
+                signal = {
+                    "source_stream": "simulator",
+                    "failure_reason": "quick default placeholder local-only workflow",
+                    **status_fields,
+                }
+
+                # Act
+                classification = module.classify_signal(signal)
+
+                # Assert
+                self.assertEqual(classification["row_problem_kind"], expected_problem_kind)
+                self.assertEqual(classification["proof_eligibility"], "ineligible")
+
     def test_quick_writes_canonical_register_and_handoff_artifacts(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()

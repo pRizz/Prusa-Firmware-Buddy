@@ -339,6 +339,17 @@ def classify_reason(reason: str) -> str | None:
 
 
 def classify_problem_kind(signal: dict[str, Any]) -> str:
+    if signal.get("redaction_status") in {"secret-tainted", "secret_tainted"} or signal.get("status") in {"secret-tainted", "secret_tainted"}:
+        return "secret_tainted"
+    if signal.get("redaction_status") in {"failed", "rejected", "redaction-failed", "rejected-redaction"}:
+        return "redaction_failed"
+    if signal.get("source_ref_status") in {"unsafe-ref", "unsafe_ref"} or signal.get("status") in {"unsafe-ref", "unsafe_ref"}:
+        return "unsafe_ref"
+    if signal.get("source_ref_status") in {"failed", "rejected", "source-ref-failed"}:
+        return "source_ref_failed"
+    if signal.get("source_lifecycle_status") in {"stale", "mismatch", "lifecycle-mismatch"}:
+        return "lifecycle_mismatch"
+
     reason = str(signal.get("failure_reason") or signal.get("reason") or "")
     maybe_reason_problem = classify_reason(reason)
     if maybe_reason_problem is not None:
@@ -348,18 +359,8 @@ def classify_problem_kind(signal: dict[str, Any]) -> str:
     if finality_status in {"rejected-final", "quarantined-non-final"}:
         return "unknown_unclassified"
 
-    if signal.get("redaction_status") in {"failed", "rejected", "redaction-failed", "rejected-redaction"}:
-        return "redaction_failed"
-    if signal.get("source_ref_status") in {"failed", "rejected", "source-ref-failed"}:
-        return "source_ref_failed"
-    if signal.get("source_lifecycle_status") in {"stale", "mismatch", "lifecycle-mismatch"}:
-        return "lifecycle_mismatch"
     if signal.get("exception_status") in {"exception-requested", "requested"} or signal.get("status") == "exception-requested":
         return "exception_requested"
-    if signal.get("redaction_status") in {"secret-tainted", "secret_tainted"} or signal.get("status") in {"secret-tainted", "secret_tainted"}:
-        return "secret_tainted"
-    if signal.get("source_ref_status") in {"unsafe-ref", "unsafe_ref"} or signal.get("status") in {"unsafe-ref", "unsafe_ref"}:
-        return "unsafe_ref"
     if signal.get("status") in {"stale", "stale-lifecycle"}:
         return "stale"
     if signal.get("status") in {"failed", "blocked"}:
