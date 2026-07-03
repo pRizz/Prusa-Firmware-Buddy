@@ -16,9 +16,9 @@ These requirements consume the v1.2 evidence and decision machinery with real sa
 
 ### Evidence Triage
 
-- [ ] **TRIAGE-01**: Maintainer can aggregate all consumed simulator, hardware/media/safety, live-service, release/signing, upstream-result, retained-code, and readiness rows into a single blocker register.
-- [ ] **TRIAGE-02**: Maintainer can classify each failed, missing, stale, malformed, redaction-failed, or exceptioned row with owner, severity, affected gate, required next action, and decision impact.
-- [ ] **TRIAGE-03**: Maintainer can prove quick/default placeholder outputs, smoke fixtures, and local-only dry-run rows are rejected as final cutover proof.
+- [x] **TRIAGE-01**: Maintainer can aggregate all consumed simulator, hardware/media/safety, live-service, release/signing, upstream-result, retained-code, and readiness rows into a single blocker register.
+- [x] **TRIAGE-02**: Maintainer can classify each failed, missing, stale, malformed, redaction-failed, or exceptioned row with owner, severity, affected gate, required next action, and decision impact.
+- [x] **TRIAGE-03**: Maintainer can prove quick/default placeholder outputs, smoke fixtures, and local-only dry-run rows are rejected as final cutover proof.
 
 ### Maintainer Decisions
 
@@ -72,9 +72,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INTAKE-02 | Phase 31 | Pending |
 | INTAKE-03 | Phase 31 | Pending |
 | INTAKE-04 | Phase 31 | Pending |
-| TRIAGE-01 | Phase 32 | Pending |
-| TRIAGE-02 | Phase 32 | Pending |
-| TRIAGE-03 | Phase 32 | Pending |
+| TRIAGE-01 | Phase 32 | Complete |
+| TRIAGE-02 | Phase 32 | Complete |
+| TRIAGE-03 | Phase 32 | Complete |
 | DECIDE-01 | Phase 33 | Pending |
 | DECIDE-02 | Phase 33 | Pending |
 | DECIDE-03 | Phase 33 | Pending |
@@ -89,12 +89,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 - v1.3 requirements: 16 total
 - Mapped to phases: 16
-- Complete: 0
-- Pending: 16
+- Complete: 3
+- Pending: 13
 - Unmapped: 0
 - Duplicate mappings: 0
 
 ______________________________________________________________________
 
 *Requirements defined: 2026-07-02*
-*Last updated: 2026-07-02 after v1.3 roadmap creation*
+*Last updated: 2026-07-03 after Phase 32 completion*
