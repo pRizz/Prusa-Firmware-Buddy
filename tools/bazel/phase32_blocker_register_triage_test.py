@@ -477,6 +477,56 @@ class Phase32BlockerRegisterTriageTest(unittest.TestCase):
         self.assertEqual(len(stale_rows), 1)
         self.assertEqual(stale_rows[0]["row_problem_kind"], "lifecycle_mismatch")
 
+    def test_phase31_accepted_receipt_skips_clean_lifecycle_source_rows(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_quick_fixture(root)
+        receipt_ref = "build/ci-evidence/phase31/stream-receipts/simulator-final-intake-receipt.json"
+        clean_source_refs = [
+            "build/ci-evidence/phase23/current-lifecycle-source-row.json",
+            "build/ci-evidence/phase23/not-required-lifecycle-source-row.json",
+        ]
+        receipt = self.read_json(root, receipt_ref)
+        receipt["consumed_upstream_row_refs"].extend(clean_source_refs)
+        self.write_json(root, receipt_ref, receipt)
+        for source_ref, lifecycle_status in zip(clean_source_refs, ["current", "not-required"]):
+            self.write_json(
+                root,
+                source_ref,
+                {
+                    "criterion_id": "final-simulator-evidence",
+                    "evidence_family": "simulator",
+                    "redaction_status": "passed",
+                    "requirement_ids": ["EVID-01"],
+                    "source_lifecycle_status": lifecycle_status,
+                    "source_ref_status": "passed",
+                    "status": "passed",
+                },
+            )
+
+        # Act
+        result = self.run_temp_verifier(
+            root,
+            [
+                "--quick",
+                "--phase31-output-dir",
+                "build/ci-evidence/phase31",
+                "--phase27-output-dir",
+                "build/ci-evidence/phase27",
+                "--phase28-output-dir",
+                "build/ci-evidence/phase28",
+                "--output-dir",
+                "build/ci-evidence/phase32",
+            ],
+        )
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        rows = self.read_json(root, "build/ci-evidence/phase32/blocker-register.json")["rows"]
+        emitted_refs = {row["source_ref"] for row in rows}
+        self.assertTrue(all(source_ref not in emitted_refs for source_ref in clean_source_refs))
+
     def test_phase27_and_phase28_handoff_rows_are_included_without_approval_semantics(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -539,6 +589,47 @@ class Phase32BlockerRegisterTriageTest(unittest.TestCase):
         self.assertEqual(len(exception_rows), 1)
         self.assertEqual(exception_rows[0]["source_stream"], "readiness")
         self.assertEqual(exception_rows[0]["affected_gate"], "final-live-network-transfer-evidence")
+
+    def test_phase28_known_pending_statuses_are_classified_as_missing(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_quick_fixture(root)
+        blocker_summary_path = "build/ci-evidence/phase28/blocker-summary.json"
+        blocker_summary = self.read_json(root, blocker_summary_path)
+        blocker_summary["blockers"] = [
+            {
+                "criterion_id": f"readiness-{status}",
+                "phase27_status": status,
+                "phase26_status": "passed",
+                "readiness_effect": "blocked",
+            }
+            for status in ["pending-ci-input", "pending-simulator-input", "not-required"]
+        ]
+        self.write_json(root, blocker_summary_path, blocker_summary)
+
+        # Act
+        result = self.run_temp_verifier(
+            root,
+            [
+                "--quick",
+                "--phase31-output-dir",
+                "build/ci-evidence/phase31",
+                "--phase27-output-dir",
+                "build/ci-evidence/phase27",
+                "--phase28-output-dir",
+                "build/ci-evidence/phase28",
+                "--output-dir",
+                "build/ci-evidence/phase32",
+            ],
+        )
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        rows = self.read_json(root, "build/ci-evidence/phase32/blocker-register.json")["rows"]
+        readiness_rows = [row for row in rows if row["source_ref"].startswith(f"{blocker_summary_path}#readiness-")]
+        self.assertEqual(len(readiness_rows), 3)
+        self.assertEqual({row["row_problem_kind"] for row in readiness_rows}, {"missing"})
 
     def test_derived_views_reference_canonical_row_ids(self) -> None:
         # Arrange

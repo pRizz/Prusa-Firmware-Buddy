@@ -120,6 +120,7 @@ REQUIRED_GENERATED_ARTIFACTS = {
     "contract-snapshots/phase27_retained_code_acceptance_decisions_contract.json",
     "contract-snapshots/phase28_final_readiness_packet_contract.json",
 }
+CLEAN_SOURCE_LIFECYCLE_STATUSES = {"current", "not-required", "passed", "", None}
 REASON_PROBLEM_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("non_final_placeholder", re.compile(r"\b(quick|default|placeholder|template[-_ ]?only|non[-_ ]?final)\b", re.IGNORECASE)),
     ("smoke_fixture", re.compile(r"\bsmoke(?:[-_ ]?fixture|[-_ ]?output)?\b", re.IGNORECASE)),
@@ -473,7 +474,7 @@ def is_non_blocking_source_row(signal: dict[str, Any]) -> bool:
         signal.get("status") == "passed"
         and signal.get("redaction_status", "passed") == "passed"
         and signal.get("source_ref_status", "passed") == "passed"
-        and signal.get("source_lifecycle_status", "passed") in {"passed", "", None}
+        and signal.get("source_lifecycle_status", "current") in CLEAN_SOURCE_LIFECYCLE_STATUSES
         and signal.get("exception_status", "none") in {"none", "", None}
     )
 
@@ -670,6 +671,12 @@ def phase27_rows(root: Path, phase27_output_dir: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def phase28_problem_status(raw_status: str) -> str:
+    if raw_status.startswith("pending-") or raw_status == "not-required":
+        return "missing"
+    return raw_status
+
+
 def phase28_rows(root: Path, phase28_output_dir: Path) -> list[dict[str, Any]]:
     phase28_dir = path_under(phase28_output_dir, DEFAULT_PHASE28_OUTPUT_DIR, "--phase28-output-dir")
     rows: list[dict[str, Any]] = []
@@ -685,13 +692,14 @@ def phase28_rows(root: Path, phase28_output_dir: Path) -> list[dict[str, Any]]:
             if not isinstance(item, dict):
                 raise VerificationError("phase28 blockers must be objects")
             criterion_id = str(item.get("criterion_id") or stable_sha12(item))
+            raw_status = str(item.get("phase27_status") or item.get("phase26_status") or "blocked")
             rows.append(
                 build_blocker_row(
                     row_id_prefix="phase28-readiness",
                     source_stream="readiness",
                     source_ref=f"{blocker_path.as_posix()}#{criterion_id}",
                     signal={
-                        "status": item.get("phase27_status") or item.get("phase26_status") or "blocked",
+                        "status": phase28_problem_status(raw_status),
                         "criterion_id": criterion_id,
                         "evidence_refs": [blocker_path.as_posix()],
                     },
