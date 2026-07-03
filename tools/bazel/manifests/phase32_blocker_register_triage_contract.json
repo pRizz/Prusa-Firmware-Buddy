@@ -1,0 +1,268 @@
+{
+  "schema_version": "1",
+  "id": "phase32_blocker_register_triage_contract",
+  "phase": "32-blocker-register-and-evidence-triage",
+  "phase_lifecycle_id": "32-2026-07-03T14-13-51",
+  "artifact_name": "phase32-blocker-register-triage",
+  "output_root": "build/ci-evidence/phase32",
+  "requirement_ids": [
+    "TRIAGE-01",
+    "TRIAGE-02",
+    "TRIAGE-03"
+  ],
+  "source_contracts": [
+    {
+      "id": "phase31_final_evidence_intake_contract",
+      "path": "tools/bazel/manifests/phase31_final_evidence_intake_contract.json",
+      "purpose": "authoritative finality, provenance, receipt, rejection, quarantine, and consumed upstream row boundary"
+    },
+    {
+      "id": "phase23_simulator_evidence_execution_contract",
+      "path": "tools/bazel/manifests/phase23_simulator_evidence_execution_contract.json",
+      "purpose": "simulator evidence row detail referenced through accepted Phase 31 receipts"
+    },
+    {
+      "id": "phase24_hardware_media_safety_evidence_execution_contract",
+      "path": "tools/bazel/manifests/phase24_hardware_media_safety_evidence_execution_contract.json",
+      "purpose": "hardware, media, and safety evidence row detail referenced through accepted Phase 31 receipts"
+    },
+    {
+      "id": "phase25_live_service_evidence_execution_contract",
+      "path": "tools/bazel/manifests/phase25_live_service_evidence_execution_contract.json",
+      "purpose": "live-service evidence row detail referenced through accepted Phase 31 receipts"
+    },
+    {
+      "id": "phase26_release_signing_upstream_evidence_contract",
+      "path": "tools/bazel/manifests/phase26_release_signing_upstream_evidence_contract.json",
+      "purpose": "release, signing, provenance, and upstream-result row detail referenced through accepted Phase 31 receipts"
+    },
+    {
+      "id": "phase27_retained_code_acceptance_decisions_contract",
+      "path": "tools/bazel/manifests/phase27_retained_code_acceptance_decisions_contract.json",
+      "purpose": "existing retained-code, residual-risk, exception, and Phase 28 handoff artifacts consumed without approval semantics"
+    },
+    {
+      "id": "phase28_final_readiness_packet_contract",
+      "path": "tools/bazel/manifests/phase28_final_readiness_packet_contract.json",
+      "purpose": "existing readiness blocker, residual-risk, exception, and demotion-blocked artifacts consumed without authorizing readiness or demotion"
+    }
+  ],
+  "canonical_row_schema": {
+    "required_fields": [
+      "row_id",
+      "source_stream",
+      "source_ref",
+      "requirement_ids",
+      "affected_gate",
+      "row_problem_kind",
+      "blocker_kind",
+      "severity",
+      "owner_ref",
+      "required_next_action",
+      "decision_impact",
+      "proof_eligibility",
+      "evidence_refs"
+    ]
+  },
+  "enums": {
+    "blocker_kind": [
+      "repair_item",
+      "exception_request",
+      "unresolved_decision_blocker"
+    ],
+    "row_problem_kind": [
+      "failed",
+      "missing",
+      "stale",
+      "malformed",
+      "redaction_failed",
+      "source_ref_failed",
+      "secret_tainted",
+      "lifecycle_mismatch",
+      "unsafe_ref",
+      "exception_requested",
+      "non_final_placeholder",
+      "smoke_fixture",
+      "local_dry_run",
+      "prose_attestation",
+      "row_only_submission",
+      "unknown_unclassified"
+    ],
+    "severity": [
+      "critical",
+      "high",
+      "medium"
+    ],
+    "proof_eligibility": [
+      "eligible",
+      "ineligible"
+    ],
+    "decision_impact": [
+      "repair_required_before_cutover",
+      "exception_decision_required",
+      "residual_risk_decision_required",
+      "retained_code_decision_required",
+      "final_readiness_blocked",
+      "demotion_decision_required",
+      "cutover_verdict_blocked"
+    ]
+  },
+  "owner_defaults": {
+    "simulator": "simulator-maintainer",
+    "hardware-media-safety": "safety-maintainer",
+    "live-service": "network-security-maintainer",
+    "release-signing": "release-maintainer",
+    "upstream-result": "release-maintainer",
+    "retained-code": "retained-code-maintainer",
+    "readiness": "readiness-maintainer",
+    "unknown": "cutover-maintainer"
+  },
+  "policy_map": {
+    "failed": {
+      "blocker_kind": "repair_item",
+      "severity": "high",
+      "decision_impact": "repair_required_before_cutover",
+      "proof_eligibility": "ineligible",
+      "required_next_action": "Repair the failed evidence row or route a later explicit exception request."
+    },
+    "missing": {
+      "blocker_kind": "repair_item",
+      "severity": "high",
+      "decision_impact": "repair_required_before_cutover",
+      "proof_eligibility": "ineligible",
+      "required_next_action": "Supply or regenerate the missing upstream evidence artifact through the owning phase."
+    },
+    "stale": {
+      "blocker_kind": "repair_item",
+      "severity": "critical",
+      "decision_impact": "repair_required_before_cutover",
+      "proof_eligibility": "ineligible",
+      "required_next_action": "Re-run evidence with the current lifecycle before downstream review."
+    },
+    "malformed": {
+      "blocker_kind": "repair_item",
+      "severity": "high",
+      "decision_impact": "repair_required_before_cutover",
+      "proof_eligibility": "ineligible",
+      "required_next_action": "Repair the submitted evidence schema before final intake can use it."
+    },
+    "redaction_failed": {
+      "blocker_kind": "repair_item",
+      "severity": "critical",
+      "decision_impact": "repair_required_before_cutover",
+      "proof_eligibility": "ineligible",
+      "required_next_action": "Re-sanitize evidence and remove secret-bearing material before any downstream use."
+    },
+    "source_ref_failed": {
+      "blocker_kind": "repair_item",
+      "severity": "critical",
+      "decision_impact": "repair_required_before_cutover",
+      "proof_eligibility": "ineligible",
+      "required_next_action": "Fix source references before downstream handoff."
+    },
+    "secret_tainted": {
+      "blocker_kind": "repair_item",
+      "severity": "critical",
+      "decision_impact": "repair_required_before_cutover",
+      "proof_eligibility": "ineligible",
+      "required_next_action": "Remove secret material and retain only sanitized refs or digests."
+    },
+    "lifecycle_mismatch": {
+      "blocker_kind": "repair_item",
+      "severity": "critical",
+      "decision_impact": "repair_required_before_cutover",
+      "proof_eligibility": "ineligible",
+      "required_next_action": "Regenerate evidence with the current lifecycle identifiers."
+    },
+    "unsafe_ref": {
+      "blocker_kind": "repair_item",
+      "severity": "critical",
+      "decision_impact": "repair_required_before_cutover",
+      "proof_eligibility": "ineligible",
+      "required_next_action": "Replace unsafe refs with allowed repo-relative evidence refs or external refs."
+    },
+    "exception_requested": {
+      "blocker_kind": "exception_request",
+      "severity": "medium",
+      "decision_impact": "exception_decision_required",
+      "proof_eligibility": "ineligible",
+      "required_next_action": "Route the row to Phase 33 for explicit exception decision input."
+    },
+    "non_final_placeholder": {
+      "blocker_kind": "repair_item",
+      "severity": "high",
+      "decision_impact": "repair_required_before_cutover",
+      "proof_eligibility": "ineligible",
+      "required_next_action": "Supply real final evidence through Phase 31."
+    },
+    "smoke_fixture": {
+      "blocker_kind": "repair_item",
+      "severity": "high",
+      "decision_impact": "repair_required_before_cutover",
+      "proof_eligibility": "ineligible",
+      "required_next_action": "Replace smoke fixture output with sanitized real-run evidence."
+    },
+    "local_dry_run": {
+      "blocker_kind": "repair_item",
+      "severity": "high",
+      "decision_impact": "repair_required_before_cutover",
+      "proof_eligibility": "ineligible",
+      "required_next_action": "Replace local-only dry-run output with sanitized real-run evidence."
+    },
+    "prose_attestation": {
+      "blocker_kind": "repair_item",
+      "severity": "high",
+      "decision_impact": "repair_required_before_cutover",
+      "proof_eligibility": "ineligible",
+      "required_next_action": "Submit machine-readable evidence instead of prose-only attestation."
+    },
+    "row_only_submission": {
+      "blocker_kind": "repair_item",
+      "severity": "high",
+      "decision_impact": "repair_required_before_cutover",
+      "proof_eligibility": "ineligible",
+      "required_next_action": "Re-submit through the source validator and Phase 31, not as an upstream row only."
+    },
+    "unknown_unclassified": {
+      "blocker_kind": "unresolved_decision_blocker",
+      "severity": "critical",
+      "decision_impact": "cutover_verdict_blocked",
+      "proof_eligibility": "ineligible",
+      "required_next_action": "Update the Phase 32 policy map or route to a later explicit decision before cutover."
+    }
+  },
+  "generated_artifacts": [
+    "blocker-register.json",
+    "decision-impact-index.json",
+    "exception-request-register.json",
+    "residual-risk-request-register.json",
+    "downstream-handoff-manifest.json",
+    "redacted-blocker-register-report.md",
+    "contract-snapshots/phase32_blocker_register_triage_contract.json",
+    "contract-snapshots/phase31_final_evidence_intake_contract.json",
+    "contract-snapshots/phase23_simulator_evidence_execution_contract.json",
+    "contract-snapshots/phase24_hardware_media_safety_evidence_execution_contract.json",
+    "contract-snapshots/phase25_live_service_evidence_execution_contract.json",
+    "contract-snapshots/phase26_release_signing_upstream_evidence_contract.json",
+    "contract-snapshots/phase27_retained_code_acceptance_decisions_contract.json",
+    "contract-snapshots/phase28_final_readiness_packet_contract.json"
+  ],
+  "verification_commands": [
+    "python3 -m py_compile tools/bazel/phase32_blocker_register_triage.py tools/bazel/phase32_blocker_register_triage_test.py",
+    "python3 tools/bazel/phase32_blocker_register_triage_test.py -q",
+    "python3 tools/bazel/phase32_blocker_register_triage.py --contract-only",
+    "python3 tools/bazel/phase32_blocker_register_triage.py --security-only",
+    "python3 tools/bazel/phase32_blocker_register_triage.py --wiring-only",
+    "python3 tools/bazel/phase32_blocker_register_triage.py --quick --phase31-output-dir build/ci-evidence/phase31 --phase27-output-dir build/ci-evidence/phase27 --phase28-output-dir build/ci-evidence/phase28 --output-dir build/ci-evidence/phase32",
+    "just phase32-verify"
+  ],
+  "prohibited_approval_semantics": [
+    "Phase 32 does not approve exceptions.",
+    "Phase 32 does not accept retained code.",
+    "Phase 32 does not accept residual risk.",
+    "Phase 32 does not approve final readiness.",
+    "Phase 32 does not authorize reference demotion.",
+    "Phase 32 does not publish a cutover verdict."
+  ],
+  "test_command": "python3 tools/bazel/phase32_blocker_register_triage_test.py"
+}
