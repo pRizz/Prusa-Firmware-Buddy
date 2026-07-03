@@ -344,12 +344,12 @@ This receipt shape preserves D-02 provenance fields and Phase 26-compatible stat
 |---|-------|---------|---------------|
 | — | No unverified assumptions are required for planning; implementation recommendations are derived from checked-in contracts, scripts, standards, or cited OWASP pages. [VERIFIED: current research commands] | All | — |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **What exact identity-reference format should Phase 31 require?**
    - What we know: Existing evidence packets use `operator`, release evidence uses release identity fields such as `key_identity_ref`, and Phase 31 context allows operator/release-manager identity references. [VERIFIED: tools/bazel/manifests/phase23_simulator_evidence_execution_contract.json; VERIFIED: tools/bazel/manifests/phase17_release_candidate_evidence_contract.json; VERIFIED: .planning/phases/31-final-evidence-intake/31-CONTEXT.md]
    - What's unclear: No single existing `operator_identity_ref` field name was found as a global convention. [VERIFIED: `rg -n "operator_identity|identity_ref|submitted_by|release_manager|operator|approver|maintainer" tools/bazel .planning/milestones/v1.2-phases/...`]
-   - Recommendation: Use an opaque, non-secret `submitter_identity_ref` string in the Phase 31 receipt and do not authenticate identities in Phase 31. [VERIFIED: .planning/phases/31-final-evidence-intake/31-CONTEXT.md]
+   - Resolution: Use an opaque, non-secret `submitter_identity_ref` string in the Phase 31 receipt. Phase 31 records provenance only and does not authenticate identities or authorize submitters. [VERIFIED: .planning/phases/31-final-evidence-intake/31-CONTEXT.md; VERIFIED: .planning/phases/31-final-evidence-intake/31-01-PLAN.md]
 
 ## Environment Availability
 
