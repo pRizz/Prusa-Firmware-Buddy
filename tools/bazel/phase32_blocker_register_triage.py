@@ -628,17 +628,20 @@ def phase27_rows(root: Path, phase27_output_dir: Path) -> list[dict[str, Any]]:
         for item in require_list(exceptions.get("rows"), "phase27 exception rows"):
             if not isinstance(item, dict):
                 raise VerificationError("phase27 exception rows must be objects")
-            row_id = str(item.get("row_id") or item.get("criterion_id") or stable_sha12(item))
+            row_type = str(item.get("row_type") or "")
+            source_stream = "retained-code" if row_type == "retained_code_decision" else "readiness"
+            gate_id = str(item.get("criterion_id") or item.get("row_id") or stable_sha12(item))
             rows.append(
                 build_blocker_row(
                     row_id_prefix="phase27-exception",
-                    source_stream="retained-code",
-                    source_ref=f"{exception_path.as_posix()}#{row_id}",
+                    source_stream=source_stream,
+                    source_ref=f"{exception_path.as_posix()}#{gate_id}",
                     signal={
                         "status": "exception-requested",
                         "exception_status": item.get("exception_state", "exception-requested"),
                         "owner": item.get("owner"),
-                        "criterion_id": item.get("criterion_id"),
+                        "criterion_id": gate_id,
+                        "row_id": gate_id,
                         "evidence_refs": [exception_path.as_posix()],
                     },
                 )

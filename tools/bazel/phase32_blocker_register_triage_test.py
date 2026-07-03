@@ -189,10 +189,15 @@ class Phase32BlockerRegisterTriageTest(unittest.TestCase):
             {
                 "rows": [
                     {
-                        "criterion_id": "final-live-network-transfer-evidence",
-                        "exception_state": "exception-requested",
+                        "exception": {
+                            "affected_printer_or_release_surface": "live network transfer",
+                            "owner": "network-security-maintainer",
+                            "status": "exception-requested",
+                        },
                         "owner": "network-security-maintainer",
-                        "row_id": "exception-live-service",
+                        "residual_risk": "Live network transfer evidence exception needs maintainer routing.",
+                        "row_id": "final-live-network-transfer-evidence",
+                        "row_type": "final_readiness_decision",
                     }
                 ]
             },
@@ -503,6 +508,37 @@ class Phase32BlockerRegisterTriageTest(unittest.TestCase):
         self.assertNotIn("demotion_allowed", register_text)
         self.assertNotIn("final_readiness_status", register_text)
         self.assertNotIn("cutover verdict approved", register_text.casefold())
+
+    def test_phase27_final_readiness_exception_keeps_original_affected_gate(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_quick_fixture(root)
+        expected_ref = "build/ci-evidence/phase27/exception-decision-register.json#final-live-network-transfer-evidence"
+
+        # Act
+        result = self.run_temp_verifier(
+            root,
+            [
+                "--quick",
+                "--phase31-output-dir",
+                "build/ci-evidence/phase31",
+                "--phase27-output-dir",
+                "build/ci-evidence/phase27",
+                "--phase28-output-dir",
+                "build/ci-evidence/phase28",
+                "--output-dir",
+                "build/ci-evidence/phase32",
+            ],
+        )
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        rows = self.read_json(root, "build/ci-evidence/phase32/blocker-register.json")["rows"]
+        exception_rows = [row for row in rows if row["source_ref"] == expected_ref]
+        self.assertEqual(len(exception_rows), 1)
+        self.assertEqual(exception_rows[0]["source_stream"], "readiness")
+        self.assertEqual(exception_rows[0]["affected_gate"], "final-live-network-transfer-evidence")
 
     def test_derived_views_reference_canonical_row_ids(self) -> None:
         # Arrange
