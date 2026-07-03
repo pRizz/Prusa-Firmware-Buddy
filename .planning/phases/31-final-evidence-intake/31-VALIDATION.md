@@ -1,9 +1,9 @@
 ---
 phase: 31
 slug: final-evidence-intake
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-07-03T02:10:15.699Z
 ---
 
@@ -32,20 +32,20 @@ created: 2026-07-03T02:10:15.699Z
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 31-W0-01 | TBD | 1 | INTAKE-01 | T-31-simulator-finality | Final simulator intake invokes Phase 23, rejects missing scenario coverage and quick placeholders, and emits accepted receipt metadata only over real Phase 23 retained outputs. | unit/integration wrapper | `python3 tools/bazel/phase31_final_evidence_intake_test.py -q` | No - W0 | pending |
-| 31-W0-02 | TBD | 1 | INTAKE-02 | T-31-hardware-finality | Final hardware/media/safety intake preserves Phase 24 authority, requires real hardware provenance, and rejects stale, quick, or placeholder outputs. | unit/integration wrapper | `python3 tools/bazel/phase31_final_evidence_intake_test.py -q` | No - W0 | pending |
-| 31-W0-03 | TBD | 1 | INTAKE-03 | T-31-live-secret-boundary | Final live-service intake invokes Phase 25, rejects prose or upstream-row-only submissions, rejects secret-bearing fields, and emits receipt metadata only over real retained packets. | unit/security | `python3 tools/bazel/phase31_final_evidence_intake_test.py -q` | No - W0 | pending |
-| 31-W0-04 | TBD | 1 | INTAKE-04 | T-31-release-secret-boundary | Final release/signing/provenance intake invokes Phase 26, consumes Phase 23/24/25 rows, rejects raw secrets, and preserves redaction/provenance plus artifact-reference summaries. | unit/security | `python3 tools/bazel/phase31_final_evidence_intake_test.py -q` | No - W0 | pending |
-| 31-W0-05 | TBD | 1 | INTAKE-01, INTAKE-02, INTAKE-03, INTAKE-04 | T-31-wiring-drift | Bazel, rust workflow, and `just` wiring expose Phase 31 tests before verifier execution. | wiring | `python3 tools/bazel/phase31_final_evidence_intake.py --wiring-only` | No - W0 | pending |
+| 31-W0-01 | 31-01 | 1 | INTAKE-01 | T-31-simulator-finality | Final simulator intake invokes Phase 23, rejects missing scenario coverage and quick placeholders, and emits accepted receipt metadata only over real Phase 23 retained outputs. | unit/integration wrapper | `python3 tools/bazel/phase31_final_evidence_intake_test.py -q` | Yes | green |
+| 31-W0-02 | 31-01 | 1 | INTAKE-02 | T-31-hardware-finality | Final hardware/media/safety intake preserves Phase 24 authority, requires real hardware provenance, and rejects stale, quick, or placeholder outputs. | unit/integration wrapper | `python3 tools/bazel/phase31_final_evidence_intake_test.py -q` | Yes | green |
+| 31-W0-03 | 31-01 | 1 | INTAKE-03 | T-31-live-secret-boundary | Final live-service intake invokes Phase 25, rejects prose or upstream-row-only submissions, rejects secret-bearing fields, and emits receipt metadata only over real retained packets. | unit/security | `python3 tools/bazel/phase31_final_evidence_intake_test.py -q` | Yes | green |
+| 31-W0-04 | 31-01 | 1 | INTAKE-04 | T-31-release-secret-boundary | Final release/signing/provenance intake invokes Phase 26, consumes Phase 23/24/25 rows, rejects raw secrets, and preserves redaction/provenance plus artifact-reference summaries. | unit/security | `python3 tools/bazel/phase31_final_evidence_intake_test.py -q` | Yes | green |
+| 31-W0-05 | 31-01 | 1 | INTAKE-01, INTAKE-02, INTAKE-03, INTAKE-04 | T-31-wiring-drift | Bazel, rust workflow, and `just` wiring expose Phase 31 tests before verifier execution. | wiring | `python3 tools/bazel/phase31_final_evidence_intake.py --wiring-only` | Yes | green |
 
 *Status: pending / green / red / flaky*
 
 ## Wave 0 Requirements
 
-- [ ] `tools/bazel/manifests/phase31_final_evidence_intake_contract.json` - wrapper contract over Phase 23-26, including stream adapters, allowed roots, finality rules, generated artifacts, and source contract refs.
-- [ ] `tools/bazel/phase31_final_evidence_intake.py` - final intake verifier and retained receipt writer with `--contract-only`, `--security-only`, `--wiring-only`, `--quick`, raw packet intake, retained-output registration, and `--output-dir`.
-- [ ] `tools/bazel/phase31_final_evidence_intake_test.py` - regression tests for accepted raw packets, retained-output registration, placeholder rejection, prose/upstream-row-only rejection, secret rejection, stale lifecycle rejection, artifact-root rejection, receipt shape, and wiring.
-- [ ] Root `BUILD.bazel`, `tools/bazel/BUILD.bazel`, `tools/bazel/rust_workflow.sh`, and `justfile` entries for `phase31_verify` and `phase31_verify_tests`.
+- [x] `tools/bazel/manifests/phase31_final_evidence_intake_contract.json` - wrapper contract over Phase 23-26, including stream adapters, allowed roots, finality rules, generated artifacts, and source contract refs.
+- [x] `tools/bazel/phase31_final_evidence_intake.py` - final intake verifier and retained receipt writer with `--contract-only`, `--security-only`, `--wiring-only`, `--quick`, raw packet intake, retained-output registration, and `--output-dir`.
+- [x] `tools/bazel/phase31_final_evidence_intake_test.py` - regression tests for accepted raw packets, retained-output registration, placeholder rejection, prose/upstream-row-only rejection, secret rejection, stale lifecycle rejection, artifact-root rejection, receipt shape, and wiring.
+- [x] Root `BUILD.bazel`, `tools/bazel/BUILD.bazel`, `tools/bazel/rust_workflow.sh`, and `justfile` entries for `phase31_verify` and `phase31_verify_tests`.
 
 ## Manual-Only Verifications
 
@@ -58,12 +58,12 @@ created: 2026-07-03T02:10:15.699Z
 
 ## Validation Sign-Off
 
-- [ ] All tasks have automated verify commands or Wave 0 dependencies.
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify.
-- [ ] Wave 0 covers all missing Phase 31 verifier/test/wiring references.
-- [ ] No watch-mode flags.
-- [ ] Feedback latency under 30 seconds for direct Python tests after Wave 0.
-- [ ] Full phase gate uses `just phase31-verify`.
-- [ ] `nyquist_compliant: true` set in frontmatter after plans and automated evidence are green.
+- [x] All tasks have automated verify commands or Wave 0 dependencies.
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify.
+- [x] Wave 0 covers all missing Phase 31 verifier/test/wiring references.
+- [x] No watch-mode flags.
+- [x] Feedback latency under 30 seconds for direct Python tests after Wave 0.
+- [x] Full phase gate uses `just phase31-verify`.
+- [x] `nyquist_compliant: true` set in frontmatter after plans and automated evidence are green.
 
-**Approval:** pending
+**Approval:** approved after green automated evidence at 2026-07-03T02:51:24Z

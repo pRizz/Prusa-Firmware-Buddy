@@ -100,6 +100,10 @@ phase28-verify:
     bazel run //tools/bazel:phase28_verify_tests
     bazel run //tools/bazel:phase28_verify
 
+phase31-verify:
+    bazel run //tools/bazel:phase31_verify_tests
+    bazel run //tools/bazel:phase31_verify
+
 phase17-release-artifacts-smoke:
     bazel build //tools/bazel:phase17_representative_release_smoke
 

@@ -1,0 +1,193 @@
+{
+  "id": "phase31_final_evidence_intake_contract",
+  "artifact_name": "phase31-final-evidence-intake",
+  "phase": "31-final-evidence-intake",
+  "phase_lifecycle_id": "31-2026-07-03T02-04-07",
+  "output_root": "build/ci-evidence/phase31",
+  "requirement_ids": [
+    "INTAKE-01",
+    "INTAKE-02",
+    "INTAKE-03",
+    "INTAKE-04"
+  ],
+  "source_contracts": [
+    {
+      "id": "phase23_simulator_evidence_execution_contract",
+      "path": "tools/bazel/manifests/phase23_simulator_evidence_execution_contract.json"
+    },
+    {
+      "id": "phase24_hardware_media_safety_evidence_execution_contract",
+      "path": "tools/bazel/manifests/phase24_hardware_media_safety_evidence_execution_contract.json"
+    },
+    {
+      "id": "phase25_live_service_evidence_execution_contract",
+      "path": "tools/bazel/manifests/phase25_live_service_evidence_execution_contract.json"
+    },
+    {
+      "id": "phase26_release_signing_upstream_evidence_contract",
+      "path": "tools/bazel/manifests/phase26_release_signing_upstream_evidence_contract.json"
+    }
+  ],
+  "stream_adapters": [
+    {
+      "stream": "simulator",
+      "requirement_ids": [
+        "INTAKE-01"
+      ],
+      "source_phase": "23-simulator-evidence-execution",
+      "source_lifecycle_id": "23-2026-06-23T18-45-38",
+      "source_contract": "tools/bazel/manifests/phase23_simulator_evidence_execution_contract.json",
+      "validator": "tools/bazel/phase23_simulator_evidence_execution.py",
+      "raw_input_flag": "--simulator-evidence-input",
+      "source_validator_input_flag": "--evidence-input",
+      "retained_output_flag": "--phase23-retained-output",
+      "output_root": "build/ci-evidence/phase23",
+      "allowed_ref_roots": [
+        "build/ci-evidence/phase23/",
+        "external://phase23/"
+      ],
+      "manifest": "simulator-result-manifest.json",
+      "upstream_row": "upstream-simulator-result-row.json",
+      "real_evidence_flag": "real_simulator_evidence_supplied",
+      "receipt_name": "simulator-final-intake-receipt.json"
+    },
+    {
+      "stream": "hardware-media-safety",
+      "requirement_ids": [
+        "INTAKE-02"
+      ],
+      "source_phase": "24-hardware-media-and-safety-evidence-execution",
+      "source_lifecycle_id": "24-2026-06-23T19-52-32",
+      "source_contract": "tools/bazel/manifests/phase24_hardware_media_safety_evidence_execution_contract.json",
+      "validator": "tools/bazel/phase24_hardware_media_safety_evidence_execution.py",
+      "raw_input_flag": "--hardware-media-safety-evidence-input",
+      "source_validator_input_flag": "--evidence-input",
+      "retained_output_flag": "--phase24-retained-output",
+      "output_root": "build/ci-evidence/phase24",
+      "allowed_ref_roots": [
+        "build/ci-evidence/phase24/",
+        "external://phase24/"
+      ],
+      "manifest": "hardware-media-safety-result-manifest.json",
+      "upstream_row": "upstream-hardware-media-safety-result-row.json",
+      "real_evidence_flag": "real_hardware_evidence_supplied",
+      "receipt_name": "hardware-media-safety-final-intake-receipt.json"
+    },
+    {
+      "stream": "live-service",
+      "requirement_ids": [
+        "INTAKE-03"
+      ],
+      "source_phase": "25-live-service-evidence-execution",
+      "source_lifecycle_id": "25-2026-06-23T21-12-42",
+      "source_contract": "tools/bazel/manifests/phase25_live_service_evidence_execution_contract.json",
+      "validator": "tools/bazel/phase25_live_service_evidence_execution.py",
+      "raw_input_flag": "--live-service-evidence-input",
+      "source_validator_input_flag": "--evidence-input",
+      "retained_output_flag": "--phase25-retained-output",
+      "output_root": "build/ci-evidence/phase25",
+      "allowed_ref_roots": [
+        "build/ci-evidence/phase25/",
+        "external://phase25/"
+      ],
+      "manifest": "live-service-result-manifest.json",
+      "upstream_row": "upstream-live-service-result-row.json",
+      "real_evidence_flag": "real_live_service_evidence_supplied",
+      "receipt_name": "live-service-final-intake-receipt.json"
+    },
+    {
+      "stream": "release-signing",
+      "requirement_ids": [
+        "INTAKE-04"
+      ],
+      "source_phase": "26-release-signing-and-upstream-result-evidence",
+      "source_lifecycle_id": "26-2026-06-24T13-36-46",
+      "source_contract": "tools/bazel/manifests/phase26_release_signing_upstream_evidence_contract.json",
+      "validator": "tools/bazel/phase26_release_signing_upstream_evidence.py",
+      "raw_input_flag": "--release-input",
+      "source_validator_input_flag": "--release-input",
+      "retained_output_flag": "--phase26-retained-output",
+      "output_root": "build/ci-evidence/phase26",
+      "allowed_ref_roots": [
+        "build/ci-evidence/phase26/",
+        "external://phase26/"
+      ],
+      "manifest": "release-upstream-run-manifest.json",
+      "upstream_row_table": "upstream-result-row-table.json",
+      "real_evidence_flag": "real_release_evidence_supplied",
+      "receipt_name": "release-signing-final-intake-receipt.json"
+    }
+  ],
+  "receipt_provenance_fields": [
+    "submission_id",
+    "stream",
+    "requirement_ids",
+    "finality_status",
+    "packet_sha256",
+    "submitter_identity_ref",
+    "receipt_generated_at_utc",
+    "validator_command",
+    "validator_output_refs",
+    "consumed_upstream_row_refs",
+    "redaction_status",
+    "source_ref_status",
+    "exception_status",
+    "failure_reason",
+    "artifact_reference_summary"
+  ],
+  "receipt_finality_statuses": [
+    "accepted-final",
+    "rejected-final",
+    "quarantined-non-final"
+  ],
+  "finality_policy": {
+    "accepted_final_requires": [
+      "non_empty_submitter_identity_ref",
+      "source_real_evidence_flag_true",
+      "source_manifest_present",
+      "source_upstream_row_or_table_present",
+      "source_lifecycle_current",
+      "redaction_status_passed",
+      "source_ref_status_passed",
+      "artifact_refs_within_allowed_roots",
+      "no_secret_bearing_fields_or_text"
+    ],
+    "non_final_rejections": [
+      "quick_placeholder",
+      "default_placeholder",
+      "template_only_release_row",
+      "local_smoke",
+      "prose_attestation",
+      "upstream_row_only",
+      "stale_lifecycle_id",
+      "unsafe_artifact_ref",
+      "secret_bearing_payload"
+    ],
+    "deferred_to_future_phases": [
+      "blocker_owner_triage",
+      "retained_code_acceptance",
+      "residual_risk_acceptance",
+      "final_readiness",
+      "reference_demotion_authorization",
+      "cutover_verdict"
+    ]
+  },
+  "generated_artifacts": [
+    "final-intake-manifest.json",
+    "rejected-submissions.json",
+    "stream-receipts/simulator-final-intake-receipt.json",
+    "stream-receipts/hardware-media-safety-final-intake-receipt.json",
+    "stream-receipts/live-service-final-intake-receipt.json",
+    "stream-receipts/release-signing-final-intake-receipt.json",
+    "contract-snapshots/phase31_final_evidence_intake_contract.json",
+    "contract-snapshots/phase23_simulator_evidence_execution_contract.json",
+    "contract-snapshots/phase24_hardware_media_safety_evidence_execution_contract.json",
+    "contract-snapshots/phase25_live_service_evidence_execution_contract.json",
+    "contract-snapshots/phase26_release_signing_upstream_evidence_contract.json"
+  ],
+  "verify_commands": [
+    "python3 tools/bazel/phase31_final_evidence_intake.py --wiring-only",
+    "python3 tools/bazel/phase31_final_evidence_intake.py --quick --output-dir build/ci-evidence/phase31"
+  ],
+  "test_command": "python3 tools/bazel/phase31_final_evidence_intake_test.py"
+}
