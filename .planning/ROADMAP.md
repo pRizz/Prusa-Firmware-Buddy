@@ -178,7 +178,7 @@ Phases execute in numeric order across archived milestones. v1.3 continues after
 | 29. Upstream Evidence Flow Closure | v1.2 | 2/2 | Complete    | 2026-06-25 |
 | 30. Milestone Metadata Cleanup | v1.2 | 1/1 | Complete    | 2026-06-27 |
 | 31. Final Evidence Intake | v1.3 | 1/1 | Complete    | 2026-07-03 |
-| 32. Blocker Register and Evidence Triage | v1.3 | 1/1 | Complete   | 2026-07-03 |
+| 32. Blocker Register and Evidence Triage | v1.3 | 1/1 | Complete    | 2026-07-03 |
 | 33. Maintainer Decision Inputs | v1.3 | 0/TBD | Not started | - |
 | 34. Final Readiness and Demotion Dry Run | v1.3 | 0/TBD | Not started | - |
 | 35. Cutover Decision Artifact | v1.3 | 0/TBD | Not started | - |
