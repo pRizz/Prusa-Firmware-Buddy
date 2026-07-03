@@ -425,6 +425,53 @@ class Phase32BlockerRegisterTriageTest(unittest.TestCase):
         self.assertIn("missing", problem_kinds)
         self.assertTrue(all(row["proof_eligibility"] == "ineligible" for row in rows))
 
+    def test_phase31_accepted_receipt_keeps_stale_lifecycle_source_row(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_quick_fixture(root)
+        receipt_ref = "build/ci-evidence/phase31/stream-receipts/simulator-final-intake-receipt.json"
+        stale_source_row_ref = "build/ci-evidence/phase23/stale-lifecycle-source-row.json"
+        receipt = self.read_json(root, receipt_ref)
+        receipt["consumed_upstream_row_refs"].append(stale_source_row_ref)
+        self.write_json(root, receipt_ref, receipt)
+        self.write_json(
+            root,
+            stale_source_row_ref,
+            {
+                "criterion_id": "final-simulator-evidence",
+                "evidence_family": "simulator",
+                "redaction_status": "passed",
+                "requirement_ids": ["EVID-01"],
+                "source_lifecycle_status": "stale",
+                "source_ref_status": "passed",
+                "status": "passed",
+            },
+        )
+
+        # Act
+        result = self.run_temp_verifier(
+            root,
+            [
+                "--quick",
+                "--phase31-output-dir",
+                "build/ci-evidence/phase31",
+                "--phase27-output-dir",
+                "build/ci-evidence/phase27",
+                "--phase28-output-dir",
+                "build/ci-evidence/phase28",
+                "--output-dir",
+                "build/ci-evidence/phase32",
+            ],
+        )
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        rows = self.read_json(root, "build/ci-evidence/phase32/blocker-register.json")["rows"]
+        stale_rows = [row for row in rows if row["source_ref"] == stale_source_row_ref]
+        self.assertEqual(len(stale_rows), 1)
+        self.assertEqual(stale_rows[0]["row_problem_kind"], "lifecycle_mismatch")
+
     def test_phase27_and_phase28_handoff_rows_are_included_without_approval_semantics(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()

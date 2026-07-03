@@ -473,6 +473,7 @@ def is_non_blocking_source_row(signal: dict[str, Any]) -> bool:
         signal.get("status") == "passed"
         and signal.get("redaction_status", "passed") == "passed"
         and signal.get("source_ref_status", "passed") == "passed"
+        and signal.get("source_lifecycle_status", "passed") in {"passed", "", None}
         and signal.get("exception_status", "none") in {"none", "", None}
     )
 
