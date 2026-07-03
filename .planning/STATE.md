@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: Cutover Evidence Execution and Acceptance
-status: complete
-stopped_at: Archived v1.2 milestone
-last_updated: "2026-07-02T21:13:17.979Z"
+milestone: v1.3
+milestone_name: Cutover Approval and Reference Demotion Trial
+status: defining_requirements
+stopped_at: Started v1.3 milestone planning
+last_updated: "2026-07-02T20:13:46-05:00"
 last_activity: 2026-07-02
 progress:
-  total_phases: 8
-  completed_phases: 8
-  total_plans: 9
-  completed_plans: 9
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,43 +21,37 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-02)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Planning next milestone
+**Current focus:** Defining v1.3 cutover approval and reference-demotion trial requirements
 
 ## Current Position
 
-Milestone: v1.2 Cutover Evidence Execution and Acceptance - archived
-Phase: 30 (Milestone Metadata Cleanup) - COMPLETE
-Plan: 1 of 1
-Status: Milestone archived; next milestone not yet defined
+Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
+Phase: Not started (defining requirements)
+Plan: -
+Status: Defining requirements
 Last activity: 2026-07-02
 
-Progress: [##########] 100% (8 of 8 v1.2 phases complete)
+Progress: [----------] 0% (roadmap not yet created)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- v1.2 plans completed: 9/9
-- v1.2 phases completed: 8/8
-- Previous milestone baseline: v1.1 completed 13 plans across 10 phases
+- v1.3 plans completed: 0/0
+- v1.3 phases completed: 0/0
+- Previous milestone baseline: v1.2 completed 9 plans across 8 phases
+- Earlier milestone baseline: v1.1 completed 13 plans across 10 phases
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 23 | 1 | - | - |
-| 24 | 1 | - | - |
-| 25 | 1 | - | - |
-| 26 | 1 | - | - |
-| 27 | 1 | - | - |
-| 28 | 1 | - | - |
-| 29 | 2 | - | - |
-| 30 | 1/1 | - | - |
+| - | - | - | - |
 
 **Recent Trend:**
 
 - Last 5 completed plans: Phase 27 P01, Phase 28 P01, Phase 29 P01, Phase 29 P02, Phase 30 P01
-- Trend: v1.2 external-evidence execution, acceptance, final-readiness, upstream evidence-flow closure, Phase 30 metadata cleanup, and milestone archival are complete; next milestone planning should create fresh requirements.
+- Trend: v1.2 external-evidence execution, acceptance, final-readiness, upstream evidence-flow closure, Phase 30 metadata cleanup, and milestone archival are complete; v1.3 now defines the cutover approval and reference-demotion trial.
 
 | Phase 30-milestone-metadata-cleanup P01 | 16m | 3 tasks | 12 files |
 
@@ -77,10 +71,12 @@ Recent decisions affecting current work:
 - [Phase 30-milestone-metadata-cleanup]: Used repo-local dual summary frontmatter keys instead of editing the global GSD helper.
 - [Phase 30-milestone-metadata-cleanup]: Recorded the v1.2 audit as workflow-equivalent local GSD audit commands because this executor cannot dispatch slash commands.
 - [v1.2-complete]: Archived v1.2 roadmap, requirements, and audit artifacts under `.planning/milestones/`; live requirements will be removed so `/gsd-new-milestone` starts from a fresh scope.
+- [v1.3-start]: Scope v1.3 as cutover approval and reference-demotion trial work: real evidence intake, blocker triage, maintainer decisions, final readiness, demotion dry-run behavior, and a go/no-go artifact.
 
 ### Pending Todos
 
-None yet.
+- Define v1.3 requirements.
+- Create the v1.3 roadmap beginning after Phase 30.
 
 ### Blockers/Concerns
 
@@ -88,10 +84,11 @@ None yet.
 - Evidence artifacts must avoid private signing keys, tokens, certificates, service payloads, raw crash dumps, and other secret-bearing data.
 - Hardware availability and failure-injection scope can block final readiness if required scenarios cannot be observed or exception-approved.
 - Reference demotion stays blocked unless a valid explicit maintainer decision supplies approval after readiness is otherwise unblocked.
-- Next milestone requirements are intentionally absent until `/gsd-new-milestone` defines the next scope.
+- v1.3 must avoid turning quick/default placeholder outputs into real proof.
+- Post-cutover retained vendor/HAL replacement and long-run dashboards are deferred unless v1.3 evidence reveals a narrow decision-blocking defect.
 
 ## Session Continuity
 
-Last session: 2026-07-02T21:13:17.979Z
-Stopped at: Archived v1.2 milestone
+Last session: 2026-07-02
+Stopped at: Started v1.3 milestone planning
 Resume file: None

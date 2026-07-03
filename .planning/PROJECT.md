@@ -20,17 +20,19 @@ Milestone v1.2 Cutover Evidence Execution and Acceptance shipped on 2026-07-02. 
 
 The replacement firmware is not yet cut over. Final reference demotion remains intentionally blocked until the validated external simulator, hardware, live-service, release, signing, upstream-result, retained-code, residual-risk, and maintainer-decision inputs are supplied, accepted, and followed by an explicit valid demotion approval.
 
-No active milestone is defined. The next step is `/gsd-new-milestone`, which should create a fresh `.planning/REQUIREMENTS.md` and roadmap section.
+Milestone v1.3 Cutover Approval and Reference Demotion Trial is now active. It should consume real sanitized maintainer/operator evidence packets, triage blockers, record explicit maintainer decisions, generate a final readiness packet from real consumed rows, and run a reference-demotion dry run that remains blocked unless a valid explicit approval is supplied.
 
-## Next Milestone: Not Defined
+## Current Milestone: v1.3 Cutover Approval and Reference Demotion Trial
 
-**Goal:** To be defined through `/gsd-new-milestone`.
+**Goal:** Turn the v1.2 executable evidence and decision machinery into a real cutover approval trial, producing a go/no-go decision while keeping reference demotion explicitly guarded.
 
-**Likely decision areas:**
+**Target features:**
 
-- Whether the next milestone should collect and accept final real-world maintainer/operator evidence packets toward cutover approval.
-- Whether to plan post-cutover hardening such as replacing retained vendor/HAL components with Rust alternatives.
-- Whether to add long-run soak dashboards and trend analytics after durable hardware and simulator evidence exists.
+- Real simulator, hardware/media/safety, live-service, and release/signing evidence intake using sanitized maintainer/operator packets.
+- Evidence triage and blocker register for failed, missing, stale, or exceptioned rows.
+- Maintainer acceptance review for retained code, exceptions, residual risks, final readiness, and demotion authorization.
+- Final readiness packet and reference-demotion dry run that proves the gate only opens with valid explicit approval.
+- Cutover decision artifact: approved, blocked, or approved with explicit exceptions.
 
 ## Requirements
 
@@ -75,7 +77,11 @@ No active milestone is defined. The next step is `/gsd-new-milestone`, which sho
 
 <!-- Current scope. Building toward these. -->
 
-No active requirements remain. The next planning step is a new milestone definition, which should create a fresh `.planning/REQUIREMENTS.md`.
+- [ ] Maintainers can intake real sanitized evidence packets for simulator, hardware/media/safety, live-service, and release/signing cutover gates.
+- [ ] Maintainers can triage all failed, missing, stale, or exceptioned evidence rows into a single blocker register with owners and next actions.
+- [ ] Maintainers can record retained-code, residual-risk, exception, final-readiness, and demotion decisions using explicit machine-readable inputs.
+- [ ] Maintainers can generate a final readiness packet from real consumed evidence rows and prove reference demotion remains fail-closed without valid explicit approval.
+- [ ] Maintainers can produce a cutover go/no-go decision artifact that routes the project to production cutover or targeted blocker repair.
 
 ### Out of Scope
 
@@ -96,6 +102,8 @@ Phase 1 established the reference baseline package for the rewrite: supported ma
 v1.1 used the archived v1.0 source-backed evidence baseline without redefining parity contracts. Phase 13 added CI evidence orchestration, Phase 14 added simulator evidence gates, Phase 15 added hardware evidence gates, Phase 16 added live-network evidence gates, Phase 17 added release-candidate evidence gates, Phase 18 added retained-code acceptance review, Phase 19 added aggregate cutover evidence CI, Phase 20 added release artifact production identity and verification, Phase 21 forced final readiness to consume machine-readable upstream result rows, and Phase 22 reconciled requirement, validation, roadmap, and audit metadata before the passed milestone audit rerun.
 
 v1.2 executed those gate capabilities. Phases 23, 24, and 25 added real-input execution contracts for simulator, hardware/media/safety, and live-service evidence while retaining quick/default outputs as blocked placeholders. Phase 26 added release/signing/provenance evidence handling and upstream result rows. Phase 27 added retained-code, residual-risk, exception, and final-readiness decision inputs. Phase 28 generated the final readiness packet while keeping readiness fail-closed and reference demotion separate. Phase 29 closed the upstream evidence flow from Phase 23-25 rows through Phase 26 into Phase 28. Phase 30 reconciled summary extraction, validation metadata, Phase 25 verification shape, state metadata, and the v1.2 milestone audit before archival.
+
+v1.3 should use the v1.2 machinery with real sanitized inputs instead of expanding the schema surface. The milestone should focus on intake, triage, maintainer decisions, final readiness, demotion dry-run behavior, and a durable cutover decision artifact. Retained vendor/HAL replacement, long-run dashboards, and new printer behavior should remain future work unless the v1.3 evidence trial exposes a narrow blocker that must be repaired before a decision can be made.
 
 The current architecture is a CMake-composed firmware target with board/printer feature gates, a FreeRTOS imperative shell, Marlin as the printing core, and application layers for GUI, Connect, WUI, transfers, persistent stores, puppies/MMU, resources, and packaging. The Rust rewrite should deliberately separate pure firmware/domain decisions from hardware, RTOS, filesystem, networking, UI, and packaging adapters where practical.
 
@@ -144,6 +152,7 @@ Known concerns to prioritize during planning include global build target couplin
 | Treat upstream evidence rows as the final readiness integration boundary | Phase 26 and Phase 28 should consume canonical row data instead of hardcoded pending defaults when real Phase 23-25 rows are supplied. | Phase 29 added consumed-row ingestion, status propagation, requirement traceability, and Phase 28 packet lineage preservation while keeping absent inputs fail-closed. |
 | Keep retained-code acceptance and final readiness as explicit maintainer decisions | Evidence rows and generated reports cannot authorize retained-code acceptance, final readiness approval, exceptions, residual-risk acceptance, or reference demotion on their own. | Phases 27 and 28 require machine-readable maintainer inputs and keep demotion blocked unless readiness is otherwise unblocked and a valid explicit demotion decision is supplied. |
 | Treat Phase 30 as requirement-neutral archival cleanup | Metadata reconciliation should close contradictory planning artifacts without creating new requirement IDs or changing firmware/evidence behavior. | Phase 30 updated state, summary extraction aliases, Phase 25 verification shape, validation metadata, and the v1.2 audit while preserving external evidence boundaries. |
+| Treat v1.3 as a cutover approval trial, not post-cutover hardening | The project has not demoted the C/C++ reference yet; the next highest-value work is to consume real evidence and produce a decision before replacing retained vendor/HAL surfaces or adding dashboards. | v1.3 is scoped to real evidence intake, blocker triage, maintainer decisions, final readiness, reference-demotion dry-run behavior, and a go/no-go decision artifact. |
 
 ## Evolution
 
@@ -166,4 +175,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ______________________________________________________________________
 
-*Last updated: 2026-07-02 after v1.2 milestone archival*
+*Last updated: 2026-07-02 after starting v1.3 milestone planning*
