@@ -78,9 +78,9 @@ The phase consumes Phase 32 handoff artifacts, including blocker rows, decision-
 - `.planning/phases/32-blocker-register-and-evidence-triage/32-CONTEXT.md` - Phase 32 handoff decisions and boundaries.
 - `.planning/phases/32-blocker-register-and-evidence-triage/32-01-SUMMARY.md` - Delivered Phase 32 artifacts and residual risks.
 - `.planning/phases/32-blocker-register-and-evidence-triage/32-VERIFICATION.md` - Verified Phase 32 behavior and lifecycle status.
-- `tools/bazel/manifests/phase32_blocker_register_evidence_triage_contract.json` - Authoritative Phase 32 blocker, exception request, residual-risk request, and handoff contract.
-- `tools/bazel/phase32_blocker_register_evidence_triage.py` - Phase 32 classifier and handoff generator.
-- `tools/bazel/phase32_blocker_register_evidence_triage_test.py` - Regression examples for blocker kinds, proof eligibility, derived registers, and handoff outputs.
+- `tools/bazel/manifests/phase32_blocker_register_triage_contract.json` - Authoritative Phase 32 blocker, exception request, residual-risk request, and handoff contract.
+- `tools/bazel/phase32_blocker_register_triage.py` - Phase 32 classifier and handoff generator.
+- `tools/bazel/phase32_blocker_register_triage_test.py` - Regression examples for blocker kinds, proof eligibility, derived registers, and handoff outputs.
 
 ### Decision and Readiness Precedents
 - `.planning/milestones/v1.2-phases/27-retained-code-and-maintainer-acceptance-decisions/27-CONTEXT.md` - v1.2 retained-code, residual-risk, exception, and readiness decision input boundaries.
@@ -105,8 +105,8 @@ The phase consumes Phase 32 handoff artifacts, including blocker rows, decision-
 ## Existing Code Insights
 
 ### Reusable Assets
-- `tools/bazel/phase32_blocker_register_evidence_triage.py`: Reuse Phase 32's handoff bundle, blocker refs, exception request refs, residual-risk request refs, and proof eligibility fields as input surfaces.
-- `tools/bazel/manifests/phase32_blocker_register_evidence_triage_contract.json`: Treat as the authoritative source for Phase 33 input row shapes and source refs.
+- `tools/bazel/phase32_blocker_register_triage.py`: Reuse Phase 32's handoff bundle, blocker refs, exception request refs, residual-risk request refs, and proof eligibility fields as input surfaces.
+- `tools/bazel/manifests/phase32_blocker_register_triage_contract.json`: Treat as the authoritative source for Phase 33 input row shapes and source refs.
 - `tools/bazel/phase27_retained_code_acceptance_decisions.py`: Reuse decision-axis concepts, retained-code acceptance patterns, residual-risk handling, exception handling, and generated artifact naming where compatible.
 - `tools/bazel/manifests/phase27_retained_code_acceptance_decisions_contract.json`: Reuse vocabulary where it prevents drift from the existing decision-input machinery.
 - `tools/bazel/phase28_final_readiness_packet.py`: Reuse fail-closed readiness and demotion vocabulary for Phase 34 handoff fields.
