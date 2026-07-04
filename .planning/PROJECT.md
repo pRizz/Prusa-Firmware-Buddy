@@ -20,7 +20,7 @@ Milestone v1.2 Cutover Evidence Execution and Acceptance shipped on 2026-07-02. 
 
 The replacement firmware is not yet cut over. Final reference demotion remains intentionally blocked until the validated external simulator, hardware, live-service, release, signing, upstream-result, retained-code, residual-risk, and maintainer-decision inputs are supplied, accepted, and followed by an explicit valid demotion approval.
 
-Milestone v1.3 Cutover Approval and Reference Demotion Trial is now active. It should consume real sanitized maintainer/operator evidence packets, triage blockers, record explicit maintainer decisions, generate a final readiness packet from real consumed rows, and run a reference-demotion dry run that remains blocked unless a valid explicit approval is supplied.
+Milestone v1.3 Cutover Approval and Reference Demotion Trial is now active. Phases 31 through 33 are complete: final sanitized evidence intake, blocker triage, and explicit maintainer decision inputs are in place. Phase 34 is next and should generate a final readiness packet from real consumed rows while proving the reference-demotion dry run remains blocked unless a valid explicit approval is supplied.
 
 ## Current Milestone: v1.3 Cutover Approval and Reference Demotion Trial
 
@@ -72,14 +72,14 @@ Milestone v1.3 Cutover Approval and Reference Demotion Trial is now active. It s
 - ✓ Maintainers can review upstream result rows for every required cutover gate through Phase 29 row ingestion that carries Phase 23 simulator, Phase 24 hardware/media/safety, and Phase 25 live-service rows into Phase 26 and Phase 28
 - ✓ Final readiness packets can reflect consumed upstream evidence flow while preserving fail-closed quick behavior and separate reference-demotion authorization through Phase 29 closure
 - ✓ v1.2 planning metadata, summary extraction, validation metadata, Phase 25 verification shape, and milestone audit state are archival-ready through Phase 30 metadata cleanup and the passed v1.2 audit
+- ✓ Maintainers can intake real sanitized evidence packets for simulator, hardware/media/safety, live-service, and release/signing cutover gates through Phase 31 final evidence intake
+- ✓ Maintainers can triage all failed, missing, stale, malformed, redaction-failed, or exceptioned evidence rows into a single blocker register with owners and next actions through Phase 32 blocker register and evidence triage
+- ✓ Maintainers can record retained-code, residual-risk, exception, final-readiness, and demotion decisions using explicit machine-readable inputs through Phase 33 maintainer decision inputs
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-- [ ] Maintainers can intake real sanitized evidence packets for simulator, hardware/media/safety, live-service, and release/signing cutover gates.
-- [ ] Maintainers can triage all failed, missing, stale, or exceptioned evidence rows into a single blocker register with owners and next actions.
-- [ ] Maintainers can record retained-code, residual-risk, exception, final-readiness, and demotion decisions using explicit machine-readable inputs.
 - [ ] Maintainers can generate a final readiness packet from real consumed evidence rows and prove reference demotion remains fail-closed without valid explicit approval.
 - [ ] Maintainers can produce a cutover go/no-go decision artifact that routes the project to production cutover or targeted blocker repair.
 
@@ -175,4 +175,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ______________________________________________________________________
 
-*Last updated: 2026-07-02 after starting v1.3 milestone planning*
+*Last updated: 2026-07-04 after Phase 33 completion*

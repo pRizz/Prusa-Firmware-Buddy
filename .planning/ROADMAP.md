@@ -75,7 +75,7 @@ Full phase details are archived in `.planning/milestones/v1.2-ROADMAP.md`.
 
 - [x] **Phase 31: Final Evidence Intake** - Maintainers and release managers can submit final sanitized evidence packets for all cutover gates. (completed 2026-07-03)
 - [x] **Phase 32: Blocker Register and Evidence Triage** - Maintainers can classify every failed, missing, stale, malformed, redaction-failed, placeholder, or exceptioned row into one blocker register. (completed 2026-07-03)
-- [ ] **Phase 33: Maintainer Decision Inputs** - Maintainers can record retained-code, residual-risk, exception, final-readiness, and demotion decisions as explicit machine-readable inputs.
+- [x] **Phase 33: Maintainer Decision Inputs** - Maintainers can record retained-code, residual-risk, exception, final-readiness, and demotion decisions as explicit machine-readable inputs. (completed 2026-07-04)
 - [ ] **Phase 34: Final Readiness and Demotion Dry Run** - Maintainers can generate readiness from real consumed rows and prove demotion stays blocked without valid explicit approval.
 - [ ] **Phase 35: Cutover Decision Artifact** - Maintainers can publish an auditable approved, blocked, or approved-with-exceptions verdict that routes the next milestone.
 
@@ -115,7 +115,7 @@ Full phase details are archived in `.planning/milestones/v1.2-ROADMAP.md`.
   4. Green evidence alone does not create retained-code, readiness, exception, residual-risk, or demotion approval.
 **Plans**: 1 plan
 Plans:
-- [ ] 33-01-PLAN.md - Phase 33 decision-input contract, verifier, generated handoff bundle, and workflow wiring.
+- [x] 33-01-PLAN.md - Phase 33 decision-input contract, verifier, generated handoff bundle, and workflow wiring.
 
 ### Phase 34: Final Readiness and Demotion Dry Run
 **Goal**: Maintainers can generate a final readiness packet from real consumed evidence and decisions, then prove reference demotion remains blocked unless readiness is unblocked and explicit demotion approval is valid.
@@ -150,9 +150,9 @@ Plans:
 | TRIAGE-01 | Phase 32 | Complete |
 | TRIAGE-02 | Phase 32 | Complete |
 | TRIAGE-03 | Phase 32 | Complete |
-| DECIDE-01 | Phase 33 | Pending |
-| DECIDE-02 | Phase 33 | Pending |
-| DECIDE-03 | Phase 33 | Pending |
+| DECIDE-01 | Phase 33 | Complete |
+| DECIDE-02 | Phase 33 | Complete |
+| DECIDE-03 | Phase 33 | Complete |
 | READY-01 | Phase 34 | Pending |
 | READY-02 | Phase 34 | Pending |
 | READY-03 | Phase 34 | Pending |
@@ -160,7 +160,7 @@ Plans:
 | CUTOVER-02 | Phase 35 | Pending |
 | CUTOVER-03 | Phase 35 | Pending |
 
-**Coverage:** 16/16 v1.3 requirements mapped. 7 complete, 9 pending. No orphaned requirements. No duplicate requirement mappings.
+**Coverage:** 16/16 v1.3 requirements mapped. 10 complete, 6 pending. No orphaned requirements. No duplicate requirement mappings.
 
 ## Progress
 
@@ -181,6 +181,6 @@ Phases execute in numeric order across archived milestones. v1.3 continues after
 | 30. Milestone Metadata Cleanup | v1.2 | 1/1 | Complete    | 2026-06-27 |
 | 31. Final Evidence Intake | v1.3 | 1/1 | Complete    | 2026-07-03 |
 | 32. Blocker Register and Evidence Triage | v1.3 | 1/1 | Complete    | 2026-07-03 |
-| 33. Maintainer Decision Inputs | v1.3 | 0/TBD | Not started | - |
+| 33. Maintainer Decision Inputs | v1.3 | 1/1 | Complete    | 2026-07-04 |
 | 34. Final Readiness and Demotion Dry Run | v1.3 | 0/TBD | Not started | - |
 | 35. Cutover Decision Artifact | v1.3 | 0/TBD | Not started | - |

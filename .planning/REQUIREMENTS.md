@@ -9,10 +9,10 @@ These requirements consume the v1.2 evidence and decision machinery with real sa
 
 ### Evidence Intake
 
-- [ ] **INTAKE-01**: Maintainer can supply final simulator evidence packets for startup, G-code, GUI, storage, transfer, and selected failure flows using sanitized real-run inputs.
-- [ ] **INTAKE-02**: Maintainer can supply final hardware/media/safety evidence packets for supported printer families, storage media, UI input, MMU, RS485, toolchanger, watchdog, thermal, motion, and safe-output scenarios.
-- [ ] **INTAKE-03**: Maintainer can supply final live-service evidence packets for Connect, PrusaLink/WUI, TLS, telemetry, proxy, transfer, negative-protocol, long-transfer, and crash-dump flows.
-- [ ] **INTAKE-04**: Release manager can supply final release/signing/provenance evidence from real release-environment outputs without exposing private keys, tokens, certificates, service payloads, raw crash dumps, or other secret-bearing data.
+- [x] **INTAKE-01**: Maintainer can supply final simulator evidence packets for startup, G-code, GUI, storage, transfer, and selected failure flows using sanitized real-run inputs.
+- [x] **INTAKE-02**: Maintainer can supply final hardware/media/safety evidence packets for supported printer families, storage media, UI input, MMU, RS485, toolchanger, watchdog, thermal, motion, and safe-output scenarios.
+- [x] **INTAKE-03**: Maintainer can supply final live-service evidence packets for Connect, PrusaLink/WUI, TLS, telemetry, proxy, transfer, negative-protocol, long-transfer, and crash-dump flows.
+- [x] **INTAKE-04**: Release manager can supply final release/signing/provenance evidence from real release-environment outputs without exposing private keys, tokens, certificates, service payloads, raw crash dumps, or other secret-bearing data.
 
 ### Evidence Triage
 
@@ -22,9 +22,9 @@ These requirements consume the v1.2 evidence and decision machinery with real sa
 
 ### Maintainer Decisions
 
-- [ ] **DECIDE-01**: Maintainer can record retained-code acceptance, rejection, or approved exception decisions with residual-risk rationale and owner signoff.
-- [ ] **DECIDE-02**: Maintainer can record final-readiness approval or block decisions using machine-readable inputs that consume the triaged evidence rows and approved exceptions.
-- [ ] **DECIDE-03**: Maintainer can record reference-demotion approval or rejection as a separate explicit decision that cannot be inferred from green evidence alone.
+- [x] **DECIDE-01**: Maintainer can record retained-code acceptance, rejection, or approved exception decisions with residual-risk rationale and owner signoff.
+- [x] **DECIDE-02**: Maintainer can record final-readiness approval or block decisions using machine-readable inputs that consume the triaged evidence rows and approved exceptions.
+- [x] **DECIDE-03**: Maintainer can record reference-demotion approval or rejection as a separate explicit decision that cannot be inferred from green evidence alone.
 
 ### Readiness and Demotion Trial
 
@@ -68,16 +68,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INTAKE-01 | Phase 31 | Pending |
-| INTAKE-02 | Phase 31 | Pending |
-| INTAKE-03 | Phase 31 | Pending |
-| INTAKE-04 | Phase 31 | Pending |
+| INTAKE-01 | Phase 31 | Complete |
+| INTAKE-02 | Phase 31 | Complete |
+| INTAKE-03 | Phase 31 | Complete |
+| INTAKE-04 | Phase 31 | Complete |
 | TRIAGE-01 | Phase 32 | Complete |
 | TRIAGE-02 | Phase 32 | Complete |
 | TRIAGE-03 | Phase 32 | Complete |
-| DECIDE-01 | Phase 33 | Pending |
-| DECIDE-02 | Phase 33 | Pending |
-| DECIDE-03 | Phase 33 | Pending |
+| DECIDE-01 | Phase 33 | Complete |
+| DECIDE-02 | Phase 33 | Complete |
+| DECIDE-03 | Phase 33 | Complete |
 | READY-01 | Phase 34 | Pending |
 | READY-02 | Phase 34 | Pending |
 | READY-03 | Phase 34 | Pending |
@@ -89,12 +89,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 - v1.3 requirements: 16 total
 - Mapped to phases: 16
-- Complete: 3
-- Pending: 13
+- Complete: 10
+- Pending: 6
 - Unmapped: 0
 - Duplicate mappings: 0
 
 ______________________________________________________________________
 
 *Requirements defined: 2026-07-02*
-*Last updated: 2026-07-03 after Phase 32 completion*
+*Last updated: 2026-07-04 after Phase 33 completion*
