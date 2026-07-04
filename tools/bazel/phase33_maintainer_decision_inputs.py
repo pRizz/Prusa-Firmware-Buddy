@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import re
 import shutil
@@ -68,6 +69,17 @@ APPROVAL_DECISION_VALUES = {
     "exception": {"approve"},
     "readiness": {"approve"},
     "reference_demotion": {"approve"},
+}
+AXIS_SPECIFIC_REGISTER_FIELDS = {
+    "retained_code": ["residual_risk_rationale"],
+    "residual_risk": ["affected_gates", "follow_up_refs"],
+    "exception": [
+        "scope",
+        "expiry_or_review_trigger",
+        "affected_requirements",
+        "affected_gates",
+        "linked_blocker_refs",
+    ],
 }
 HARD_BLOCKER_PROBLEM_KINDS = {
     "redaction_failed",
@@ -619,8 +631,16 @@ def normalized_decision_record(decision: dict[str, Any]) -> dict[str, Any]:
     return row
 
 
+def register_decision_record(decision: dict[str, Any]) -> dict[str, Any]:
+    row = normalized_decision_record(decision)
+    for field in AXIS_SPECIFIC_REGISTER_FIELDS.get(str(decision["decision_type"]), []):
+        if field in decision:
+            row[field] = decision[field]
+    return row
+
+
 def decision_records_by_type(decisions: list[dict[str, Any]], decision_type: str) -> list[dict[str, Any]]:
-    return [normalized_decision_record(decision) for decision in decisions if decision["decision_type"] == decision_type]
+    return [register_decision_record(decision) for decision in decisions if decision["decision_type"] == decision_type]
 
 
 def exception_register_rows(decisions: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -628,7 +648,7 @@ def exception_register_rows(decisions: list[dict[str, Any]]) -> list[dict[str, A
     for decision in decisions:
         if decision["decision_type"] != "exception":
             continue
-        row = normalized_decision_record(decision)
+        row = register_decision_record(decision)
         row["coverage_state"] = "approved-exception" if decision["decision_value"] == "approve" else "rejected"
         rows.append(row)
     return rows
@@ -807,9 +827,23 @@ def redacted_report(records: list[dict[str, Any]], readiness: dict[str, Any], de
     ]
     for record in records:
         lines.append(
-            f"| {record['decision_id']} | {record['decision_type']} | {record['decision_value']} | {len(record['source_row_refs'])} |"
+            "| "
+            + " | ".join(
+                [
+                    markdown_table_cell(record["decision_id"]),
+                    markdown_table_cell(record["decision_type"]),
+                    markdown_table_cell(record["decision_value"]),
+                    str(len(record["source_row_refs"])),
+                ]
+            )
+            + " |"
         )
     return "\n".join(lines) + "\n"
+
+
+def markdown_table_cell(value: object) -> str:
+    text = " ".join(str(value).splitlines())
+    return html.escape(text, quote=False).replace("|", r"\|")
 
 
 def copy_contract_snapshots(root: Path, output_dir: Path, phase32_handoff_path: Path, phase32_register: dict[str, Any], phase32_register_ref: str) -> list[str]:

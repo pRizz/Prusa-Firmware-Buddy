@@ -335,7 +335,10 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         retained_register = self.read_json(root, "build/ci-evidence/phase33/retained-code-decision-register.json")
         residual_register = self.read_json(root, "build/ci-evidence/phase33/residual-risk-decision-register.json")
         self.assertEqual(retained_register["rows"][0]["decision_value"], "accept")
+        self.assertEqual(retained_register["rows"][0]["residual_risk_rationale"], "Accepted with owner signoff.")
         self.assertEqual(residual_register["rows"][0]["decision_value"], "accept")
+        self.assertEqual(residual_register["rows"][0]["affected_gates"], ["final-residual-risk-review"])
+        self.assertEqual(residual_register["rows"][0]["follow_up_refs"], ["external://ticket/risk-review"])
 
     def test_decision_type_must_match_phase32_decision_impact(self) -> None:
         cases = [
@@ -529,6 +532,11 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         self.assertEqual(valid_result.returncode, 0, valid_result.stdout)
         register = self.read_json(root, "build/ci-evidence/phase33/exception-decision-register.json")
         self.assertEqual(register["rows"][0]["coverage_state"], "approved-exception")
+        self.assertEqual(register["rows"][0]["scope"], "live transfer only")
+        self.assertEqual(register["rows"][0]["expiry_or_review_trigger"], "phase35 review")
+        self.assertEqual(register["rows"][0]["affected_requirements"], ["DECIDE-02"])
+        self.assertEqual(register["rows"][0]["affected_gates"], ["final-live-network-transfer-evidence"])
+        self.assertEqual(register["rows"][0]["linked_blocker_refs"], [self.blocker_ref("exception-row")])
 
     def test_decision_source_traceability_refs_must_be_non_empty(self) -> None:
         # Arrange
@@ -909,6 +917,38 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout)
         manifest = self.read_json(root, "build/ci-evidence/phase33/downstream-handoff-manifest.json")
         self.assertNotIn("demotion_allowed", manifest)
+
+    def test_redacted_report_escapes_markdown_table_cells(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_fixture(root, [self.blocker_row("known-row")])
+        decision = self.decision(
+            "decision|line\n<b>html</b>",
+            "readiness",
+            "block",
+            [self.blocker_ref("known-row")],
+            blocked_source_row_refs=[self.blocker_ref("known-row")],
+        )
+        decisions_path = self.write_json(
+            root,
+            "build/ci-evidence/phase33-inputs/markdown-cells.json",
+            {
+                "schema_version": "1",
+                "phase": "33-maintainer-decision-inputs",
+                "phase_lifecycle_id": "33-2026-07-04T01-36-41",
+                "decisions": [decision],
+            },
+        )
+
+        # Act
+        result = self.run_quick(root, decisions_path)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        report = (root / "build/ci-evidence/phase33/redacted-maintainer-decision-report.md").read_text(encoding="utf-8")
+        self.assertIn("decision\\|line &lt;b&gt;html&lt;/b&gt;", report)
+        self.assertNotIn("<b>html</b>", report)
 
     def test_wiring_requires_bazel_root_workflow_and_just_entries(self) -> None:
         # Arrange
