@@ -228,6 +228,13 @@ def require_string_list(value: Any, field: str) -> list[str]:
     return values
 
 
+def require_non_empty_string_list(value: Any, field: str) -> list[str]:
+    values = require_string_list(value, field)
+    if not values:
+        raise VerificationError(f"{field} must contain at least one entry")
+    return values
+
+
 def require_iso_utc(timestamp_text: str, field: str) -> None:
     if not timestamp_text.endswith("Z"):
         raise VerificationError(f"{field} must be ISO UTC ending in Z")
@@ -493,7 +500,7 @@ def validate_decision(raw_decision: dict[str, Any], row_map: dict[str, dict[str,
     decision_value = require_string(raw_decision.get("decision_value"), f"{decision_id}.decision_value")
     if decision_value not in DECISION_VALUE_ENUMS[decision_type]:
         raise VerificationError(f"{decision_id} invalid decision_value for {decision_type}: {decision_value}")
-    source_row_refs = require_string_list(raw_decision.get("source_row_refs"), f"{decision_id}.source_row_refs")
+    source_row_refs = require_non_empty_string_list(raw_decision.get("source_row_refs"), f"{decision_id}.source_row_refs")
     source_rows = validate_source_row_refs(decision_id, "source_row_refs", source_row_refs, row_map)
     for field in ("maintainer_identity_ref", "maintainer_role", "owner_signoff_ref", "rationale"):
         require_string(raw_decision.get(field), f"{decision_id}.{field}")
@@ -576,6 +583,8 @@ def validate_exception_approval(decision: dict[str, Any], source_rows: list[dict
     ]:
         if field in {"scope", "expiry_or_review_trigger"}:
             require_string(decision.get(field), f"{decision_id}.{field}")
+        elif field == "linked_blocker_refs":
+            decision[field] = require_non_empty_string_list(decision.get(field), f"{decision_id}.{field}")
         else:
             require_string_list(decision.get(field), f"{decision_id}.{field}")
     require_string(decision.get("rationale"), f"{decision_id}.rationale")

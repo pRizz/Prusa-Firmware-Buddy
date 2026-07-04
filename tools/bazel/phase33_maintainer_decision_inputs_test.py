@@ -465,6 +465,45 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         register = self.read_json(root, "build/ci-evidence/phase33/exception-decision-register.json")
         self.assertEqual(register["rows"][0]["coverage_state"], "approved-exception")
 
+    def test_decision_source_traceability_refs_must_be_non_empty(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        exception_row = self.blocker_row(
+            "exception-row",
+            row_problem_kind="exception_requested",
+            blocker_kind="exception_request",
+            decision_impact="exception_decision_required",
+        )
+        self.write_phase32_fixture(root, [exception_row])
+        empty_source_refs_path = self.write_decisions(root, [self.decision("empty-source-refs", "readiness", "block", [])])
+        empty_linked_refs_path = self.write_decisions(
+            root,
+            [
+                self.decision(
+                    "empty-linked-refs",
+                    "exception",
+                    "approve",
+                    [self.blocker_ref("exception-row")],
+                    scope="narrow",
+                    expiry_or_review_trigger="phase35 review",
+                    affected_requirements=["DECIDE-02"],
+                    affected_gates=["final-simulator-evidence"],
+                    linked_blocker_refs=[],
+                )
+            ],
+        )
+
+        # Act
+        empty_source_result = self.run_quick(root, empty_source_refs_path)
+        empty_linked_result = self.run_quick(root, empty_linked_refs_path)
+
+        # Assert
+        self.assertNotEqual(empty_source_result.returncode, 0)
+        self.assertIn("empty-source-refs.source_row_refs must contain at least one entry", empty_source_result.stdout)
+        self.assertNotEqual(empty_linked_result.returncode, 0)
+        self.assertIn("empty-linked-refs.linked_blocker_refs must contain at least one entry", empty_linked_result.stdout)
+
     def test_rejected_exception_remains_in_exception_register(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
