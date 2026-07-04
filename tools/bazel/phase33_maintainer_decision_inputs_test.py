@@ -609,6 +609,44 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("uncovered critical blocker", result.stdout.casefold())
 
+    def test_readiness_approval_counts_accepted_retained_code_coverage(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        retained_row = self.blocker_row(
+            "critical-retained-row",
+            severity="critical",
+            decision_impact="retained_code_decision_required",
+            source_stream="retained-code",
+        )
+        readiness_row = self.blocker_row(
+            "warning-readiness-row",
+            severity="warning",
+            decision_impact="final_readiness_blocked",
+        )
+        self.write_phase32_fixture(root, [retained_row, readiness_row])
+        decisions_path = self.write_decisions(
+            root,
+            [
+                self.decision(
+                    "accept-retained-row",
+                    "retained_code",
+                    "accept",
+                    [self.blocker_ref("critical-retained-row")],
+                    residual_risk_rationale="Accepted retained code with explicit owner signoff.",
+                ),
+                self.decision("approve-readiness", "readiness", "approve", [self.blocker_ref("warning-readiness-row")]),
+            ],
+        )
+
+        # Act
+        result = self.run_quick(root, decisions_path)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        handoff = self.read_json(root, "build/ci-evidence/phase33/readiness-decision-handoff.json")
+        self.assertEqual(handoff["handoff_state"], "approval-input-recorded")
+
     def test_invalid_decision_id_type_fails_closed(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()

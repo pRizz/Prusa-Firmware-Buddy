@@ -652,6 +652,14 @@ def accepted_residual_risk_covered_refs(decisions: list[dict[str, Any]]) -> set[
     return refs
 
 
+def accepted_retained_code_covered_refs(decisions: list[dict[str, Any]]) -> set[str]:
+    refs: set[str] = set()
+    for decision in decisions:
+        if decision["decision_type"] == "retained_code" and decision["decision_value"] in {"accept", "exception_approve"}:
+            refs.update(decision["source_row_refs"])
+    return refs
+
+
 def readiness_uncovered_blocker_refs(row_map: dict[str, dict[str, Any]], covered_refs: set[str]) -> list[str]:
     uncovered = []
     for row_id, row in row_map.items():
@@ -676,7 +684,11 @@ def readiness_handoff(decisions: list[dict[str, Any]], row_map: dict[str, dict[s
         }
     latest = readiness_decisions[-1]
     if latest["decision_value"] == "approve":
-        covered = approved_exception_covered_refs(decisions) | accepted_residual_risk_covered_refs(decisions)
+        covered = (
+            approved_exception_covered_refs(decisions)
+            | accepted_residual_risk_covered_refs(decisions)
+            | accepted_retained_code_covered_refs(decisions)
+        )
         uncovered = readiness_uncovered_blocker_refs(row_map, covered)
         if uncovered:
             raise VerificationError("readiness approval has uncovered critical blocker or hard blocker rows: " + ", ".join(uncovered))
