@@ -62,6 +62,15 @@ HARD_BLOCKER_PROBLEM_KINDS = {
     "lifecycle_mismatch",
     "unsafe_ref",
 }
+SECURITY_SCAN_CONTRACT_ALLOWLIST = {
+    CONTRACT_MANIFEST.as_posix(),
+    "contract-snapshots/phase33_maintainer_decision_inputs_contract.json",
+    "contract-snapshots/phase32_blocker_register_triage_contract.json",
+    "contract-snapshots/phase27_retained_code_acceptance_decisions_contract.json",
+    "contract-snapshots/phase28_final_readiness_packet_contract.json",
+    "contract-snapshots/phase32-downstream-handoff-manifest.json",
+    "contract-snapshots/phase32-blocker-register.json",
+}
 GENERATED_ARTIFACTS = [
     "maintainer-decision-input-template.json",
     "normalized-decision-records.json",
@@ -83,17 +92,8 @@ GENERATED_ARTIFACTS = [
 EMITTED_OUTPUT_SCAN_ARTIFACTS = [
     artifact
     for artifact in GENERATED_ARTIFACTS
-    if not artifact.startswith("contract-snapshots/")
+    if artifact not in SECURITY_SCAN_CONTRACT_ALLOWLIST
 ]
-SECURITY_SCAN_CONTRACT_ALLOWLIST = {
-    CONTRACT_MANIFEST.as_posix(),
-    "contract-snapshots/phase33_maintainer_decision_inputs_contract.json",
-    "contract-snapshots/phase32_blocker_register_triage_contract.json",
-    "contract-snapshots/phase27_retained_code_acceptance_decisions_contract.json",
-    "contract-snapshots/phase28_final_readiness_packet_contract.json",
-    "contract-snapshots/phase32-downstream-handoff-manifest.json",
-    "contract-snapshots/phase32-blocker-register.json",
-}
 FORBIDDEN_FIELD_NAMES = {
     "access_token",
     "api_key",
@@ -248,6 +248,14 @@ def path_under(value: str | Path, expected_root: Path, field: str) -> Path:
     return path
 
 
+def path_is_under(path: Path, parent: Path) -> bool:
+    try:
+        path.relative_to(parent)
+    except ValueError:
+        return False
+    return True
+
+
 def output_dir_path(root: Path, output_dir: str | Path) -> tuple[Path, Path]:
     relative_output_dir = path_under(output_dir, DEFAULT_OUTPUT_DIR, "--output-dir")
     current = root
@@ -270,6 +278,23 @@ def reset_output_root(full_output_dir: Path) -> None:
             raise VerificationError(f"--output-dir exists and is not a normal directory: {full_output_dir.as_posix()}")
         shutil.rmtree(full_output_dir)
     full_output_dir.mkdir(parents=True, exist_ok=True)
+
+
+def reject_decisions_inside_output(root: Path, maybe_decisions_path: str | None, full_output_dir: Path) -> None:
+    if maybe_decisions_path is None:
+        return
+    decisions_path = (root / repo_relative_path(maybe_decisions_path, "--maintainer-decisions")).resolve(strict=False)
+    if path_is_under(decisions_path, full_output_dir.resolve(strict=False)):
+        raise VerificationError("--maintainer-decisions must be outside the generated --output-dir")
+
+
+def repo_relative_output_dir(output_dir: Path) -> Path:
+    if not output_dir.is_absolute():
+        return output_dir
+    try:
+        return output_dir.relative_to(ROOT)
+    except ValueError as error:
+        raise VerificationError(f"output directory is outside repo: {output_dir.as_posix()}") from error
 
 
 def normalized_field_name(field_name: str) -> str:
@@ -302,9 +327,8 @@ def reject_forbidden_field_names(value: Any, source_name: str, path: str = "$") 
 def reject_forbidden_text(path: Path, text: str) -> None:
     errors: list[str] = []
     for label, pattern in FORBIDDEN_TEXT_PATTERNS:
-        match = pattern.search(text)
-        if match:
-            errors.append(f"{path.as_posix()} contains forbidden marker {label}: {match.group(0)}")
+        if pattern.search(text):
+            errors.append(f"{path.as_posix()} contains forbidden marker {label}")
     if errors:
         raise VerificationError("\n".join(errors))
 
@@ -392,14 +416,25 @@ def load_phase32_handoff(root: Path, handoff_arg: str | Path) -> tuple[Path, dic
     return handoff_path, handoff, row_map, register
 
 
-def source_ref_row_id(source_ref: str) -> str:
+def source_ref_row_id(source_ref: str, field: str = "source_row_refs") -> str:
     prefix = f"{PHASE32_REGISTER_REF}#"
     if not source_ref.startswith(prefix):
-        raise VerificationError(f"source_row_refs must use {prefix}<row_id>: {source_ref}")
+        raise VerificationError(f"{field} must use {prefix}<row_id>: {source_ref}")
     row_id = source_ref[len(prefix):]
     if not row_id or "/" in row_id or ".." in row_id:
-        raise VerificationError(f"source_row_refs contains malformed row id: {source_ref}")
+        raise VerificationError(f"{field} contains malformed row id: {source_ref}")
     return row_id
+
+
+def validate_source_row_refs(decision_id: str, field: str, source_refs: list[str], row_map: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    source_rows: list[dict[str, Any]] = []
+    for source_ref in source_refs:
+        row_id = source_ref_row_id(source_ref, field)
+        maybe_row = row_map.get(row_id)
+        if maybe_row is None:
+            raise VerificationError(f"{decision_id}.{field} references unresolved Phase 32 row: {source_ref}")
+        source_rows.append(maybe_row)
+    return source_rows
 
 
 def scan_json_payload(data: Any, path: Path) -> None:
@@ -439,7 +474,7 @@ def load_maintainer_decisions(root: Path, maybe_decisions_path: str | None, row_
 
 
 def validate_decision(raw_decision: dict[str, Any], row_map: dict[str, dict[str, Any]]) -> dict[str, Any]:
-    decision_id = str(raw_decision.get("decision_id", "<unknown>"))
+    decision_id = require_string(raw_decision.get("decision_id"), "decision_id")
     for field in REQUIRED_DECISION_FIELDS:
         if field not in raw_decision:
             raise VerificationError(f"{decision_id} missing required field: {field}")
@@ -450,13 +485,7 @@ def validate_decision(raw_decision: dict[str, Any], row_map: dict[str, dict[str,
     if decision_value not in DECISION_VALUE_ENUMS[decision_type]:
         raise VerificationError(f"{decision_id} invalid decision_value for {decision_type}: {decision_value}")
     source_row_refs = require_string_list(raw_decision.get("source_row_refs"), f"{decision_id}.source_row_refs")
-    source_rows: list[dict[str, Any]] = []
-    for source_ref in source_row_refs:
-        row_id = source_ref_row_id(source_ref)
-        maybe_row = row_map.get(row_id)
-        if maybe_row is None:
-            raise VerificationError(f"{decision_id} references unresolved Phase 32 row: {source_ref}")
-        source_rows.append(maybe_row)
+    source_rows = validate_source_row_refs(decision_id, "source_row_refs", source_row_refs, row_map)
     for field in ("maintainer_identity_ref", "maintainer_role", "owner_signoff_ref", "rationale"):
         require_string(raw_decision.get(field), f"{decision_id}.{field}")
     require_iso_utc(require_string(raw_decision.get("decision_timestamp"), f"{decision_id}.decision_timestamp"), f"{decision_id}.decision_timestamp")
@@ -465,12 +494,16 @@ def validate_decision(raw_decision: dict[str, Any], row_map: dict[str, dict[str,
         for ref in refs:
             validate_reference_text(ref, f"{decision_id}.{field}")
     decision = dict(raw_decision)
+    decision["decision_id"] = decision_id
+    decision["decision_type"] = decision_type
+    decision["decision_value"] = decision_value
+    decision["source_row_refs"] = source_row_refs
     decision["source_rows"] = source_rows
-    validate_axis_specific_decision(decision)
+    validate_axis_specific_decision(decision, row_map)
     return decision
 
 
-def validate_axis_specific_decision(decision: dict[str, Any]) -> None:
+def validate_axis_specific_decision(decision: dict[str, Any], row_map: dict[str, dict[str, Any]]) -> None:
     decision_id = str(decision["decision_id"])
     decision_type = str(decision["decision_type"])
     decision_value = str(decision["decision_value"])
@@ -492,7 +525,9 @@ def validate_axis_specific_decision(decision: dict[str, Any]) -> None:
         return
     if decision_type == "readiness":
         if decision_value == "block" and "blocked_source_row_refs" in decision:
-            require_string_list(decision.get("blocked_source_row_refs"), f"{decision_id}.blocked_source_row_refs")
+            blocked_source_refs = require_string_list(decision.get("blocked_source_row_refs"), f"{decision_id}.blocked_source_row_refs")
+            validate_source_row_refs(decision_id, "blocked_source_row_refs", blocked_source_refs, row_map)
+            decision["blocked_source_row_refs"] = blocked_source_refs
         return
     if decision_type == "reference_demotion":
         return
@@ -757,7 +792,7 @@ def downstream_handoff_manifest(
     maintainer_input_supplied: bool,
     snapshot_refs: list[str],
 ) -> dict[str, Any]:
-    relative_output_dir = output_dir.relative_to(ROOT) if output_dir.is_relative_to(ROOT) else DEFAULT_OUTPUT_DIR
+    relative_output_dir = repo_relative_output_dir(output_dir)
     return {
         "phase": PHASE,
         "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
@@ -819,17 +854,12 @@ def write_phase33_outputs(
 
 def run_quick(root: Path, phase32_handoff: str | Path, output_dir: str | Path, maybe_decisions_path: str | None) -> None:
     load_contract(root)
+    _relative_output_dir, full_output_dir = output_dir_path(root, output_dir)
+    reject_decisions_inside_output(root, maybe_decisions_path, full_output_dir)
     handoff_path, _handoff, row_map, phase32_register = load_phase32_handoff(root, phase32_handoff)
     decisions, maintainer_input_supplied = load_maintainer_decisions(root, maybe_decisions_path, row_map)
     write_phase33_outputs(root, output_dir, handoff_path, row_map, phase32_register, decisions, maintainer_input_supplied)
     print(f"Phase 33 maintainer decision inputs quick validation passed; decision_count={len(decisions)}")
-
-
-def should_scan_output_path(path: Path) -> bool:
-    parts = set(path.parts)
-    if "contract-snapshots" in parts:
-        return False
-    return True
 
 
 def run_security_scan(root: Path, maybe_decisions_path: str | None = None, output_dir: str | Path = DEFAULT_OUTPUT_DIR) -> None:
@@ -849,7 +879,7 @@ def run_security_scan(root: Path, maybe_decisions_path: str | None = None, outpu
         else:
             for artifact in EMITTED_OUTPUT_SCAN_ARTIFACTS:
                 path = full_output_dir / artifact
-                if not path.exists() or path.is_dir() or not should_scan_output_path(path):
+                if not path.exists() or path.is_dir():
                     continue
                 relative_path = path.relative_to(root)
                 try:

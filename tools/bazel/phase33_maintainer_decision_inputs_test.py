@@ -193,15 +193,15 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         decision_id = "empty"
         if decisions:
             decision_id = str(decisions[0].get("decision_id", "decision"))
-        return self.write_json(root, f"build/ci-evidence/phase33/{decision_id}.json", payload)
+        return self.write_json(root, f"build/ci-evidence/phase33-inputs/{decision_id}.json", payload)
 
-    def run_quick(self, root: Path, decisions_path: str | None = None) -> subprocess.CompletedProcess[str]:
+    def run_quick(self, root: Path, decisions_path: str | None = None, output_dir: str = "build/ci-evidence/phase33") -> subprocess.CompletedProcess[str]:
         args = [
             "--quick",
             "--phase32-handoff",
             "build/ci-evidence/phase32/downstream-handoff-manifest.json",
             "--output-dir",
-            "build/ci-evidence/phase33",
+            output_dir,
         ]
         if decisions_path is not None:
             args.extend(["--maintainer-decisions", decisions_path])
@@ -248,6 +248,27 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         self.assertIs(manifest["source_inputs"]["raw_evidence_consumed"], False)
         self.assertEqual(readiness["handoff_state"], "blocked-pending-maintainer-input")
         self.assertEqual(demotion["authorization_state"], "blocked")
+
+    def test_quick_rejects_maintainer_input_inside_output_root_without_deleting_it(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_fixture(root, [self.blocker_row("known-row")])
+        payload = {
+            "schema_version": "1",
+            "phase": "33-maintainer-decision-inputs",
+            "phase_lifecycle_id": "33-2026-07-04T01-36-41",
+            "decisions": [self.decision("unsafe-input-location", "readiness", "block", [self.blocker_ref("known-row")])],
+        }
+        unsafe_path = self.write_json(root, "build/ci-evidence/phase33/unsafe-input-location.json", payload)
+
+        # Act
+        result = self.run_quick(root, unsafe_path)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--maintainer-decisions must be outside", result.stdout)
+        self.assertTrue((root / unsafe_path).exists())
 
     def test_retained_and_residual_decisions_require_explicit_metadata_and_owner_signoff(self) -> None:
         # Arrange
@@ -419,6 +440,23 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("uncovered critical blocker", result.stdout.casefold())
 
+    def test_invalid_decision_id_type_fails_closed(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_fixture(root, [self.blocker_row("known-row")])
+        decision = self.decision("invalid-id", "readiness", "block", [self.blocker_ref("known-row")])
+        decision["decision_id"] = ["invalid-id"]
+        decisions_path = self.write_decisions(root, [decision])
+
+        # Act
+        result = self.run_quick(root, decisions_path)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("decision_id must be a non-empty string", result.stdout)
+        self.assertNotIn("Traceback", result.stdout)
+
     def test_readiness_block_handoff_preserves_blocker_refs(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -445,6 +483,47 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         handoff = self.read_json(root, "build/ci-evidence/phase33/readiness-decision-handoff.json")
         self.assertEqual(handoff["handoff_state"], "blocked-by-maintainer-input")
         self.assertEqual(handoff["blocked_source_row_refs"], [self.blocker_ref("critical-readiness-blocker")])
+
+    def test_readiness_block_validates_blocked_source_row_refs(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_fixture(root, [self.blocker_row("known-row")])
+        cases = [
+            self.write_decisions(
+                root,
+                [
+                    self.decision(
+                        "blocked-malformed-ref",
+                        "readiness",
+                        "block",
+                        [self.blocker_ref("known-row")],
+                        blocked_source_row_refs=["build/ci-evidence/phase32/../secret.json#known-row"],
+                    )
+                ],
+            ),
+            self.write_decisions(
+                root,
+                [
+                    self.decision(
+                        "blocked-unresolved-ref",
+                        "readiness",
+                        "block",
+                        [self.blocker_ref("known-row")],
+                        blocked_source_row_refs=[self.blocker_ref("missing-row")],
+                    )
+                ],
+            ),
+        ]
+
+        for decisions_path in cases:
+            with self.subTest(decisions_path=decisions_path):
+                # Act
+                result = self.run_quick(root, decisions_path)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("blocked_source_row_refs", result.stdout)
 
     def test_demotion_decision_is_separate_from_readiness_and_evidence(self) -> None:
         # Arrange
@@ -504,6 +583,25 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
 
+    def test_custom_output_dir_manifest_paths_use_custom_root(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_fixture(root, [self.blocker_row("known-row")])
+
+        # Act
+        result = self.run_quick(root, output_dir="build/ci-evidence/phase33/retry")
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        manifest = self.read_json(root, "build/ci-evidence/phase33/retry/downstream-handoff-manifest.json")
+        self.assertEqual(manifest["output_root"], "build/ci-evidence/phase33/retry")
+        self.assertEqual(
+            manifest["register_refs"]["normalized_decision_records"],
+            "build/ci-evidence/phase33/retry/normalized-decision-records.json",
+        )
+        self.assertTrue((root / "build/ci-evidence/phase33/retry/readiness-decision-handoff.json").exists())
+
     def test_security_scan_rejects_secret_fields_path_traversal_and_approval_overclaims(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -524,8 +622,54 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         self.assertNotEqual(input_result.returncode, 0)
         self.assertIn("token_value", input_result.stdout)
         self.assertNotEqual(output_result.returncode, 0)
-        self.assertIn("demotion_allowed", output_result.stdout)
+        self.assertIn("demotion-allowed", output_result.stdout)
         self.assertNotEqual(path_result.returncode, 0)
+
+    def test_security_scan_redacts_matched_bearer_text(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_fixture(root, [self.blocker_row("known-row")])
+        secret_value = "Bearer ABCDEFGHIJK12345"
+        decisions_path = self.write_decisions(
+            root,
+            [
+                self.decision(
+                    "bearer-secret",
+                    "readiness",
+                    "block",
+                    [self.blocker_ref("known-row")],
+                    rationale=f"Do not leak {secret_value}",
+                )
+            ],
+        )
+
+        # Act
+        result = self.run_quick(root, decisions_path)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("bearer-token", result.stdout)
+        self.assertNotIn(secret_value, result.stdout)
+
+    def test_security_scan_contract_allowlist_skips_contract_snapshots(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_fixture(root, [self.blocker_row("known-row")])
+        quick_result = self.run_quick(root)
+        module = self.load_module()
+        snapshot = root / "build/ci-evidence/phase33/contract-snapshots/phase33_maintainer_decision_inputs_contract.json"
+
+        # Act
+        scan_result = self.run_temp_verifier(root, ["--security-only", "--output-dir", "build/ci-evidence/phase33"])
+
+        # Assert
+        self.assertEqual(quick_result.returncode, 0, quick_result.stdout)
+        self.assertIn("demotion_allowed", snapshot.read_text(encoding="utf-8"))
+        self.assertNotIn("contract-snapshots/phase33_maintainer_decision_inputs_contract.json", module.EMITTED_OUTPUT_SCAN_ARTIFACTS)
+        self.assertIn("downstream-handoff-manifest.json", module.EMITTED_OUTPUT_SCAN_ARTIFACTS)
+        self.assertEqual(scan_result.returncode, 0, scan_result.stdout)
 
     def test_wiring_requires_bazel_root_workflow_and_just_entries(self) -> None:
         # Arrange
