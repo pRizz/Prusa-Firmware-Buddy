@@ -430,6 +430,7 @@ def load_contract(root: Path = ROOT) -> dict[str, Any]:
 def load_phase32_handoff(root: Path, handoff_arg: str | Path) -> tuple[Path, dict[str, Any], dict[str, dict[str, Any]], dict[str, Any]]:
     handoff_path = path_under(handoff_arg, PHASE32_OUTPUT_ROOT, "--phase32-handoff")
     handoff = load_json(root, handoff_path)
+    scan_json_payload(handoff, handoff_path)
     if handoff.get("phase_lifecycle_id") != PHASE32_LIFECYCLE_ID:
         raise VerificationError(f"--phase32-handoff phase_lifecycle_id must be {PHASE32_LIFECYCLE_ID}")
     register_ref = require_string(handoff.get("canonical_register_ref"), "canonical_register_ref")
@@ -437,6 +438,7 @@ def load_phase32_handoff(root: Path, handoff_arg: str | Path) -> tuple[Path, dic
         raise VerificationError(f"canonical_register_ref must be {PHASE32_REGISTER_REF}")
     register_path = path_under(register_ref, PHASE32_OUTPUT_ROOT, "canonical_register_ref")
     register = load_json(root, register_path)
+    scan_json_payload(register, register_path)
     if register.get("phase_lifecycle_id") != PHASE32_LIFECYCLE_ID:
         raise VerificationError(f"Phase 32 canonical register phase_lifecycle_id must be {PHASE32_LIFECYCLE_ID}")
     row_map: dict[str, dict[str, Any]] = {}
@@ -707,8 +709,8 @@ def readiness_uncovered_blocker_refs(row_map: dict[str, dict[str, Any]], covered
 
 
 def readiness_handoff(decisions: list[dict[str, Any]], row_map: dict[str, dict[str, Any]], maintainer_input_supplied: bool) -> dict[str, Any]:
-    readiness_decisions = [decision for decision in decisions if decision["decision_type"] == "readiness"]
-    if not readiness_decisions:
+    maybe_latest = latest_decision(decisions, "readiness")
+    if maybe_latest is None:
         return {
             "phase": PHASE,
             "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
@@ -717,7 +719,7 @@ def readiness_handoff(decisions: list[dict[str, Any]], row_map: dict[str, dict[s
             "blocked_source_row_refs": [],
             "rationale": "No explicit Phase 33 readiness decision input was supplied.",
         }
-    latest = readiness_decisions[-1]
+    latest = maybe_latest
     if latest["decision_value"] == "approve":
         covered = (
             approved_exception_covered_refs(decisions)
@@ -750,8 +752,8 @@ def readiness_handoff(decisions: list[dict[str, Any]], row_map: dict[str, dict[s
 
 
 def demotion_handoff(decisions: list[dict[str, Any]]) -> dict[str, Any]:
-    demotion_decisions = [decision for decision in decisions if decision["decision_type"] == "reference_demotion"]
-    if not demotion_decisions:
+    maybe_latest = latest_decision(decisions, "reference_demotion")
+    if maybe_latest is None:
         return {
             "phase": PHASE,
             "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
@@ -760,7 +762,7 @@ def demotion_handoff(decisions: list[dict[str, Any]]) -> dict[str, Any]:
             "phase34_must_validate_readiness": True,
             "rationale": "Reference demotion requires a separate explicit Phase 33 decision input.",
         }
-    latest = demotion_decisions[-1]
+    latest = maybe_latest
     if latest["decision_value"] == "approve":
         return {
             "phase": PHASE,
@@ -785,6 +787,20 @@ def demotion_handoff(decisions: list[dict[str, Any]]) -> dict[str, Any]:
         "phase34_must_validate_readiness": True,
         "rationale": latest["rationale"],
     }
+
+
+def latest_decision(decisions: list[dict[str, Any]], decision_type: str) -> dict[str, Any] | None:
+    matching = [
+        decision
+        for decision in decisions
+        if decision["decision_type"] == decision_type
+    ]
+    if not matching:
+        return None
+    return max(
+        matching,
+        key=lambda decision: datetime.fromisoformat(str(decision["decision_timestamp"]).replace("Z", "+00:00")),
+    )
 
 
 def maintainer_input_template(row_map: dict[str, dict[str, Any]]) -> dict[str, Any]:

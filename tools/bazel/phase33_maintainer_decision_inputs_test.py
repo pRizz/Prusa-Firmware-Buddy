@@ -824,6 +824,57 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         self.assertNotIn("demotion_allowed", readiness_text)
         self.assertNotIn("final_readiness_status", manifest_text)
 
+    def test_readiness_and_demotion_handoffs_use_latest_timestamp(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_fixture(
+            root,
+            [
+                self.blocker_row("readiness-row", severity="warning"),
+                self.blocker_row(
+                    "demotion-row",
+                    decision_impact="demotion_decision_required",
+                    affected_gate="final-reference-demotion-allowed",
+                ),
+            ],
+        )
+        newer_readiness_block = self.decision(
+            "newer-readiness-block",
+            "readiness",
+            "block",
+            [self.blocker_ref("readiness-row")],
+            blocked_source_row_refs=[self.blocker_ref("readiness-row")],
+        )
+        newer_readiness_block["decision_timestamp"] = "2026-07-04T03:00:00Z"
+        older_readiness_approve = self.decision("older-readiness-approve", "readiness", "approve", [self.blocker_ref("readiness-row")])
+        older_readiness_approve["decision_timestamp"] = "2026-07-04T01:00:00Z"
+        newer_demotion_reject = self.decision("newer-demotion-reject", "reference_demotion", "reject", [self.blocker_ref("demotion-row")])
+        newer_demotion_reject["decision_timestamp"] = "2026-07-04T03:00:00Z"
+        older_demotion_approve = self.decision("older-demotion-approve", "reference_demotion", "approve", [self.blocker_ref("demotion-row")])
+        older_demotion_approve["decision_timestamp"] = "2026-07-04T01:00:00Z"
+        decisions_path = self.write_decisions(
+            root,
+            [
+                newer_readiness_block,
+                newer_demotion_reject,
+                older_readiness_approve,
+                older_demotion_approve,
+            ],
+        )
+
+        # Act
+        result = self.run_quick(root, decisions_path)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        readiness = self.read_json(root, "build/ci-evidence/phase33/readiness-decision-handoff.json")
+        demotion = self.read_json(root, "build/ci-evidence/phase33/demotion-decision-handoff.json")
+        self.assertEqual(readiness["handoff_state"], "blocked-by-maintainer-input")
+        self.assertEqual(readiness["decision_id"], "newer-readiness-block")
+        self.assertEqual(demotion["authorization_state"], "rejected")
+        self.assertEqual(demotion["decision_id"], "newer-demotion-reject")
+
     def test_green_evidence_does_not_create_any_approval(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -964,8 +1015,9 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("phase32-blocker-register.json", result.stdout)
+        self.assertIn(PHASE32_REGISTER_REF, result.stdout)
         self.assertIn("token_value", result.stdout)
+        self.assertFalse((root / "build/ci-evidence/phase33/contract-snapshots/phase32-blocker-register.json").exists())
 
     def test_quick_resets_stale_outputs_before_output_security_scan(self) -> None:
         # Arrange
