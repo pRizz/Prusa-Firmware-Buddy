@@ -1,0 +1,152 @@
+{
+  "schema_version": "1",
+  "id": "phase33_maintainer_decision_inputs_contract",
+  "phase": "33-maintainer-decision-inputs",
+  "phase_lifecycle_id": "33-2026-07-04T01-36-41",
+  "artifact_name": "phase33-maintainer-decision-inputs",
+  "output_root": "build/ci-evidence/phase33",
+  "requirement_ids": [
+    "DECIDE-01",
+    "DECIDE-02",
+    "DECIDE-03"
+  ],
+  "source_contracts": [
+    {
+      "id": "phase32_blocker_register_triage_contract",
+      "path": "tools/bazel/manifests/phase32_blocker_register_triage_contract.json",
+      "purpose": "authoritative Phase 32 blocker rows, source refs, decision impacts, and handoff lifecycle"
+    },
+    {
+      "id": "phase27_retained_code_acceptance_decisions_contract",
+      "path": "tools/bazel/manifests/phase27_retained_code_acceptance_decisions_contract.json",
+      "purpose": "retained-code, residual-risk, and exception decision vocabulary reused without demotion authorization"
+    },
+    {
+      "id": "phase28_final_readiness_packet_contract",
+      "path": "tools/bazel/manifests/phase28_final_readiness_packet_contract.json",
+      "purpose": "final-readiness and reference-demotion fail-closed vocabulary reused as Phase 34 handoff input"
+    }
+  ],
+  "source_inputs": {
+    "phase32_handoff": "build/ci-evidence/phase32/downstream-handoff-manifest.json",
+    "phase32_canonical_register": "build/ci-evidence/phase32/blocker-register.json",
+    "phase32_lifecycle_id": "32-2026-07-03T14-13-51",
+    "raw_evidence_consumed": false
+  },
+  "decision_record_schema": {
+    "required_fields": [
+      "decision_id",
+      "decision_type",
+      "decision_value",
+      "source_row_refs",
+      "maintainer_identity_ref",
+      "maintainer_role",
+      "owner_signoff_ref",
+      "decision_timestamp",
+      "rationale",
+      "evidence_refs",
+      "artifact_refs"
+    ]
+  },
+  "enums": {
+    "decision_type": [
+      "retained_code",
+      "residual_risk",
+      "exception",
+      "readiness",
+      "reference_demotion"
+    ],
+    "decision_value": {
+      "retained_code": [
+        "accept",
+        "reject",
+        "exception_approve"
+      ],
+      "residual_risk": [
+        "accept",
+        "reject"
+      ],
+      "exception": [
+        "approve",
+        "reject"
+      ],
+      "readiness": [
+        "approve",
+        "block"
+      ],
+      "reference_demotion": [
+        "approve",
+        "reject"
+      ]
+    }
+  },
+  "hard_blocker_problem_kinds": [
+    "redaction_failed",
+    "source_ref_failed",
+    "secret_tainted",
+    "lifecycle_mismatch",
+    "unsafe_ref"
+  ],
+  "exception_policy": {
+    "exact_source_row_ref_match": true,
+    "affected_gate_must_match": true,
+    "required_fields": [
+      "scope",
+      "expiry_or_review_trigger",
+      "affected_requirements",
+      "affected_gates",
+      "rationale",
+      "owner_signoff_ref",
+      "linked_blocker_refs"
+    ]
+  },
+  "generated_artifacts": [
+    "maintainer-decision-input-template.json",
+    "normalized-decision-records.json",
+    "retained-code-decision-register.json",
+    "residual-risk-decision-register.json",
+    "exception-decision-register.json",
+    "readiness-decision-handoff.json",
+    "demotion-decision-handoff.json",
+    "decision-validation-report.json",
+    "downstream-handoff-manifest.json",
+    "redacted-maintainer-decision-report.md",
+    "contract-snapshots/phase33_maintainer_decision_inputs_contract.json",
+    "contract-snapshots/phase32_blocker_register_triage_contract.json",
+    "contract-snapshots/phase27_retained_code_acceptance_decisions_contract.json",
+    "contract-snapshots/phase28_final_readiness_packet_contract.json",
+    "contract-snapshots/phase32-downstream-handoff-manifest.json",
+    "contract-snapshots/phase32-blocker-register.json"
+  ],
+  "prohibited_approval_semantics": [
+    "Phase 33 does not reclassify Phase 32 rows.",
+    "Phase 33 does not collect new evidence.",
+    "Phase 33 does not generate the final readiness packet.",
+    "Phase 33 does not run a demotion dry run.",
+    "Phase 33 does not publish a cutover verdict.",
+    "Phase 33 does not infer retained-code acceptance.",
+    "Phase 33 does not infer residual-risk acceptance.",
+    "Phase 33 does not infer exception approval.",
+    "Phase 33 does not infer readiness approval.",
+    "Phase 33 does not infer reference-demotion approval.",
+    "Phase 33 does not emit demotion_allowed."
+  ],
+  "prohibited_output_markers": [
+    "demotion_allowed",
+    "reference demotion approved",
+    "final readiness approved",
+    "final_readiness_status: \"unblocked\"",
+    "cutover verdict approved",
+    "accepted by evidence alone"
+  ],
+  "verification_commands": [
+    "python3 -m py_compile tools/bazel/phase33_maintainer_decision_inputs.py tools/bazel/phase33_maintainer_decision_inputs_test.py",
+    "python3 tools/bazel/phase33_maintainer_decision_inputs_test.py -q",
+    "python3 tools/bazel/phase33_maintainer_decision_inputs.py --contract-only",
+    "python3 tools/bazel/phase33_maintainer_decision_inputs.py --security-only",
+    "python3 tools/bazel/phase33_maintainer_decision_inputs.py --wiring-only",
+    "python3 tools/bazel/phase33_maintainer_decision_inputs.py --quick --phase32-handoff build/ci-evidence/phase32/downstream-handoff-manifest.json --output-dir build/ci-evidence/phase33",
+    "just phase33-verify"
+  ],
+  "test_command": "python3 tools/bazel/phase33_maintainer_decision_inputs_test.py"
+}
