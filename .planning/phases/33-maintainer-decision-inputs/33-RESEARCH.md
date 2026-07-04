@@ -327,17 +327,15 @@ Source: Phase 27/28/32 security scan helpers. [VERIFIED: tools/bazel/phase27_ret
 
 All claims in this research were verified against local project files or command output; no user-confirmation-only assumptions are required before planning. [VERIFIED: sources listed below]
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Exact Phase 33 enum spellings**
    - What we know: The user allowed the agent to choose exact enum spellings where not already locked by Phase 27/28/32 contracts. [VERIFIED: .planning/phases/33-maintainer-decision-inputs/33-CONTEXT.md]
-   - What's unclear: The final names for Phase 33 decision values and invalid states are not yet checked in. [VERIFIED: no phase33 contract exists]
-   - Recommendation: Define enums in `phase33_maintainer_decision_inputs_contract.json` and tests before implementation logic. [VERIFIED: adjacent contract-first pattern in Phase 27/28/32 tests]
+   - Resolution: Exact enum spelling will be defined in the Phase 33 contract and RED tests before implementation logic. The contract is the checked-in authority for `decision_type`, `decision_value`, invalid states, and generated artifact names. [VERIFIED: adjacent contract-first pattern in Phase 27/28/32 tests]
 
 2. **One script or split helpers**
    - What we know: The user allows either one script with subcommands or a verifier plus helper functions. [VERIFIED: .planning/phases/33-maintainer-decision-inputs/33-CONTEXT.md]
-   - What's unclear: The file could exceed the Bright Builds advisory 628-line trigger if all validation, output, security, and wiring code lives in one file. [VERIFIED: standards/core/code-shape.md; tools/bazel/phase32_blocker_register_triage.py line count]
-   - Recommendation: Start with one script for consistency, but extract pure validation clusters into named helpers early; split only if the implementation becomes harder to review. [VERIFIED: tools/bazel/BUILD.bazel pattern; standards/core/code-shape.md]
+   - Resolution: Implementation starts as one verifier script with named pure helpers for contract validation, source-ref parsing, decision normalization, security scanning, artifact writing, and wiring checks. Split into helper modules only if reviewability requires it after those named helpers exist. [VERIFIED: tools/bazel/BUILD.bazel pattern; standards/core/code-shape.md]
 
 ## Environment Availability
 
