@@ -233,15 +233,15 @@ def require_list(value: Any, field: str) -> list[Any]:
 
 
 def require_string(value: Any, field: str) -> str:
-    if not isinstance(value, str) or not value:
-        raise VerificationError(f"{field} must be a non-empty string")
+    if not isinstance(value, str) or not value.strip():
+        raise VerificationError(f"{field} must be a non-blank string")
     return value
 
 
 def require_string_list(value: Any, field: str) -> list[str]:
     values = require_list(value, field)
-    if not all(isinstance(item, str) and item for item in values):
-        raise VerificationError(f"{field} must contain non-empty strings")
+    if not all(isinstance(item, str) and item.strip() for item in values):
+        raise VerificationError(f"{field} must contain non-blank strings")
     return values
 
 
@@ -503,7 +503,24 @@ def load_maintainer_decisions(root: Path, maybe_decisions_path: str | None, row_
             errors.append(str(error))
     if errors:
         raise VerificationError("\n".join(errors))
+    reject_duplicate_axis_refs(parsed)
     return parsed, True
+
+
+def reject_duplicate_axis_refs(decisions: list[dict[str, Any]]) -> None:
+    seen: dict[tuple[str, str], str] = {}
+    for decision in decisions:
+        decision_type = str(decision["decision_type"])
+        if decision_type not in {"retained_code", "residual_risk", "exception"}:
+            continue
+        for source_ref in decision["source_row_refs"]:
+            key = (decision_type, source_ref)
+            maybe_previous = seen.get(key)
+            if maybe_previous is not None:
+                raise VerificationError(
+                    f"{decision['decision_id']} duplicates {source_ref} for {decision_type}; already decided by {maybe_previous}"
+                )
+            seen[key] = str(decision["decision_id"])
 
 
 def validate_decision(raw_decision: dict[str, Any], row_map: dict[str, dict[str, Any]]) -> dict[str, Any]:

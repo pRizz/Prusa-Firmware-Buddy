@@ -340,6 +340,70 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         self.assertEqual(residual_register["rows"][0]["affected_gates"], ["final-residual-risk-review"])
         self.assertEqual(residual_register["rows"][0]["follow_up_refs"], ["external://ticket/risk-review"])
 
+    def test_maintainer_metadata_must_be_non_blank(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_fixture(root, [self.blocker_row("known-row")])
+        decision = self.decision("blank-metadata", "readiness", "block", [self.blocker_ref("known-row")])
+        decision["maintainer_identity_ref"] = "   "
+        decision["owner_signoff_ref"] = "\t"
+        decision["rationale"] = "\n"
+        decisions_path = self.write_decisions(root, [decision])
+
+        # Act
+        result = self.run_quick(root, decisions_path)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("must be a non-blank string", result.stdout)
+
+    def test_contradictory_source_row_decisions_fail_closed(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_fixture(
+            root,
+            [
+                self.blocker_row(
+                    "risk-row",
+                    severity="critical",
+                    decision_impact="residual_risk_decision_required",
+                    affected_gate="final-residual-risk-review",
+                ),
+                self.blocker_row("readiness-row", severity="warning"),
+            ],
+        )
+        decisions_path = self.write_decisions(
+            root,
+            [
+                self.decision(
+                    "accept-risk",
+                    "residual_risk",
+                    "accept",
+                    [self.blocker_ref("risk-row")],
+                    affected_gates=["final-residual-risk-review"],
+                    follow_up_refs=["external://ticket/risk-review"],
+                ),
+                self.decision(
+                    "reject-risk",
+                    "residual_risk",
+                    "reject",
+                    [self.blocker_ref("risk-row")],
+                    affected_gates=[],
+                    follow_up_refs=[],
+                ),
+                self.decision("approve-readiness", "readiness", "approve", [self.blocker_ref("readiness-row")]),
+            ],
+        )
+
+        # Act
+        result = self.run_quick(root, decisions_path)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("duplicates", result.stdout)
+
     def test_decision_type_must_match_phase32_decision_impact(self) -> None:
         cases = [
             ("retained_code", "reject", "residual_risk_decision_required", {}),
@@ -669,7 +733,7 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("decision_id must be a non-empty string", result.stdout)
+        self.assertIn("decision_id must be a non-blank string", result.stdout)
         self.assertNotIn("Traceback", result.stdout)
 
     def test_readiness_block_handoff_preserves_blocker_refs(self) -> None:
