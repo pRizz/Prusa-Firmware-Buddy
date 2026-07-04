@@ -82,8 +82,6 @@ SECURITY_SCAN_CONTRACT_ALLOWLIST = {
     "contract-snapshots/phase32_blocker_register_triage_contract.json",
     "contract-snapshots/phase27_retained_code_acceptance_decisions_contract.json",
     "contract-snapshots/phase28_final_readiness_packet_contract.json",
-    "contract-snapshots/phase32-downstream-handoff-manifest.json",
-    "contract-snapshots/phase32-blocker-register.json",
 }
 GENERATED_ARTIFACTS = [
     "maintainer-decision-input-template.json",
@@ -910,7 +908,7 @@ def run_quick(root: Path, phase32_handoff: str | Path, output_dir: str | Path, m
     print(f"Phase 33 maintainer decision inputs quick validation passed; decision_count={len(decisions)}")
 
 
-def run_security_scan(root: Path, maybe_decisions_path: str | None = None, output_dir: str | Path = DEFAULT_OUTPUT_DIR) -> None:
+def run_security_scan(root: Path, maybe_decisions_path: str | None = None, output_dir: str | Path = DEFAULT_OUTPUT_DIR, *, scan_existing_outputs: bool = True) -> None:
     errors: list[str] = []
     if maybe_decisions_path is not None:
         try:
@@ -919,6 +917,11 @@ def run_security_scan(root: Path, maybe_decisions_path: str | None = None, outpu
             scan_json_payload(data, decisions_path)
         except VerificationError as error:
             errors.append(str(error))
+    if not scan_existing_outputs:
+        if errors:
+            raise VerificationError("\n".join(errors))
+        print("Phase 33 input security scan passed")
+        return
     relative_output_dir = path_under(output_dir, DEFAULT_OUTPUT_DIR, "--output-dir")
     full_output_dir = root / relative_output_dir
     if full_output_dir.exists():
@@ -1069,7 +1072,7 @@ def main(argv: list[str] | None = None) -> int:
             check_wiring(ROOT)
             return 0
         if args.quick:
-            run_security_scan(ROOT, args.maintainer_decisions, args.output_dir)
+            run_security_scan(ROOT, args.maintainer_decisions, args.output_dir, scan_existing_outputs=False)
             run_quick(ROOT, args.phase32_handoff, args.output_dir, args.maintainer_decisions)
             return 0
         raise VerificationError("no mode selected")

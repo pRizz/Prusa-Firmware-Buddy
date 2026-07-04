@@ -878,6 +878,38 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         self.assertIn("downstream-handoff-manifest.json", module.EMITTED_OUTPUT_SCAN_ARTIFACTS)
         self.assertEqual(scan_result.returncode, 0, scan_result.stdout)
 
+    def test_security_scan_checks_copied_phase32_data_snapshots(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_fixture(root, [self.blocker_row("known-row")])
+        register = self.read_json(root, PHASE32_REGISTER_REF)
+        register["token_value"] = "redacted-test-token"
+        self.write_json(root, PHASE32_REGISTER_REF, register)
+
+        # Act
+        result = self.run_quick(root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("phase32-blocker-register.json", result.stdout)
+        self.assertIn("token_value", result.stdout)
+
+    def test_quick_resets_stale_outputs_before_output_security_scan(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_fixture(root, [self.blocker_row("known-row")])
+        self.write_text(root, "build/ci-evidence/phase33/downstream-handoff-manifest.json", '{"demotion_allowed": true}\n')
+
+        # Act
+        result = self.run_quick(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        manifest = self.read_json(root, "build/ci-evidence/phase33/downstream-handoff-manifest.json")
+        self.assertNotIn("demotion_allowed", manifest)
+
     def test_wiring_requires_bazel_root_workflow_and_just_entries(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
