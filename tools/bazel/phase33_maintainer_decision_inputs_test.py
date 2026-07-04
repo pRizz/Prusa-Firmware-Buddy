@@ -409,6 +409,71 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("hard blocker", result.stdout.casefold())
 
+    def test_hard_blocker_problem_kinds_reject_readiness_and_demotion_approval(self) -> None:
+        cases = [
+            ("readiness", "redaction_failed", "final_readiness_blocked", "final-simulator-evidence"),
+            ("readiness", "secret_tainted", "final_readiness_blocked", "final-simulator-evidence"),
+            ("reference_demotion", "lifecycle_mismatch", "demotion_decision_required", "final-reference-demotion-allowed"),
+            ("reference_demotion", "unsafe_ref", "demotion_decision_required", "final-reference-demotion-allowed"),
+        ]
+
+        for decision_type, row_problem_kind, decision_impact, affected_gate in cases:
+            with self.subTest(decision_type=decision_type, row_problem_kind=row_problem_kind):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                self.addCleanup(temp_dir.cleanup)
+                row_id = f"{decision_type}-{row_problem_kind}"
+                self.write_phase32_fixture(
+                    root,
+                    [
+                        self.blocker_row(
+                            row_id,
+                            row_problem_kind=row_problem_kind,
+                            severity="warning",
+                            decision_impact=decision_impact,
+                            affected_gate=affected_gate,
+                        )
+                    ],
+                )
+                decisions_path = self.write_decisions(
+                    root,
+                    [self.decision(f"approve-{row_id}", decision_type, "approve", [self.blocker_ref(row_id)])],
+                )
+
+                # Act
+                result = self.run_quick(root, decisions_path)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("hard blocker", result.stdout.casefold())
+
+    def test_readiness_approval_rejects_remaining_noncritical_hard_blocker(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        normal_readiness = self.blocker_row(
+            "normal-readiness-row",
+            row_problem_kind="failed",
+            severity="warning",
+            decision_impact="final_readiness_blocked",
+        )
+        warning_hard_blocker = self.blocker_row(
+            "warning-hard-blocker",
+            row_problem_kind="redaction_failed",
+            severity="warning",
+            decision_impact="final_readiness_blocked",
+        )
+        self.write_phase32_fixture(root, [normal_readiness, warning_hard_blocker])
+        decisions_path = self.write_decisions(root, [self.decision("approve-readiness", "readiness", "approve", [self.blocker_ref("normal-readiness-row")])])
+
+        # Act
+        result = self.run_quick(root, decisions_path)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("hard blocker", result.stdout.casefold())
+        self.assertIn(self.blocker_ref("warning-hard-blocker"), result.stdout)
+
     def test_exception_approval_requires_exact_row_ref_and_gate_match(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()

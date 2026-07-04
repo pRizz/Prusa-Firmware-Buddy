@@ -62,6 +62,13 @@ DECISION_TYPE_IMPACTS = {
     "readiness": {"final_readiness_blocked"},
     "reference_demotion": {"demotion_decision_required"},
 }
+APPROVAL_DECISION_VALUES = {
+    "retained_code": {"accept", "exception_approve"},
+    "residual_risk": {"accept"},
+    "exception": {"approve"},
+    "readiness": {"approve"},
+    "reference_demotion": {"approve"},
+}
 HARD_BLOCKER_PROBLEM_KINDS = {
     "redaction_failed",
     "source_ref_failed",
@@ -525,16 +532,15 @@ def validate_axis_specific_decision(decision: dict[str, Any], row_map: dict[str,
     decision_value = str(decision["decision_value"])
     source_rows = list(decision["source_rows"])
     validate_decision_axis_rows(decision_id, decision_type, source_rows)
+    if decision_value in APPROVAL_DECISION_VALUES[decision_type]:
+        reject_hard_blocker_acceptance(decision_id, source_rows)
     if decision_type == "retained_code":
         if decision_value in {"accept", "exception_approve"}:
             require_string(decision.get("residual_risk_rationale"), f"{decision_id}.residual_risk_rationale")
-            reject_hard_blocker_acceptance(decision_id, source_rows)
         return
     if decision_type == "residual_risk":
         require_string_list(decision.get("affected_gates"), f"{decision_id}.affected_gates")
         require_string_list(decision.get("follow_up_refs"), f"{decision_id}.follow_up_refs")
-        if decision_value == "accept":
-            reject_hard_blocker_acceptance(decision_id, source_rows)
         return
     if decision_type == "exception":
         if decision_value == "approve":
@@ -646,13 +652,13 @@ def accepted_residual_risk_covered_refs(decisions: list[dict[str, Any]]) -> set[
     return refs
 
 
-def critical_uncovered_refs(row_map: dict[str, dict[str, Any]], covered_refs: set[str]) -> list[str]:
+def readiness_uncovered_blocker_refs(row_map: dict[str, dict[str, Any]], covered_refs: set[str]) -> list[str]:
     uncovered = []
     for row_id, row in row_map.items():
         row_ref = f"{PHASE32_REGISTER_REF}#{row_id}"
         if row_ref in covered_refs:
             continue
-        if row.get("severity") == "critical":
+        if row.get("severity") == "critical" or row.get("row_problem_kind") in HARD_BLOCKER_PROBLEM_KINDS:
             uncovered.append(row_ref)
     return sorted(uncovered)
 
@@ -671,9 +677,9 @@ def readiness_handoff(decisions: list[dict[str, Any]], row_map: dict[str, dict[s
     latest = readiness_decisions[-1]
     if latest["decision_value"] == "approve":
         covered = approved_exception_covered_refs(decisions) | accepted_residual_risk_covered_refs(decisions)
-        uncovered = critical_uncovered_refs(row_map, covered)
+        uncovered = readiness_uncovered_blocker_refs(row_map, covered)
         if uncovered:
-            raise VerificationError("readiness approval has uncovered critical blocker rows: " + ", ".join(uncovered))
+            raise VerificationError("readiness approval has uncovered critical blocker or hard blocker rows: " + ", ".join(uncovered))
         return {
             "phase": PHASE,
             "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
