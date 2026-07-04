@@ -55,6 +55,13 @@ DECISION_VALUE_ENUMS = {
     "reference_demotion": ["approve", "reject"],
 }
 DECISION_TYPES = list(DECISION_VALUE_ENUMS)
+DECISION_TYPE_IMPACTS = {
+    "retained_code": {"retained_code_decision_required"},
+    "residual_risk": {"residual_risk_decision_required"},
+    "exception": {"exception_decision_required"},
+    "readiness": {"final_readiness_blocked"},
+    "reference_demotion": {"demotion_decision_required"},
+}
 HARD_BLOCKER_PROBLEM_KINDS = {
     "redaction_failed",
     "source_ref_failed",
@@ -508,6 +515,7 @@ def validate_axis_specific_decision(decision: dict[str, Any], row_map: dict[str,
     decision_type = str(decision["decision_type"])
     decision_value = str(decision["decision_value"])
     source_rows = list(decision["source_rows"])
+    validate_decision_axis_rows(decision_id, decision_type, source_rows)
     if decision_type == "retained_code":
         if decision_value in {"accept", "exception_approve"}:
             require_string(decision.get("residual_risk_rationale"), f"{decision_id}.residual_risk_rationale")
@@ -532,6 +540,17 @@ def validate_axis_specific_decision(decision: dict[str, Any], row_map: dict[str,
     if decision_type == "reference_demotion":
         return
     raise VerificationError(f"{decision_id} unknown decision_type: {decision_type}")
+
+
+def validate_decision_axis_rows(decision_id: str, decision_type: str, source_rows: list[dict[str, Any]]) -> None:
+    allowed_impacts = DECISION_TYPE_IMPACTS[decision_type]
+    for row in source_rows:
+        decision_impact = row.get("decision_impact")
+        if decision_impact not in allowed_impacts:
+            raise VerificationError(
+                f"{decision_id} {decision_type} decision cannot reference "
+                f"{row.get('row_id')} with decision_impact={decision_impact}"
+            )
 
 
 def reject_hard_blocker_acceptance(decision_id: str, source_rows: list[dict[str, Any]]) -> None:

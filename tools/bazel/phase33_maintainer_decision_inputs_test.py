@@ -308,6 +308,42 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         self.assertEqual(retained_register["rows"][0]["decision_value"], "accept")
         self.assertEqual(residual_register["rows"][0]["decision_value"], "accept")
 
+    def test_decision_type_must_match_phase32_decision_impact(self) -> None:
+        cases = [
+            ("retained_code", "reject", "residual_risk_decision_required", {}),
+            ("residual_risk", "reject", "retained_code_decision_required", {"affected_gates": [], "follow_up_refs": []}),
+            ("exception", "reject", "final_readiness_blocked", {}),
+            ("readiness", "block", "residual_risk_decision_required", {}),
+            ("reference_demotion", "reject", "final_readiness_blocked", {}),
+        ]
+
+        for decision_type, decision_value, decision_impact, extra in cases:
+            with self.subTest(decision_type=decision_type):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                self.addCleanup(temp_dir.cleanup)
+                row_id = f"{decision_type}-row"
+                self.write_phase32_fixture(root, [self.blocker_row(row_id, decision_impact=decision_impact)])
+                decisions_path = self.write_decisions(
+                    root,
+                    [
+                        self.decision(
+                            f"wrong-axis-{decision_type}",
+                            decision_type,
+                            decision_value,
+                            [self.blocker_ref(row_id)],
+                            **extra,
+                        )
+                    ],
+                )
+
+                # Act
+                result = self.run_quick(root, decisions_path)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("decision_impact", result.stdout)
+
     def test_hard_blocker_problem_kinds_reject_normal_acceptance(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
