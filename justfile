@@ -108,6 +108,10 @@ phase32-verify:
     bazel run //tools/bazel:phase32_verify_tests
     bazel run //tools/bazel:phase32_verify
 
+phase33-verify:
+    bazel run //tools/bazel:phase33_verify_tests
+    bazel run //tools/bazel:phase33_verify
+
 phase17-release-artifacts-smoke:
     bazel build //tools/bazel:phase17_representative_release_smoke
 

@@ -261,6 +261,16 @@ filegroup(
 )
 
 filegroup(
+    name = "phase33_maintainer_decision_inputs_docs",
+    srcs = [
+        ".planning/phases/33-maintainer-decision-inputs/33-CONTEXT.md",
+        ".planning/phases/33-maintainer-decision-inputs/33-RESEARCH.md",
+        ".planning/phases/33-maintainer-decision-inputs/33-VALIDATION.md",
+        ".planning/phases/33-maintainer-decision-inputs/33-01-PLAN.md",
+    ],
+)
+
+filegroup(
     name = "phase22_metadata_reconciliation_docs",
     srcs = [
         ".planning/REQUIREMENTS.md",
@@ -577,6 +587,16 @@ alias(
 alias(
     name = "phase32_verify_tests",
     actual = "//tools/bazel:phase32_verify_tests",
+)
+
+alias(
+    name = "phase33_verify",
+    actual = "//tools/bazel:phase33_verify",
+)
+
+alias(
+    name = "phase33_verify_tests",
+    actual = "//tools/bazel:phase33_verify_tests",
 )
 
 alias(

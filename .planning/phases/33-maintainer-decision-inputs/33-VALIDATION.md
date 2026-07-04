@@ -1,9 +1,9 @@
 ---
 phase: 33
 slug: maintainer-decision-inputs
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: verified
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-07-04
 ---
 
@@ -32,19 +32,19 @@ created: 2026-07-04
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 33-01-01 | 01 | 1 | DECIDE-01 | T-33-01 | Retained-code accept/reject/exception decisions require explicit maintainer metadata, residual-risk rationale, owner signoff, valid source row refs, and hard-blocker rejection. | unit + integration | `python3 tools/bazel/phase33_maintainer_decision_inputs_test.py -q` | no - Wave 0 | pending |
-| 33-01-02 | 01 | 1 | DECIDE-02 | T-33-02 | Readiness approve/block handoff consumes Phase 32 rows and approved exception/residual-risk decisions; approval fails with unresolved uncovered blockers. | unit + integration | `python3 tools/bazel/phase33_maintainer_decision_inputs_test.py -q` | no - Wave 0 | pending |
-| 33-01-03 | 01 | 1 | DECIDE-03 | T-33-03 | Demotion approve/reject handoff is separate and cannot be inferred from evidence, readiness, exceptions, or retained-code decisions. | unit + integration | `python3 tools/bazel/phase33_maintainer_decision_inputs_test.py -q` | no - Wave 0 | pending |
-| 33-01-04 | 01 | 1 | DECIDE-01, DECIDE-02, DECIDE-03 | T-33-04 | Generated outputs contain no secret-bearing fields, approval-overclaim markers, path traversal refs, or `demotion_allowed` fields. | security + wiring | `python3 tools/bazel/phase33_maintainer_decision_inputs.py --security-only` and `python3 tools/bazel/phase33_maintainer_decision_inputs.py --wiring-only` | no - Wave 0 | pending |
+| 33-01-01 | 01 | 1 | DECIDE-01 | T-33-01 | Retained-code accept/reject/exception decisions require explicit maintainer metadata, residual-risk rationale, owner signoff, valid source row refs, and hard-blocker rejection. | unit + integration | `python3 tools/bazel/phase33_maintainer_decision_inputs_test.py -q` | yes | green |
+| 33-01-02 | 01 | 1 | DECIDE-02 | T-33-02 | Readiness approve/block handoff consumes Phase 32 rows and approved exception/residual-risk decisions; approval fails with unresolved uncovered blockers. | unit + integration | `python3 tools/bazel/phase33_maintainer_decision_inputs_test.py -q` | yes | green |
+| 33-01-03 | 01 | 1 | DECIDE-03 | T-33-03 | Demotion approve/reject handoff is separate and cannot be inferred from evidence, readiness, exceptions, or retained-code decisions. | unit + integration | `python3 tools/bazel/phase33_maintainer_decision_inputs_test.py -q` | yes | green |
+| 33-01-04 | 01 | 1 | DECIDE-01, DECIDE-02, DECIDE-03 | T-33-04 | Generated outputs contain no secret-bearing fields, approval-overclaim markers, path traversal refs, or `demotion_allowed` fields. | security + wiring | `python3 tools/bazel/phase33_maintainer_decision_inputs.py --security-only` and `python3 tools/bazel/phase33_maintainer_decision_inputs.py --wiring-only` | yes | green |
 
 *Status: pending / green / red / flaky*
 
 ## Wave 0 Requirements
 
-- [ ] `tools/bazel/manifests/phase33_maintainer_decision_inputs_contract.json` - contract covering DECIDE-01, DECIDE-02, DECIDE-03, generated artifacts, source contracts, decision enums, and verification commands.
-- [ ] `tools/bazel/phase33_maintainer_decision_inputs.py` - verifier implementation with contract, quick, security, and wiring modes.
-- [ ] `tools/bazel/phase33_maintainer_decision_inputs_test.py` - focused unit and integration tests for all Phase 33 decision axes.
-- [ ] `tools/bazel/BUILD.bazel`, root `BUILD.bazel`, `tools/bazel/rust_workflow.sh`, and `justfile` - `phase33_verify`, `phase33_verify_tests`, and `phase33-verify` wiring.
+- [x] `tools/bazel/manifests/phase33_maintainer_decision_inputs_contract.json` - contract covering DECIDE-01, DECIDE-02, DECIDE-03, generated artifacts, source contracts, decision enums, and verification commands.
+- [x] `tools/bazel/phase33_maintainer_decision_inputs.py` - verifier implementation with contract, quick, security, and wiring modes.
+- [x] `tools/bazel/phase33_maintainer_decision_inputs_test.py` - focused unit and integration tests for all Phase 33 decision axes.
+- [x] `tools/bazel/BUILD.bazel`, root `BUILD.bazel`, `tools/bazel/rust_workflow.sh`, and `justfile` - `phase33_verify`, `phase33_verify_tests`, and `phase33-verify` wiring.
 
 ## Manual-Only Verifications
 
@@ -54,11 +54,11 @@ created: 2026-07-04
 
 ## Validation Sign-Off
 
-- [ ] All tasks have automated verify or Wave 0 dependencies.
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify.
-- [ ] Wave 0 covers all missing references.
-- [ ] No watch-mode flags.
-- [ ] Feedback latency target documented.
-- [ ] `nyquist_compliant: true` set in frontmatter after implementation evidence passes.
+- [x] All tasks have automated verify or Wave 0 dependencies.
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify.
+- [x] Wave 0 covers all missing references.
+- [x] No watch-mode flags.
+- [x] Feedback latency target documented.
+- [x] `nyquist_compliant: true` set in frontmatter after implementation evidence passes.
 
-**Approval:** pending
+**Approval:** verified
