@@ -190,7 +190,10 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
             "decisions": decisions,
         }
         payload.update(extra)
-        return self.write_json(root, "build/ci-evidence/phase33/maintainer-decisions.json", payload)
+        decision_id = "empty"
+        if decisions:
+            decision_id = str(decisions[0].get("decision_id", "decision"))
+        return self.write_json(root, f"build/ci-evidence/phase33/{decision_id}.json", payload)
 
     def run_quick(self, root: Path, decisions_path: str | None = None) -> subprocess.CompletedProcess[str]:
         args = [
