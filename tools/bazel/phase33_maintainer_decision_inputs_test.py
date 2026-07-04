@@ -249,6 +249,35 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         self.assertEqual(readiness["handoff_state"], "blocked-pending-maintainer-input")
         self.assertEqual(demotion["authorization_state"], "blocked")
 
+    def test_phase32_handoff_must_reference_canonical_register(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        row = self.blocker_row("known-row")
+        alternate_register_ref = "build/ci-evidence/phase32/alternate-register.json"
+        self.write_phase32_fixture(root, [row])
+        self.write_json(
+            root,
+            alternate_register_ref,
+            {
+                "artifact_name": "phase32-blocker-register-triage",
+                "phase": "32-blocker-register-and-evidence-triage",
+                "phase_lifecycle_id": "32-2026-07-03T14-13-51",
+                "rows": [row],
+            },
+        )
+        handoff = self.read_json(root, "build/ci-evidence/phase32/downstream-handoff-manifest.json")
+        handoff["canonical_register_ref"] = alternate_register_ref
+        self.write_json(root, "build/ci-evidence/phase32/downstream-handoff-manifest.json", handoff)
+
+        # Act
+        result = self.run_quick(root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(f"canonical_register_ref must be {PHASE32_REGISTER_REF}", result.stdout)
+        self.assertFalse((root / "build/ci-evidence/phase33").exists())
+
     def test_quick_rejects_maintainer_input_inside_output_root_without_deleting_it(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()

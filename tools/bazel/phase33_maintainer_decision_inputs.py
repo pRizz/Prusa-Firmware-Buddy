@@ -409,6 +409,8 @@ def load_phase32_handoff(root: Path, handoff_arg: str | Path) -> tuple[Path, dic
     if handoff.get("phase_lifecycle_id") != PHASE32_LIFECYCLE_ID:
         raise VerificationError(f"--phase32-handoff phase_lifecycle_id must be {PHASE32_LIFECYCLE_ID}")
     register_ref = require_string(handoff.get("canonical_register_ref"), "canonical_register_ref")
+    if register_ref != PHASE32_REGISTER_REF:
+        raise VerificationError(f"canonical_register_ref must be {PHASE32_REGISTER_REF}")
     register_path = path_under(register_ref, PHASE32_OUTPUT_ROOT, "canonical_register_ref")
     register = load_json(root, register_path)
     if register.get("phase_lifecycle_id") != PHASE32_LIFECYCLE_ID:
