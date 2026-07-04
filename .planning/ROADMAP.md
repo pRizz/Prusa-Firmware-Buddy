@@ -113,7 +113,9 @@ Full phase details are archived in `.planning/milestones/v1.2-ROADMAP.md`.
   2. Maintainer can approve or block final readiness through machine-readable inputs that consume triaged evidence rows and approved exceptions.
   3. Maintainer can approve or reject reference demotion as a separate explicit decision input.
   4. Green evidence alone does not create retained-code, readiness, exception, residual-risk, or demotion approval.
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 33-01-PLAN.md - Phase 33 decision-input contract, verifier, generated handoff bundle, and workflow wiring.
 
 ### Phase 34: Final Readiness and Demotion Dry Run
 **Goal**: Maintainers can generate a final readiness packet from real consumed evidence and decisions, then prove reference demotion remains blocked unless readiness is unblocked and explicit demotion approval is valid.
