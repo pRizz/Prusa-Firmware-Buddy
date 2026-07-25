@@ -998,6 +998,19 @@ def load_phase33_register(root: Path, register_refs: dict[str, Any], name: str) 
     return payload
 
 
+def phase33_register_digests(root: Path, register_refs: dict[str, Any]) -> dict[str, str]:
+    return {
+        name: hashlib.sha256(
+            json.dumps(
+                load_phase33_register(root, register_refs, name),
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode()
+        ).hexdigest()
+        for name in sorted(register_refs)
+    }
+
+
 def load_phase33(
     root: Path,
     handoff_arg: str | Path,
@@ -1217,6 +1230,7 @@ def write_bundle(
     readiness: str,
     readiness_reasons: list[str],
     demotion: dict[str, Any],
+    register_digests: dict[str, str],
 ) -> None:
     reset_output_root(full_output)
     snapshot_refs = copy_snapshots(
@@ -1263,6 +1277,7 @@ def write_bundle(
         "snapshot_refs": snapshot_refs,
         "source_refs": [manifest_path.as_posix(), handoff_path.as_posix()],
         "accepted_receipt_snapshot_ref": (relative_output / "contract-snapshots/phase31-accepted-receipts.json").as_posix(),
+        "phase33_register_digests": register_digests,
         "raw_evidence_consumed": False,
     }
     write_json(full_output / "final-readiness-run-manifest.json", run_manifest)
@@ -1327,6 +1342,7 @@ def run_quick(root: Path, phase31_output: str, phase33_handoff: str, output_arg:
     if not all(isinstance(row, dict) for row in blocker_rows):
         raise VerificationError("Phase 32 blocker rows must contain objects")
     decisions_by_id = validate_normalized_decisions(decisions)
+    register_digests = phase33_register_digests(root, register_refs)
     ledger = evaluate_coverage(receipts, blocker_rows, decisions, required_streams)
     readiness, readiness_reasons, maybe_readiness_error = readiness_state(ledger, readiness_input, decisions_by_id)
     validation, decision, source_refs, maybe_approval_error = approval_state(demotion_input, decisions_by_id)
@@ -1345,6 +1361,7 @@ def run_quick(root: Path, phase31_output: str, phase33_handoff: str, output_arg:
         readiness,
         readiness_reasons,
         demotion,
+        register_digests,
     )
     run_security_scan(root, relative_output)
     errors = [error for error in (maybe_readiness_error, maybe_approval_error) if error is not None]

@@ -422,6 +422,29 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
                 self.assertEqual(result["cutover_verdict"], "blocked")
                 self.assertIn("exception-invalid", result["reason_codes"])
 
+    def test_cutover_01_phase34_ledger_is_the_active_exception_authority(
+            self) -> None:
+        # Arrange
+        ledger = [{
+            "coverage_state":
+            "exception-covered",
+            "exception_decision_refs": [
+                "build/ci-evidence/phase33/normalized-decision-records.json#exception-1"
+            ],
+        }, {
+            "coverage_state":
+            "exception-uncovered",
+            "exception_decision_refs": [
+                "build/ci-evidence/phase33/normalized-decision-records.json#exception-2"
+            ],
+        }]
+
+        # Act
+        active_ids = phase35.active_exception_ids_from_ledger(ledger)
+
+        # Assert
+        self.assertEqual(active_ids, ["exception-1"])
+
     def test_cutover_03_route_truth_table_is_exclusive_and_planning_only(
             self) -> None:
         expected = {
@@ -888,6 +911,57 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         # Assert
         self.assertIn("production demotion complete",
                       contract["security"]["prohibited_text_markers"])
+
+    def test_t_35_04_phase33_register_digest_rejects_post_phase34_mutation(
+            self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        register_ref = "build/ci-evidence/phase33/exception-decision-register.json"
+        register_path = root / register_ref
+        register_path.parent.mkdir(parents=True, exist_ok=True)
+        original = {"rows": []}
+        register_path.write_text(json.dumps(original), encoding="utf-8")
+        digest = hashlib.sha256(
+            phase35.canonical_json(original)).hexdigest()
+        refs = {"exception_decision_register": register_ref}
+        digests = {"exception_decision_register": digest}
+        register_path.write_text(json.dumps({"rows": [{
+            "decision_id": "late"
+        }]}),
+                                 encoding="utf-8")
+
+        # Act / Assert
+        with self.assertRaisesRegex(
+                phase35.VerificationError,
+                "changed after Phase 34 validation"):
+            phase35.reached_register(root, refs, digests,
+                                     "exception_decision_register")
+
+    def test_t_35_04_exception_projection_must_equal_normalized_decision(
+            self) -> None:
+        # Arrange
+        normalized = [{
+            "decision_id": "exception-1",
+            "decision_type": "exception",
+            "decision_value": "approve",
+            "source_row_refs": [f"{PHASE32_REGISTER}#blocker-1"],
+        }]
+        projection = [{
+            **normalized[0],
+            "decision_value": "reject",
+            "scope": "exact",
+            "expiry_or_review_trigger": "review-before-cutover",
+            "affected_requirements": ["CUTOVER-01"],
+            "affected_gates": ["final-simulator-evidence"],
+            "linked_blocker_refs": [f"{PHASE32_REGISTER}#blocker-1"],
+        }]
+
+        # Act / Assert
+        with self.assertRaisesRegex(phase35.VerificationError,
+                                    "projection differs"):
+            phase35.validate_register_projection(projection, normalized,
+                                                 "exception")
 
     def test_t_35_05_caller_supplied_authority_flags_are_rejected(
             self) -> None:

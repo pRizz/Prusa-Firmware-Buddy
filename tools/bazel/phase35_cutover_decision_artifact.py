@@ -126,7 +126,17 @@ PHASE34_CONTRACT_FIELDS = {
 PHASE34_MANIFEST_FIELDS = {
     "accepted_receipt_snapshot_ref", "artifact_name", "generated_artifacts",
     "generated_at_utc", "output_root", "phase", "phase_lifecycle_id",
-    "raw_evidence_consumed", "snapshot_refs", "source_refs",
+    "phase33_register_digests", "raw_evidence_consumed", "snapshot_refs",
+    "source_refs",
+}
+PHASE33_REGISTER_NAMES = {
+    "decision_validation_report",
+    "demotion_decision_handoff",
+    "exception_decision_register",
+    "normalized_decision_records",
+    "readiness_decision_handoff",
+    "residual_risk_decision_register",
+    "retained_code_decision_register",
 }
 ALLOWED_REF_PREFIXES = (
     "build/ci-evidence/phase23/",
@@ -412,6 +422,15 @@ def validate_phase34_manifest(contract: dict[str, Any],
     validate_exact_fields(manifest, PHASE34_MANIFEST_FIELDS,
                           "Phase 34 manifest")
     scan_security(manifest, "Phase 34 manifest")
+    register_digests = manifest.get("phase33_register_digests")
+    if (not isinstance(register_digests, dict)
+            or set(register_digests) != PHASE33_REGISTER_NAMES
+            or not all(
+                isinstance(digest, str)
+                and re.fullmatch(r"[0-9a-f]{64}", digest)
+                for digest in register_digests.values())):
+        raise VerificationError(
+            "Phase 34 manifest Phase 33 register digests are invalid")
     source = contract.get("source_contract")
     if not isinstance(source, dict):
         raise VerificationError("Phase 35 source_contract must be an object")
@@ -505,10 +524,36 @@ def evaluate_verdict(facts: dict[str, Any]) -> dict[str, Any]:
         if maybe_exception is None:
             exception_invalid = True
             continue
-        if (maybe_exception.get("decision_value") != "approve"
-                or maybe_exception.get("validation_state") != "valid"
-                or maybe_exception.get("active") is not True
-                or maybe_exception.get("exact_scope") is not True):
+        legacy_validation = "validation_state" in maybe_exception
+        if legacy_validation:
+            valid = (
+                maybe_exception.get("decision_value") == "approve"
+                and maybe_exception.get("validation_state") == "valid"
+                and maybe_exception.get("active") is True
+                and maybe_exception.get("exact_scope") is True)
+        else:
+            maybe_timestamp = parse_timestamp(
+                maybe_exception.get("decision_timestamp"))
+            valid = (
+                maybe_exception.get("decision_type") == "exception"
+                and maybe_exception.get("decision_value") == "approve"
+                and maybe_exception.get("phase_lifecycle_id")
+                == PHASE33_LIFECYCLE_ID and maybe_timestamp is not None
+                and maybe_timestamp >= STALE_BEFORE
+                and isinstance(maybe_exception.get("maintainer_identity_ref"),
+                               str)
+                and bool(maybe_exception["maintainer_identity_ref"])
+                and isinstance(maybe_exception.get("maintainer_role"), str)
+                and bool(maybe_exception["maintainer_role"])
+                and isinstance(maybe_exception.get("owner_signoff_ref"), str)
+                and bool(maybe_exception["owner_signoff_ref"])
+                and isinstance(maybe_exception.get("scope"), str)
+                and bool(maybe_exception["scope"])
+                and maybe_exception.get("linked_blocker_refs")
+                == maybe_exception.get("source_row_refs")
+                and bool(maybe_exception.get("affected_gates"))
+                and bool(maybe_exception.get("expiry_or_review_trigger")))
+        if not valid:
             exception_invalid = True
     if set(exception_by_id) != set(active_ids):
         exception_invalid = True
@@ -870,6 +915,7 @@ def audit_sources_from_bundle(bundle: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def reached_register(root: Path, refs: dict[str, Any],
+                     expected_digests: dict[str, str],
                      name: str) -> dict[str, Any]:
     value = refs.get(name)
     if not isinstance(value, str):
@@ -881,7 +927,70 @@ def reached_register(root: Path, refs: dict[str, Any],
             f"Phase 33 register ref has wrong root: {value}")
     payload = load_json(root, path)
     scan_security(payload, value)
+    actual_digest = hashlib.sha256(canonical_json(payload)).hexdigest()
+    if actual_digest != expected_digests.get(name):
+        raise VerificationError(
+            f"Phase 33 register changed after Phase 34 validation: {name}")
     return payload
+
+
+def validate_register_projection(rows: list[dict[str, Any]],
+                                 normalized_rows: list[dict[str, Any]],
+                                 decision_type: str) -> None:
+    expected = {
+        str(row.get("decision_id")): row
+        for row in normalized_rows
+        if row.get("decision_type") == decision_type
+    }
+    actual = {str(row.get("decision_id")): row for row in rows}
+    if len(actual) != len(rows) or set(actual) != set(expected):
+        raise VerificationError(
+            f"Phase 33 {decision_type} register does not match the normalized decisions"
+        )
+    for decision_id, normalized in expected.items():
+        projection = actual[decision_id]
+        if any(projection.get(field) != value
+               for field, value in normalized.items()):
+            raise VerificationError(
+                f"Phase 33 {decision_type} projection differs for {decision_id}"
+            )
+        if decision_type != "exception":
+            continue
+        for field in ("scope", "expiry_or_review_trigger"):
+            if not isinstance(projection.get(field),
+                              str) or not projection[field]:
+                raise VerificationError(
+                    f"Phase 33 exception {decision_id} {field} is invalid")
+        for field in ("affected_requirements", "affected_gates",
+                      "linked_blocker_refs"):
+            if not isinstance(projection.get(field), list) or not all(
+                    isinstance(value, str) and value
+                    for value in projection[field]):
+                raise VerificationError(
+                    f"Phase 33 exception {decision_id} {field} is invalid")
+        if projection["linked_blocker_refs"] != projection.get(
+                "source_row_refs"):
+            raise VerificationError(
+                f"Phase 33 exception {decision_id} scope is not exact")
+
+
+def active_exception_ids_from_ledger(
+        ledger_rows: list[dict[str, Any]]) -> list[str]:
+    prefix = "build/ci-evidence/phase33/normalized-decision-records.json#"
+    active_ids: set[str] = set()
+    for row in ledger_rows:
+        if row.get("coverage_state") != "exception-covered":
+            continue
+        refs = row.get("exception_decision_refs")
+        if not isinstance(refs, list) or not refs:
+            raise VerificationError(
+                "Phase 34 exception coverage lacks canonical decision refs")
+        for ref in refs:
+            if not isinstance(ref, str) or not ref.startswith(prefix):
+                raise VerificationError(
+                    "Phase 34 exception coverage has an unsafe decision ref")
+            active_ids.add(ref[len(prefix):])
+    return sorted(active_ids)
 
 
 def load_bundle(
@@ -928,18 +1037,22 @@ def load_bundle(
     if not isinstance(refs, dict):
         raise VerificationError(
             "Phase 33 reached handoff register_refs must be an object")
-    normalized = reached_register(root, refs, "normalized_decision_records")
+    register_digests = manifest["phase33_register_digests"]
+    normalized = reached_register(root, refs, register_digests,
+                                  "normalized_decision_records")
     loaded["retained"] = reached_register(
-        root, refs, "retained_code_decision_register").get("rows", [])
+        root, refs, register_digests,
+        "retained_code_decision_register").get("rows", [])
     loaded["residuals"] = reached_register(
-        root, refs, "residual_risk_decision_register").get("rows", [])
-    loaded["exceptions"] = reached_register(root, refs,
-                                            "exception_decision_register").get(
-                                                "rows", [])
+        root, refs, register_digests,
+        "residual_risk_decision_register").get("rows", [])
+    loaded["exceptions"] = reached_register(
+        root, refs, register_digests,
+        "exception_decision_register").get("rows", [])
     loaded["readiness_handoff"] = reached_register(
-        root, refs, "readiness_decision_handoff")
-    loaded["demotion_handoff"] = reached_register(root, refs,
-                                                  "demotion_decision_handoff")
+        root, refs, register_digests, "readiness_decision_handoff")
+    loaded["demotion_handoff"] = reached_register(
+        root, refs, register_digests, "demotion_decision_handoff")
     loaded["normalized"] = normalized.get("rows", [])
     loaded["blockers"] = loaded["phase32_register"].get("rows", [])
     loaded["receipts"] = loaded["receipts"].get("receipts", [])
@@ -948,6 +1061,12 @@ def load_bundle(
         if not isinstance(loaded[name], list) or not all(
                 isinstance(row, dict) for row in loaded[name]):
             raise VerificationError(f"{name} must contain object rows")
+    validate_register_projection(loaded["retained"], loaded["normalized"],
+                                 "retained_code")
+    validate_register_projection(loaded["residuals"], loaded["normalized"],
+                                 "residual_risk")
+    validate_register_projection(loaded["exceptions"], loaded["normalized"],
+                                 "exception")
     return loaded, phase34_contract
 
 
@@ -1073,16 +1192,10 @@ def write_bundle(
         reason_map.get(reason, "readiness-blocked")
         for reason in upstream_reasons
     } | set(link_reasons))
-    active_exceptions = [{
-        "decision_id": row["decision_id"],
-        "decision_value": row.get("decision_value"),
-        "validation_state": "valid",
-        "active": row.get("coverage_state") == "approved-exception",
-        "exact_scope": True,
-    } for row in source["exceptions"]
-                         if row.get("decision_value") == "approve"]
-    active_ids = [
-        row["decision_id"] for row in active_exceptions if row["active"]
+    active_ids = active_exception_ids_from_ledger(ledger_rows)
+    active_exceptions = [
+        row for row in source["exceptions"]
+        if row.get("decision_id") in active_ids
     ]
     verdict = evaluate_verdict({
         "readiness_state": readiness_state,

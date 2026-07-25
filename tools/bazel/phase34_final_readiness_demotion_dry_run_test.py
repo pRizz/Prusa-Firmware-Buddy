@@ -434,9 +434,25 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout)
         dry_run = self.read_json(root, f"{OUTPUT_DIR}/demotion-dry-run.json")
         packet = self.read_json(root, f"{OUTPUT_DIR}/final-readiness-packet.json")
+        manifest = self.read_json(
+            root, f"{OUTPUT_DIR}/final-readiness-run-manifest.json")
         self.assertEqual(dry_run["gate_state"], "blocked")
         self.assertEqual(dry_run["approval_validation_state"], "missing")
         self.assertEqual(packet["readiness_state"], "blocked")
+        self.assertEqual(
+            set(manifest["phase33_register_digests"]),
+            {
+                "decision_validation_report",
+                "demotion_decision_handoff",
+                "exception_decision_register",
+                "normalized_decision_records",
+                "readiness_decision_handoff",
+                "residual_risk_decision_register",
+                "retained_code_decision_register",
+            },
+        )
+        for digest in manifest["phase33_register_digests"].values():
+            self.assertRegex(digest, r"^[0-9a-f]{64}$")
 
     def test_expected_rows_come_from_phase31_accepted_final_receipts(self) -> None:
         # Arrange
