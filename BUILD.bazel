@@ -281,6 +281,16 @@ filegroup(
 )
 
 filegroup(
+    name = "phase35_cutover_decision_artifact_docs",
+    srcs = [
+        ".planning/phases/35-cutover-decision-artifact/35-CONTEXT.md",
+        ".planning/phases/35-cutover-decision-artifact/35-RESEARCH.md",
+        ".planning/phases/35-cutover-decision-artifact/35-VALIDATION.md",
+        ".planning/phases/35-cutover-decision-artifact/35-01-PLAN.md",
+    ],
+)
+
+filegroup(
     name = "phase22_metadata_reconciliation_docs",
     srcs = [
         ".planning/REQUIREMENTS.md",
@@ -617,6 +627,16 @@ alias(
 alias(
     name = "phase34_verify_tests",
     actual = "//tools/bazel:phase34_verify_tests",
+)
+
+alias(
+    name = "phase35_verify",
+    actual = "//tools/bazel:phase35_verify",
+)
+
+alias(
+    name = "phase35_verify_tests",
+    actual = "//tools/bazel:phase35_verify_tests",
 )
 
 alias(

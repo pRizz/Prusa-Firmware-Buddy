@@ -974,6 +974,46 @@ shell_binary(
 )
 
 filegroup(
+    name = "phase35_source_ref_manifests",
+    srcs = [
+        "manifests/phase31_final_evidence_intake_contract.json",
+        "manifests/phase32_blocker_register_triage_contract.json",
+        "manifests/phase33_maintainer_decision_inputs_contract.json",
+        "manifests/phase34_final_readiness_demotion_dry_run_contract.json",
+        "manifests/phase35_cutover_decision_artifact_contract.json",
+    ],
+)
+
+shell_binary(
+    name = "phase35_verify",
+    src = "rust_workflow.sh",
+    data = [
+        "phase26_release_signing_upstream_evidence.py",
+        "phase27_retained_code_acceptance_decisions.py",
+        "phase28_final_readiness_packet.py",
+        "phase31_final_evidence_intake.py",
+        "phase32_blocker_register_triage.py",
+        "phase33_maintainer_decision_inputs.py",
+        "phase34_final_readiness_demotion_dry_run.py",
+        "phase35_cutover_decision_artifact.py",
+        "manifests/phase35_cutover_decision_artifact_contract.json",
+        ":phase35_source_ref_manifests",
+        "//:phase35_cutover_decision_artifact_docs",
+    ],
+)
+
+shell_binary(
+    name = "phase35_verify_tests",
+    src = "rust_workflow.sh",
+    data = [
+        "phase35_cutover_decision_artifact.py",
+        "phase35_cutover_decision_artifact_test.py",
+        "manifests/phase35_cutover_decision_artifact_contract.json",
+        ":phase35_source_ref_manifests",
+    ],
+)
+
+filegroup(
     name = "unsafe_boundary_audit",
     srcs = ["manifests/unsafe_boundary_audit.json"],
 )

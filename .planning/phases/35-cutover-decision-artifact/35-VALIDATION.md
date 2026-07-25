@@ -1,9 +1,9 @@
 ---
 phase: "35"
 slug: "cutover-decision-artifact"
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: verified
+nyquist_compliant: true
+wave_0_complete: true
 created: "2026-07-25"
 ---
 
@@ -38,9 +38,9 @@ ______________________________________________________________________
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 35-01-01 | 01 | 1 | CUTOVER-01, CUTOVER-02, CUTOVER-03 | T-35-01 through T-35-06 | RED tests cover closed verdict/route truth tables, exact audit-link sets, independent demotion state, unsafe paths/refs, lifecycle guards, and secret rejection | unit | `python3 tools/bazel/phase35_cutover_decision_artifact_test.py -q` | ❌ W0 | ⬜ pending |
-| 35-01-02 | 01 | 1 | CUTOVER-01, CUTOVER-02, CUTOVER-03 | T-35-01 through T-35-06 | The verifier derives one canonical link index, blocks incomplete or invalid inputs, emits exactly one route, and never infers demotion approval | unit/integration | `python3 tools/bazel/phase35_cutover_decision_artifact_test.py -q && python3 tools/bazel/phase35_cutover_decision_artifact.py --contract-only && python3 tools/bazel/phase35_cutover_decision_artifact.py --security-only` | ❌ W0 | ⬜ pending |
-| 35-01-03 | 01 | 1 | CUTOVER-01, CUTOVER-02, CUTOVER-03 | T-35-01 through T-35-06 | Bazel and `just` regenerate blocked prerequisites without synthesizing evidence, approval, exceptions, or demotion authorization | integration | `just phase35-verify` | ❌ W0 | ⬜ pending |
+| 35-01-01 | 01 | 1 | CUTOVER-01, CUTOVER-02, CUTOVER-03 | T-35-01 through T-35-06 | RED tests cover closed verdict/route truth tables, exact audit-link sets, independent demotion state, unsafe paths/refs, lifecycle guards, and secret rejection | unit | `python3 tools/bazel/phase35_cutover_decision_artifact_test.py -q` | ✅ existing | ✅ green |
+| 35-01-02 | 01 | 1 | CUTOVER-01, CUTOVER-02, CUTOVER-03 | T-35-01 through T-35-06 | The verifier derives one canonical link index, blocks incomplete or invalid inputs, emits exactly one route, and never infers demotion approval | unit/integration | `python3 tools/bazel/phase35_cutover_decision_artifact_test.py -q && python3 tools/bazel/phase35_cutover_decision_artifact.py --contract-only && python3 tools/bazel/phase35_cutover_decision_artifact.py --security-only` | ✅ existing | ✅ green |
+| 35-01-03 | 01 | 1 | CUTOVER-01, CUTOVER-02, CUTOVER-03 | T-35-01 through T-35-06 | Bazel and `just` regenerate blocked prerequisites without synthesizing evidence, approval, exceptions, or demotion authorization | integration | `just phase35-verify` | ✅ existing | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -48,8 +48,8 @@ ______________________________________________________________________
 
 ## Wave 0 Requirements
 
-- [ ] `tools/bazel/phase35_cutover_decision_artifact_test.py` — focused fixtures and RED tests for CUTOVER-01, CUTOVER-02, and CUTOVER-03
-- [ ] `tools/bazel/manifests/phase35_cutover_decision_artifact_contract.json` — lifecycle, artifact, verdict, route, audit-link, security, and demotion-separation contract
+- [x] `tools/bazel/phase35_cutover_decision_artifact_test.py` — focused fixtures and RED tests for CUTOVER-01, CUTOVER-02, and CUTOVER-03
+- [x] `tools/bazel/manifests/phase35_cutover_decision_artifact_contract.json` — lifecycle, artifact, verdict, route, audit-link, security, and demotion-separation contract
 - [x] Existing Python `unittest`, Bazel, and `just` infrastructure covers all other phase requirements
 
 ______________________________________________________________________
@@ -62,11 +62,11 @@ ______________________________________________________________________
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 45s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 45s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** verified

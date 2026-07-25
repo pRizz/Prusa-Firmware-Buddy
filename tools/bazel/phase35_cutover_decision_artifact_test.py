@@ -11,7 +11,6 @@ from pathlib import Path
 
 import phase35_cutover_decision_artifact as phase35
 
-
 ROOT = Path(__file__).resolve().parents[2]
 CONTRACT = ROOT / "tools/bazel/manifests/phase35_cutover_decision_artifact_contract.json"
 PHASE32_REGISTER = "build/ci-evidence/phase32/blocker-register.json"
@@ -98,6 +97,7 @@ DECISION_FIELDS = [
 
 
 class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
+
     def contract(self) -> dict[str, object]:
         return json.loads(CONTRACT.read_text(encoding="utf-8"))
 
@@ -140,16 +140,22 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
             "demotion-dry-run": "34-2026-07-25T18-18-48",
         }
         for index, kind in enumerate(AUDIT_KINDS):
-            sources.append(
-                {
+            sources.append({
+                "kind":
+                kind,
+                "target_id":
+                f"target-{index}",
+                "target_ref":
+                f"build/ci-evidence/phase34/sanitized-{index}.json",
+                "source_phase_lifecycle_id":
+                lifecycle_by_kind[kind],
+                "verdict_effect":
+                "supports" if kind == "evidence-packet" else "blocks",
+                "digest_source": {
                     "kind": kind,
-                    "target_id": f"target-{index}",
-                    "target_ref": f"build/ci-evidence/phase34/sanitized-{index}.json",
-                    "source_phase_lifecycle_id": lifecycle_by_kind[kind],
-                    "verdict_effect": "supports" if kind == "evidence-packet" else "blocks",
-                    "digest_source": {"kind": kind, "target": index},
-                }
-            )
+                    "target": index
+                },
+            })
         return sources
 
     def demotion_decision(
@@ -175,11 +181,16 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         lifecycle: str = "33-2026-07-04T01-36-41",
     ) -> dict[str, object]:
         return {
-            "phase": "33-maintainer-decision-inputs",
-            "phase_lifecycle_id": lifecycle,
-            "demotion_input_supplied": supplied,
-            "decision_id": "demotion-1" if supplied else "",
-            "source_row_refs": [f"{PHASE32_REGISTER}#blocker-1"] if supplied else [],
+            "phase":
+            "33-maintainer-decision-inputs",
+            "phase_lifecycle_id":
+            lifecycle,
+            "demotion_input_supplied":
+            supplied,
+            "decision_id":
+            "demotion-1" if supplied else "",
+            "source_row_refs":
+            [f"{PHASE32_REGISTER}#blocker-1"] if supplied else [],
         }
 
     def demotion_dry_run(
@@ -225,8 +236,8 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         temp_dir = tempfile.TemporaryDirectory()
         root = Path(temp_dir.name)
         for relative_path in [
-            "tools/bazel/manifests/phase35_cutover_decision_artifact_contract.json",
-            "tools/bazel/manifests/phase34_final_readiness_demotion_dry_run_contract.json",
+                "tools/bazel/manifests/phase35_cutover_decision_artifact_contract.json",
+                "tools/bazel/manifests/phase34_final_readiness_demotion_dry_run_contract.json",
         ]:
             source = ROOT / relative_path
             destination = root / relative_path
@@ -234,7 +245,8 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
             shutil.copy2(source, destination)
         return temp_dir, root
 
-    def test_cutover_01_contract_identity_lifecycle_and_closed_verdict_enum(self) -> None:
+    def test_cutover_01_contract_identity_lifecycle_and_closed_verdict_enum(
+            self) -> None:
         # Arrange
         contract = self.contract()
 
@@ -256,10 +268,12 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
                 "build/ci-evidence/phase35",
             ),
         )
-        self.assertEqual(contract["requirement_ids"], ["CUTOVER-01", "CUTOVER-02", "CUTOVER-03"])
+        self.assertEqual(contract["requirement_ids"],
+                         ["CUTOVER-01", "CUTOVER-02", "CUTOVER-03"])
         self.assertEqual(contract["verdict_enum"], VERDICTS)
 
-    def test_cutover_02_contract_declares_exact_nine_kind_audit_schema(self) -> None:
+    def test_cutover_02_contract_declares_exact_nine_kind_audit_schema(
+            self) -> None:
         # Arrange
         contract = self.contract()
 
@@ -272,7 +286,8 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         self.assertEqual(schema["optional_fields"], ["digest"])
         self.assertTrue(schema["exact_set_required"])
 
-    def test_cutover_03_contract_declares_routes_artifacts_and_no_authority(self) -> None:
+    def test_cutover_03_contract_declares_routes_artifacts_and_no_authority(
+            self) -> None:
         # Arrange
         contract = self.contract()
 
@@ -286,9 +301,11 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         self.assertFalse(authority["accepts_cutover_confirmation"])
         self.assertFalse(authority["accepts_demotion_approval"])
         self.assertFalse(authority["production_actions_authorized"])
-        self.assertEqual(authority["reference_demotion_requirement"], "POST-01")
+        self.assertEqual(authority["reference_demotion_requirement"],
+                         "POST-01")
 
-    def test_contract_declares_exact_blocked_reasons_and_output_fields(self) -> None:
+    def test_contract_declares_exact_blocked_reasons_and_output_fields(
+            self) -> None:
         # Arrange
         contract = self.contract()
 
@@ -297,15 +314,20 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         self.assertEqual(contract["cutover_decision_fields"], DECISION_FIELDS)
         self.assertEqual(
             contract["demotion_projection"]["decision_validation_states"],
-            ["missing", "malformed", "stale", "lifecycle-mismatched", "invalid", "valid"],
+            [
+                "missing", "malformed", "stale", "lifecycle-mismatched",
+                "invalid", "valid"
+            ],
         )
         self.assertEqual(
             contract["demotion_projection"]["decision_states"],
             ["missing", "approve", "reject"],
         )
-        self.assertEqual(contract["demotion_projection"]["gate_states"], ["blocked", "open"])
+        self.assertEqual(contract["demotion_projection"]["gate_states"],
+                         ["blocked", "open"])
 
-    def test_cutover_01_truth_table_approves_only_unblocked_without_exceptions(self) -> None:
+    def test_cutover_01_truth_table_approves_only_unblocked_without_exceptions(
+            self) -> None:
         # Arrange
         facts = self.valid_facts()
 
@@ -317,7 +339,8 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         self.assertEqual(result["reason_codes"], [])
         self.assertEqual(result["active_exception_ids"], [])
 
-    def test_cutover_01_truth_table_approves_with_exact_active_exceptions(self) -> None:
+    def test_cutover_01_truth_table_approves_with_exact_active_exceptions(
+            self) -> None:
         # Arrange
         facts = self.valid_facts()
         facts["active_exception_ids"] = ["exception-1"]
@@ -330,7 +353,8 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         self.assertEqual(result["cutover_verdict"], "approved-with-exceptions")
         self.assertEqual(result["active_exception_ids"], ["exception-1"])
 
-    def test_cutover_01_truth_table_blocks_readiness_and_all_invalid_families(self) -> None:
+    def test_cutover_01_truth_table_blocks_readiness_and_all_invalid_families(
+            self) -> None:
         for reason_code in BLOCKED_REASONS:
             with self.subTest(reason_code=reason_code):
                 # Arrange
@@ -344,12 +368,28 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
                 self.assertEqual(result["cutover_verdict"], "blocked")
                 self.assertIn(reason_code, result["reason_codes"])
 
-    def test_cutover_01_truth_table_blocks_unknown_or_incomplete_fact_shapes(self) -> None:
+    def test_cutover_01_truth_table_blocks_unknown_or_incomplete_fact_shapes(
+            self) -> None:
         cases = [
             {},
-            {"readiness_state": "unknown", "reason_codes": [], "active_exception_ids": [], "exceptions": []},
-            {"readiness_state": "blocked", "reason_codes": [], "active_exception_ids": [], "exceptions": []},
-            {"readiness_state": "unblocked", "reason_codes": [], "active_exception_ids": ["missing"], "exceptions": []},
+            {
+                "readiness_state": "unknown",
+                "reason_codes": [],
+                "active_exception_ids": [],
+                "exceptions": []
+            },
+            {
+                "readiness_state": "blocked",
+                "reason_codes": [],
+                "active_exception_ids": [],
+                "exceptions": []
+            },
+            {
+                "readiness_state": "unblocked",
+                "reason_codes": [],
+                "active_exception_ids": ["missing"],
+                "exceptions": []
+            },
         ]
         for facts in cases:
             with self.subTest(facts=facts):
@@ -382,7 +422,8 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
                 self.assertEqual(result["cutover_verdict"], "blocked")
                 self.assertIn("exception-invalid", result["reason_codes"])
 
-    def test_cutover_03_route_truth_table_is_exclusive_and_planning_only(self) -> None:
+    def test_cutover_03_route_truth_table_is_exclusive_and_planning_only(
+            self) -> None:
         expected = {
             "approved": ("production-cutover-planning", False),
             "blocked": ("targeted-blocker-repair", True),
@@ -396,11 +437,13 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
                 # Assert
                 self.assertEqual(route["route"], route_name)
                 self.assertEqual(route["source_verdict"], verdict)
-                self.assertEqual(route["requires_fresh_cutover_decision"], requires_fresh)
+                self.assertEqual(route["requires_fresh_cutover_decision"],
+                                 requires_fresh)
                 self.assertTrue(route["planning_only"])
                 self.assertFalse(route["production_actions_authorized"])
 
-    def test_t_35_01_audit_links_cover_all_nine_categories_deterministically(self) -> None:
+    def test_t_35_01_audit_links_cover_all_nine_categories_deterministically(
+            self) -> None:
         # Arrange
         sources = list(reversed(self.audit_sources()))
 
@@ -424,7 +467,8 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
 
         # Act
         links = phase35.derive_audit_links(sources)
-        external_link = next(link for link in links if link["kind"] == "evidence-packet")
+        external_link = next(link for link in links
+                             if link["kind"] == "evidence-packet")
 
         # Assert
         self.assertNotIn("digest", external_link)
@@ -433,13 +477,11 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         expected = phase35.derive_audit_links(self.audit_sources())
         mutations = {}
         mutations["audit-link-missing"] = expected[1:]
-        mutations["audit-link-extra"] = expected + [
-            {
-                **expected[0],
-                "link_id": "audit-extra",
-                "target_id": "extra",
-            }
-        ]
+        mutations["audit-link-extra"] = expected + [{
+            **expected[0],
+            "link_id": "audit-extra",
+            "target_id": "extra",
+        }]
         mutations["audit-link-duplicate"] = expected + [dict(expected[0])]
         dangling = copy.deepcopy(expected)
         dangling[0]["target_ref"] = "build/ci-evidence/phase34/missing.json"
@@ -462,10 +504,13 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
                 # Assert
                 self.assertIn(expected_reason, reasons)
 
-    def test_t_35_01_link_digest_uses_canonical_sanitized_projection(self) -> None:
+    def test_t_35_01_link_digest_uses_canonical_sanitized_projection(
+            self) -> None:
         # Arrange
         source = self.audit_sources()[0]
-        canonical = json.dumps(source["digest_source"], sort_keys=True, separators=(",", ":")).encode()
+        canonical = json.dumps(source["digest_source"],
+                               sort_keys=True,
+                               separators=(",", ":")).encode()
 
         # Act
         link = phase35.derive_audit_links([source])[0]
@@ -473,13 +518,15 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         # Assert
         self.assertEqual(link["digest"], hashlib.sha256(canonical).hexdigest())
 
-    def test_cutover_03_repair_scope_uses_exact_ordinary_exit_review_refs(self) -> None:
+    def test_cutover_03_repair_scope_uses_exact_ordinary_exit_review_refs(
+            self) -> None:
         # Arrange
         blocker = self.blocker_row()
         ledger = self.ledger_row()
 
         # Act
-        scope, reasons = phase35.build_repair_scope([blocker], [ledger], [], [])
+        scope, reasons = phase35.build_repair_scope([blocker], [ledger], [],
+                                                    [])
 
         # Assert
         self.assertEqual(reasons, [])
@@ -498,7 +545,8 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
             ],
         )
 
-    def test_cutover_03_repair_scope_adds_exact_exception_criteria(self) -> None:
+    def test_cutover_03_repair_scope_adds_exact_exception_criteria(
+            self) -> None:
         # Arrange
         blocker = self.blocker_row(blocker_kind="exception_request")
         exception = {
@@ -510,7 +558,9 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         }
 
         # Act
-        scope, reasons = phase35.build_repair_scope([blocker], [self.ledger_row()], [exception], [])
+        scope, reasons = phase35.build_repair_scope([blocker],
+                                                    [self.ledger_row()],
+                                                    [exception], [])
 
         # Assert
         self.assertEqual(reasons, [])
@@ -522,7 +572,8 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
             ],
         )
 
-    def test_cutover_03_repair_scope_adds_exact_residual_risk_criteria(self) -> None:
+    def test_cutover_03_repair_scope_adds_exact_residual_risk_criteria(
+            self) -> None:
         # Arrange
         blocker = self.blocker_row()
         residual = {
@@ -534,7 +585,9 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         }
 
         # Act
-        scope, reasons = phase35.build_repair_scope([blocker], [self.ledger_row()], [], [residual])
+        scope, reasons = phase35.build_repair_scope([blocker],
+                                                    [self.ledger_row()], [],
+                                                    [residual])
 
         # Assert
         self.assertEqual(reasons, [])
@@ -546,27 +599,29 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
             ],
         )
 
-    def test_cutover_03_unresolved_or_fabricated_scope_stays_blocked(self) -> None:
+    def test_cutover_03_unresolved_or_fabricated_scope_stays_blocked(
+            self) -> None:
         cases = [
             ("missing-ledger", [], [], []),
             (
                 "wrong-classification",
-                [{**self.ledger_row(), "classification_ref": f"{PHASE32_REGISTER}#other"}],
+                [{
+                    **self.ledger_row(), "classification_ref":
+                    f"{PHASE32_REGISTER}#other"
+                }],
                 [],
                 [],
             ),
             (
                 "fabricated-exception",
                 [self.ledger_row()],
-                [
-                    {
-                        "decision_id": "exception-1",
-                        "source_row_refs": [f"{PHASE32_REGISTER}#other"],
-                        "linked_blocker_refs": [f"{PHASE32_REGISTER}#other"],
-                        "expiry_or_review_trigger": "review",
-                        "affected_gates": ["final-simulator-evidence"],
-                    }
-                ],
+                [{
+                    "decision_id": "exception-1",
+                    "source_row_refs": [f"{PHASE32_REGISTER}#other"],
+                    "linked_blocker_refs": [f"{PHASE32_REGISTER}#other"],
+                    "expiry_or_review_trigger": "review",
+                    "affected_gates": ["final-simulator-evidence"],
+                }],
                 [],
             ),
         ]
@@ -599,19 +654,27 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         projection = phase35.project_demotion(handoff, [], dry_run)
 
         # Assert
-        self.assertEqual(projection["demotion_decision_validation_state"], "missing")
+        self.assertEqual(projection["demotion_decision_validation_state"],
+                         "missing")
         self.assertEqual(projection["demotion_decision_state"], "missing")
         self.assertEqual(projection["demotion_decision_source_refs"], [])
         self.assertEqual(projection["demotion_gate_state"], "blocked")
-        self.assertEqual(projection["demotion_gate_reason_codes"], ["approval-missing"])
+        self.assertEqual(projection["demotion_gate_reason_codes"],
+                         ["approval-missing"])
 
-    def test_t_35_06_demotion_malformed_stale_lifecycle_and_other_invalid_remain_distinct(self) -> None:
+    def test_t_35_06_demotion_malformed_stale_lifecycle_and_other_invalid_remain_distinct(
+            self) -> None:
         cases = [
-            ("malformed", {"phase": 3}, [], "malformed"),
+            ("malformed", {
+                "phase": 3
+            }, [], "malformed"),
             (
                 "stale",
                 self.demotion_handoff(),
-                [self.demotion_decision(decision_timestamp="2020-01-01T00:00:00Z")],
+                [
+                    self.demotion_decision(
+                        decision_timestamp="2020-01-01T00:00:00Z")
+                ],
                 "stale",
             ),
             (
@@ -633,13 +696,17 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
                 dry_run = self.demotion_dry_run()
 
                 # Act
-                projection = phase35.project_demotion(handoff, records, dry_run)
+                projection = phase35.project_demotion(handoff, records,
+                                                      dry_run)
 
                 # Assert
-                self.assertEqual(projection["demotion_decision_validation_state"], expected_state)
+                self.assertEqual(
+                    projection["demotion_decision_validation_state"],
+                    expected_state)
                 self.assertEqual(projection["demotion_gate_state"], "blocked")
 
-    def test_t_35_06_valid_reject_is_valid_and_preserves_safe_source_refs(self) -> None:
+    def test_t_35_06_valid_reject_is_valid_and_preserves_safe_source_refs(
+            self) -> None:
         # Arrange
         handoff = self.demotion_handoff()
         records = [self.demotion_decision(decision_value="reject")]
@@ -652,33 +719,37 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         projection = phase35.project_demotion(handoff, records, dry_run)
 
         # Assert
-        self.assertEqual(projection["demotion_decision_validation_state"], "valid")
+        self.assertEqual(projection["demotion_decision_validation_state"],
+                         "valid")
         self.assertEqual(projection["demotion_decision_state"], "reject")
         self.assertEqual(
             projection["demotion_decision_source_refs"],
             [f"{PHASE32_REGISTER}#blocker-1"],
         )
-        self.assertEqual(projection["demotion_gate_reason_codes"], ["approval-rejected"])
+        self.assertEqual(projection["demotion_gate_reason_codes"],
+                         ["approval-rejected"])
 
-    def test_t_35_06_valid_approve_does_not_upgrade_cutover_or_gate(self) -> None:
+    def test_t_35_06_valid_approve_does_not_upgrade_cutover_or_gate(
+            self) -> None:
         # Arrange
         handoff = self.demotion_handoff()
         records = [self.demotion_decision()]
-        dry_run = self.demotion_dry_run(gate_state="blocked", reason_codes=["readiness-blocked"])
+        dry_run = self.demotion_dry_run(gate_state="blocked",
+                                        reason_codes=["readiness-blocked"])
 
         # Act
         projection = phase35.project_demotion(handoff, records, dry_run)
-        verdict = phase35.evaluate_verdict(
-            {
-                "readiness_state": "blocked",
-                "reason_codes": ["readiness-blocked"],
-                "active_exception_ids": [],
-                "exceptions": [],
-            }
-        )
+        verdict = phase35.evaluate_verdict({
+            "readiness_state":
+            "blocked",
+            "reason_codes": ["readiness-blocked"],
+            "active_exception_ids": [],
+            "exceptions": [],
+        })
 
         # Assert
-        self.assertEqual(projection["demotion_decision_validation_state"], "valid")
+        self.assertEqual(projection["demotion_decision_validation_state"],
+                         "valid")
         self.assertEqual(projection["demotion_decision_state"], "approve")
         self.assertEqual(projection["demotion_gate_state"], "blocked")
         self.assertEqual(verdict["cutover_verdict"], "blocked")
@@ -693,20 +764,20 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
             [self.demotion_decision()],
             dry_run,
         )
-        verdict = phase35.evaluate_verdict(
-            {
-                "readiness_state": "blocked",
-                "reason_codes": ["readiness-blocked"],
-                "active_exception_ids": [],
-                "exceptions": [],
-            }
-        )
+        verdict = phase35.evaluate_verdict({
+            "readiness_state":
+            "blocked",
+            "reason_codes": ["readiness-blocked"],
+            "active_exception_ids": [],
+            "exceptions": [],
+        })
 
         # Assert
         self.assertEqual(projection["demotion_gate_state"], "open")
         self.assertEqual(verdict["cutover_verdict"], "blocked")
 
-    def test_t_35_02_paths_reject_absolute_traversal_wrong_root_overlap_and_symlink_escape(self) -> None:
+    def test_t_35_02_paths_reject_absolute_traversal_wrong_root_overlap_and_symlink_escape(
+            self) -> None:
         temp_dir, root = self.make_temp_root()
         self.addCleanup(temp_dir.cleanup)
         outside = root / "outside"
@@ -727,13 +798,28 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
                 with self.assertRaises(phase35.VerificationError):
                     phase35.validate_paths(root, phase34_dir, output_dir)
 
-    def test_t_35_03_security_rejects_forbidden_fields_text_raw_payloads_and_unsafe_refs(self) -> None:
+    def test_t_35_03_security_rejects_forbidden_fields_text_raw_payloads_and_unsafe_refs(
+            self) -> None:
         cases = [
-            {"token_value": "redacted"},
-            {"nested": {"private_key": "redacted"}},
-            {"rationale": "production demotion complete"},
-            {"raw_payload": {"data": "not-allowed"}},
-            {"source_refs": ["../unsafe.json"]},
+            {
+                "token_value": "redacted"
+            },
+            {
+                "nested": {
+                    "private_key": "redacted"
+                }
+            },
+            {
+                "rationale": "production demotion complete"
+            },
+            {
+                "raw_payload": {
+                    "data": "not-allowed"
+                }
+            },
+            {
+                "source_refs": ["../unsafe.json"]
+            },
         ]
         for payload in cases:
             with self.subTest(payload=payload):
@@ -756,7 +842,8 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         with self.assertRaises(phase35.VerificationError):
             phase35.validate_phase34_manifest(contract, manifest)
 
-    def test_t_35_05_caller_supplied_authority_flags_are_rejected(self) -> None:
+    def test_t_35_05_caller_supplied_authority_flags_are_rejected(
+            self) -> None:
         forbidden_options = [
             "--verdict",
             "--route",
@@ -795,7 +882,10 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
             "readiness_state": "blocked",
             "active_exception_ids": [],
             "blocker_ids": ["blocker-1"],
-            "audit_link_counts_by_kind": {kind: 1 for kind in AUDIT_KINDS},
+            "audit_link_counts_by_kind": {
+                kind: 1
+                for kind in AUDIT_KINDS
+            },
             "demotion_decision_validation_state": "missing",
             "demotion_decision_state": "missing",
             "demotion_decision_source_refs": [],
@@ -815,7 +905,8 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         for kind in AUDIT_KINDS:
             self.assertIn(f"{kind}: 1", report)
 
-    def test_default_projection_is_blocked_repair_without_synthesized_authority(self) -> None:
+    def test_default_projection_is_blocked_repair_without_synthesized_authority(
+            self) -> None:
         # Arrange
         contract = self.contract()
 
@@ -825,7 +916,8 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         # Assert
         self.assertEqual(default["cutover_verdict"], "blocked")
         self.assertEqual(default["route"], "targeted-blocker-repair")
-        self.assertEqual(default["demotion_decision_validation_state"], "missing")
+        self.assertEqual(default["demotion_decision_validation_state"],
+                         "missing")
         self.assertEqual(default["demotion_decision_state"], "missing")
         self.assertEqual(default["demotion_decision_source_refs"], [])
         self.assertEqual(default["demotion_gate_state"], "blocked")
@@ -834,7 +926,8 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         self.assertFalse(default["synthesizes_exception"])
         self.assertFalse(default["synthesizes_demotion_authorization"])
 
-    def test_wiring_contract_requires_exact_bazel_workflow_and_just_strings(self) -> None:
+    def test_wiring_contract_requires_exact_bazel_workflow_and_just_strings(
+            self) -> None:
         # Arrange
         expected = phase35.required_wiring_strings()
 
@@ -842,7 +935,8 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         self.assertIn("phase35_source_ref_manifests", expected["tools_bazel"])
         self.assertIn("phase35_verify", expected["tools_bazel"])
         self.assertIn("phase35_verify_tests", expected["tools_bazel"])
-        self.assertIn("phase35_cutover_decision_artifact_docs", expected["root_bazel"])
+        self.assertIn("phase35_cutover_decision_artifact_docs",
+                      expected["root_bazel"])
         self.assertIn("phase35_verify_tests)", expected["workflow"])
         self.assertIn("phase35_verify)", expected["workflow"])
         self.assertEqual(
