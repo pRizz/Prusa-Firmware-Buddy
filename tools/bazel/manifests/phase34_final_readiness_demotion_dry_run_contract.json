@@ -1,0 +1,204 @@
+{
+  "schema_version": "1",
+  "id": "phase34_final_readiness_demotion_dry_run_contract",
+  "phase": "34-final-readiness-and-demotion-dry-run",
+  "phase_lifecycle_id": "34-2026-07-25T18-18-48",
+  "artifact_name": "phase34-final-readiness-demotion-dry-run",
+  "output_root": "build/ci-evidence/phase34",
+  "requirement_ids": [
+    "READY-01",
+    "READY-02",
+    "READY-03"
+  ],
+  "source_contracts": [
+    {
+      "id": "phase31_final_evidence_intake_contract",
+      "path": "tools/bazel/manifests/phase31_final_evidence_intake_contract.json",
+      "purpose": "authoritative accepted-final receipt, provenance, and expected-row boundary"
+    },
+    {
+      "id": "phase32_blocker_register_triage_contract",
+      "path": "tools/bazel/manifests/phase32_blocker_register_triage_contract.json",
+      "purpose": "sparse blocker classification overlay for problem evidence rows"
+    },
+    {
+      "id": "phase33_maintainer_decision_inputs_contract",
+      "path": "tools/bazel/manifests/phase33_maintainer_decision_inputs_contract.json",
+      "purpose": "authoritative retained-code, residual-risk, exception, readiness, and demotion decision handoff"
+    },
+    {
+      "id": "phase28_final_readiness_packet_contract",
+      "path": "tools/bazel/manifests/phase28_final_readiness_packet_contract.json",
+      "purpose": "semantic precedent only; Phase 28 remains unchanged and is not a Phase 34 authority"
+    }
+  ],
+  "source_inputs": {
+    "default_phase31_output_root": "build/ci-evidence/phase31",
+    "default_phase31_manifest": "build/ci-evidence/phase31/final-intake-manifest.json",
+    "default_phase33_handoff": "build/ci-evidence/phase33/downstream-handoff-manifest.json",
+    "phase31_lifecycle_id": "31-2026-07-03T02-04-07",
+    "phase32_lifecycle_id": "32-2026-07-03T14-13-51",
+    "phase33_lifecycle_id": "33-2026-07-04T01-36-41",
+    "raw_evidence_consumed": false
+  },
+  "ledger_schema": {
+    "required_fields": [
+      "row_id",
+      "source_stream",
+      "source_ref",
+      "requirement_ids",
+      "affected_gates",
+      "proof_eligibility",
+      "evidence_status",
+      "row_problem_kind",
+      "blocker_kind",
+      "severity",
+      "evidence_refs",
+      "artifact_refs",
+      "classification_ref",
+      "retained_code_decision_refs",
+      "residual_risk_decision_refs",
+      "exception_decision_refs",
+      "readiness_decision_refs",
+      "coverage_state",
+      "readiness_effect",
+      "reason_codes"
+    ]
+  },
+  "sparse_blocker_overlay_policy": {
+    "expected_rows_from": "phase31 accepted-final receipts and consumed_upstream_row_refs",
+    "clean_row_may_omit_phase32_classification": true,
+    "clean_row_requires": [
+      "finality_status accepted-final",
+      "redaction_status passed",
+      "source_ref_status passed",
+      "proof_eligibility eligible"
+    ],
+    "problem_row_requires_exact_phase32_classification": true,
+    "missing_problem_classification_state": "underclassified",
+    "exact_join_fields": [
+      "source_ref",
+      "affected_gate"
+    ]
+  },
+  "demotion_dry_run_schema": {
+    "required_fields": [
+      "readiness_state",
+      "approval_validation_state",
+      "approval_decision_state",
+      "gate_state",
+      "reason_codes",
+      "source_refs"
+    ],
+    "readiness_state": [
+      "blocked",
+      "unblocked"
+    ],
+    "approval_validation_state": [
+      "missing",
+      "invalid",
+      "valid"
+    ],
+    "approval_decision_state": [
+      "missing",
+      "approve",
+      "reject"
+    ],
+    "gate_state": [
+      "blocked",
+      "open"
+    ],
+    "open_requires": {
+      "readiness_state": "unblocked",
+      "approval_validation_state": "valid",
+      "approval_decision_state": "approve"
+    }
+  },
+  "blocked_reason_codes": [
+    "required-row-missing",
+    "duplicate-row",
+    "dangling-row-ref",
+    "evidence-failed",
+    "evidence-stale",
+    "evidence-malformed",
+    "redaction-failed",
+    "source-ref-failed",
+    "secret-tainted",
+    "lifecycle-mismatched",
+    "unsafe-ref",
+    "non-final-evidence",
+    "unknown-classification",
+    "underclassified",
+    "exception-uncovered",
+    "readiness-input-invalid",
+    "approval-missing",
+    "approval-invalid",
+    "approval-rejected"
+  ],
+  "hard_blocker_problem_kinds": [
+    "redaction_failed",
+    "source_ref_failed",
+    "secret_tainted",
+    "lifecycle_mismatch",
+    "unsafe_ref"
+  ],
+  "pure_evaluator_outputs": [
+    "readiness coverage ledger rows",
+    "readiness state and reason codes",
+    "demotion predicate state",
+    "packet, summary, and report projections"
+  ],
+  "io_validation_responsibilities": [
+    "exact-root path containment",
+    "symlink escape rejection",
+    "contract and lifecycle validation",
+    "sanitized snapshot loading",
+    "secret and overclaim scans",
+    "deterministic artifact writing"
+  ],
+  "generated_artifacts": [
+    "final-readiness-run-manifest.json",
+    "readiness-coverage-ledger.json",
+    "final-readiness-packet.json",
+    "readiness-blocker-summary.json",
+    "demotion-dry-run.json",
+    "redacted-readiness-report.md",
+    "contract-snapshots/phase34_final_readiness_demotion_dry_run_contract.json",
+    "contract-snapshots/phase33_maintainer_decision_inputs_contract.json",
+    "contract-snapshots/phase33-downstream-handoff-manifest.json",
+    "contract-snapshots/phase32-blocker-register.json",
+    "contract-snapshots/phase31-final-intake-manifest.json",
+    "contract-snapshots/phase31-accepted-receipts.json"
+  ],
+  "default_behavior": {
+    "quick_readiness_state": "blocked",
+    "quick_gate_state": "blocked",
+    "synthesizes_approval": false,
+    "isolated_open_fixture_required": true
+  },
+  "prohibited_semantics": [
+    "inferred readiness",
+    "inferred demotion",
+    "production demotion",
+    "cutover verdict",
+    "raw evidence consumption"
+  ],
+  "prohibited_output_markers": [
+    "demotion_allowed",
+    "reference demotion approved by evidence",
+    "production demotion complete",
+    "cutover verdict approved",
+    "accepted by evidence alone"
+  ],
+  "verification_commands": [
+    "python3 -m py_compile tools/bazel/phase34_final_readiness_demotion_dry_run.py tools/bazel/phase34_final_readiness_demotion_dry_run_test.py",
+    "python3 tools/bazel/phase34_final_readiness_demotion_dry_run_test.py -q",
+    "python3 tools/bazel/phase34_final_readiness_demotion_dry_run.py --contract-only",
+    "python3 tools/bazel/phase34_final_readiness_demotion_dry_run.py --security-only",
+    "python3 tools/bazel/phase34_final_readiness_demotion_dry_run.py --wiring-only",
+    "bazel run //tools/bazel:phase34_verify_tests",
+    "bazel run //tools/bazel:phase34_verify",
+    "just phase34-verify"
+  ],
+  "test_command": "python3 tools/bazel/phase34_final_readiness_demotion_dry_run_test.py"
+}
