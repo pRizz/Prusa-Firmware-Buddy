@@ -1,0 +1,341 @@
+{
+  "schema_version": "1",
+  "id": "phase35_cutover_decision_artifact_contract",
+  "artifact_name": "phase35-cutover-decision-artifact",
+  "phase": "35-cutover-decision-artifact",
+  "phase_lifecycle_id": "35-2026-07-25T21-06-10",
+  "output_root": "build/ci-evidence/phase35",
+  "requirement_ids": [
+    "CUTOVER-01",
+    "CUTOVER-02",
+    "CUTOVER-03"
+  ],
+  "source_contract": {
+    "id": "phase34_final_readiness_demotion_dry_run_contract",
+    "path": "tools/bazel/manifests/phase34_final_readiness_demotion_dry_run_contract.json",
+    "phase_lifecycle_id": "34-2026-07-25T18-18-48",
+    "immediate_manifest_ref": "build/ci-evidence/phase34/final-readiness-run-manifest.json",
+    "artifact_name": "phase34-final-readiness-demotion-dry-run",
+    "output_root": "build/ci-evidence/phase34",
+    "raw_evidence_consumed": false
+  },
+  "source_lifecycle_ids": {
+    "phase31": "31-2026-07-03T02-04-07",
+    "phase32": "32-2026-07-03T14-13-51",
+    "phase33": "33-2026-07-04T01-36-41",
+    "phase34": "34-2026-07-25T18-18-48",
+    "phase35": "35-2026-07-25T21-06-10"
+  },
+  "verdict_enum": [
+    "approved",
+    "blocked",
+    "approved-with-exceptions"
+  ],
+  "route_enum": [
+    "production-cutover-planning",
+    "targeted-blocker-repair"
+  ],
+  "verdict_truth_table": [
+    {
+      "readiness_state": "blocked",
+      "blocking_reason_count": "any",
+      "active_approved_exception_count": "any",
+      "verdict": "blocked"
+    },
+    {
+      "readiness_state": "unblocked",
+      "blocking_reason_count": "nonzero",
+      "active_approved_exception_count": "any",
+      "verdict": "blocked"
+    },
+    {
+      "readiness_state": "unblocked",
+      "blocking_reason_count": 0,
+      "active_approved_exception_count": "nonzero",
+      "verdict": "approved-with-exceptions"
+    },
+    {
+      "readiness_state": "unblocked",
+      "blocking_reason_count": 0,
+      "active_approved_exception_count": 0,
+      "verdict": "approved"
+    }
+  ],
+  "route_truth_table": {
+    "approved": "production-cutover-planning",
+    "blocked": "targeted-blocker-repair",
+    "approved-with-exceptions": "targeted-blocker-repair"
+  },
+  "blocked_reason_codes": [
+    "source-artifact-missing",
+    "source-artifact-malformed",
+    "source-artifact-stale",
+    "source-artifact-duplicate",
+    "source-artifact-lifecycle-mismatched",
+    "redaction-failed",
+    "source-ref-failed",
+    "secret-tainted",
+    "unsafe-ref",
+    "unknown-input",
+    "underclassified",
+    "coverage-incomplete",
+    "readiness-blocked",
+    "exception-invalid",
+    "audit-link-missing",
+    "audit-link-extra",
+    "audit-link-duplicate",
+    "audit-link-dangling",
+    "audit-link-lifecycle-mismatched",
+    "audit-link-category-mismatched",
+    "audit-link-digest-mismatched",
+    "route-scope-incomplete"
+  ],
+  "audit_link_schema": {
+    "required_fields": [
+      "link_id",
+      "kind",
+      "target_id",
+      "target_ref",
+      "source_phase_lifecycle_id",
+      "verdict_effect"
+    ],
+    "optional_fields": [
+      "digest"
+    ],
+    "kinds": [
+      "evidence-packet",
+      "blocker",
+      "exception",
+      "residual-risk",
+      "retained-code-decision",
+      "readiness-decision",
+      "readiness-result",
+      "demotion-decision",
+      "demotion-dry-run"
+    ],
+    "sort_key": [
+      "kind",
+      "target_id",
+      "target_ref"
+    ],
+    "stable_id_inputs": [
+      "kind",
+      "submission_id",
+      "row_id",
+      "decision_id",
+      "sanitized_semantic_target"
+    ],
+    "exact_set_required": true,
+    "digest_algorithm": "sha256",
+    "digest_policy": "validated-sanitized-local-targets-only",
+    "external_ref_digest_policy": "omit"
+  },
+  "audit_link_failure_modes": [
+    "missing",
+    "extra",
+    "duplicate",
+    "dangling",
+    "lifecycle-mismatched",
+    "category-mismatched",
+    "digest-mismatched"
+  ],
+  "demotion_projection": {
+    "fields": [
+      "demotion_decision_validation_state",
+      "demotion_decision_state",
+      "demotion_decision_source_refs",
+      "demotion_gate_state",
+      "demotion_gate_reason_codes"
+    ],
+    "decision_validation_states": [
+      "missing",
+      "malformed",
+      "stale",
+      "lifecycle-mismatched",
+      "invalid",
+      "valid"
+    ],
+    "decision_states": [
+      "missing",
+      "approve",
+      "reject"
+    ],
+    "gate_states": [
+      "blocked",
+      "open"
+    ],
+    "phase33_source": "build/ci-evidence/phase33/demotion-decision-handoff.json",
+    "phase34_source": "build/ci-evidence/phase34/demotion-dry-run.json",
+    "independence_requirements": [
+      "cutover_verdict does not imply demotion_decision_state",
+      "cutover_verdict does not imply demotion_gate_state",
+      "demotion_decision_state does not imply cutover_verdict",
+      "demotion_gate_state does not imply cutover_verdict",
+      "Phase 33 validation, value, and source refs remain separate from Phase 34 gate and reason codes",
+      "reference demotion remains a POST-01 authorization and execution boundary"
+    ]
+  },
+  "cutover_decision_fields": [
+    "artifact_name",
+    "phase",
+    "phase_lifecycle_id",
+    "requirement_ids",
+    "cutover_verdict",
+    "reason_codes",
+    "readiness_state",
+    "readiness_result_ref",
+    "active_exception_ids",
+    "blocker_ids",
+    "audit_link_index_ref",
+    "audit_link_counts_by_kind",
+    "demotion_decision_validation_state",
+    "demotion_decision_state",
+    "demotion_decision_source_refs",
+    "demotion_gate_state",
+    "demotion_gate_reason_codes",
+    "route_ref",
+    "raw_evidence_consumed"
+  ],
+  "route_fields": [
+    "artifact_name",
+    "phase",
+    "phase_lifecycle_id",
+    "route",
+    "source_verdict",
+    "follow_up_scope",
+    "requires_fresh_cutover_decision",
+    "planning_only",
+    "production_actions_authorized"
+  ],
+  "repair_scope_fields": [
+    "scope_id",
+    "blocker_refs",
+    "exception_refs",
+    "residual_risk_refs",
+    "requirement_ids",
+    "affected_gates",
+    "owner_ref",
+    "required_action_ref",
+    "exit_review_criterion_refs"
+  ],
+  "repair_scope_ref_policy": {
+    "required_action_ref": "build/ci-evidence/phase32/blocker-register.json#<row_id>/required_next_action",
+    "ordinary_exit_review_criterion_refs": [
+      "build/ci-evidence/phase32/blocker-register.json#<row_id>/affected_gate",
+      "build/ci-evidence/phase32/blocker-register.json#<row_id>/required_next_action",
+      "build/ci-evidence/phase34/readiness-coverage-ledger.json#<ledger-row-id>/reason_codes",
+      "build/ci-evidence/phase34/readiness-coverage-ledger.json#<ledger-row-id>/readiness_effect"
+    ],
+    "exception_exit_review_criterion_refs": [
+      "build/ci-evidence/phase33/exception-decision-register.json#<decision_id>/expiry_or_review_trigger",
+      "build/ci-evidence/phase33/exception-decision-register.json#<decision_id>/affected_gates"
+    ],
+    "residual_risk_exit_review_criterion_refs": [
+      "build/ci-evidence/phase33/residual-risk-decision-register.json#<decision_id>/follow_up_refs",
+      "build/ci-evidence/phase33/residual-risk-decision-register.json#<decision_id>/affected_gates"
+    ],
+    "free_form_refs_allowed": false,
+    "unresolved_refs_add_reason": "route-scope-incomplete"
+  },
+  "route_semantics": {
+    "approved": {
+      "route": "production-cutover-planning",
+      "requires_fresh_cutover_decision": false,
+      "planning_only": true,
+      "production_actions_authorized": false
+    },
+    "blocked": {
+      "route": "targeted-blocker-repair",
+      "requires_fresh_cutover_decision": true,
+      "planning_only": true,
+      "production_actions_authorized": false
+    },
+    "approved-with-exceptions": {
+      "route": "targeted-blocker-repair",
+      "requires_fresh_cutover_decision": true,
+      "planning_only": true,
+      "production_actions_authorized": false
+    }
+  },
+  "generated_artifacts": [
+    "cutover-decision-run-manifest.json",
+    "cutover-audit-link-index.json",
+    "cutover-decision.json",
+    "next-milestone-route.json",
+    "redacted-cutover-decision-report.md",
+    "contract-snapshots/phase35_cutover_decision_artifact_contract.json",
+    "contract-snapshots/phase34_final_readiness_demotion_dry_run_contract.json",
+    "contract-snapshots/phase34-final-readiness-run-manifest.json"
+  ],
+  "security": {
+    "allowed_source_roots": [
+      "build/ci-evidence/phase31/",
+      "build/ci-evidence/phase32/",
+      "build/ci-evidence/phase33/",
+      "build/ci-evidence/phase34/",
+      "external://phase31/",
+      "external://phase32/",
+      "external://phase33/",
+      "external://phase34/"
+    ],
+    "path_requirements": [
+      "repository-relative",
+      "contract-rooted",
+      "resolved-root-contained",
+      "input-output-non-overlapping",
+      "no-parent-traversal",
+      "no-symlink-escape"
+    ],
+    "prohibited_field_fragments": [
+      "private_key",
+      "secret",
+      "token",
+      "password",
+      "certificate_pem",
+      "raw_payload",
+      "raw_crash_dump",
+      "raw_release_log"
+    ],
+    "prohibited_text_markers": [
+      "BEGIN PRIVATE KEY",
+      "production demotion complete",
+      "reference demotion authorized by cutover",
+      "production rollout authorized",
+      "raw evidence payload"
+    ],
+    "raw_evidence_consumed": false,
+    "snapshot_policy": "only the three contract-listed sanitized sources"
+  },
+  "authority_boundaries": {
+    "accepts_caller_supplied_verdict": false,
+    "accepts_cutover_confirmation": false,
+    "accepts_demotion_approval": false,
+    "accepts_evidence_payload": false,
+    "planning_only": true,
+    "production_actions_authorized": false,
+    "reference_demotion_requirement": "POST-01"
+  },
+  "default_behavior": {
+    "cutover_verdict": "blocked",
+    "route": "targeted-blocker-repair",
+    "requires_fresh_cutover_decision": true,
+    "demotion_decision_validation_state": "missing",
+    "demotion_decision_state": "missing",
+    "demotion_decision_source_refs": [],
+    "demotion_gate_state": "blocked",
+    "synthesizes_evidence": false,
+    "synthesizes_approval": false,
+    "synthesizes_exception": false,
+    "synthesizes_demotion_authorization": false
+  },
+  "verification_commands": [
+    "python3 -m py_compile tools/bazel/phase35_cutover_decision_artifact.py tools/bazel/phase35_cutover_decision_artifact_test.py",
+    "python3 tools/bazel/phase35_cutover_decision_artifact_test.py -q",
+    "python3 tools/bazel/phase35_cutover_decision_artifact.py --contract-only",
+    "python3 tools/bazel/phase35_cutover_decision_artifact.py --security-only",
+    "python3 tools/bazel/phase35_cutover_decision_artifact.py --wiring-only",
+    "bazel run //tools/bazel:phase35_verify_tests",
+    "bazel run //tools/bazel:phase35_verify",
+    "just phase35-verify"
+  ]
+}
