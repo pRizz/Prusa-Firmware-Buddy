@@ -228,6 +228,8 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         return {
             "row_id": row_id,
             "classification_ref": f"{PHASE32_REGISTER}#blocker-1",
+            "requirement_ids": ["CUTOVER-01"],
+            "affected_gates": ["final-simulator-evidence"],
             "reason_codes": ["evidence-failed"],
             "readiness_effect": "blocked",
         }
@@ -661,6 +663,36 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
                 f"{PHASE33_RESIDUAL_REGISTER}#risk-1/follow_up_refs",
                 f"{PHASE33_RESIDUAL_REGISTER}#risk-1/affected_gates",
             ],
+        )
+
+    def test_cutover_03_repair_scope_covers_phase34_created_blocker(
+            self) -> None:
+        # Arrange
+        ledger = {
+            "row_id": "phase34-required-stream",
+            "classification_ref": "",
+            "source_stream": "simulator",
+            "source_ref":
+            "build/ci-evidence/phase23/upstream-simulator-result-row.json",
+            "requirement_ids": ["INTAKE-01"],
+            "affected_gates": ["final-simulator-evidence"],
+            "reason_codes": ["required-row-missing"],
+            "readiness_effect": "blocked",
+        }
+
+        # Act
+        scope, reasons = phase35.build_repair_scope([], [ledger], [], [])
+
+        # Assert
+        self.assertEqual(reasons, [])
+        self.assertEqual(len(scope), 1)
+        self.assertEqual(
+            scope[0]["blocker_refs"],
+            [f"{PHASE34_LEDGER}#phase34-required-stream"],
+        )
+        self.assertEqual(
+            scope[0]["required_action_ref"],
+            f"{PHASE34_LEDGER}#phase34-required-stream/source_ref",
         )
 
     def test_cutover_03_unresolved_or_fabricated_scope_stays_blocked(

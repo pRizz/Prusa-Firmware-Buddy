@@ -219,10 +219,14 @@
     "exit_review_criterion_refs"
   ],
   "repair_scope_ref_policy": {
-    "required_action_ref": "build/ci-evidence/phase32/blocker-register.json#<row_id>/required_next_action",
+    "required_action_refs": [
+      "build/ci-evidence/phase32/blocker-register.json#<row_id>/required_next_action",
+      "build/ci-evidence/phase34/readiness-coverage-ledger.json#<ledger-row-id>/source_ref"
+    ],
     "ordinary_exit_review_criterion_refs": [
       "build/ci-evidence/phase32/blocker-register.json#<row_id>/affected_gate",
       "build/ci-evidence/phase32/blocker-register.json#<row_id>/required_next_action",
+      "build/ci-evidence/phase34/readiness-coverage-ledger.json#<ledger-row-id>/source_ref",
       "build/ci-evidence/phase34/readiness-coverage-ledger.json#<ledger-row-id>/reason_codes",
       "build/ci-evidence/phase34/readiness-coverage-ledger.json#<ledger-row-id>/readiness_effect"
     ],

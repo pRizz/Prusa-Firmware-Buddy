@@ -725,33 +725,62 @@ def build_repair_scope(
     reasons: set[str] = set()
     matched_exception_ids: set[str] = set()
     matched_residual_ids: set[str] = set()
-    for blocker in sorted(blockers,
-                          key=lambda row: str(row.get("row_id", ""))):
-        row_id = str(blocker.get("row_id") or "")
-        blocker_ref = f"{PHASE32_REGISTER_REF}#{row_id}"
-        ledger_matches = [
-            row for row in ledger_rows
-            if row.get("classification_ref") == blocker_ref
-        ]
-        if not row_id or len(ledger_matches) != 1:
+    blocker_by_ref = {
+        f"{PHASE32_REGISTER_REF}#{row.get('row_id')}": row
+        for row in blockers if row.get("row_id")
+    }
+    matched_blocker_refs: set[str] = set()
+    blocked_rows = [
+        row for row in ledger_rows if row.get("readiness_effect") == "blocked"
+    ]
+    for ledger in sorted(blocked_rows,
+                         key=lambda row: str(row.get("row_id", ""))):
+        ledger_row_id = str(ledger.get("row_id") or "")
+        ledger_ref = f"{PHASE34_LEDGER_REF}#{ledger_row_id}"
+        classification_ref = str(ledger.get("classification_ref") or "")
+        maybe_blocker = blocker_by_ref.get(classification_ref)
+        if not ledger_row_id:
             reasons.add("route-scope-incomplete")
             continue
-        ledger = ledger_matches[0]
-        required = ("owner_ref", "required_next_action", "requirement_ids",
-                    "affected_gate")
-        if any(
-                field not in blocker for field in required
-        ) or "reason_codes" not in ledger or "readiness_effect" not in ledger:
+        if ("reason_codes" not in ledger
+                or not isinstance(ledger.get("requirement_ids"), list)
+                or not isinstance(ledger.get("affected_gates"), list)):
             reasons.add("route-scope-incomplete")
             continue
-        criteria = [
-            f"{blocker_ref}/affected_gate",
-            f"{blocker_ref}/required_next_action",
-            f"{PHASE34_LEDGER_REF}#{ledger['row_id']}/reason_codes",
-            f"{PHASE34_LEDGER_REF}#{ledger['row_id']}/readiness_effect",
-        ]
-        exception_matches = matching_decisions(exception_rows, blocker_ref)
-        residual_matches = matching_decisions(residual_rows, blocker_ref)
+        if maybe_blocker is None:
+            source_stream = re.sub(
+                r"[^a-z0-9-]+", "-",
+                str(ledger.get("source_stream") or "unknown").casefold())
+            blocker_refs = [ledger_ref]
+            owner_ref = f"owner://phase34/{source_stream}"
+            required_action_ref = f"{ledger_ref}/source_ref"
+            criteria = [
+                f"{ledger_ref}/source_ref",
+                f"{ledger_ref}/reason_codes",
+                f"{ledger_ref}/readiness_effect",
+            ]
+            exception_matches: list[dict[str, Any]] = []
+            residual_matches: list[dict[str, Any]] = []
+        else:
+            matched_blocker_refs.add(classification_ref)
+            required = ("owner_ref", "required_next_action",
+                        "requirement_ids", "affected_gate")
+            if any(field not in maybe_blocker for field in required):
+                reasons.add("route-scope-incomplete")
+                continue
+            blocker_refs = [ledger_ref, classification_ref]
+            owner_ref = str(maybe_blocker["owner_ref"])
+            required_action_ref = f"{classification_ref}/required_next_action"
+            criteria = [
+                f"{classification_ref}/affected_gate",
+                f"{classification_ref}/required_next_action",
+                f"{ledger_ref}/reason_codes",
+                f"{ledger_ref}/readiness_effect",
+            ]
+            exception_matches = matching_decisions(exception_rows,
+                                                   classification_ref)
+            residual_matches = matching_decisions(residual_rows,
+                                                  classification_ref)
         for decision in exception_matches:
             decision_id = str(decision.get("decision_id") or "")
             if not decision_id or not decision.get(
@@ -777,8 +806,8 @@ def build_repair_scope(
             ])
         scope.append({
             "scope_id":
-            f"repair-{row_id}",
-            "blocker_refs": [blocker_ref],
+            f"repair-{ledger_row_id}",
+            "blocker_refs": blocker_refs,
             "exception_refs": [
                 f"{PHASE33_EXCEPTION_REGISTER}#{row['decision_id']}"
                 for row in exception_matches
@@ -790,12 +819,19 @@ def build_repair_scope(
                 if row.get("decision_id") in matched_residual_ids
             ],
             "requirement_ids":
-            sorted(set(str(value) for value in blocker["requirement_ids"])),
-            "affected_gates": [str(blocker["affected_gate"])],
+            sorted(
+                set(
+                    str(value)
+                    for value in ledger.get("requirement_ids", []))),
+            "affected_gates":
+            sorted(
+                set(
+                    str(value)
+                    for value in ledger.get("affected_gates", []))),
             "owner_ref":
-            str(blocker["owner_ref"]),
+            owner_ref,
             "required_action_ref":
-            f"{blocker_ref}/required_next_action",
+            required_action_ref,
             "exit_review_criterion_refs":
             criteria,
         })
@@ -808,6 +844,8 @@ def build_repair_scope(
         for row in residual_rows
     }
     if all_exception_ids - matched_exception_ids or all_residual_ids - matched_residual_ids:
+        reasons.add("route-scope-incomplete")
+    if set(blocker_by_ref) - matched_blocker_refs:
         reasons.add("route-scope-incomplete")
     return scope, sorted(reasons)
 
@@ -1278,8 +1316,8 @@ def write_bundle(
         for kind in AUDIT_KINDS
     }
     blocker_ids = sorted(
-        str(row.get("row_id")) for row in source["blockers"]
-        if row.get("row_id"))
+        str(row.get("row_id")) for row in ledger_rows
+        if row.get("row_id") and row.get("readiness_effect") == "blocked")
     decision = {
         "artifact_name": "phase35-cutover-decision",
         "phase": PHASE,
