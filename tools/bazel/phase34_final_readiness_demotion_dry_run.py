@@ -639,7 +639,7 @@ def coverage_for_row(
     reason_codes: list[str] = []
     if expected["duplicate_source_ref"]:
         reason_codes.append("duplicate-row")
-    if maybe_blocker is None and problem_kind == "missing":
+    if problem_kind == "missing":
         reason_codes.append("required-row-missing")
         coverage_state = "required-row-missing"
         readiness_effect = "blocked"

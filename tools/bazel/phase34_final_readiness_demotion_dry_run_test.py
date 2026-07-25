@@ -758,6 +758,25 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
                         affected_gate=affected_gate,
                     )
                 )
+                missing_source_ref = REQUIRED_STREAM_SOURCE_REFS[missing_stream]
+                missing_gate = EXPECTED_GATE_BY_STREAM[missing_stream]
+                missing_blocker = self.blocker_row(
+                    "missing-stream-row",
+                    missing_source_ref,
+                    row_problem_kind="missing",
+                    affected_gate=missing_gate,
+                )
+                missing_blocker["source_stream"] = missing_stream
+                missing_blocker_ref = f"{PHASE32_REGISTER}#missing-stream-row"
+                decisions.append(
+                    self.decision(
+                        "approve-missing-stream-exception",
+                        "exception",
+                        "approve",
+                        missing_blocker_ref,
+                        affected_gate=missing_gate,
+                    )
+                )
                 receipts = [
                     receipt
                     for receipt in self.required_stream_receipts()
@@ -771,7 +790,14 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
                             evidence_status="failed",
                             exception_status="exception-requested",
                         )
-                self.write_fixture(root, receipts, [blocker], decisions, readiness, demotion)
+                self.write_fixture(
+                    root,
+                    receipts,
+                    [blocker, missing_blocker],
+                    decisions,
+                    readiness,
+                    demotion,
+                )
 
                 # Act
                 result = self.run_quick(root)
