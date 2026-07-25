@@ -288,10 +288,27 @@ def validate_exact_fields(value: dict[str, Any], expected_fields: set[str],
         raise VerificationError(f"{field} field set is not exact")
 
 
+def decode_ref_component(value: str, field: str) -> str:
+    if re.search(r"%(?![0-9a-fA-F]{2})", value):
+        raise VerificationError(f"unsafe ref in {field}: malformed encoding")
+    try:
+        decoded = unquote(value, encoding="utf-8", errors="strict")
+    except UnicodeDecodeError as error:
+        raise VerificationError(
+            f"unsafe ref in {field}: malformed encoding") from error
+    if "\\" in decoded or any(
+            ord(character) < 32 or ord(character) == 127
+            for character in decoded):
+        raise VerificationError(f"unsafe ref in {field}: decoded control")
+    return decoded
+
+
 def validate_ref(value: str, field: str = "ref") -> None:
     if not isinstance(value, str) or not value:
         raise VerificationError(f"{field} must be a non-blank string")
-    if "\\" in value or any(ord(character) < 32 for character in value):
+    if "\\" in value or any(
+            ord(character) < 32 or ord(character) == 127
+            for character in value):
         raise VerificationError(f"unsafe ref in {field}: {value}")
     if not value.startswith(ALLOWED_REF_PREFIXES):
         raise VerificationError(f"unsafe ref in {field}: {value}")
@@ -301,18 +318,25 @@ def validate_ref(value: str, field: str = "ref") -> None:
                 or not parsed.netloc or parsed.query or "@" in parsed.netloc
                 or ":" in parsed.netloc):
             raise VerificationError(f"unsafe ref in {field}: {value}")
+        decoded_netloc = decode_ref_component(parsed.netloc, field)
+        decoded_path = decode_ref_component(parsed.path, field)
+        if decoded_netloc != parsed.netloc or any(
+                delimiter in decoded_path for delimiter in "?#"):
+            raise VerificationError(f"unsafe ref in {field}: {value}")
         if parsed.scheme == "external" and (
                 parsed.netloc not in {
                     f"phase{phase}"
                     for phase in range(23, 35)
-                } or not parsed.path.startswith("/")
-                or parsed.path in {"", "/"}):
+                } or not decoded_path.startswith("/")
+                or decoded_path in {"", "/"}):
             raise VerificationError(f"unsafe ref in {field}: {value}")
-        decoded_parts = Path(unquote(parsed.path)).parts
-        if any(part in {".", ".."} for part in decoded_parts):
+        path_parts = decoded_path[1:].split("/") if decoded_path else []
+        if any(part in {"", ".", ".."} for part in path_parts):
             raise VerificationError(f"unsafe ref in {field}: {value}")
         if parsed.fragment:
-            decoded_fragment = unquote(parsed.fragment)
+            decoded_fragment = decode_ref_component(parsed.fragment, field)
+            if any(delimiter in decoded_fragment for delimiter in "?#"):
+                raise VerificationError(f"unsafe ref in {field}: {value}")
             fragment_parts = decoded_fragment.split("/")
             if any(part in {"", ".", ".."} for part in fragment_parts):
                 raise VerificationError(f"unsafe ref in {field}: {value}")
@@ -324,7 +348,7 @@ def validate_ref(value: str, field: str = "ref") -> None:
     if path.is_absolute() or ".." in path.parts or "\\" in path_text:
         raise VerificationError(f"unsafe ref in {field}: {value}")
     if separator:
-        decoded_fragment = unquote(fragment)
+        decoded_fragment = decode_ref_component(fragment, field)
         fragment_parts = decoded_fragment.split("/")
         if any(part in {"", ".", ".."} for part in fragment_parts):
             raise VerificationError(f"unsafe ref in {field}: {value}")
