@@ -31,6 +31,12 @@ PHASE33_OUTPUT_ROOT = Path("build/ci-evidence/phase33")
 DEFAULT_OUTPUT_DIR = Path("build/ci-evidence/phase34")
 PHASE32_REGISTER_REF = "build/ci-evidence/phase32/blocker-register.json"
 REQUIRED_REQUIREMENT_IDS = ["READY-01", "READY-02", "READY-03"]
+REQUIRED_PHASE31_STREAMS = (
+    "simulator",
+    "hardware-media-safety",
+    "live-service",
+    "release-signing",
+)
 LEDGER_FIELDS = [
     "row_id",
     "source_stream",
@@ -388,6 +394,13 @@ def validate_contract(contract: dict[str, Any]) -> None:
     source_inputs = contract.get("source_inputs")
     if not isinstance(source_inputs, dict) or source_inputs.get("raw_evidence_consumed") is not False:
         raise VerificationError("source_inputs.raw_evidence_consumed must be false")
+    overlay_policy = contract.get("sparse_blocker_overlay_policy")
+    if not isinstance(overlay_policy, dict):
+        raise VerificationError("sparse_blocker_overlay_policy must be an object")
+    if overlay_policy.get("required_streams_from") != "phase31 contract stream_adapters":
+        raise VerificationError("required streams must derive from Phase 31 stream_adapters")
+    if overlay_policy.get("absent_required_stream_state") != "required-row-missing":
+        raise VerificationError("absent required streams must use required-row-missing")
     open_requires = contract.get("demotion_dry_run_schema", {}).get("open_requires")
     if open_requires != {
         "readiness_state": "unblocked",
@@ -401,6 +414,51 @@ def load_contract(root: Path = ROOT) -> dict[str, Any]:
     contract = load_json(root, CONTRACT_MANIFEST)
     validate_contract(contract)
     return contract
+
+
+def load_phase31_required_streams(root: Path) -> dict[str, dict[str, Any]]:
+    contract = load_json(root, PHASE31_CONTRACT)
+    if contract.get("id") != "phase31_final_evidence_intake_contract":
+        raise VerificationError("Phase 31 contract id must be phase31_final_evidence_intake_contract")
+    if contract.get("phase_lifecycle_id") != PHASE31_LIFECYCLE_ID:
+        raise VerificationError(f"Phase 31 contract phase_lifecycle_id must be {PHASE31_LIFECYCLE_ID}")
+
+    required_streams: dict[str, dict[str, Any]] = {}
+    for index, adapter in enumerate(require_list(contract.get("stream_adapters"), "Phase 31 stream_adapters")):
+        if not isinstance(adapter, dict):
+            raise VerificationError(f"Phase 31 stream_adapters[{index}] must be an object")
+        stream = require_string(adapter.get("stream"), f"Phase 31 stream_adapters[{index}].stream")
+        if stream in required_streams:
+            raise VerificationError(f"duplicate Phase 31 stream adapter: {stream}")
+        if stream not in REQUIRED_PHASE31_STREAMS:
+            raise VerificationError(f"unknown Phase 31 required stream: {stream}")
+        output_root = repo_relative_path(
+            require_string(adapter.get("output_root"), f"{stream}.output_root"),
+            f"{stream}.output_root",
+        )
+        maybe_upstream_row = adapter.get("upstream_row")
+        maybe_upstream_table = adapter.get("upstream_row_table")
+        if (isinstance(maybe_upstream_row, str) and maybe_upstream_row) == (
+            isinstance(maybe_upstream_table, str) and maybe_upstream_table
+        ):
+            raise VerificationError(f"{stream} must declare exactly one upstream row or row table")
+        upstream_name = maybe_upstream_row if isinstance(maybe_upstream_row, str) else maybe_upstream_table
+        upstream_path = repo_relative_path(
+            require_string(upstream_name, f"{stream}.upstream row"),
+            f"{stream}.upstream row",
+        )
+        expected_source_ref = (output_root / upstream_path).as_posix()
+        required_streams[stream] = {
+            "stream": stream,
+            "requirement_ids": string_list(adapter.get("requirement_ids"), f"{stream}.requirement_ids"),
+            "expected_source_ref": expected_source_ref,
+            "expected_gate": EXPECTED_GATE_BY_STREAM[stream],
+        }
+
+    if set(required_streams) != set(REQUIRED_PHASE31_STREAMS):
+        missing = sorted(set(REQUIRED_PHASE31_STREAMS) - set(required_streams))
+        raise VerificationError(f"Phase 31 stream_adapters missing required streams: {', '.join(missing)}")
+    return required_streams
 
 
 def stable_row_id(stream: str, source_ref: str) -> str:
@@ -423,7 +481,10 @@ def receipt_problem_kind(receipt: dict[str, Any]) -> str:
     return ""
 
 
-def derive_expected_rows(receipts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def derive_expected_rows(
+    receipts: list[dict[str, Any]],
+    required_streams: dict[str, dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     seen_refs: set[str] = set()
     duplicate_refs: set[str] = set()
@@ -456,6 +517,26 @@ def derive_expected_rows(receipts: list[dict[str, Any]]) -> list[dict[str, Any]]
                     "duplicate_source_ref": source_ref in duplicate_refs,
                 }
             )
+    present_streams = {row["source_stream"] for row in rows}
+    for stream, specification in sorted((required_streams or {}).items()):
+        if stream in present_streams:
+            continue
+        source_ref = str(specification["expected_source_ref"])
+        rows.append(
+            {
+                "row_id": stable_row_id(stream, source_ref),
+                "source_stream": stream,
+                "source_ref": source_ref,
+                "expected_gate": str(specification["expected_gate"]),
+                "requirement_ids": sorted({str(value) for value in specification["requirement_ids"]}),
+                "proof_eligibility": "ineligible",
+                "evidence_status": "missing",
+                "row_problem_kind": "missing",
+                "evidence_refs": [source_ref],
+                "artifact_refs": [],
+                "duplicate_source_ref": False,
+            }
+        )
     for row in rows:
         row["duplicate_source_ref"] = row["source_ref"] in duplicate_refs
     return sorted(rows, key=lambda row: (row["source_stream"], row["source_ref"], row["row_id"]))
@@ -558,7 +639,18 @@ def coverage_for_row(
     reason_codes: list[str] = []
     if expected["duplicate_source_ref"]:
         reason_codes.append("duplicate-row")
-    if maybe_blocker is None and problem_kind:
+    if maybe_blocker is None and problem_kind == "missing":
+        reason_codes.append("required-row-missing")
+        coverage_state = "required-row-missing"
+        readiness_effect = "blocked"
+        affected_gates = [str(expected["expected_gate"])]
+        blocker_kind = "missing_required_evidence"
+        severity = "critical"
+        classification_ref = ""
+        retained_refs = []
+        residual_refs = []
+        exception_refs = []
+    elif maybe_blocker is None and problem_kind:
         reason_codes.append("underclassified")
         coverage_state = "underclassified"
         readiness_effect = "blocked"
@@ -657,8 +749,9 @@ def evaluate_coverage(
     receipts: list[dict[str, Any]],
     blocker_rows: list[dict[str, Any]],
     decisions: list[dict[str, Any]],
+    required_streams: dict[str, dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
-    expected_rows = derive_expected_rows(receipts)
+    expected_rows = derive_expected_rows(receipts, required_streams)
     blocker_id_counts: dict[str, int] = {}
     blockers_by_join_key: dict[tuple[str, str], list[tuple[int, dict[str, Any]]]] = {}
     blockers_by_id: dict[str, list[tuple[int, dict[str, Any]]]] = {}
@@ -1203,6 +1296,7 @@ def validate_generated_outputs(output_dir: Path) -> None:
 
 def run_quick(root: Path, phase31_output: str, phase33_handoff: str, output_arg: str) -> str | None:
     load_contract(root)
+    required_streams = load_phase31_required_streams(root)
     relative_output, full_output = output_paths(root, output_arg)
     raw_handoff_path = repo_relative_path(phase33_handoff, "--phase33-handoff")
     resolved_handoff = (root / raw_handoff_path).resolve(strict=False)
@@ -1233,7 +1327,7 @@ def run_quick(root: Path, phase31_output: str, phase33_handoff: str, output_arg:
     if not all(isinstance(row, dict) for row in blocker_rows):
         raise VerificationError("Phase 32 blocker rows must contain objects")
     decisions_by_id = validate_normalized_decisions(decisions)
-    ledger = evaluate_coverage(receipts, blocker_rows, decisions)
+    ledger = evaluate_coverage(receipts, blocker_rows, decisions, required_streams)
     readiness, readiness_reasons, maybe_readiness_error = readiness_state(ledger, readiness_input, decisions_by_id)
     validation, decision, source_refs, maybe_approval_error = approval_state(demotion_input, decisions_by_id)
     demotion = evaluate_demotion(readiness, validation, decision, source_refs)

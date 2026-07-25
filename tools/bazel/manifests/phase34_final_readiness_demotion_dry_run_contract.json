@@ -67,6 +67,8 @@
   },
   "sparse_blocker_overlay_policy": {
     "expected_rows_from": "phase31 accepted-final receipts and consumed_upstream_row_refs",
+    "required_streams_from": "phase31 contract stream_adapters",
+    "absent_required_stream_state": "required-row-missing",
     "clean_row_may_omit_phase32_classification": true,
     "clean_row_requires": [
       "finality_status accepted-final",

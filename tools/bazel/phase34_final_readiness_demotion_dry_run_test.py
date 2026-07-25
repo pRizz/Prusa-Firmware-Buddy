@@ -17,6 +17,18 @@ PHASE31_MANIFEST = "build/ci-evidence/phase31/final-intake-manifest.json"
 PHASE32_REGISTER = "build/ci-evidence/phase32/blocker-register.json"
 PHASE33_HANDOFF = "build/ci-evidence/phase33/downstream-handoff-manifest.json"
 OUTPUT_DIR = "build/ci-evidence/phase34"
+REQUIRED_STREAM_SOURCE_REFS = {
+    "simulator": "build/ci-evidence/phase23/upstream-simulator-result-row.json",
+    "hardware-media-safety": "build/ci-evidence/phase24/upstream-hardware-media-safety-result-row.json",
+    "live-service": "build/ci-evidence/phase25/upstream-live-service-result-row.json",
+    "release-signing": "build/ci-evidence/phase26/upstream-result-row-table.json",
+}
+EXPECTED_GATE_BY_STREAM = {
+    "simulator": "final-simulator-evidence",
+    "hardware-media-safety": "final-hardware-safety-media-evidence",
+    "live-service": "final-live-network-transfer-evidence",
+    "release-signing": "final-release-artifact-signing-evidence",
+}
 LEDGER_FIELDS = [
     "row_id",
     "source_stream",
@@ -135,6 +147,12 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
             "validator_output_refs": [source_ref],
         }
 
+    def required_stream_receipts(self) -> list[dict[str, object]]:
+        return [
+            self.receipt(stream, source_ref)
+            for stream, source_ref in REQUIRED_STREAM_SOURCE_REFS.items()
+        ]
+
     def blocker_row(
         self,
         row_id: str,
@@ -194,9 +212,22 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
     def approved_projection_fixture(
         self,
         blocker_ref: str,
+        affected_gate: str = "final-simulator-evidence",
     ) -> tuple[list[dict[str, object]], dict[str, object], dict[str, object]]:
-        readiness_decision = self.decision("approve-readiness", "readiness", "approve", blocker_ref)
-        demotion_decision = self.decision("approve-demotion", "reference_demotion", "approve", blocker_ref)
+        readiness_decision = self.decision(
+            "approve-readiness",
+            "readiness",
+            "approve",
+            blocker_ref,
+            affected_gate=affected_gate,
+        )
+        demotion_decision = self.decision(
+            "approve-demotion",
+            "reference_demotion",
+            "approve",
+            blocker_ref,
+            affected_gate=affected_gate,
+        )
         readiness = {
             "phase": "33-maintainer-decision-inputs",
             "phase_lifecycle_id": "33-2026-07-04T01-36-41",
@@ -379,6 +410,14 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
             },
         )
         self.assertTrue(contract["sparse_blocker_overlay_policy"]["clean_row_may_omit_phase32_classification"])
+        self.assertEqual(
+            contract["sparse_blocker_overlay_policy"]["required_streams_from"],
+            "phase31 contract stream_adapters",
+        )
+        self.assertEqual(
+            contract["sparse_blocker_overlay_policy"]["absent_required_stream_state"],
+            "required-row-missing",
+        )
         self.assertFalse(contract["source_inputs"]["raw_evidence_consumed"])
 
     def test_quick_default_writes_blocked_packet_and_dry_run(self) -> None:
@@ -413,6 +452,44 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
         # Assert
         self.assertEqual([row["source_stream"] for row in rows], ["live-service", "simulator"])
         self.assertEqual(len(rows), 2)
+
+    def test_required_stream_specs_come_from_validated_phase31_contract(self) -> None:
+        # Arrange
+        module = self.load_module()
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+
+        # Act
+        specifications = module.load_phase31_required_streams(root)
+
+        # Assert
+        self.assertEqual(set(specifications), set(REQUIRED_STREAM_SOURCE_REFS))
+        for stream, source_ref in REQUIRED_STREAM_SOURCE_REFS.items():
+            self.assertEqual(specifications[stream]["expected_source_ref"], source_ref)
+            self.assertEqual(specifications[stream]["expected_gate"], EXPECTED_GATE_BY_STREAM[stream])
+
+    def test_phase31_required_stream_contract_rejects_duplicate_and_unsafe_adapters(self) -> None:
+        cases = ["duplicate", "unsafe-output-root"]
+        for case in cases:
+            with self.subTest(case=case):
+                # Arrange
+                module = self.load_module()
+                temp_dir, root = self.make_temp_root()
+                self.addCleanup(temp_dir.cleanup)
+                contract_path = root / "tools/bazel/manifests/phase31_final_evidence_intake_contract.json"
+                contract = json.loads(contract_path.read_text(encoding="utf-8"))
+                if case == "duplicate":
+                    contract["stream_adapters"].append(dict(contract["stream_adapters"][0]))
+                else:
+                    contract["stream_adapters"][0]["output_root"] = "/tmp/phase31-escape"
+                contract_path.write_text(
+                    json.dumps(contract, indent=2, sort_keys=True) + "\n",
+                    encoding="utf-8",
+                )
+
+                # Act / Assert
+                with self.assertRaises(module.VerificationError):
+                    module.load_phase31_required_streams(root)
 
     def test_clean_final_passed_row_needs_no_phase32_blocker(self) -> None:
         # Arrange
@@ -547,7 +624,11 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
         # Assert
         self.assertEqual(result.returncode, 0, result.stdout)
         packet = self.read_json(root, f"{OUTPUT_DIR}/final-readiness-packet.json")
-        row = packet["ledger_rows"][0]
+        row = next(
+            ledger_row
+            for ledger_row in packet["ledger_rows"]
+            if ledger_row["source_stream"] == "simulator"
+        )
         self.assertEqual(row["classification_ref"], blocker_ref)
         self.assertIn("external://simulator/sanitized-report.json", row["artifact_refs"])
         self.assertTrue(row["readiness_decision_refs"])
@@ -630,8 +711,14 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
         blocker_ref = f"{PHASE32_REGISTER}#exception-row"
         decisions, readiness, demotion = self.approved_projection_fixture(blocker_ref)
         decisions.append(self.decision("approve-exception", "exception", "approve", blocker_ref))
-        receipt = self.receipt("simulator", source_ref, evidence_status="failed", exception_status="exception-requested")
-        self.write_fixture(root, [receipt], [blocker], decisions, readiness, demotion)
+        receipts = self.required_stream_receipts()
+        receipts[0] = self.receipt(
+            "simulator",
+            source_ref,
+            evidence_status="failed",
+            exception_status="exception-requested",
+        )
+        self.write_fixture(root, receipts, [blocker], decisions, readiness, demotion)
 
         # Act
         result = self.run_quick(root)
@@ -640,6 +727,69 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout)
         dry_run = self.read_json(root, f"{OUTPUT_DIR}/demotion-dry-run.json")
         self.assertEqual(dry_run["gate_state"], "open")
+
+    def test_each_absent_required_stream_blocks_otherwise_valid_demotion(self) -> None:
+        for missing_stream in REQUIRED_STREAM_SOURCE_REFS:
+            with self.subTest(missing_stream=missing_stream):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                self.addCleanup(temp_dir.cleanup)
+                exception_stream = "hardware-media-safety" if missing_stream == "simulator" else "simulator"
+                exception_source_ref = REQUIRED_STREAM_SOURCE_REFS[exception_stream]
+                affected_gate = EXPECTED_GATE_BY_STREAM[exception_stream]
+                blocker = self.blocker_row(
+                    "exception-row",
+                    exception_source_ref,
+                    row_problem_kind="exception_requested",
+                    affected_gate=affected_gate,
+                )
+                blocker["source_stream"] = exception_stream
+                blocker_ref = f"{PHASE32_REGISTER}#exception-row"
+                decisions, readiness, demotion = self.approved_projection_fixture(
+                    blocker_ref,
+                    affected_gate,
+                )
+                decisions.append(
+                    self.decision(
+                        "approve-exception",
+                        "exception",
+                        "approve",
+                        blocker_ref,
+                        affected_gate=affected_gate,
+                    )
+                )
+                receipts = [
+                    receipt
+                    for receipt in self.required_stream_receipts()
+                    if receipt["stream"] != missing_stream
+                ]
+                for index, receipt in enumerate(receipts):
+                    if receipt["stream"] == exception_stream:
+                        receipts[index] = self.receipt(
+                            exception_stream,
+                            exception_source_ref,
+                            evidence_status="failed",
+                            exception_status="exception-requested",
+                        )
+                self.write_fixture(root, receipts, [blocker], decisions, readiness, demotion)
+
+                # Act
+                result = self.run_quick(root)
+
+                # Assert
+                self.assertEqual(result.returncode, 0, result.stdout)
+                dry_run = self.read_json(root, f"{OUTPUT_DIR}/demotion-dry-run.json")
+                ledger = self.read_json(root, f"{OUTPUT_DIR}/readiness-coverage-ledger.json")
+                missing_rows = [
+                    row
+                    for row in ledger["rows"]
+                    if row["source_stream"] == missing_stream
+                ]
+                self.assertEqual(dry_run["readiness_state"], "blocked")
+                self.assertEqual(dry_run["gate_state"], "blocked")
+                self.assertEqual(len(missing_rows), 1)
+                self.assertEqual(missing_rows[0]["coverage_state"], "required-row-missing")
+                self.assertEqual(missing_rows[0]["reason_codes"], ["required-row-missing"])
 
     def test_unknown_projection_decision_ids_are_rejected(self) -> None:
         for projection_name in ["readiness", "demotion"]:
