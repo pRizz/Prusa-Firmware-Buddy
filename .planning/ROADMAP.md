@@ -188,4 +188,4 @@ Phases execute in numeric order across archived milestones. v1.3 continues after
 | 32. Blocker Register and Evidence Triage | v1.3 | 1/1 | Complete    | 2026-07-03 |
 | 33. Maintainer Decision Inputs | v1.3 | 1/1 | Complete    | 2026-07-04 |
 | 34. Final Readiness and Demotion Dry Run | v1.3 | 2/2 | Complete    | 2026-07-25 |
-| 35. Cutover Decision Artifact | v1.3 | 1/1 | Complete   | 2026-07-25 |
+| 35. Cutover Decision Artifact | v1.3 | 2/2 | Complete   | 2026-07-25 |

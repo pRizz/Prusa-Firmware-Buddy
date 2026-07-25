@@ -3,14 +3,14 @@ gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
 status: verifying
-stopped_at: Completed 35-01-PLAN.md
-last_updated: "2026-07-25T22:19:54.547Z"
+stopped_at: Completed 35-02-PLAN.md
+last_updated: "2026-07-25T23:57:09.873Z"
 last_activity: "2026-07-25"
 progress:
   total_phases: 5
   completed_phases: 5
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 7
+  completed_plans: 7
   percent: 100
 ---
 
@@ -64,6 +64,7 @@ Progress: [##########] 100% (5/5 v1.3 phases complete)
 | Phase 32 P01 | 19min | 3 tasks | 8 files |
 | Phase 33 P01 | 15min | 3 tasks | 8 files |
 | Phase 35 P01 | 20m42s | 3 tasks | 8 files |
+| Phase 35 P02 | 14min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -88,6 +89,9 @@ Recent decisions affecting current work:
 - [Phase 35]: Phase 35 derives verdict JSON, route JSON, and Markdown from one exact nine-kind canonical audit-link index.
 - [Phase 35]: Blocked and approved-with-exceptions verdicts route to targeted repair and require a fresh cutover decision.
 - [Phase 35]: Phase 33 demotion decision validation/value/source and the Phase 34 demotion gate remain independent from the cutover verdict.
+- [Phase 35]: Any source-boundary failure publishes the exact durable three-artifact blocked bundle before the command returns nonzero.
+- [Phase 35]: Both normal and failure bundles are validated in sibling staging directories before replacing the canonical output.
+- [Phase 35]: Failure output keeps cutover verdict, demotion validation and value, source lineage, and demotion gate state independent.
 
 ### Pending Todos
 
@@ -105,6 +109,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-25T22:19:54.545Z
-Stopped at: Completed 35-01-PLAN.md
+Last session: 2026-07-25T23:57:09.867Z
+Stopped at: Completed 35-02-PLAN.md
 Resume file: None
