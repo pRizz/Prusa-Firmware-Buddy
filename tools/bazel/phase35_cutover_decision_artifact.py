@@ -657,6 +657,55 @@ def validate_audit_links(expected: list[dict[str, Any]],
     return sorted(reasons)
 
 
+def resolve_audit_target(root: Path, target_ref: str) -> Any:
+    validate_ref(target_ref, "audit target_ref")
+    path_text, separator, fragment = target_ref.partition("#")
+    payload = load_json(root, Path(path_text))
+    scan_security(payload, target_ref)
+    if not separator:
+        return payload
+    if not fragment or "/" in fragment:
+        raise VerificationError(f"audit target fragment is invalid: {target_ref}")
+    for collection_name in ("rows", "receipts", "blockers"):
+        rows = payload.get(collection_name)
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            candidate = row.get("receipt", row)
+            if not isinstance(candidate, dict):
+                continue
+            identities = {
+                str(candidate.get(field) or "")
+                for field in ("row_id", "decision_id", "submission_id")
+            }
+            if fragment in identities:
+                return candidate
+    raise VerificationError(f"audit target fragment is dangling: {target_ref}")
+
+
+def validate_resolved_audit_links(root: Path,
+                                  links: list[dict[str, Any]]) -> list[str]:
+    reasons: set[str] = set()
+    for link in links:
+        target_ref = link.get("target_ref")
+        if not isinstance(target_ref, str):
+            reasons.add("audit-link-dangling")
+            continue
+        if target_ref.startswith("external://"):
+            continue
+        try:
+            resolved = resolve_audit_target(root, target_ref)
+        except VerificationError:
+            reasons.add("audit-link-dangling")
+            continue
+        expected_digest = hashlib.sha256(canonical_json(resolved)).hexdigest()
+        if link.get("digest") != expected_digest:
+            reasons.add("audit-link-digest-mismatched")
+    return sorted(reasons)
+
+
 def matching_decisions(rows: list[dict[str, Any]],
                        blocker_ref: str) -> list[dict[str, Any]]:
     return [
@@ -880,7 +929,7 @@ def audit_sources_from_bundle(bundle: dict[str, Any]) -> list[dict[str, Any]]:
             str(receipt.get("receipt_ref")),
             "31-2026-07-03T02-04-07",
             "supports",
-            receipt,
+            receipt_value,
         )
     for blocker in bundle["blockers"]:
         add("blocker", str(blocker["row_id"]),
@@ -1149,8 +1198,13 @@ def validate_generated_outputs(output: Path) -> None:
         raise VerificationError(
             "Phase 35 decision or route field set is not exact")
     links = index.get("links")
-    if not isinstance(links, list) or validate_audit_links(links, links):
+    if not isinstance(links, list):
         raise VerificationError("Phase 35 audit index is invalid")
+    resolution_reasons = validate_resolved_audit_links(output.parents[2],
+                                                       links)
+    if not set(resolution_reasons).issubset(decision.get("reason_codes", [])):
+        raise VerificationError(
+            "Phase 35 audit index resolution failures are not fail-closed")
     expected_report = render_report(decision, route, links)
     if report != expected_report:
         raise VerificationError(
@@ -1167,8 +1221,11 @@ def write_bundle(
 ) -> None:
     output = root / relative_output
     reset_output(output)
-    links = derive_audit_links(audit_sources_from_bundle(source))
-    link_reasons = validate_audit_links(links, links)
+    expected_links = derive_audit_links(audit_sources_from_bundle(source))
+    index_links = [dict(link) for link in expected_links]
+    link_reasons = sorted(
+        set(validate_audit_links(expected_links, index_links))
+        | set(validate_resolved_audit_links(root, index_links)))
     ledger_rows = source["ledger"]["rows"]
     readiness_state = str(source["packet"].get("readiness_state") or "blocked")
     upstream_reasons = [
@@ -1217,7 +1274,7 @@ def write_bundle(
     demotion = project_demotion(source["demotion_handoff"],
                                 source["normalized"], source["dry_run"])
     counts = {
-        kind: sum(link["kind"] == kind for link in links)
+        kind: sum(link["kind"] == kind for link in index_links)
         for kind in AUDIT_KINDS
     }
     blocker_ids = sorted(
@@ -1246,9 +1303,9 @@ def write_bundle(
         "artifact_name": "phase35-cutover-audit-link-index",
         "phase": PHASE,
         "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
-        "link_count": len(links),
+        "link_count": len(index_links),
         "counts_by_kind": counts,
-        "links": links,
+        "links": index_links,
     }
     manifest = {
         "artifact_name": "phase35-cutover-decision-artifact",
@@ -1266,7 +1323,7 @@ def write_bundle(
     write_json(output / "cutover-decision.json", decision)
     write_json(output / "next-milestone-route.json", route)
     (output / "redacted-cutover-decision-report.md").write_text(
-        render_report(decision, route, links), encoding="utf-8")
+        render_report(decision, route, index_links), encoding="utf-8")
     write_json(
         output /
         "contract-snapshots/phase35_cutover_decision_artifact_contract.json",

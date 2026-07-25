@@ -541,6 +541,47 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         # Assert
         self.assertEqual(link["digest"], hashlib.sha256(canonical).hexdigest())
 
+    def test_t_35_01_local_audit_links_resolve_targets_and_fragments(
+            self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        target_ref = "build/ci-evidence/phase34/rows.json#row-1"
+        target = {"row_id": "row-1", "value": "sanitized"}
+        target_path = root / target_ref.split("#", 1)[0]
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        target_path.write_text(json.dumps({"rows": [target]}),
+                               encoding="utf-8")
+        link = {
+            "target_ref":
+            target_ref,
+            "digest":
+            hashlib.sha256(phase35.canonical_json(target)).hexdigest(),
+        }
+
+        # Act
+        reasons = phase35.validate_resolved_audit_links(root, [link])
+
+        # Assert
+        self.assertEqual(reasons, [])
+
+    def test_t_35_01_dangling_local_audit_link_fails_closed(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        link = {
+            "target_ref":
+            "build/ci-evidence/phase34/does-not-exist.json",
+            "digest":
+            "0" * 64,
+        }
+
+        # Act
+        reasons = phase35.validate_resolved_audit_links(root, [link])
+
+        # Assert
+        self.assertEqual(reasons, ["audit-link-dangling"])
+
     def test_cutover_03_repair_scope_uses_exact_ordinary_exit_review_refs(
             self) -> None:
         # Arrange
