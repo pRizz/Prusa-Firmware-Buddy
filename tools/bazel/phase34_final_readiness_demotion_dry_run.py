@@ -27,6 +27,7 @@ PHASE28_CONTRACT = Path("tools/bazel/manifests/phase28_final_readiness_packet_co
 DEFAULT_PHASE31_OUTPUT_DIR = Path("build/ci-evidence/phase31")
 DEFAULT_PHASE31_MANIFEST = DEFAULT_PHASE31_OUTPUT_DIR / "final-intake-manifest.json"
 DEFAULT_PHASE33_HANDOFF = Path("build/ci-evidence/phase33/downstream-handoff-manifest.json")
+PHASE33_OUTPUT_ROOT = Path("build/ci-evidence/phase33")
 DEFAULT_OUTPUT_DIR = Path("build/ci-evidence/phase34")
 PHASE32_REGISTER_REF = "build/ci-evidence/phase32/blocker-register.json"
 REQUIRED_REQUIREMENT_IDS = ["READY-01", "READY-02", "READY-03"]
@@ -716,6 +717,22 @@ def load_phase31(root: Path, output_arg: str | Path) -> tuple[Path, dict[str, An
     return manifest_path, manifest, receipts, [json.dumps(row, sort_keys=True) for row in snapshot_rows]
 
 
+def phase33_register_path(root: Path, register_refs: dict[str, Any], name: str) -> Path:
+    value = register_refs.get(name)
+    if not isinstance(value, str):
+        raise VerificationError(f"Phase 33 register_refs.{name} must be a path")
+    register_path = path_under(value, PHASE33_OUTPUT_ROOT, f"register_refs.{name}")
+    resolved_under(root, register_path, PHASE33_OUTPUT_ROOT, f"register_refs.{name}")
+    return register_path
+
+
+def load_phase33_register(root: Path, register_refs: dict[str, Any], name: str) -> dict[str, Any]:
+    register_path = phase33_register_path(root, register_refs, name)
+    payload = load_json(root, register_path)
+    scan_json(payload, register_path)
+    return payload
+
+
 def load_phase33(
     root: Path,
     handoff_arg: str | Path,
@@ -725,8 +742,8 @@ def load_phase33(
     resolved_input = (root / raw_path).resolve(strict=False)
     if resolved_input == full_output or full_output in resolved_input.parents:
         raise VerificationError("--phase33-handoff must be outside the generated --output-dir")
-    handoff_path = path_under(raw_path, Path("build/ci-evidence/phase33"), "--phase33-handoff")
-    resolved_under(root, handoff_path, Path("build/ci-evidence/phase33"), "--phase33-handoff")
+    handoff_path = path_under(raw_path, PHASE33_OUTPUT_ROOT, "--phase33-handoff")
+    resolved_under(root, handoff_path, PHASE33_OUTPUT_ROOT, "--phase33-handoff")
     handoff = load_json(root, handoff_path)
     scan_json(handoff, handoff_path)
     if handoff.get("artifact_name") != "phase33-maintainer-decision-inputs":
@@ -742,19 +759,8 @@ def load_phase33(
     if not isinstance(register_refs, dict):
         raise VerificationError("Phase 33 handoff register_refs must be an object")
 
-    def load_register(name: str) -> dict[str, Any]:
-        value = register_refs.get(name)
-        if not isinstance(value, str):
-            raise VerificationError(f"Phase 33 register_refs.{name} must be a path")
-        register_path = path_under(value, Path("build/ci-evidence/phase33"), f"register_refs.{name}")
-        resolved_under(root, register_path, Path("build/ci-evidence/phase33"), f"register_refs.{name}")
-        payload = load_json(root, register_path)
-        scan_json(payload, register_path)
-        return payload
-
-    normalized = load_register("normalized_decision_records")
-    readiness = load_register("readiness_decision_handoff")
-    demotion = load_register("demotion_decision_handoff")
+    normalized = load_phase33_register(root, register_refs, "normalized_decision_records")
+    readiness = load_phase33_register(root, register_refs, "readiness_decision_handoff")
     raw_decisions = require_list(normalized.get("rows"), "normalized decision rows")
     if not all(isinstance(row, dict) for row in raw_decisions):
         raise VerificationError("normalized decision rows must contain objects")
@@ -766,7 +772,7 @@ def load_phase33(
     scan_json(blocker_register, blocker_register_path)
     if blocker_register.get("phase_lifecycle_id") != PHASE32_LIFECYCLE_ID:
         raise VerificationError(f"Phase 32 blocker register phase_lifecycle_id must be {PHASE32_LIFECYCLE_ID}")
-    return handoff_path, handoff, decisions, readiness, demotion, blocker_register
+    return handoff_path, handoff, decisions, readiness, register_refs, blocker_register
 
 
 def approval_state(
@@ -850,6 +856,32 @@ def reset_output_root(full_output: Path) -> None:
             raise VerificationError(f"--output-dir contains a symlink escape or is not a normal directory: {full_output}")
         shutil.rmtree(full_output)
     full_output.mkdir(parents=True, exist_ok=True)
+
+
+def write_invalid_approval_artifacts(
+    relative_output: Path,
+    full_output: Path,
+    handoff_path: Path,
+    approval_validation_state: str,
+) -> None:
+    reset_output_root(full_output)
+    demotion = evaluate_demotion("blocked", approval_validation_state, "missing", [])
+    run_manifest = {
+        "artifact_name": "phase34-final-readiness-demotion-dry-run",
+        "phase": PHASE,
+        "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
+        "output_root": relative_output.as_posix(),
+        "run_state": "blocked-invalid-approval",
+        "approval_validation_state": approval_validation_state,
+        "generated_artifacts": [
+            "final-readiness-run-manifest.json",
+            "demotion-dry-run.json",
+        ],
+        "source_refs": [handoff_path.as_posix()],
+        "raw_evidence_consumed": False,
+    }
+    write_json(full_output / "final-readiness-run-manifest.json", run_manifest)
+    write_json(full_output / "demotion-dry-run.json", demotion)
 
 
 def copy_snapshots(
@@ -1006,11 +1038,25 @@ def run_quick(root: Path, phase31_output: str, phase33_handoff: str, output_arg:
         raise VerificationError("--phase33-handoff must be outside the generated --output-dir")
     path_under(raw_handoff_path, Path("build/ci-evidence/phase33"), "--phase33-handoff")
     manifest_path, manifest, receipts, accepted_receipt_rows = load_phase31(root, phase31_output)
-    handoff_path, handoff, decisions, readiness_input, demotion_input, blocker_register = load_phase33(
+    handoff_path, handoff, decisions, readiness_input, register_refs, blocker_register = load_phase33(
         root,
         phase33_handoff,
         full_output,
     )
+    try:
+        demotion_input = load_phase33_register(root, register_refs, "demotion_decision_handoff")
+    except VerificationError as error:
+        approval_validation_state = "invalid"
+        if str(error).startswith("missing required file:"):
+            approval_validation_state = "missing"
+        write_invalid_approval_artifacts(
+            relative_output,
+            full_output,
+            handoff_path,
+            approval_validation_state,
+        )
+        run_security_scan(root, relative_output)
+        return str(error)
     blocker_rows = require_list(blocker_register.get("rows"), "Phase 32 blocker rows")
     if not all(isinstance(row, dict) for row in blocker_rows):
         raise VerificationError("Phase 32 blocker rows must contain objects")

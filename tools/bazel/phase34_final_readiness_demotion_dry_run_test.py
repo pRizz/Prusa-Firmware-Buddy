@@ -728,6 +728,59 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
                 if expected_validation == "invalid":
                     self.assertNotEqual(result.returncode, 0)
 
+    def test_unreadable_approval_inputs_retain_minimal_blocked_artifacts(self) -> None:
+        cases = [
+            ("missing", "missing"),
+            ("invalid-json", "invalid"),
+            ("non-object", "invalid"),
+            ("unsafe-ref", "invalid"),
+            ("forbidden-field", "invalid"),
+            ("forbidden-text", "invalid"),
+            ("symlink", "invalid"),
+        ]
+        for failure_kind, expected_validation in cases:
+            with self.subTest(failure_kind=failure_kind):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                self.addCleanup(temp_dir.cleanup)
+                source_ref = "build/ci-evidence/phase23/upstream-simulator-result-row.json"
+                self.write_fixture(root, [self.receipt("simulator", source_ref)], [])
+                approval_path = root / "build/ci-evidence/phase33/demotion-decision-handoff.json"
+                if failure_kind == "missing":
+                    approval_path.unlink()
+                elif failure_kind == "invalid-json":
+                    approval_path.write_text("{", encoding="utf-8")
+                elif failure_kind == "non-object":
+                    approval_path.write_text("[]\n", encoding="utf-8")
+                elif failure_kind == "symlink":
+                    outside_path = root / "outside/demotion-decision-handoff.json"
+                    outside_path.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(approval_path, outside_path)
+                    approval_path.unlink()
+                    approval_path.symlink_to(outside_path)
+                else:
+                    approval = self.read_json(root, "build/ci-evidence/phase33/demotion-decision-handoff.json")
+                    if failure_kind == "unsafe-ref":
+                        approval["source_row_refs"] = ["../unsafe-approval.json"]
+                    elif failure_kind == "forbidden-field":
+                        approval["token_value"] = "redacted-fixture-value"
+                    else:
+                        approval["rationale"] = "production demotion complete"
+                    self.write_json(root, "build/ci-evidence/phase33/demotion-decision-handoff.json", approval)
+
+                # Act
+                result = self.run_quick(root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertTrue((root / OUTPUT_DIR / "final-readiness-run-manifest.json").is_file())
+                self.assertTrue((root / OUTPUT_DIR / "demotion-dry-run.json").is_file())
+                manifest = self.read_json(root, f"{OUTPUT_DIR}/final-readiness-run-manifest.json")
+                dry_run = self.read_json(root, f"{OUTPUT_DIR}/demotion-dry-run.json")
+                self.assertEqual(manifest["run_state"], "blocked-invalid-approval")
+                self.assertEqual(dry_run["gate_state"], "blocked")
+                self.assertEqual(dry_run["approval_validation_state"], expected_validation)
+
     def test_absolute_path_is_rejected(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
