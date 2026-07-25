@@ -8,6 +8,7 @@ import json
 import re
 import shutil
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -60,6 +61,32 @@ GENERATED_ARTIFACTS = [
     "contract-snapshots/phase34_final_readiness_demotion_dry_run_contract.json",
     "contract-snapshots/phase34-final-readiness-run-manifest.json",
 ]
+SOURCE_FAILURE_ARTIFACTS = [
+    "cutover-decision-run-manifest.json",
+    "cutover-decision.json",
+    "next-milestone-route.json",
+]
+SOURCE_FAILURE_MANIFEST_FIELDS = [
+    "artifact_name",
+    "phase",
+    "phase_lifecycle_id",
+    "generation_state",
+    "output_root",
+    "generated_artifacts",
+    "source_manifest_ref",
+    "source_failure_reason_codes",
+    "raw_evidence_consumed",
+]
+SOURCE_FAILURE_REASON_CODES = [
+    "source-artifact-missing",
+    "source-artifact-malformed",
+    "source-artifact-stale",
+    "source-artifact-lifecycle-mismatched",
+    "secret-tainted",
+    "unsafe-ref",
+    "source-ref-failed",
+]
+SAFE_SOURCE_FAILURE_REASONS = set(SOURCE_FAILURE_REASON_CODES)
 DECISION_FIELDS = [
     "artifact_name",
     "phase",
@@ -107,28 +134,70 @@ PHASE34_ARTIFACTS = [
     "contract-snapshots/phase31-accepted-receipts.json",
 ]
 PHASE35_CONTRACT_FIELDS = {
-    "artifact_name", "audit_link_failure_modes", "audit_link_schema",
-    "authority_boundaries", "blocked_reason_codes", "cutover_decision_fields",
-    "default_behavior", "demotion_projection", "generated_artifacts", "id",
-    "output_root", "phase", "phase_lifecycle_id", "repair_scope_fields",
-    "repair_scope_ref_policy", "requirement_ids", "route_enum", "route_fields",
-    "route_semantics", "route_truth_table", "schema_version", "security",
-    "source_contract", "source_lifecycle_ids", "verdict_enum",
-    "verdict_truth_table", "verification_commands",
+    "artifact_name",
+    "audit_link_failure_modes",
+    "audit_link_schema",
+    "authority_boundaries",
+    "blocked_reason_codes",
+    "cutover_decision_fields",
+    "default_behavior",
+    "demotion_projection",
+    "generated_artifacts",
+    "id",
+    "output_root",
+    "phase",
+    "phase_lifecycle_id",
+    "repair_scope_fields",
+    "repair_scope_ref_policy",
+    "requirement_ids",
+    "route_enum",
+    "route_fields",
+    "route_semantics",
+    "route_truth_table",
+    "schema_version",
+    "security",
+    "source_contract",
+    "source_failure_behavior",
+    "source_lifecycle_ids",
+    "verdict_enum",
+    "verdict_truth_table",
+    "verification_commands",
 }
 PHASE34_CONTRACT_FIELDS = {
-    "artifact_name", "blocked_reason_codes", "default_behavior",
-    "demotion_dry_run_schema", "generated_artifacts",
-    "hard_blocker_problem_kinds", "id", "io_validation_responsibilities",
-    "ledger_schema", "output_root", "phase", "phase_lifecycle_id",
-    "prohibited_output_markers", "prohibited_semantics", "pure_evaluator_outputs",
-    "requirement_ids", "schema_version", "source_contracts", "source_inputs",
-    "sparse_blocker_overlay_policy", "test_command", "verification_commands",
+    "artifact_name",
+    "blocked_reason_codes",
+    "default_behavior",
+    "demotion_dry_run_schema",
+    "generated_artifacts",
+    "hard_blocker_problem_kinds",
+    "id",
+    "io_validation_responsibilities",
+    "ledger_schema",
+    "output_root",
+    "phase",
+    "phase_lifecycle_id",
+    "prohibited_output_markers",
+    "prohibited_semantics",
+    "pure_evaluator_outputs",
+    "requirement_ids",
+    "schema_version",
+    "source_contracts",
+    "source_inputs",
+    "sparse_blocker_overlay_policy",
+    "test_command",
+    "verification_commands",
 }
 PHASE34_MANIFEST_FIELDS = {
-    "accepted_receipt_snapshot_ref", "artifact_name", "generated_artifacts",
-    "generated_at_utc", "output_root", "phase", "phase_lifecycle_id",
-    "phase33_register_digests", "raw_evidence_consumed", "snapshot_refs",
+    "accepted_receipt_snapshot_ref",
+    "artifact_name",
+    "generated_artifacts",
+    "generated_at_utc",
+    "output_root",
+    "phase",
+    "phase_lifecycle_id",
+    "phase33_register_digests",
+    "raw_evidence_consumed",
+    "snapshot_refs",
     "source_refs",
 }
 PHASE33_REGISTER_NAMES = {
@@ -224,7 +293,14 @@ PHASE35_TEST_COMMANDS = [
 
 
 class VerificationError(Exception):
-    pass
+
+    def __init__(self,
+                 message: str,
+                 reason_code: str = "source-artifact-malformed") -> None:
+        super().__init__(message)
+        self.reason_code = (reason_code
+                            if reason_code in SAFE_SOURCE_FAILURE_REASONS else
+                            "source-artifact-malformed")
 
 
 def utc_now() -> str:
@@ -239,28 +315,35 @@ def canonical_json(value: Any) -> bytes:
 def resolve_source_file(root: Path, relative_path: Path) -> Path:
     if relative_path.is_absolute() or ".." in relative_path.parts:
         raise VerificationError(
-            f"source artifact escapes repository root: {relative_path.as_posix()}"
+            f"source artifact escapes repository root: {relative_path.as_posix()}",
+            "unsafe-ref",
         )
     current = root
     for part in relative_path.parts:
         current /= part
         if current.is_symlink():
             raise VerificationError(
-                f"source artifact contains a symlink escape: {relative_path.as_posix()}"
+                f"source artifact contains a symlink escape: {relative_path.as_posix()}",
+                "source-ref-failed",
             )
     try:
         resolved_root = root.resolve(strict=True)
         resolved = (root / relative_path).resolve(strict=True)
     except OSError as error:
         raise VerificationError(
-            f"source artifact missing: {relative_path.as_posix()}") from error
+            f"source artifact missing: {relative_path.as_posix()}",
+            "source-artifact-missing",
+        ) from error
     if resolved_root not in resolved.parents:
         raise VerificationError(
-            f"source artifact escapes repository root: {relative_path.as_posix()}"
+            f"source artifact escapes repository root: {relative_path.as_posix()}",
+            "unsafe-ref",
         )
     if not resolved.is_file():
         raise VerificationError(
-            f"source artifact missing: {relative_path.as_posix()}")
+            f"source artifact missing: {relative_path.as_posix()}",
+            "source-artifact-missing",
+        )
     return resolved
 
 
@@ -270,9 +353,10 @@ def load_json(root: Path,
     full_path = resolve_source_file(root, relative_path)
     try:
         value = json.loads(full_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as error:
+    except (json.JSONDecodeError, UnicodeError, OSError) as error:
         raise VerificationError(
-            f"source artifact malformed: {relative_path.as_posix()}: {error}"
+            f"source artifact malformed: {relative_path.as_posix()}",
+            "source-artifact-malformed",
         ) from error
     if not isinstance(value, dict):
         raise VerificationError(
@@ -316,46 +400,54 @@ def validate_exact_fields(value: dict[str, Any], expected_fields: set[str],
 
 def decode_ref_component(value: str, field: str) -> str:
     if re.search(r"%(?![0-9a-fA-F]{2})", value):
-        raise VerificationError(f"unsafe ref in {field}: malformed encoding")
+        raise VerificationError(f"unsafe ref in {field}: malformed encoding",
+                                "unsafe-ref")
     try:
         decoded = unquote(value, encoding="utf-8", errors="strict")
     except UnicodeDecodeError as error:
         raise VerificationError(
-            f"unsafe ref in {field}: malformed encoding") from error
+            f"unsafe ref in {field}: malformed encoding",
+            "unsafe-ref",
+        ) from error
     if "\\" in decoded or any(
             ord(character) < 32 or ord(character) == 127
             for character in decoded):
-        raise VerificationError(f"unsafe ref in {field}: decoded control")
+        raise VerificationError(f"unsafe ref in {field}: decoded control",
+                                "unsafe-ref")
     return decoded
 
 
 def validate_ref(value: str, field: str = "ref") -> None:
     if not isinstance(value, str) or not value:
-        raise VerificationError(f"{field} must be a non-blank string")
+        raise VerificationError(f"{field} must be a non-blank string",
+                                "unsafe-ref")
     if "\\" in value or any(
             ord(character) < 32 or ord(character) == 127
             for character in value):
-        raise VerificationError(f"unsafe ref in {field}: {value}")
+        raise VerificationError(f"unsafe ref in {field}: {value}",
+                                "unsafe-ref")
     if not value.startswith(ALLOWED_REF_PREFIXES):
-        raise VerificationError(f"unsafe ref in {field}: {value}")
+        raise VerificationError(f"unsafe ref in {field}: {value}",
+                                "unsafe-ref")
     if value.startswith(("external://", "maintainer://", "owner://")):
         parsed = urlsplit(value)
         if (parsed.scheme not in {"external", "maintainer", "owner"}
                 or not parsed.netloc or parsed.query or "@" in parsed.netloc
                 or ":" in parsed.netloc):
-            raise VerificationError(f"unsafe ref in {field}: {value}")
+            raise VerificationError(f"unsafe ref in {field}: {value}",
+                                    "unsafe-ref")
         decoded_netloc = decode_ref_component(parsed.netloc, field)
         decoded_path = decode_ref_component(parsed.path, field)
-        if decoded_netloc != parsed.netloc or any(
-                delimiter in decoded_path for delimiter in "?#"):
-            raise VerificationError(f"unsafe ref in {field}: {value}")
-        if parsed.scheme == "external" and (
-                parsed.netloc not in {
-                    f"phase{phase}"
-                    for phase in range(23, 35)
-                } or not decoded_path.startswith("/")
-                or decoded_path in {"", "/"}):
-            raise VerificationError(f"unsafe ref in {field}: {value}")
+        if decoded_netloc != parsed.netloc or any(delimiter in decoded_path
+                                                  for delimiter in "?#"):
+            raise VerificationError(f"unsafe ref in {field}: {value}",
+                                    "unsafe-ref")
+        if parsed.scheme == "external" and (parsed.netloc not in {
+                f"phase{phase}"
+                for phase in range(23, 35)
+        } or not decoded_path.startswith("/") or decoded_path in {"", "/"}):
+            raise VerificationError(f"unsafe ref in {field}: {value}",
+                                    "unsafe-ref")
         path_parts = decoded_path[1:].split("/") if decoded_path else []
         if any(part in {"", ".", ".."} for part in path_parts):
             raise VerificationError(f"unsafe ref in {field}: {value}")
@@ -365,19 +457,23 @@ def validate_ref(value: str, field: str = "ref") -> None:
                 raise VerificationError(f"unsafe ref in {field}: {value}")
             fragment_parts = decoded_fragment.split("/")
             if any(part in {"", ".", ".."} for part in fragment_parts):
-                raise VerificationError(f"unsafe ref in {field}: {value}")
+                raise VerificationError(f"unsafe ref in {field}: {value}",
+                                        "unsafe-ref")
         elif "#" in value:
-            raise VerificationError(f"unsafe ref in {field}: {value}")
+            raise VerificationError(f"unsafe ref in {field}: {value}",
+                                    "unsafe-ref")
         return
     path_text, separator, fragment = value.partition("#")
     path = Path(path_text)
     if path.is_absolute() or ".." in path.parts or "\\" in path_text:
-        raise VerificationError(f"unsafe ref in {field}: {value}")
+        raise VerificationError(f"unsafe ref in {field}: {value}",
+                                "unsafe-ref")
     if separator:
         decoded_fragment = decode_ref_component(fragment, field)
         fragment_parts = decoded_fragment.split("/")
         if any(part in {"", ".", ".."} for part in fragment_parts):
-            raise VerificationError(f"unsafe ref in {field}: {value}")
+            raise VerificationError(f"unsafe ref in {field}: {value}",
+                                    "unsafe-ref")
 
 
 def scan_security(value: Any,
@@ -424,40 +520,69 @@ def scan_security(value: Any,
 
     walk(value, field)
     if errors:
-        raise VerificationError("\n".join(errors))
+        reason_code = ("secret-tainted" if any(
+            "secret-tainted" in error or "forbidden text" in error
+            for error in errors) else "unsafe-ref")
+        raise VerificationError("\n".join(errors), reason_code)
 
 
 def repo_relative(value: str | Path, field: str) -> Path:
     path = Path(value)
     if path.is_absolute():
-        raise VerificationError(f"{field} must be repo-relative")
+        raise VerificationError(f"{field} must be repo-relative", "unsafe-ref")
     if ".." in path.parts:
-        raise VerificationError(f"{field} contains parent traversal")
+        raise VerificationError(f"{field} contains parent traversal",
+                                "unsafe-ref")
     return path
+
+
+def validate_output_path(root: Path, output_arg: str | Path) -> Path:
+    output = repo_relative(output_arg, "--output-dir")
+    if output != DEFAULT_OUTPUT:
+        raise VerificationError(
+            f"--output-dir must be {DEFAULT_OUTPUT.as_posix()}")
+    current = root
+    for part in output.parts:
+        current /= part
+        if current.is_symlink():
+            raise VerificationError("--output-dir contains a symlink escape",
+                                    "unsafe-ref")
+    if current.exists() and not current.is_dir():
+        raise VerificationError("--output-dir is not a normal directory",
+                                "unsafe-ref")
+    return output
+
+
+def validate_source_path(root: Path, phase34_arg: str | Path,
+                         output: Path) -> Path:
+    phase34 = repo_relative(phase34_arg, "--phase34-output-dir")
+    if phase34 != DEFAULT_PHASE34_OUTPUT:
+        raise VerificationError(
+            f"--phase34-output-dir must be {DEFAULT_PHASE34_OUTPUT.as_posix()}",
+            "unsafe-ref",
+        )
+    phase34_resolved = (root / phase34).resolve(strict=False)
+    output_resolved = (root / output).resolve(strict=False)
+    if (phase34_resolved == output_resolved
+            or phase34_resolved in output_resolved.parents
+            or output_resolved in phase34_resolved.parents):
+        raise VerificationError("input and output roots must not overlap",
+                                "unsafe-ref")
+    current = root
+    for part in phase34.parts:
+        current /= part
+        if current.is_symlink():
+            raise VerificationError(
+                "--phase34-output-dir contains a symlink escape",
+                "source-ref-failed",
+            )
+    return phase34
 
 
 def validate_paths(root: Path, phase34_arg: str | Path,
                    output_arg: str | Path) -> tuple[Path, Path]:
-    phase34 = repo_relative(phase34_arg, "--phase34-output-dir")
-    output = repo_relative(output_arg, "--output-dir")
-    if phase34 != DEFAULT_PHASE34_OUTPUT:
-        raise VerificationError(
-            f"--phase34-output-dir must be {DEFAULT_PHASE34_OUTPUT.as_posix()}"
-        )
-    if output != DEFAULT_OUTPUT:
-        raise VerificationError(
-            f"--output-dir must be {DEFAULT_OUTPUT.as_posix()}")
-    phase34_resolved = (root / phase34).resolve(strict=False)
-    output_resolved = (root / output).resolve(strict=False)
-    if phase34_resolved == output_resolved or phase34_resolved in output_resolved.parents or output_resolved in phase34_resolved.parents:
-        raise VerificationError("input and output roots must not overlap")
-    for relative_path, label in ((phase34, "--phase34-output-dir"),
-                                 (output, "--output-dir")):
-        current = root
-        for part in relative_path.parts:
-            current = current / part
-            if current.is_symlink():
-                raise VerificationError(f"{label} contains a symlink escape")
+    output = validate_output_path(root, output_arg)
+    phase34 = validate_source_path(root, phase34_arg, output)
     return phase34, output
 
 
@@ -486,6 +611,41 @@ def validate_contract(contract: dict[str, Any]) -> None:
             schema, dict) or schema.get("kinds") != AUDIT_KINDS or schema.get(
                 "required_fields") != AUDIT_FIELDS:
         raise VerificationError("Phase 35 audit link schema is invalid")
+    behavior = contract.get("source_failure_behavior")
+    if not isinstance(behavior, dict):
+        raise VerificationError(
+            "Phase 35 source_failure_behavior must be an object")
+    expected_behavior = {
+        "generated_artifacts": SOURCE_FAILURE_ARTIFACTS,
+        "manifest_fields": SOURCE_FAILURE_MANIFEST_FIELDS,
+        "decision_fields": DECISION_FIELDS,
+        "route_fields": ROUTE_FIELDS,
+        "safe_reason_codes": SOURCE_FAILURE_REASON_CODES,
+        "generation_state": "blocked-source-error",
+        "cutover_verdict": "blocked",
+        "route": "targeted-blocker-repair",
+        "requires_fresh_cutover_decision": True,
+        "planning_only": True,
+        "production_actions_authorized": False,
+        "raw_evidence_consumed": False,
+        "readiness_state": "blocked",
+        "readiness_result_ref": "",
+        "active_exception_ids": [],
+        "blocker_ids": [],
+        "audit_link_index_ref": "",
+        "audit_link_counts_by_kind": {
+            kind: 0
+            for kind in AUDIT_KINDS
+        },
+        "repair_scope": [],
+        "repair_scope_reason_code": "route-scope-incomplete",
+        "demotion_decision_validation_state": "invalid",
+        "demotion_decision_state": "missing",
+        "demotion_decision_source_refs": [],
+        "demotion_gate_state": "blocked",
+    }
+    if behavior != expected_behavior:
+        raise VerificationError("Phase 35 source_failure_behavior is invalid")
 
 
 def load_contract(root: Path = ROOT) -> dict[str, Any]:
@@ -499,13 +659,12 @@ def load_contract(root: Path = ROOT) -> dict[str, Any]:
 
 def validate_phase34_manifest(contract: dict[str, Any],
                               manifest: dict[str, Any]) -> None:
+    scan_security(manifest, "Phase 34 manifest")
     validate_exact_fields(manifest, PHASE34_MANIFEST_FIELDS,
                           "Phase 34 manifest")
-    scan_security(manifest, "Phase 34 manifest")
     register_digests = manifest.get("phase33_register_digests")
     if (not isinstance(register_digests, dict)
-            or set(register_digests) != PHASE33_REGISTER_NAMES
-            or not all(
+            or set(register_digests) != PHASE33_REGISTER_NAMES or not all(
                 isinstance(digest, str)
                 and re.fullmatch(r"[0-9a-f]{64}", digest)
                 for digest in register_digests.values())):
@@ -523,9 +682,24 @@ def validate_phase34_manifest(contract: dict[str, Any],
     }
     for field, expected_value in expected.items():
         if manifest.get(field) != expected_value:
+            reason_code = ("source-artifact-lifecycle-mismatched"
+                           if field == "phase_lifecycle_id" else
+                           "source-artifact-malformed")
             raise VerificationError(
-                f"Phase 34 manifest {field} is stale, malformed, or lifecycle-mismatched"
+                f"Phase 34 manifest {field} is stale, malformed, or lifecycle-mismatched",
+                reason_code,
             )
+    maybe_generated_at = parse_timestamp(manifest.get("generated_at_utc"))
+    if maybe_generated_at is None:
+        raise VerificationError(
+            "Phase 34 manifest generated_at_utc is malformed",
+            "source-artifact-malformed",
+        )
+    if maybe_generated_at < STALE_BEFORE:
+        raise VerificationError(
+            "Phase 34 manifest generated_at_utc is stale",
+            "source-artifact-stale",
+        )
 
 
 def validate_phase34_contract(contract: dict[str, Any]) -> None:
@@ -554,9 +728,7 @@ def validate_phase34_contract(contract: dict[str, Any]) -> None:
 def validate_snapshot(artifact: str, payload: dict[str, Any]) -> None:
     if artifact.endswith("phase35_cutover_decision_artifact_contract.json"):
         validate_contract(payload)
-        scan_security(payload,
-                      artifact,
-                      allow_contract_vocabulary=True)
+        scan_security(payload, artifact, allow_contract_vocabulary=True)
         return
     if artifact.endswith(
             "phase34_final_readiness_demotion_dry_run_contract.json"):
@@ -606,25 +778,23 @@ def evaluate_verdict(facts: dict[str, Any]) -> dict[str, Any]:
             continue
         maybe_timestamp = parse_timestamp(
             maybe_exception.get("decision_timestamp"))
-        valid = (
-            maybe_exception.get("decision_type") == "exception"
-            and maybe_exception.get("decision_value") == "approve"
-            and maybe_exception.get("phase_lifecycle_id")
-            == PHASE33_LIFECYCLE_ID and maybe_timestamp is not None
-            and maybe_timestamp >= STALE_BEFORE
-            and isinstance(maybe_exception.get("maintainer_identity_ref"),
-                           str)
-            and bool(maybe_exception["maintainer_identity_ref"])
-            and isinstance(maybe_exception.get("maintainer_role"), str)
-            and bool(maybe_exception["maintainer_role"])
-            and isinstance(maybe_exception.get("owner_signoff_ref"), str)
-            and bool(maybe_exception["owner_signoff_ref"])
-            and isinstance(maybe_exception.get("scope"), str)
-            and bool(maybe_exception["scope"])
-            and maybe_exception.get("linked_blocker_refs")
-            == maybe_exception.get("source_row_refs")
-            and bool(maybe_exception.get("affected_gates"))
-            and bool(maybe_exception.get("expiry_or_review_trigger")))
+        valid = (maybe_exception.get("decision_type") == "exception"
+                 and maybe_exception.get("decision_value") == "approve"
+                 and maybe_exception.get("phase_lifecycle_id")
+                 == PHASE33_LIFECYCLE_ID and maybe_timestamp is not None
+                 and maybe_timestamp >= STALE_BEFORE and isinstance(
+                     maybe_exception.get("maintainer_identity_ref"), str)
+                 and bool(maybe_exception["maintainer_identity_ref"])
+                 and isinstance(maybe_exception.get("maintainer_role"), str)
+                 and bool(maybe_exception["maintainer_role"])
+                 and isinstance(maybe_exception.get("owner_signoff_ref"), str)
+                 and bool(maybe_exception["owner_signoff_ref"])
+                 and isinstance(maybe_exception.get("scope"), str)
+                 and bool(maybe_exception["scope"])
+                 and maybe_exception.get("linked_blocker_refs")
+                 == maybe_exception.get("source_row_refs")
+                 and bool(maybe_exception.get("affected_gates"))
+                 and bool(maybe_exception.get("expiry_or_review_trigger")))
         if not valid:
             exception_invalid = True
     if set(exception_by_id) != set(active_ids):
@@ -737,7 +907,8 @@ def resolve_audit_target(root: Path, target_ref: str) -> Any:
     if not separator:
         return payload
     if not fragment or "/" in fragment:
-        raise VerificationError(f"audit target fragment is invalid: {target_ref}")
+        raise VerificationError(
+            f"audit target fragment is invalid: {target_ref}")
     for collection_name in ("rows", "receipts", "blockers"):
         rows = payload.get(collection_name)
         if not isinstance(rows, list):
@@ -792,8 +963,9 @@ def referenced_decisions(
     prefix = f"{PHASE33_NORMALIZED_REGISTER}#"
     decision_ids = []
     for ref in refs:
-        if not isinstance(ref, str) or not ref.startswith(
-                prefix) or not ref[len(prefix):]:
+        if not isinstance(
+                ref,
+                str) or not ref.startswith(prefix) or not ref[len(prefix):]:
             reasons.add("route-scope-incomplete")
             continue
         decision_ids.append(ref[len(prefix):])
@@ -801,16 +973,17 @@ def referenced_decisions(
         str(row.get("decision_id") or ""): row
         for row in rows if row.get("decision_id")
     }
-    if len(row_by_id) != len(rows) or len(set(decision_ids)) != len(
-            decision_ids):
+    if len(row_by_id) != len(rows) or len(
+            set(decision_ids)) != len(decision_ids):
         reasons.add("route-scope-incomplete")
     matches = []
     for decision_id in sorted(set(decision_ids)):
         maybe_decision = row_by_id.get(decision_id)
         if maybe_decision is None or blocker_ref not in maybe_decision.get(
-                "source_row_refs", []) or blocker_ref not in maybe_decision.get(
-                    "linked_blocker_refs",
-                    maybe_decision.get("source_row_refs", [])):
+                "source_row_refs",
+            []) or blocker_ref not in maybe_decision.get(
+                "linked_blocker_refs", maybe_decision.get(
+                    "source_row_refs", [])):
             reasons.add("route-scope-incomplete")
             continue
         matches.append(maybe_decision)
@@ -830,8 +1003,7 @@ def build_repair_scope(
         for row in blockers if row.get("row_id")
     }
     route_rows = [
-        row for row in ledger_rows
-        if row.get("readiness_effect") == "blocked"
+        row for row in ledger_rows if row.get("readiness_effect") == "blocked"
         or row.get("coverage_state") == "exception-covered"
     ]
     if not route_rows:
@@ -866,8 +1038,8 @@ def build_repair_scope(
                 f"{ledger_ref}/readiness_effect",
             ]
         else:
-            required = ("owner_ref", "required_next_action",
-                        "requirement_ids", "affected_gate")
+            required = ("owner_ref", "required_next_action", "requirement_ids",
+                        "affected_gate")
             if any(field not in maybe_blocker for field in required):
                 reasons.add("route-scope-incomplete")
                 continue
@@ -894,8 +1066,8 @@ def build_repair_scope(
             classification_ref,
             reasons,
         )
-        if ledger.get(
-                "coverage_state") == "exception-covered" and not exception_matches:
+        if ledger.get("coverage_state"
+                      ) == "exception-covered" and not exception_matches:
             reasons.add("route-scope-incomplete")
         valid_exception_matches = []
         for decision in exception_matches:
@@ -925,7 +1097,8 @@ def build_repair_scope(
         scope.append({
             "scope_id":
             f"repair-{ledger_row_id}",
-            "blocker_refs": blocker_refs,
+            "blocker_refs":
+            blocker_refs,
             "exception_refs": [
                 f"{PHASE33_EXCEPTION_REGISTER}#{row['decision_id']}"
                 for row in valid_exception_matches
@@ -936,14 +1109,11 @@ def build_repair_scope(
             ],
             "requirement_ids":
             sorted(
-                set(
-                    str(value)
+                set(str(value)
                     for value in ledger.get("requirement_ids", []))),
             "affected_gates":
             sorted(
-                set(
-                    str(value)
-                    for value in ledger.get("affected_gates", []))),
+                set(str(value) for value in ledger.get("affected_gates", []))),
             "owner_ref":
             owner_ref,
             "required_action_ref":
@@ -1037,8 +1207,8 @@ def project_demotion(
     if validation_state != "valid" or decision_state != "approve":
         gate_state = "blocked"
         if not gate_reasons:
-            gate_reasons.append("approval-missing" if validation_state
-                                == "missing" else "approval-invalid")
+            gate_reasons.append("approval-missing" if validation_state ==
+                                "missing" else "approval-invalid")
     if dry_run.get("readiness_state") != "unblocked":
         gate_state = "blocked"
         gate_reasons.append("readiness-input-invalid")
@@ -1056,8 +1226,7 @@ def project_demotion(
         "demotion_gate_reason_codes":
         sorted(
             set(
-                str(value)
-                for value in gate_reasons
+                str(value) for value in gate_reasons
                 if isinstance(value, str) and value)),
     }
 
@@ -1121,22 +1290,27 @@ def audit_sources_from_bundle(bundle: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def reached_register(root: Path, refs: dict[str, Any],
-                     expected_digests: dict[str, str],
-                     name: str) -> dict[str, Any]:
+                     expected_digests: dict[str,
+                                            str], name: str) -> dict[str, Any]:
     value = refs.get(name)
     if not isinstance(value, str):
-        raise VerificationError(f"Phase 33 register ref missing: {name}")
+        raise VerificationError(f"Phase 33 register ref missing: {name}",
+                                "source-ref-failed")
     validate_ref(value, f"register_refs.{name}")
     path = Path(value)
     if not path.as_posix().startswith("build/ci-evidence/phase33/"):
         raise VerificationError(
-            f"Phase 33 register ref has wrong root: {value}")
+            f"Phase 33 register ref has wrong root: {value}",
+            "source-ref-failed",
+        )
     payload = load_json(root, path)
     scan_security(payload, value)
     actual_digest = hashlib.sha256(canonical_json(payload)).hexdigest()
     if actual_digest != expected_digests.get(name):
         raise VerificationError(
-            f"Phase 33 register changed after Phase 34 validation: {name}")
+            f"Phase 33 register changed after Phase 34 validation: {name}",
+            "source-ref-failed",
+        )
     return payload
 
 
@@ -1158,8 +1332,7 @@ def validate_register_projection(rows: list[dict[str, Any]],
     forbidden_legacy_fields = {"validation_state", "active", "exact_scope"}
     expected = {
         str(row.get("decision_id")): row
-        for row in normalized_rows
-        if row.get("decision_type") == decision_type
+        for row in normalized_rows if row.get("decision_type") == decision_type
     }
     actual = {str(row.get("decision_id")): row for row in rows}
     if len(actual) != len(rows) or set(actual) != set(expected):
@@ -1173,14 +1346,15 @@ def validate_register_projection(rows: list[dict[str, Any]],
                 f"Phase 33 {decision_type} register contains forbidden legacy validation fields"
             )
         unexpected_fields = (
-            set(projection) - set(normalized)
-            - allowed_extension_fields.get(decision_type, set()))
+            set(projection) - set(normalized) -
+            allowed_extension_fields.get(decision_type, set()))
         if unexpected_fields:
             raise VerificationError(
                 f"Phase 33 {decision_type} register contains uncontracted fields for {decision_id}"
             )
-        if any(projection.get(field) != value
-               for field, value in normalized.items()):
+        if any(
+                projection.get(field) != value
+                for field, value in normalized.items()):
             raise VerificationError(
                 f"Phase 33 {decision_type} projection differs for {decision_id}"
             )
@@ -1250,7 +1424,9 @@ def load_bundle(
                             ) != PHASE34_LIFECYCLE_ID or loaded["packet"].get(
                                 "phase_lifecycle_id") != PHASE34_LIFECYCLE_ID:
         raise VerificationError(
-            "Phase 34 packet or ledger lifecycle is mismatched")
+            "Phase 34 packet or ledger lifecycle is mismatched",
+            "source-artifact-lifecycle-mismatched",
+        )
     if loaded["packet"].get("ledger_rows") != loaded["ledger"].get("rows"):
         raise VerificationError(
             "Phase 34 packet and ledger projections differ")
@@ -1261,8 +1437,14 @@ def load_bundle(
     if handoff.get(
             "phase_lifecycle_id") != PHASE33_LIFECYCLE_ID or handoff.get(
                 "artifact_name") != "phase33-maintainer-decision-inputs":
+        reason_code = ("source-artifact-lifecycle-mismatched"
+                       if handoff.get("phase_lifecycle_id")
+                       != PHASE33_LIFECYCLE_ID else
+                       "source-artifact-malformed")
         raise VerificationError(
-            "Phase 33 reached handoff lifecycle or identity is invalid")
+            "Phase 33 reached handoff lifecycle or identity is invalid",
+            reason_code,
+        )
     refs = handoff.get("register_refs")
     if not isinstance(refs, dict):
         raise VerificationError(
@@ -1276,13 +1458,13 @@ def load_bundle(
     loaded["residuals"] = reached_register(
         root, refs, register_digests,
         "residual_risk_decision_register").get("rows", [])
-    loaded["exceptions"] = reached_register(
-        root, refs, register_digests,
-        "exception_decision_register").get("rows", [])
+    loaded["exceptions"] = reached_register(root, refs, register_digests,
+                                            "exception_decision_register").get(
+                                                "rows", [])
     loaded["readiness_handoff"] = reached_register(
         root, refs, register_digests, "readiness_decision_handoff")
-    loaded["demotion_handoff"] = reached_register(
-        root, refs, register_digests, "demotion_decision_handoff")
+    loaded["demotion_handoff"] = reached_register(root, refs, register_digests,
+                                                  "demotion_decision_handoff")
     loaded["normalized"] = normalized.get("rows", [])
     loaded["blockers"] = loaded["phase32_register"].get("rows", [])
     loaded["receipts"] = loaded["receipts"].get("receipts", [])
@@ -1361,6 +1543,173 @@ def reset_output(output: Path) -> None:
     output.mkdir(parents=True)
 
 
+def create_staging_directory(root: Path, relative_output: Path) -> Path:
+    parent = root / relative_output.parent
+    try:
+        parent.mkdir(parents=True, exist_ok=True)
+        return Path(tempfile.mkdtemp(prefix=".phase35-stage-", dir=parent))
+    except OSError as error:
+        raise VerificationError(
+            "unable to create Phase 35 staging directory") from error
+
+
+def discard_staging_directory(stage: Path | None) -> None:
+    if stage is None or not stage.exists():
+        return
+    shutil.rmtree(stage)
+
+
+def install_staged_bundle(stage: Path, canonical_output: Path) -> None:
+    if canonical_output.is_symlink():
+        raise VerificationError("Phase 35 output contains a symlink escape",
+                                "unsafe-ref")
+    if canonical_output.exists() and not canonical_output.is_dir():
+        raise VerificationError("Phase 35 output is not a normal directory",
+                                "unsafe-ref")
+    parent = canonical_output.parent
+    backup = Path(tempfile.mkdtemp(prefix=".phase35-previous-", dir=parent))
+    backup.rmdir()
+    moved_previous = False
+    try:
+        if canonical_output.exists():
+            canonical_output.rename(backup)
+            moved_previous = True
+        stage.rename(canonical_output)
+    except OSError as error:
+        if moved_previous and backup.exists():
+            shutil.rmtree(backup)
+        if stage.exists():
+            shutil.rmtree(stage)
+        raise VerificationError(
+            "unable to install Phase 35 staged bundle") from error
+    if moved_previous and backup.exists():
+        shutil.rmtree(backup)
+
+
+def source_failure_reason(error: VerificationError) -> str:
+    if error.reason_code in SAFE_SOURCE_FAILURE_REASONS:
+        return error.reason_code
+    return "source-artifact-malformed"
+
+
+def write_source_failure_bundle(relative_output: Path, output: Path,
+                                reason_code: str) -> None:
+    if reason_code not in SAFE_SOURCE_FAILURE_REASONS:
+        reason_code = "source-artifact-malformed"
+    reset_output(output)
+    counts = {kind: 0 for kind in AUDIT_KINDS}
+    manifest = {
+        "artifact_name": "phase35-cutover-decision-artifact",
+        "phase": PHASE,
+        "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
+        "generation_state": "blocked-source-error",
+        "output_root": relative_output.as_posix(),
+        "generated_artifacts": SOURCE_FAILURE_ARTIFACTS,
+        "source_manifest_ref":
+        "build/ci-evidence/phase34/final-readiness-run-manifest.json",
+        "source_failure_reason_codes": [reason_code],
+        "raw_evidence_consumed": False,
+    }
+    decision = {
+        "artifact_name": "phase35-cutover-decision",
+        "phase": PHASE,
+        "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
+        "requirement_ids": REQUIREMENTS,
+        "cutover_verdict": "blocked",
+        "reason_codes": sorted({reason_code, "route-scope-incomplete"}),
+        "readiness_state": "blocked",
+        "readiness_result_ref": "",
+        "active_exception_ids": [],
+        "blocker_ids": [],
+        "audit_link_index_ref": "",
+        "audit_link_counts_by_kind": counts,
+        "demotion_decision_validation_state": "invalid",
+        "demotion_decision_state": "missing",
+        "demotion_decision_source_refs": [],
+        "demotion_gate_state": "blocked",
+        "demotion_gate_reason_codes": [reason_code],
+        "route_ref": "build/ci-evidence/phase35/next-milestone-route.json",
+        "raw_evidence_consumed": False,
+    }
+    route = {
+        "artifact_name": "phase35-next-milestone-route",
+        "phase": PHASE,
+        "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
+        "route": "targeted-blocker-repair",
+        "source_verdict": "blocked",
+        "follow_up_scope": [],
+        "requires_fresh_cutover_decision": True,
+        "planning_only": True,
+        "production_actions_authorized": False,
+    }
+    write_json(output / "cutover-decision-run-manifest.json", manifest)
+    write_json(output / "cutover-decision.json", decision)
+    write_json(output / "next-milestone-route.json", route)
+    validate_source_failure_bundle(output)
+
+
+def validate_source_failure_bundle(output: Path) -> None:
+    actual = sorted(
+        path.relative_to(output).as_posix() for path in output.rglob("*")
+        if path.is_file())
+    if actual != SOURCE_FAILURE_ARTIFACTS:
+        raise VerificationError(
+            "Phase 35 source failure artifact set is not exact")
+    try:
+        manifest = json.loads(
+            (output /
+             "cutover-decision-run-manifest.json").read_text(encoding="utf-8"))
+        decision = json.loads(
+            (output / "cutover-decision.json").read_text(encoding="utf-8"))
+        route = json.loads(
+            (output / "next-milestone-route.json").read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, UnicodeError, OSError) as error:
+        raise VerificationError(
+            "Phase 35 source failure bundle is unreadable") from error
+    if (list(manifest) != SOURCE_FAILURE_MANIFEST_FIELDS
+            or list(decision) != DECISION_FIELDS
+            or list(route) != ROUTE_FIELDS):
+        raise VerificationError("Phase 35 source failure fields are not exact")
+    reasons = manifest.get("source_failure_reason_codes")
+    if (not isinstance(reasons, list) or len(reasons) != 1
+            or reasons[0] not in SAFE_SOURCE_FAILURE_REASONS):
+        raise VerificationError("Phase 35 source failure reasons are invalid")
+    reason_code = reasons[0]
+    expected_counts = {kind: 0 for kind in AUDIT_KINDS}
+    if (manifest.get("generation_state") != "blocked-source-error"
+            or manifest.get("generated_artifacts") != SOURCE_FAILURE_ARTIFACTS
+            or manifest.get("raw_evidence_consumed") is not False
+            or decision.get("cutover_verdict") != "blocked"
+            or decision.get("reason_codes") != sorted(
+                {reason_code, "route-scope-incomplete"})
+            or decision.get("readiness_state") != "blocked"
+            or decision.get("readiness_result_ref") != ""
+            or decision.get("active_exception_ids") != []
+            or decision.get("blocker_ids") != []
+            or decision.get("audit_link_index_ref") != ""
+            or decision.get("audit_link_counts_by_kind") != expected_counts
+            or decision.get("demotion_decision_validation_state") != "invalid"
+            or decision.get("demotion_decision_state") != "missing"
+            or decision.get("demotion_decision_source_refs") != []
+            or decision.get("demotion_gate_state") != "blocked"
+            or decision.get("demotion_gate_reason_codes") != [reason_code]
+            or decision.get("raw_evidence_consumed") is not False
+            or route.get("route") != "targeted-blocker-repair"
+            or route.get("source_verdict") != "blocked"
+            or route.get("follow_up_scope") != []
+            or route.get("requires_fresh_cutover_decision") is not True
+            or route.get("planning_only") is not True
+            or route.get("production_actions_authorized") is not False):
+        raise VerificationError(
+            "Phase 35 source failure semantics are invalid")
+    for artifact, payload in (
+        ("cutover-decision-run-manifest.json", manifest),
+        ("cutover-decision.json", decision),
+        ("next-milestone-route.json", route),
+    ):
+        scan_security(payload, artifact)
+
+
 def validate_generated_outputs(output: Path) -> None:
     actual = sorted(
         path.relative_to(output).as_posix() for path in output.rglob("*")
@@ -1390,6 +1739,34 @@ def validate_generated_outputs(output: Path) -> None:
     if report != expected_report:
         raise VerificationError(
             "Phase 35 Markdown projection drifted from JSON")
+    for artifact in GENERATED_ARTIFACTS:
+        path = output / artifact
+        try:
+            text = path.read_text(encoding="utf-8")
+            if path.suffix == ".json":
+                payload = json.loads(text)
+                if not isinstance(payload, dict):
+                    raise VerificationError(
+                        f"{artifact} must contain an object")
+                if artifact.startswith("contract-snapshots/"):
+                    scan_security(
+                        payload,
+                        artifact,
+                        allow_contract_vocabulary=artifact.endswith(
+                            "_contract.json"),
+                    )
+                else:
+                    scan_security(payload, artifact)
+            else:
+                for pattern in FORBIDDEN_TEXT:
+                    if pattern.search(text):
+                        raise VerificationError(
+                            f"{artifact} contains forbidden text",
+                            "secret-tainted",
+                        )
+        except (json.JSONDecodeError, UnicodeError, OSError) as error:
+            raise VerificationError(
+                f"generated artifact is unreadable: {artifact}") from error
 
 
 def write_bundle(
@@ -1399,8 +1776,10 @@ def write_bundle(
     phase34_contract: dict[str, Any],
     phase34_manifest: dict[str, Any],
     source: dict[str, Any],
+    *,
+    staging_output: Path | None = None,
 ) -> None:
-    output = root / relative_output
+    output = staging_output or root / relative_output
     reset_output(output)
     expected_links = derive_audit_links(audit_sources_from_bundle(source))
     index_links = [dict(link) for link in expected_links]
@@ -1524,12 +1903,40 @@ def write_bundle(
 
 
 def run_quick(root: Path, phase34_arg: str, output_arg: str) -> None:
-    phase34, output = validate_paths(root, phase34_arg, output_arg)
-    contract = load_contract(root)
-    source, phase34_contract = load_bundle(root, phase34, contract)
-    manifest = load_json(root, phase34 / "final-readiness-run-manifest.json")
-    write_bundle(root, output, contract, phase34_contract, manifest, source)
-    run_security_scan(root, output.as_posix())
+    output = validate_output_path(root, output_arg)
+    canonical_output = root / output
+    stage: Path | None = None
+    try:
+        phase34 = validate_source_path(root, phase34_arg, output)
+        contract = load_contract(root)
+        source, phase34_contract = load_bundle(root, phase34, contract)
+        manifest = load_json(root,
+                             phase34 / "final-readiness-run-manifest.json")
+        stage = create_staging_directory(root, output)
+        write_bundle(
+            root,
+            output,
+            contract,
+            phase34_contract,
+            manifest,
+            source,
+            staging_output=stage,
+        )
+        install_staged_bundle(stage, canonical_output)
+        stage = None
+        run_security_scan(root, output.as_posix())
+    except VerificationError as error:
+        discard_staging_directory(stage)
+        reason_code = source_failure_reason(error)
+        failure_stage = create_staging_directory(root, output)
+        try:
+            write_source_failure_bundle(output, failure_stage, reason_code)
+            install_staged_bundle(failure_stage, canonical_output)
+        except VerificationError:
+            discard_staging_directory(failure_stage)
+            raise
+        raise VerificationError("Phase 35 source validation failed",
+                                reason_code) from error
 
 
 def run_security_scan(root: Path,
@@ -1691,7 +2098,8 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         raise VerificationError("no mode selected")
     except VerificationError as error:
-        print(str(error), file=sys.stderr)
+        print(f"Phase 35 verification failed: {error.reason_code}",
+              file=sys.stderr)
         return 1
 
 
