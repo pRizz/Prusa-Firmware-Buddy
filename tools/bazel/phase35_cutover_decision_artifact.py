@@ -236,13 +236,38 @@ def canonical_json(value: Any) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
 
 
+def resolve_source_file(root: Path, relative_path: Path) -> Path:
+    if relative_path.is_absolute() or ".." in relative_path.parts:
+        raise VerificationError(
+            f"source artifact escapes repository root: {relative_path.as_posix()}"
+        )
+    current = root
+    for part in relative_path.parts:
+        current /= part
+        if current.is_symlink():
+            raise VerificationError(
+                f"source artifact contains a symlink escape: {relative_path.as_posix()}"
+            )
+    try:
+        resolved_root = root.resolve(strict=True)
+        resolved = (root / relative_path).resolve(strict=True)
+    except OSError as error:
+        raise VerificationError(
+            f"source artifact missing: {relative_path.as_posix()}") from error
+    if resolved_root not in resolved.parents:
+        raise VerificationError(
+            f"source artifact escapes repository root: {relative_path.as_posix()}"
+        )
+    if not resolved.is_file():
+        raise VerificationError(
+            f"source artifact missing: {relative_path.as_posix()}")
+    return resolved
+
+
 def load_json(root: Path,
               relative_path: Path,
               field: str | None = None) -> dict[str, Any]:
-    full_path = root / relative_path
-    if not full_path.is_file():
-        raise VerificationError(
-            f"source artifact missing: {relative_path.as_posix()}")
+    full_path = resolve_source_file(root, relative_path)
     try:
         value = json.loads(full_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as error:

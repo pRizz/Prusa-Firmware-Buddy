@@ -648,6 +648,33 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         # Assert
         self.assertEqual(reasons, ["audit-link-dangling"])
 
+    def test_t_35_01_symlinked_local_audit_target_fails_closed(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        outside_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(outside_dir.cleanup)
+        outside_target = Path(outside_dir.name) / "rows.json"
+        target = {"row_id": "row-1", "value": "outside"}
+        outside_target.write_text(json.dumps({"rows": [target]}),
+                                  encoding="utf-8")
+        target_ref = "build/ci-evidence/phase34/rows.json#row-1"
+        target_path = root / target_ref.split("#", 1)[0]
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        target_path.symlink_to(outside_target)
+        link = {
+            "target_ref":
+            target_ref,
+            "digest":
+            hashlib.sha256(phase35.canonical_json(target)).hexdigest(),
+        }
+
+        # Act
+        reasons = phase35.validate_resolved_audit_links(root, [link])
+
+        # Assert
+        self.assertEqual(reasons, ["audit-link-dangling"])
+
     def test_cutover_03_repair_scope_uses_exact_ordinary_exit_review_refs(
             self) -> None:
         # Arrange
@@ -1080,6 +1107,47 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
                 # Arrange / Act / Assert
                 with self.assertRaises(phase35.VerificationError):
                     phase35.validate_paths(root, phase34_dir, output_dir)
+
+    def test_t_35_02_source_artifact_file_symlink_is_rejected(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        outside_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(outside_dir.cleanup)
+        outside_artifact = Path(outside_dir.name) / "manifest.json"
+        outside_artifact.write_text(json.dumps({"sentinel": "outside"}),
+                                    encoding="utf-8")
+        relative_path = Path(
+            "build/ci-evidence/phase34/final-readiness-run-manifest.json")
+        source_path = root / relative_path
+        source_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path.symlink_to(outside_artifact)
+
+        # Act / Assert
+        with self.assertRaisesRegex(phase35.VerificationError,
+                                    "contains a symlink escape"):
+            phase35.load_json(root, relative_path)
+
+    def test_t_35_02_source_artifact_parent_symlink_is_rejected(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        outside_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(outside_dir.cleanup)
+        outside_artifact = Path(outside_dir.name) / "snapshot.json"
+        outside_artifact.write_text(json.dumps({"sentinel": "outside"}),
+                                    encoding="utf-8")
+        relative_path = Path(
+            "build/ci-evidence/phase34/contract-snapshots/snapshot.json")
+        symlinked_parent = root / relative_path.parent
+        symlinked_parent.parent.mkdir(parents=True, exist_ok=True)
+        symlinked_parent.symlink_to(Path(outside_dir.name),
+                                   target_is_directory=True)
+
+        # Act / Assert
+        with self.assertRaisesRegex(phase35.VerificationError,
+                                    "contains a symlink escape"):
+            phase35.load_json(root, relative_path)
 
     def test_t_35_03_security_rejects_forbidden_fields_text_raw_payloads_and_unsafe_refs(
             self) -> None:
