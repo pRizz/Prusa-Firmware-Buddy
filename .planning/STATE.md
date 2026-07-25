@@ -2,16 +2,16 @@
 gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
-status: executing
-stopped_at: Phase 35 context gathered
-last_updated: "2026-07-25T21:55:10.318Z"
-last_activity: 2026-07-25 -- Phase 35 planning complete
+status: verifying
+stopped_at: Completed 35-01-PLAN.md
+last_updated: "2026-07-25T22:19:54.547Z"
+last_activity: "2026-07-25"
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 6
-  completed_plans: 5
-  percent: 83
+  completed_plans: 6
+  percent: 100
 ---
 
 # Project State
@@ -26,12 +26,12 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
-Phase: 35 of 35 (5 of 5 in current milestone) - Cutover Decision Artifact
-Plan: Not planned
-Status: Ready to execute
-Last activity: 2026-07-25 -- Phase 35 planning complete
+Phase: 35 (Cutover Decision Artifact) — COMPLETE
+Plan: 1 of 1
+Status: Phase complete — ready for verification
+Last activity: 2026-07-25
 
-Progress: [########--] 80% (4/5 v1.3 phases complete)
+Progress: [##########] 100% (5/5 v1.3 phases complete)
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ Progress: [########--] 80% (4/5 v1.3 phases complete)
 |------|----------|-------|-------|
 | Phase 32 P01 | 19min | 3 tasks | 8 files |
 | Phase 33 P01 | 15min | 3 tasks | 8 files |
+| Phase 35 P01 | 20m42s | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,9 @@ Recent decisions affecting current work:
 - [v1.3-roadmap]: Reference demotion remains fail-closed and requires a separate explicit maintainer approval; green evidence alone cannot authorize demotion.
 - [Phase 32]: Phase 32 preserves Phase 31 as the finality/provenance boundary and follows accepted receipt row refs only after Phase 31 outputs load.
 - [Phase 32]: Phase 32 emits blocker classification and downstream handoff state only; it does not approve exceptions, retained code, readiness, demotion, or cutover.
+- [Phase 35]: Phase 35 derives verdict JSON, route JSON, and Markdown from one exact nine-kind canonical audit-link index.
+- [Phase 35]: Blocked and approved-with-exceptions verdicts route to targeted repair and require a fresh cutover decision.
+- [Phase 35]: Phase 33 demotion decision validation/value/source and the Phase 34 demotion gate remain independent from the cutover verdict.
 
 ### Pending Todos
 
@@ -101,6 +105,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-25T21:15:15.242Z
-Stopped at: Phase 35 context gathered
-Resume file: .planning/phases/35-cutover-decision-artifact/35-CONTEXT.md
+Last session: 2026-07-25T22:19:54.545Z
+Stopped at: Completed 35-01-PLAN.md
+Resume file: None

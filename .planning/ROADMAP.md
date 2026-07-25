@@ -77,7 +77,7 @@ Full phase details are archived in `.planning/milestones/v1.2-ROADMAP.md`.
 - [x] **Phase 32: Blocker Register and Evidence Triage** - Maintainers can classify every failed, missing, stale, malformed, redaction-failed, placeholder, or exceptioned row into one blocker register. (completed 2026-07-03)
 - [x] **Phase 33: Maintainer Decision Inputs** - Maintainers can record retained-code, residual-risk, exception, final-readiness, and demotion decisions as explicit machine-readable inputs. (completed 2026-07-04)
 - [x] **Phase 34: Final Readiness and Demotion Dry Run** - Maintainers can generate readiness from real consumed rows and prove demotion stays blocked without valid explicit approval. (completed 2026-07-25)
-- [ ] **Phase 35: Cutover Decision Artifact** - Maintainers can publish an auditable approved, blocked, or approved-with-exceptions verdict that routes the next milestone.
+- [x] **Phase 35: Cutover Decision Artifact** - Maintainers can publish an auditable approved, blocked, or approved-with-exceptions verdict that routes the next milestone. (completed 2026-07-25)
 
 ## Phase Details
 
@@ -142,7 +142,7 @@ Plans:
   4. The artifact preserves reference-demotion authorization as an explicit decision state rather than deriving it from green evidence or cutover approval alone.
 **Plans**: 1 plan
 Plans:
-- [ ] 35-01-PLAN.md - Contract-first auditable cutover verdict, canonical audit-link index, next-milestone routing, demotion-state separation, and verification wiring.
+- [x] 35-01-PLAN.md - Contract-first auditable cutover verdict, canonical audit-link index, next-milestone routing, demotion-state separation, and verification wiring.
 
 ## Requirement Coverage
 
@@ -188,4 +188,4 @@ Phases execute in numeric order across archived milestones. v1.3 continues after
 | 32. Blocker Register and Evidence Triage | v1.3 | 1/1 | Complete    | 2026-07-03 |
 | 33. Maintainer Decision Inputs | v1.3 | 1/1 | Complete    | 2026-07-04 |
 | 34. Final Readiness and Demotion Dry Run | v1.3 | 2/2 | Complete    | 2026-07-25 |
-| 35. Cutover Decision Artifact | v1.3 | 0/TBD | Not started | - |
+| 35. Cutover Decision Artifact | v1.3 | 1/1 | Complete   | 2026-07-25 |

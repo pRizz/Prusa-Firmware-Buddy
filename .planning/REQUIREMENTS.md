@@ -34,9 +34,9 @@ These requirements consume the v1.2 evidence and decision machinery with real sa
 
 ### Cutover Decision
 
-- [ ] **CUTOVER-01**: Maintainer can produce a cutover decision artifact with one explicit verdict: approved, blocked, or approved with explicit exceptions.
-- [ ] **CUTOVER-02**: Cutover decision artifact links every blocker, exception, residual risk, evidence packet, retained-code decision, readiness result, and demotion decision needed to audit the verdict.
-- [ ] **CUTOVER-03**: Cutover decision artifact routes the next milestone to production cutover when approved, or to targeted blocker repair when blocked or approved with exceptions that require follow-up.
+- [x] **CUTOVER-01**: Maintainer can produce a cutover decision artifact with one explicit verdict: approved, blocked, or approved with explicit exceptions.
+- [x] **CUTOVER-02**: Cutover decision artifact links every blocker, exception, residual risk, evidence packet, retained-code decision, readiness result, and demotion decision needed to audit the verdict.
+- [x] **CUTOVER-03**: Cutover decision artifact routes the next milestone to production cutover when approved, or to targeted blocker repair when blocked or approved with exceptions that require follow-up.
 
 ## Future Requirements
 
@@ -81,9 +81,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | READY-01 | Phase 34 | Complete |
 | READY-02 | Phase 34 | Complete |
 | READY-03 | Phase 34 | Complete |
-| CUTOVER-01 | Phase 35 | Pending |
-| CUTOVER-02 | Phase 35 | Pending |
-| CUTOVER-03 | Phase 35 | Pending |
+| CUTOVER-01 | Phase 35 | Complete |
+| CUTOVER-02 | Phase 35 | Complete |
+| CUTOVER-03 | Phase 35 | Complete |
 
 **Coverage:**
 
