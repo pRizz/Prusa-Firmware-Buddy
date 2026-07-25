@@ -140,7 +140,9 @@ Plans:
   2. The decision artifact links every blocker, exception, residual risk, evidence packet, retained-code decision, readiness result, and demotion decision needed to audit the verdict.
   3. An approved verdict routes the next milestone to production cutover planning, while blocked or exception-bearing verdicts route to targeted blocker repair with named follow-up scope.
   4. The artifact preserves reference-demotion authorization as an explicit decision state rather than deriving it from green evidence or cutover approval alone.
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 35-01-PLAN.md - Contract-first auditable cutover verdict, canonical audit-link index, next-milestone routing, demotion-state separation, and verification wiring.
 
 ## Requirement Coverage
 
