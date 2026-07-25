@@ -90,6 +90,26 @@ PROBLEM_REASON_CODES = {
     "row_only_submission": "non-final-evidence",
     "unknown_unclassified": "unknown-classification",
 }
+PHASE33_REQUIRED_DECISION_FIELDS = [
+    "decision_id",
+    "decision_type",
+    "decision_value",
+    "source_row_refs",
+    "maintainer_identity_ref",
+    "maintainer_role",
+    "owner_signoff_ref",
+    "decision_timestamp",
+    "rationale",
+    "evidence_refs",
+    "artifact_refs",
+]
+PHASE33_DECISION_VALUE_ENUMS = {
+    "retained_code": {"accept", "reject", "exception_approve"},
+    "residual_risk": {"accept", "reject"},
+    "exception": {"approve", "reject"},
+    "readiness": {"approve", "block"},
+    "reference_demotion": {"approve", "reject"},
+}
 FORBIDDEN_FIELD_NAMES = {
     "access_token",
     "api_key",
@@ -203,6 +223,23 @@ def string_list(value: Any, field: str) -> list[str]:
     if not all(isinstance(item, str) and item.strip() for item in values):
         raise VerificationError(f"{field} must contain non-blank strings")
     return values
+
+
+def require_string(value: Any, field: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise VerificationError(f"{field} must be a non-blank string")
+    return value
+
+
+def require_iso_utc(timestamp_text: str, field: str) -> None:
+    if not timestamp_text.endswith("Z"):
+        raise VerificationError(f"{field} must be ISO UTC ending in Z")
+    try:
+        parsed = datetime.fromisoformat(timestamp_text.replace("Z", "+00:00"))
+    except ValueError as error:
+        raise VerificationError(f"{field} must be ISO UTC") from error
+    if parsed.tzinfo is None or parsed.utcoffset() != timezone.utc.utcoffset(parsed):
+        raise VerificationError(f"{field} must be ISO UTC")
 
 
 def normalized_field_name(value: str) -> str:
@@ -436,6 +473,69 @@ def decision_refs(rows: list[dict[str, Any]]) -> list[str]:
     return [f"build/ci-evidence/phase33/normalized-decision-records.json#{row.get('decision_id')}" for row in rows]
 
 
+def validate_normalized_decisions(decisions: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    decisions_by_id: dict[str, dict[str, Any]] = {}
+    for index, decision in enumerate(decisions):
+        field_prefix = f"normalized decision rows[{index}]"
+        missing_fields = [
+            field
+            for field in PHASE33_REQUIRED_DECISION_FIELDS
+            if field not in decision
+        ]
+        if missing_fields:
+            raise VerificationError(f"{field_prefix} missing required fields: {', '.join(missing_fields)}")
+        decision_id = require_string(decision.get("decision_id"), f"{field_prefix}.decision_id")
+        if decision_id in decisions_by_id:
+            raise VerificationError(f"duplicate Phase 33 decision_id: {decision_id}")
+        decision_type = require_string(decision.get("decision_type"), f"{decision_id}.decision_type")
+        maybe_values = PHASE33_DECISION_VALUE_ENUMS.get(decision_type)
+        if maybe_values is None:
+            raise VerificationError(f"{decision_id} unknown decision_type: {decision_type}")
+        decision_value = require_string(decision.get("decision_value"), f"{decision_id}.decision_value")
+        if decision_value not in maybe_values:
+            raise VerificationError(f"{decision_id} invalid decision_value for {decision_type}: {decision_value}")
+        if decision.get("phase") != "33-maintainer-decision-inputs":
+            raise VerificationError(f"{decision_id}.phase must be 33-maintainer-decision-inputs")
+        if decision.get("phase_lifecycle_id") != PHASE33_LIFECYCLE_ID:
+            raise VerificationError(f"{decision_id}.phase_lifecycle_id must be {PHASE33_LIFECYCLE_ID}")
+        if decision.get("decision_axis") != decision_type:
+            raise VerificationError(f"{decision_id}.decision_axis must match decision_type")
+        source_refs = string_list(decision.get("source_row_refs"), f"{decision_id}.source_row_refs")
+        if not source_refs:
+            raise VerificationError(f"{decision_id}.source_row_refs must contain at least one entry")
+        for field in ("maintainer_identity_ref", "maintainer_role", "owner_signoff_ref", "rationale"):
+            require_string(decision.get(field), f"{decision_id}.{field}")
+        require_iso_utc(
+            require_string(decision.get("decision_timestamp"), f"{decision_id}.decision_timestamp"),
+            f"{decision_id}.decision_timestamp",
+        )
+        for field in ("evidence_refs", "artifact_refs"):
+            string_list(decision.get(field), f"{decision_id}.{field}")
+        decisions_by_id[decision_id] = decision
+    return decisions_by_id
+
+
+def validate_handoff_decision(
+    projection: dict[str, Any],
+    decisions_by_id: dict[str, dict[str, Any]],
+    expected_type: str,
+    expected_value: str,
+    matching_fields: tuple[str, ...],
+) -> dict[str, Any]:
+    decision_id = require_string(projection.get("decision_id"), "decision_id")
+    maybe_decision = decisions_by_id.get(decision_id)
+    if maybe_decision is None:
+        raise VerificationError(f"unknown Phase 33 decision_id: {decision_id}")
+    decision = maybe_decision
+    if decision.get("decision_type") != expected_type or decision.get("decision_value") != expected_value:
+        raise VerificationError(f"{decision_id} does not authorize {expected_type}={expected_value}")
+    for field in matching_fields:
+        if projection.get(field) != decision.get(field):
+            raise VerificationError(f"{decision_id} projection mismatch for {field}")
+    require_iso_utc(str(decision["decision_timestamp"]), f"{decision_id}.decision_timestamp")
+    return decision
+
+
 def coverage_for_row(
     expected: dict[str, Any],
     maybe_blocker: dict[str, Any] | None,
@@ -654,9 +754,11 @@ def load_phase33(
     normalized = load_register("normalized_decision_records")
     readiness = load_register("readiness_decision_handoff")
     demotion = load_register("demotion_decision_handoff")
-    decisions = require_list(normalized.get("rows"), "normalized decision rows")
-    if not all(isinstance(row, dict) for row in decisions):
+    raw_decisions = require_list(normalized.get("rows"), "normalized decision rows")
+    if not all(isinstance(row, dict) for row in raw_decisions):
         raise VerificationError("normalized decision rows must contain objects")
+    decisions = [dict(row) for row in raw_decisions]
+    validate_normalized_decisions(decisions)
     blocker_register = load_json(root, Path(PHASE32_REGISTER_REF))
     scan_json(blocker_register, Path(PHASE32_REGISTER_REF))
     if blocker_register.get("phase_lifecycle_id") != PHASE32_LIFECYCLE_ID:
@@ -664,7 +766,10 @@ def load_phase33(
     return handoff_path, handoff, decisions, readiness, demotion, blocker_register
 
 
-def approval_state(maybe_demotion: dict[str, Any]) -> tuple[str, str, list[str], str | None]:
+def approval_state(
+    maybe_demotion: dict[str, Any],
+    decisions_by_id: dict[str, dict[str, Any]],
+) -> tuple[str, str, list[str], str | None]:
     if maybe_demotion.get("phase_lifecycle_id") != PHASE33_LIFECYCLE_ID:
         return "invalid", "missing", [], "Phase 33 demotion approval lifecycle is stale or malformed"
     authorization_state = maybe_demotion.get("authorization_state")
@@ -672,28 +777,68 @@ def approval_state(maybe_demotion: dict[str, Any]) -> tuple[str, str, list[str],
         return "missing", "missing", [], None
     source_refs = [str(ref) for ref in maybe_demotion.get("source_row_refs", []) if isinstance(ref, str)]
     if authorization_state == "rejected":
+        try:
+            validate_handoff_decision(
+                maybe_demotion,
+                decisions_by_id,
+                "reference_demotion",
+                "reject",
+                ("source_row_refs", "rationale"),
+            )
+        except VerificationError as error:
+            return "invalid", "reject", source_refs, str(error)
         return "valid", "reject", source_refs, None
     if authorization_state != "approved-input-recorded":
         return "invalid", "missing", source_refs, "Phase 33 demotion approval state is invalid"
-    required = ["decision_id", "maintainer_identity_ref", "maintainer_role", "decision_timestamp"]
-    if any(not isinstance(maybe_demotion.get(field), str) or not str(maybe_demotion.get(field)).strip() for field in required):
-        return "invalid", "missing", source_refs, "Phase 33 demotion approval metadata is malformed"
+    try:
+        validate_handoff_decision(
+            maybe_demotion,
+            decisions_by_id,
+            "reference_demotion",
+            "approve",
+            (
+                "source_row_refs",
+                "maintainer_identity_ref",
+                "maintainer_role",
+                "decision_timestamp",
+                "rationale",
+            ),
+        )
+    except VerificationError as error:
+        return "invalid", "missing", source_refs, str(error)
     return "valid", "approve", source_refs, None
 
 
-def readiness_state(ledger: list[dict[str, Any]], readiness: dict[str, Any]) -> tuple[str, list[str]]:
+def readiness_state(
+    ledger: list[dict[str, Any]],
+    readiness: dict[str, Any],
+    decisions_by_id: dict[str, dict[str, Any]],
+) -> tuple[str, list[str], str | None]:
     reason_codes = sorted({reason for row in ledger for reason in row["reason_codes"]})
+    maybe_error = None
     if not ledger:
         reason_codes.append("required-row-missing")
     if readiness.get("phase_lifecycle_id") != PHASE33_LIFECYCLE_ID:
         reason_codes.append("readiness-input-invalid")
-    if readiness.get("handoff_state") != "approval-input-recorded":
+    elif readiness.get("handoff_state") == "approval-input-recorded":
+        try:
+            validate_handoff_decision(
+                readiness,
+                decisions_by_id,
+                "readiness",
+                "approve",
+                ("source_row_refs", "rationale"),
+            )
+        except VerificationError as error:
+            reason_codes.append("readiness-input-invalid")
+            maybe_error = str(error)
+    else:
         reason_codes.append("readiness-input-invalid")
     if any(row["readiness_effect"] == "blocked" for row in ledger):
-        return "blocked", sorted(set(reason_codes))
+        return "blocked", sorted(set(reason_codes)), maybe_error
     if reason_codes:
-        return "blocked", sorted(set(reason_codes))
-    return "unblocked", []
+        return "blocked", sorted(set(reason_codes)), maybe_error
+    return "unblocked", [], maybe_error
 
 
 def reset_output_root(full_output: Path) -> None:
@@ -866,9 +1011,10 @@ def run_quick(root: Path, phase31_output: str, phase33_handoff: str, output_arg:
     blocker_rows = require_list(blocker_register.get("rows"), "Phase 32 blocker rows")
     if not all(isinstance(row, dict) for row in blocker_rows):
         raise VerificationError("Phase 32 blocker rows must contain objects")
+    decisions_by_id = validate_normalized_decisions(decisions)
     ledger = evaluate_coverage(receipts, blocker_rows, decisions)
-    readiness, readiness_reasons = readiness_state(ledger, readiness_input)
-    validation, decision, source_refs, maybe_error = approval_state(demotion_input)
+    readiness, readiness_reasons, maybe_readiness_error = readiness_state(ledger, readiness_input, decisions_by_id)
+    validation, decision, source_refs, maybe_approval_error = approval_state(demotion_input, decisions_by_id)
     demotion = evaluate_demotion(readiness, validation, decision, source_refs)
     write_bundle(
         root,
@@ -886,7 +1032,8 @@ def run_quick(root: Path, phase31_output: str, phase33_handoff: str, output_arg:
         demotion,
     )
     run_security_scan(root, relative_output)
-    return maybe_error
+    errors = [error for error in (maybe_readiness_error, maybe_approval_error) if error is not None]
+    return "\n".join(errors) or None
 
 
 def run_security_scan(root: Path, output_arg: str | Path = DEFAULT_OUTPUT_DIR) -> None:

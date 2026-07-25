@@ -173,15 +173,54 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
             "decision_type": decision_type,
             "decision_value": decision_value,
             "source_row_refs": [blocker_ref],
+            "maintainer_identity_ref": "maintainer://phase34-test",
+            "maintainer_role": "firmware-maintainer",
+            "owner_signoff_ref": "maintainer://phase34-owner",
+            "decision_timestamp": "2026-07-25T18:45:00Z",
+            "rationale": f"Phase 34 fixture decision for {decision_id}.",
             "artifact_refs": ["external://phase33/sanitized-decision.json"],
             "evidence_refs": [blocker_ref],
+            "phase": "33-maintainer-decision-inputs",
+            "phase_lifecycle_id": "33-2026-07-04T01-36-41",
+            "source_row_ids": [blocker_ref.rsplit("#", 1)[-1]],
+            "affected_gates": [affected_gate],
+            "decision_axis": decision_type,
         }
-        if decision_type in {"exception", "residual_risk"}:
-            row["affected_gates"] = [affected_gate]
         if decision_type == "exception":
             row["linked_blocker_refs"] = [blocker_ref]
             row["coverage_state"] = "approved-exception" if decision_value == "approve" else "rejected"
         return row
+
+    def approved_projection_fixture(
+        self,
+        blocker_ref: str,
+    ) -> tuple[list[dict[str, object]], dict[str, object], dict[str, object]]:
+        readiness_decision = self.decision("approve-readiness", "readiness", "approve", blocker_ref)
+        demotion_decision = self.decision("approve-demotion", "reference_demotion", "approve", blocker_ref)
+        readiness = {
+            "phase": "33-maintainer-decision-inputs",
+            "phase_lifecycle_id": "33-2026-07-04T01-36-41",
+            "handoff_state": "approval-input-recorded",
+            "readiness_input_supplied": True,
+            "decision_id": readiness_decision["decision_id"],
+            "source_row_refs": readiness_decision["source_row_refs"],
+            "phase34_must_generate_final_readiness": True,
+            "rationale": readiness_decision["rationale"],
+        }
+        demotion = {
+            "phase": "33-maintainer-decision-inputs",
+            "phase_lifecycle_id": "33-2026-07-04T01-36-41",
+            "authorization_state": "approved-input-recorded",
+            "demotion_input_supplied": True,
+            "decision_id": demotion_decision["decision_id"],
+            "source_row_refs": demotion_decision["source_row_refs"],
+            "maintainer_identity_ref": demotion_decision["maintainer_identity_ref"],
+            "maintainer_role": demotion_decision["maintainer_role"],
+            "decision_timestamp": demotion_decision["decision_timestamp"],
+            "phase34_must_validate_readiness": True,
+            "rationale": demotion_decision["rationale"],
+        }
+        return [readiness_decision, demotion_decision], readiness, demotion
 
     def write_fixture(
         self,
@@ -497,6 +536,142 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
                         expected = "open" if (readiness, validation, decision) == ("unblocked", "valid", "approve") else "blocked"
                         self.assertEqual(result["gate_state"], expected)
 
+    def test_open_gate_requires_corroborated_readiness_and_demotion_decisions(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        source_ref = "build/ci-evidence/phase23/upstream-simulator-result-row.json"
+        blocker = self.blocker_row("exception-row", source_ref, row_problem_kind="exception_requested")
+        blocker_ref = f"{PHASE32_REGISTER}#exception-row"
+        decisions, readiness, demotion = self.approved_projection_fixture(blocker_ref)
+        decisions.append(self.decision("approve-exception", "exception", "approve", blocker_ref))
+        receipt = self.receipt("simulator", source_ref, evidence_status="failed", exception_status="exception-requested")
+        self.write_fixture(root, [receipt], [blocker], decisions, readiness, demotion)
+
+        # Act
+        result = self.run_quick(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        dry_run = self.read_json(root, f"{OUTPUT_DIR}/demotion-dry-run.json")
+        self.assertEqual(dry_run["gate_state"], "open")
+
+    def test_unknown_projection_decision_ids_are_rejected(self) -> None:
+        for projection_name in ["readiness", "demotion"]:
+            with self.subTest(projection=projection_name):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                self.addCleanup(temp_dir.cleanup)
+                source_ref = "build/ci-evidence/phase23/upstream-simulator-result-row.json"
+                blocker = self.blocker_row("exception-row", source_ref, row_problem_kind="exception_requested")
+                blocker_ref = f"{PHASE32_REGISTER}#exception-row"
+                decisions, readiness, demotion = self.approved_projection_fixture(blocker_ref)
+                decisions.append(self.decision("approve-exception", "exception", "approve", blocker_ref))
+                target = readiness if projection_name == "readiness" else demotion
+                target["decision_id"] = "unknown-decision"
+                receipt = self.receipt(
+                    "simulator",
+                    source_ref,
+                    evidence_status="failed",
+                    exception_status="exception-requested",
+                )
+                self.write_fixture(root, [receipt], [blocker], decisions, readiness, demotion)
+
+                # Act
+                result = self.run_quick(root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("unknown Phase 33 decision_id", result.stdout)
+
+    def test_duplicate_normalized_decision_ids_are_rejected(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        source_ref = "build/ci-evidence/phase23/upstream-simulator-result-row.json"
+        blocker = self.blocker_row("exception-row", source_ref, row_problem_kind="exception_requested")
+        blocker_ref = f"{PHASE32_REGISTER}#exception-row"
+        decisions, readiness, demotion = self.approved_projection_fixture(blocker_ref)
+        duplicate = self.decision("approve-demotion", "reference_demotion", "approve", blocker_ref)
+        decisions.append(duplicate)
+        self.write_fixture(root, [self.receipt("simulator", source_ref)], [blocker], decisions, readiness, demotion)
+
+        # Act
+        result = self.run_quick(root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("duplicate Phase 33 decision_id", result.stdout)
+
+    def test_projection_decision_axis_and_value_must_authorize_projection(self) -> None:
+        cases = [
+            ("decision_type", "readiness"),
+            ("decision_value", "reject"),
+        ]
+        for field, value in cases:
+            with self.subTest(field=field, value=value):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                self.addCleanup(temp_dir.cleanup)
+                source_ref = "build/ci-evidence/phase23/upstream-simulator-result-row.json"
+                blocker = self.blocker_row("exception-row", source_ref, row_problem_kind="exception_requested")
+                blocker_ref = f"{PHASE32_REGISTER}#exception-row"
+                decisions, readiness, demotion = self.approved_projection_fixture(blocker_ref)
+                demotion_decision = decisions[1]
+                demotion_decision[field] = value
+                demotion_decision["decision_axis"] = demotion_decision["decision_type"]
+                self.write_fixture(root, [self.receipt("simulator", source_ref)], [blocker], decisions, readiness, demotion)
+
+                # Act
+                result = self.run_quick(root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("does not authorize reference_demotion=approve", result.stdout)
+
+    def test_projection_metadata_and_source_refs_must_match_normalized_decision(self) -> None:
+        cases = [
+            ("maintainer_role", "different-role"),
+            ("source_row_refs", [f"{PHASE32_REGISTER}#different-row"]),
+        ]
+        for field, value in cases:
+            with self.subTest(field=field):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                self.addCleanup(temp_dir.cleanup)
+                source_ref = "build/ci-evidence/phase23/upstream-simulator-result-row.json"
+                blocker = self.blocker_row("exception-row", source_ref, row_problem_kind="exception_requested")
+                blocker_ref = f"{PHASE32_REGISTER}#exception-row"
+                decisions, readiness, demotion = self.approved_projection_fixture(blocker_ref)
+                demotion[field] = value
+                self.write_fixture(root, [self.receipt("simulator", source_ref)], [blocker], decisions, readiness, demotion)
+
+                # Act
+                result = self.run_quick(root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(f"projection mismatch for {field}", result.stdout)
+
+    def test_normalized_decision_timestamp_must_be_iso_utc(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        source_ref = "build/ci-evidence/phase23/upstream-simulator-result-row.json"
+        blocker = self.blocker_row("exception-row", source_ref, row_problem_kind="exception_requested")
+        blocker_ref = f"{PHASE32_REGISTER}#exception-row"
+        decisions, readiness, demotion = self.approved_projection_fixture(blocker_ref)
+        decisions[1]["decision_timestamp"] = "not-even-a-timestamp"
+        demotion["decision_timestamp"] = "not-even-a-timestamp"
+        self.write_fixture(root, [self.receipt("simulator", source_ref)], [blocker], decisions, readiness, demotion)
+
+        # Act
+        result = self.run_quick(root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("must be ISO UTC", result.stdout)
+
     def test_missing_invalid_stale_and_rejected_approval_write_durable_blocked_result(self) -> None:
         cases = [
             (None, "missing"),
@@ -518,7 +693,29 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
                     "decision_id": "approve-readiness",
                     "source_row_refs": [],
                 }
-                self.write_fixture(root, [self.receipt("simulator", source_ref)], [], readiness=readiness, demotion=demotion)
+                blocker_rows = []
+                decisions = []
+                if demotion and demotion.get("authorization_state") == "rejected":
+                    blocker = self.blocker_row("demotion-row", source_ref)
+                    blocker_rows.append(blocker)
+                    blocker_ref = f"{PHASE32_REGISTER}#demotion-row"
+                    decision = self.decision("reject-demotion", "reference_demotion", "reject", blocker_ref)
+                    decisions.append(decision)
+                    demotion.update(
+                        {
+                            "decision_id": decision["decision_id"],
+                            "source_row_refs": decision["source_row_refs"],
+                            "rationale": decision["rationale"],
+                        }
+                    )
+                self.write_fixture(
+                    root,
+                    [self.receipt("simulator", source_ref)],
+                    blocker_rows,
+                    decisions,
+                    readiness,
+                    demotion,
+                )
 
                 # Act
                 result = self.run_quick(root)
