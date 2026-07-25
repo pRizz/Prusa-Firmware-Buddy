@@ -1,9 +1,9 @@
 ---
 phase: "34"
 slug: "final-readiness-and-demotion-dry-run"
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: verified
+nyquist_compliant: true
+wave_0_complete: true
 created: "2026-07-25"
 ---
 
@@ -38,9 +38,9 @@ ______________________________________________________________________
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 34-01-01 | 01 | 1 | READY-01, READY-02, READY-03 | T-34-01 through T-34-06 | RED tests cover exact lineage, sparse blocker overlays, explicit approval, absolute/traversal/wrong-root/input-output-overlap/symlink path rejection, lifecycle guards, and secret rejection | unit | `python3 tools/bazel/phase34_final_readiness_demotion_dry_run_test.py -q` | ❌ W0 | ⬜ pending |
-| 34-01-02 | 01 | 1 | READY-01, READY-02, READY-03 | T-34-01 through T-34-06 | Verifier generates one canonical ledger and blocks every non-open authorization state | unit/integration | `python3 tools/bazel/phase34_final_readiness_demotion_dry_run_test.py -q && python3 tools/bazel/phase34_final_readiness_demotion_dry_run.py --contract-only && python3 tools/bazel/phase34_final_readiness_demotion_dry_run.py --security-only` | ❌ W0 | ⬜ pending |
-| 34-01-03 | 01 | 1 | READY-01, READY-02, READY-03 | T-34-01 through T-34-06 | Bazel and `just` regenerate prerequisites without synthesizing approval and verify the complete blocked-default bundle | integration | `just phase34-verify` | ❌ W0 | ⬜ pending |
+| 34-01-01 | 01 | 1 | READY-01, READY-02, READY-03 | T-34-01 through T-34-06 | RED tests cover exact lineage, sparse blocker overlays, explicit approval, absolute/traversal/wrong-root/input-output-overlap/symlink path rejection, lifecycle guards, and secret rejection | unit | `python3 tools/bazel/phase34_final_readiness_demotion_dry_run_test.py -q` | ✅ W0 | ✅ green |
+| 34-01-02 | 01 | 1 | READY-01, READY-02, READY-03 | T-34-01 through T-34-06 | Verifier generates one canonical ledger and blocks every non-open authorization state | unit/integration | `python3 tools/bazel/phase34_final_readiness_demotion_dry_run_test.py -q && python3 tools/bazel/phase34_final_readiness_demotion_dry_run.py --contract-only && python3 tools/bazel/phase34_final_readiness_demotion_dry_run.py --security-only` | ✅ W0 | ✅ green |
+| 34-01-03 | 01 | 1 | READY-01, READY-02, READY-03 | T-34-01 through T-34-06 | Bazel and `just` regenerate prerequisites without synthesizing approval and verify the complete blocked-default bundle | integration | `just phase34-verify` | ✅ W0 | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -48,9 +48,9 @@ ______________________________________________________________________
 
 ## Wave 0 Requirements
 
-- [ ] `tools/bazel/phase34_final_readiness_demotion_dry_run_test.py` — focused fixtures and RED tests for READY-01, READY-02, READY-03, including all five T-34-02 path-boundary cases
-- [ ] `tools/bazel/manifests/phase34_final_readiness_demotion_dry_run_contract.json` — lifecycle, artifact, reason-code, security, and authorization contract
-- [ ] Existing Python `unittest`, Bazel, and `just` infrastructure covers all other phase requirements
+- [x] `tools/bazel/phase34_final_readiness_demotion_dry_run_test.py` — focused fixtures and RED tests for READY-01, READY-02, READY-03, including all five T-34-02 path-boundary cases
+- [x] `tools/bazel/manifests/phase34_final_readiness_demotion_dry_run_contract.json` — lifecycle, artifact, reason-code, security, and authorization contract
+- [x] Existing Python `unittest`, Bazel, and `just` infrastructure covers all other phase requirements
 
 ______________________________________________________________________
 
@@ -62,11 +62,11 @@ ______________________________________________________________________
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 30s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 30s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-07-25
