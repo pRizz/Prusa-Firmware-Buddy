@@ -800,6 +800,53 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("symlink escape", result.stdout)
 
+    def test_nested_phase33_register_symlink_escapes_are_rejected(self) -> None:
+        register_names = [
+            "normalized-decision-records.json",
+            "readiness-decision-handoff.json",
+            "demotion-decision-handoff.json",
+        ]
+        for register_name in register_names:
+            with self.subTest(register=register_name):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                self.addCleanup(temp_dir.cleanup)
+                source_ref = "build/ci-evidence/phase23/upstream-simulator-result-row.json"
+                self.write_fixture(root, [self.receipt("simulator", source_ref)], [])
+                register_path = root / "build/ci-evidence/phase33" / register_name
+                outside_path = root / "outside" / register_name
+                outside_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(register_path, outside_path)
+                register_path.unlink()
+                register_path.symlink_to(outside_path)
+
+                # Act
+                result = self.run_quick(root)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("symlink escape", result.stdout)
+
+    def test_nested_phase32_register_symlink_escape_is_rejected(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        source_ref = "build/ci-evidence/phase23/upstream-simulator-result-row.json"
+        self.write_fixture(root, [self.receipt("simulator", source_ref)], [])
+        register_path = root / PHASE32_REGISTER
+        outside_path = root / "outside/blocker-register.json"
+        outside_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(register_path, outside_path)
+        register_path.unlink()
+        register_path.symlink_to(outside_path)
+
+        # Act
+        result = self.run_quick(root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("symlink escape", result.stdout)
+
     def test_security_rejects_secret_fields_unsafe_refs_and_overclaim_markers(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()

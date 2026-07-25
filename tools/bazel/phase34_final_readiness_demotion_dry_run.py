@@ -747,6 +747,7 @@ def load_phase33(
         if not isinstance(value, str):
             raise VerificationError(f"Phase 33 register_refs.{name} must be a path")
         register_path = path_under(value, Path("build/ci-evidence/phase33"), f"register_refs.{name}")
+        resolved_under(root, register_path, Path("build/ci-evidence/phase33"), f"register_refs.{name}")
         payload = load_json(root, register_path)
         scan_json(payload, register_path)
         return payload
@@ -759,8 +760,10 @@ def load_phase33(
         raise VerificationError("normalized decision rows must contain objects")
     decisions = [dict(row) for row in raw_decisions]
     validate_normalized_decisions(decisions)
-    blocker_register = load_json(root, Path(PHASE32_REGISTER_REF))
-    scan_json(blocker_register, Path(PHASE32_REGISTER_REF))
+    blocker_register_path = Path(PHASE32_REGISTER_REF)
+    resolved_under(root, blocker_register_path, Path("build/ci-evidence/phase32"), "Phase 32 blocker register")
+    blocker_register = load_json(root, blocker_register_path)
+    scan_json(blocker_register, blocker_register_path)
     if blocker_register.get("phase_lifecycle_id") != PHASE32_LIFECYCLE_ID:
         raise VerificationError(f"Phase 32 blocker register phase_lifecycle_id must be {PHASE32_LIFECYCLE_ID}")
     return handoff_path, handoff, decisions, readiness, demotion, blocker_register
