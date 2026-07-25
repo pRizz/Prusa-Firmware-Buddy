@@ -842,6 +842,53 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         with self.assertRaises(phase35.VerificationError):
             phase35.validate_phase34_manifest(contract, manifest)
 
+    def test_t_35_03_snapshots_reject_secret_fields_and_uncontracted_fields(
+            self) -> None:
+        # Arrange
+        contract = self.contract()
+        secret_manifest = {
+            "accepted_receipt_snapshot_ref": "build/ci-evidence/phase34/contract-snapshots/phase31-accepted-receipts.json",
+            "artifact_name": "phase34-final-readiness-demotion-dry-run",
+            "generated_artifacts": phase35.PHASE34_ARTIFACTS,
+            "generated_at_utc": "2026-07-25T22:18:11Z",
+            "output_root": "build/ci-evidence/phase34",
+            "phase": "34-final-readiness-and-demotion-dry-run",
+            "phase_lifecycle_id": phase35.PHASE34_LIFECYCLE_ID,
+            "raw_evidence_consumed": False,
+            "snapshot_refs": [],
+            "source_refs": [],
+            "token_value": "secret-bearing-value",
+        }
+        uncontracted_contract = {
+            **contract, "unexpected": {
+                "rationale": "not contracted"
+            }
+        }
+
+        # Act / Assert
+        with self.assertRaises(phase35.VerificationError):
+            phase35.validate_phase34_manifest(contract, secret_manifest)
+        with self.assertRaises(phase35.VerificationError):
+            phase35.validate_snapshot(
+                "contract-snapshots/phase35_cutover_decision_artifact_contract.json",
+                uncontracted_contract,
+            )
+
+    def test_t_35_03_snapshot_scan_permits_declared_contract_vocabulary(
+            self) -> None:
+        # Arrange
+        contract = self.contract()
+
+        # Act
+        phase35.validate_snapshot(
+            "contract-snapshots/phase35_cutover_decision_artifact_contract.json",
+            contract,
+        )
+
+        # Assert
+        self.assertIn("production demotion complete",
+                      contract["security"]["prohibited_text_markers"])
+
     def test_t_35_05_caller_supplied_authority_flags_are_rejected(
             self) -> None:
         forbidden_options = [

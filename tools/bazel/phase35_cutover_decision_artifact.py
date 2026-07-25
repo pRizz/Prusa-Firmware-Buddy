@@ -104,6 +104,30 @@ PHASE34_ARTIFACTS = [
     "contract-snapshots/phase31-final-intake-manifest.json",
     "contract-snapshots/phase31-accepted-receipts.json",
 ]
+PHASE35_CONTRACT_FIELDS = {
+    "artifact_name", "audit_link_failure_modes", "audit_link_schema",
+    "authority_boundaries", "blocked_reason_codes", "cutover_decision_fields",
+    "default_behavior", "demotion_projection", "generated_artifacts", "id",
+    "output_root", "phase", "phase_lifecycle_id", "repair_scope_fields",
+    "repair_scope_ref_policy", "requirement_ids", "route_enum", "route_fields",
+    "route_semantics", "route_truth_table", "schema_version", "security",
+    "source_contract", "source_lifecycle_ids", "verdict_enum",
+    "verdict_truth_table", "verification_commands",
+}
+PHASE34_CONTRACT_FIELDS = {
+    "artifact_name", "blocked_reason_codes", "default_behavior",
+    "demotion_dry_run_schema", "generated_artifacts",
+    "hard_blocker_problem_kinds", "id", "io_validation_responsibilities",
+    "ledger_schema", "output_root", "phase", "phase_lifecycle_id",
+    "prohibited_output_markers", "prohibited_semantics", "pure_evaluator_outputs",
+    "requirement_ids", "schema_version", "source_contracts", "source_inputs",
+    "sparse_blocker_overlay_policy", "test_command", "verification_commands",
+}
+PHASE34_MANIFEST_FIELDS = {
+    "accepted_receipt_snapshot_ref", "artifact_name", "generated_artifacts",
+    "generated_at_utc", "output_root", "phase", "phase_lifecycle_id",
+    "raw_evidence_consumed", "snapshot_refs", "source_refs",
+}
 ALLOWED_REF_PREFIXES = (
     "build/ci-evidence/phase23/",
     "build/ci-evidence/phase24/",
@@ -163,6 +187,12 @@ FORBIDDEN_TEXT = (
     re.compile(r"\bproduction rollout authorized\b", re.IGNORECASE),
     re.compile(r"\braw evidence payload\b", re.IGNORECASE),
 )
+CONTRACT_VOCABULARY = {
+    "production demotion complete",
+    "reference demotion authorized by cutover",
+    "production rollout authorized",
+    "raw evidence payload",
+}
 STALE_BEFORE = datetime(2026, 4, 26, tzinfo=timezone.utc)
 PHASE35_VERIFY_COMMANDS = [
     "python3 tools/bazel/phase31_final_evidence_intake.py --quick --output-dir build/ci-evidence/phase31",
@@ -241,6 +271,12 @@ FORBIDDEN_NORMALIZED_FIELDS = {
 }
 
 
+def validate_exact_fields(value: dict[str, Any], expected_fields: set[str],
+                          field: str) -> None:
+    if set(value) != expected_fields:
+        raise VerificationError(f"{field} field set is not exact")
+
+
 def validate_ref(value: str, field: str = "ref") -> None:
     if not isinstance(value, str) or not value:
         raise VerificationError(f"{field} must be a non-blank string")
@@ -254,7 +290,10 @@ def validate_ref(value: str, field: str = "ref") -> None:
         raise VerificationError(f"unsafe ref in {field}: {value}")
 
 
-def scan_security(value: Any, field: str = "$") -> None:
+def scan_security(value: Any,
+                  field: str = "$",
+                  *,
+                  allow_contract_vocabulary: bool = False) -> None:
     errors: list[str] = []
 
     def walk(candidate: Any, candidate_field: str) -> None:
@@ -285,6 +324,12 @@ def scan_security(value: Any, field: str = "$") -> None:
         elif isinstance(candidate, str):
             for pattern in FORBIDDEN_TEXT:
                 if pattern.search(candidate):
+                    is_policy_value = (
+                        ".security.prohibited_text_markers[" in candidate_field
+                        or ".prohibited_output_markers[" in candidate_field)
+                    if (allow_contract_vocabulary and is_policy_value
+                            and candidate in CONTRACT_VOCABULARY):
+                        continue
                     errors.append(f"forbidden text at {candidate_field}")
 
     walk(value, field)
@@ -327,6 +372,8 @@ def validate_paths(root: Path, phase34_arg: str | Path,
 
 
 def validate_contract(contract: dict[str, Any]) -> None:
+    validate_exact_fields(contract, PHASE35_CONTRACT_FIELDS,
+                          CONTRACT_PATH.as_posix())
     expected = {
         "schema_version": "1",
         "id": "phase35_cutover_decision_artifact_contract",
@@ -354,11 +401,17 @@ def validate_contract(contract: dict[str, Any]) -> None:
 def load_contract(root: Path = ROOT) -> dict[str, Any]:
     contract = load_json(root, CONTRACT_PATH)
     validate_contract(contract)
+    scan_security(contract,
+                  CONTRACT_PATH.as_posix(),
+                  allow_contract_vocabulary=True)
     return contract
 
 
 def validate_phase34_manifest(contract: dict[str, Any],
                               manifest: dict[str, Any]) -> None:
+    validate_exact_fields(manifest, PHASE34_MANIFEST_FIELDS,
+                          "Phase 34 manifest")
+    scan_security(manifest, "Phase 34 manifest")
     source = contract.get("source_contract")
     if not isinstance(source, dict):
         raise VerificationError("Phase 35 source_contract must be an object")
@@ -374,6 +427,47 @@ def validate_phase34_manifest(contract: dict[str, Any],
             raise VerificationError(
                 f"Phase 34 manifest {field} is stale, malformed, or lifecycle-mismatched"
             )
+
+
+def validate_phase34_contract(contract: dict[str, Any]) -> None:
+    validate_exact_fields(contract, PHASE34_CONTRACT_FIELDS,
+                          PHASE34_CONTRACT_PATH.as_posix())
+    expected = {
+        "schema_version": "1",
+        "id": "phase34_final_readiness_demotion_dry_run_contract",
+        "artifact_name": "phase34-final-readiness-demotion-dry-run",
+        "phase": "34-final-readiness-and-demotion-dry-run",
+        "phase_lifecycle_id": PHASE34_LIFECYCLE_ID,
+        "output_root": DEFAULT_PHASE34_OUTPUT.as_posix(),
+        "generated_artifacts": PHASE34_ARTIFACTS,
+    }
+    for field, expected_value in expected.items():
+        if contract.get(field) != expected_value:
+            raise VerificationError(
+                f"{PHASE34_CONTRACT_PATH.as_posix()} {field} is invalid")
+    scan_security(
+        contract,
+        PHASE34_CONTRACT_PATH.as_posix(),
+        allow_contract_vocabulary=True,
+    )
+
+
+def validate_snapshot(artifact: str, payload: dict[str, Any]) -> None:
+    if artifact.endswith("phase35_cutover_decision_artifact_contract.json"):
+        validate_contract(payload)
+        scan_security(payload,
+                      artifact,
+                      allow_contract_vocabulary=True)
+        return
+    if artifact.endswith(
+            "phase34_final_readiness_demotion_dry_run_contract.json"):
+        validate_phase34_contract(payload)
+        return
+    if artifact.endswith("phase34-final-readiness-run-manifest.json"):
+        validate_exact_fields(payload, PHASE34_MANIFEST_FIELDS, artifact)
+        scan_security(payload, artifact)
+        return
+    raise VerificationError(f"uncontracted snapshot: {artifact}")
 
 
 def evaluate_verdict(facts: dict[str, Any]) -> dict[str, Any]:
@@ -797,9 +891,7 @@ def load_bundle(
     manifest = load_json(root, manifest_path)
     validate_phase34_manifest(contract, manifest)
     phase34_contract = load_json(root, PHASE34_CONTRACT_PATH)
-    if phase34_contract.get(
-            "id") != "phase34_final_readiness_demotion_dry_run_contract":
-        raise VerificationError("Phase 34 source contract identity is invalid")
+    validate_phase34_contract(phase34_contract)
     paths = {
         "ledger": phase34 / "readiness-coverage-ledger.json",
         "packet": phase34 / "final-readiness-packet.json",
@@ -1100,17 +1192,24 @@ def run_security_scan(root: Path,
         raise VerificationError(
             "Phase 35 output root contains a symlink escape")
     for artifact in GENERATED_ARTIFACTS:
-        if artifact.startswith("contract-snapshots/"):
-            continue
         path = full_output / artifact
         if not path.is_file():
             continue
         text = path.read_text(encoding="utf-8")
-        for pattern in FORBIDDEN_TEXT:
-            if pattern.search(text):
-                raise VerificationError(f"{artifact} contains forbidden text")
         if path.suffix == ".json":
-            scan_security(json.loads(text), artifact)
+            payload = json.loads(text)
+            if artifact.startswith("contract-snapshots/"):
+                if not isinstance(payload, dict):
+                    raise VerificationError(
+                        f"{artifact} must contain an object")
+                validate_snapshot(artifact, payload)
+            else:
+                scan_security(payload, artifact)
+        else:
+            for pattern in FORBIDDEN_TEXT:
+                if pattern.search(text):
+                    raise VerificationError(
+                        f"{artifact} contains forbidden text")
     print(f"Phase 35 security scan passed for {output.as_posix()}")
 
 
