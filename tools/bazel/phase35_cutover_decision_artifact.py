@@ -554,35 +554,27 @@ def evaluate_verdict(facts: dict[str, Any]) -> dict[str, Any]:
         if maybe_exception is None:
             exception_invalid = True
             continue
-        legacy_validation = "validation_state" in maybe_exception
-        if legacy_validation:
-            valid = (
-                maybe_exception.get("decision_value") == "approve"
-                and maybe_exception.get("validation_state") == "valid"
-                and maybe_exception.get("active") is True
-                and maybe_exception.get("exact_scope") is True)
-        else:
-            maybe_timestamp = parse_timestamp(
-                maybe_exception.get("decision_timestamp"))
-            valid = (
-                maybe_exception.get("decision_type") == "exception"
-                and maybe_exception.get("decision_value") == "approve"
-                and maybe_exception.get("phase_lifecycle_id")
-                == PHASE33_LIFECYCLE_ID and maybe_timestamp is not None
-                and maybe_timestamp >= STALE_BEFORE
-                and isinstance(maybe_exception.get("maintainer_identity_ref"),
-                               str)
-                and bool(maybe_exception["maintainer_identity_ref"])
-                and isinstance(maybe_exception.get("maintainer_role"), str)
-                and bool(maybe_exception["maintainer_role"])
-                and isinstance(maybe_exception.get("owner_signoff_ref"), str)
-                and bool(maybe_exception["owner_signoff_ref"])
-                and isinstance(maybe_exception.get("scope"), str)
-                and bool(maybe_exception["scope"])
-                and maybe_exception.get("linked_blocker_refs")
-                == maybe_exception.get("source_row_refs")
-                and bool(maybe_exception.get("affected_gates"))
-                and bool(maybe_exception.get("expiry_or_review_trigger")))
+        maybe_timestamp = parse_timestamp(
+            maybe_exception.get("decision_timestamp"))
+        valid = (
+            maybe_exception.get("decision_type") == "exception"
+            and maybe_exception.get("decision_value") == "approve"
+            and maybe_exception.get("phase_lifecycle_id")
+            == PHASE33_LIFECYCLE_ID and maybe_timestamp is not None
+            and maybe_timestamp >= STALE_BEFORE
+            and isinstance(maybe_exception.get("maintainer_identity_ref"),
+                           str)
+            and bool(maybe_exception["maintainer_identity_ref"])
+            and isinstance(maybe_exception.get("maintainer_role"), str)
+            and bool(maybe_exception["maintainer_role"])
+            and isinstance(maybe_exception.get("owner_signoff_ref"), str)
+            and bool(maybe_exception["owner_signoff_ref"])
+            and isinstance(maybe_exception.get("scope"), str)
+            and bool(maybe_exception["scope"])
+            and maybe_exception.get("linked_blocker_refs")
+            == maybe_exception.get("source_row_refs")
+            and bool(maybe_exception.get("affected_gates"))
+            and bool(maybe_exception.get("expiry_or_review_trigger")))
         if not valid:
             exception_invalid = True
     if set(exception_by_id) != set(active_ids):
@@ -1069,6 +1061,19 @@ def reached_register(root: Path, refs: dict[str, Any],
 def validate_register_projection(rows: list[dict[str, Any]],
                                  normalized_rows: list[dict[str, Any]],
                                  decision_type: str) -> None:
+    allowed_extension_fields = {
+        "retained_code": {"residual_risk_rationale"},
+        "residual_risk": {"follow_up_refs"},
+        "exception": {
+            "scope",
+            "expiry_or_review_trigger",
+            "affected_requirements",
+            "affected_gates",
+            "linked_blocker_refs",
+            "coverage_state",
+        },
+    }
+    forbidden_legacy_fields = {"validation_state", "active", "exact_scope"}
     expected = {
         str(row.get("decision_id")): row
         for row in normalized_rows
@@ -1081,6 +1086,17 @@ def validate_register_projection(rows: list[dict[str, Any]],
         )
     for decision_id, normalized in expected.items():
         projection = actual[decision_id]
+        if forbidden_legacy_fields & set(projection):
+            raise VerificationError(
+                f"Phase 33 {decision_type} register contains forbidden legacy validation fields"
+            )
+        unexpected_fields = (
+            set(projection) - set(normalized)
+            - allowed_extension_fields.get(decision_type, set()))
+        if unexpected_fields:
+            raise VerificationError(
+                f"Phase 33 {decision_type} register contains uncontracted fields for {decision_id}"
+            )
         if any(projection.get(field) != value
                for field, value in normalized.items()):
             raise VerificationError(

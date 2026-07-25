@@ -114,16 +114,24 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         decision_id: str = "exception-1",
         *,
         decision_value: str = "approve",
-        validation_state: str = "valid",
-        active: bool = True,
-        exact_scope: bool = True,
+        decision_timestamp: str = "2026-07-25T20:00:00Z",
+        lifecycle: str = "33-2026-07-04T01-36-41",
     ) -> dict[str, object]:
+        source_row_refs = [f"{PHASE32_REGISTER}#blocker-1"]
         return {
             "decision_id": decision_id,
+            "decision_type": "exception",
             "decision_value": decision_value,
-            "validation_state": validation_state,
-            "active": active,
-            "exact_scope": exact_scope,
+            "source_row_refs": source_row_refs,
+            "maintainer_identity_ref": "maintainer://alice",
+            "maintainer_role": "cutover-maintainer",
+            "owner_signoff_ref": "owner://signoff/alice",
+            "decision_timestamp": decision_timestamp,
+            "phase_lifecycle_id": lifecycle,
+            "scope": "exact",
+            "expiry_or_review_trigger": "review-before-cutover",
+            "affected_gates": ["final-simulator-evidence"],
+            "linked_blocker_refs": source_row_refs,
         }
 
     def audit_sources(self) -> list[dict[str, object]]:
@@ -405,13 +413,22 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
                 self.assertEqual(result["cutover_verdict"], "blocked")
 
     def test_cutover_01_exception_boundaries_fail_closed(self) -> None:
+        canonical = self.exception()
         cases = [
-            ("broad", self.exception(exact_scope=False)),
+            ("broad", {
+                **canonical, "linked_blocker_refs":
+                [f"{PHASE32_REGISTER}#other"]
+            }),
             ("unmatched", self.exception(decision_id="other")),
             ("rejected", self.exception(decision_value="reject")),
-            ("expired", self.exception(active=False)),
-            ("stale", self.exception(validation_state="stale")),
-            ("invalid", self.exception(validation_state="invalid")),
+            ("expired", {
+                **canonical, "expiry_or_review_trigger": ""
+            }),
+            ("stale",
+             self.exception(decision_timestamp="2020-01-01T00:00:00Z")),
+            ("invalid", {
+                **canonical, "owner_signoff_ref": ""
+            }),
         ]
         for case_name, exception in cases:
             with self.subTest(case=case_name):
@@ -426,6 +443,28 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
                 # Assert
                 self.assertEqual(result["cutover_verdict"], "blocked")
                 self.assertIn("exception-invalid", result["reason_codes"])
+
+    def test_cutover_01_legacy_fields_cannot_override_canonical_validation(
+            self) -> None:
+        # Arrange
+        facts = self.valid_facts()
+        facts["active_exception_ids"] = ["exception-1"]
+        facts["exceptions"] = [{
+            **self.exception(decision_timestamp="2020-01-01T00:00:00Z"),
+            "validation_state":
+            "valid",
+            "active":
+            True,
+            "exact_scope":
+            True,
+        }]
+
+        # Act
+        result = phase35.evaluate_verdict(facts)
+
+        # Assert
+        self.assertEqual(result["cutover_verdict"], "blocked")
+        self.assertIn("exception-invalid", result["reason_codes"])
 
     def test_cutover_01_phase34_ledger_is_the_active_exception_authority(
             self) -> None:
@@ -1091,6 +1130,33 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         # Act / Assert
         with self.assertRaisesRegex(phase35.VerificationError,
                                     "projection differs"):
+            phase35.validate_register_projection(projection, normalized,
+                                                 "exception")
+
+    def test_t_35_04_exception_projection_rejects_legacy_validation_fields(
+            self) -> None:
+        # Arrange
+        normalized = [{
+            "decision_id": "exception-1",
+            "decision_type": "exception",
+            "decision_value": "approve",
+            "source_row_refs": [f"{PHASE32_REGISTER}#blocker-1"],
+        }]
+        projection = [{
+            **normalized[0],
+            "scope": "exact",
+            "expiry_or_review_trigger": "review-before-cutover",
+            "affected_requirements": ["CUTOVER-01"],
+            "affected_gates": ["final-simulator-evidence"],
+            "linked_blocker_refs": [f"{PHASE32_REGISTER}#blocker-1"],
+            "validation_state": "valid",
+            "active": True,
+            "exact_scope": True,
+        }]
+
+        # Act / Assert
+        with self.assertRaisesRegex(phase35.VerificationError,
+                                    "forbidden legacy"):
             phase35.validate_register_projection(projection, normalized,
                                                  "exception")
 
