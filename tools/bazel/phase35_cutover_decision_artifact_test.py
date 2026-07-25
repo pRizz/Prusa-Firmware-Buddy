@@ -196,14 +196,17 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
     def demotion_dry_run(
         self,
         *,
+        readiness_state: str = "unblocked",
         gate_state: str = "blocked",
         approval_validation_state: str = "valid",
         approval_decision_state: str = "approve",
         reason_codes: list[str] | None = None,
     ) -> dict[str, object]:
         return {
+            "readiness_state": readiness_state,
             "gate_state": gate_state,
-            "reason_codes": reason_codes or ["readiness-blocked"],
+            "reason_codes":
+            ["readiness-blocked"] if reason_codes is None else reason_codes,
             "approval_validation_state": approval_validation_state,
             "approval_decision_state": approval_decision_state,
             "source_refs": [f"{PHASE32_REGISTER}#blocker-1"],
@@ -871,6 +874,29 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
         # Assert
         self.assertEqual(projection["demotion_gate_state"], "open")
         self.assertEqual(verdict["cutover_verdict"], "blocked")
+
+    def test_t_35_06_stale_approval_cannot_preserve_open_gate(self) -> None:
+        # Arrange
+        handoff = self.demotion_handoff()
+        records = [
+            self.demotion_decision(
+                decision_timestamp="2020-01-01T00:00:00Z")
+        ]
+        dry_run = self.demotion_dry_run(
+            gate_state="open",
+            approval_validation_state="invalid",
+            reason_codes=[],
+        )
+
+        # Act
+        projection = phase35.project_demotion(handoff, records, dry_run)
+
+        # Assert
+        self.assertEqual(projection["demotion_decision_validation_state"],
+                         "stale")
+        self.assertEqual(projection["demotion_gate_state"], "blocked")
+        self.assertIn("approval-invalid",
+                      projection["demotion_gate_reason_codes"])
 
     def test_t_35_02_paths_reject_absolute_traversal_wrong_root_overlap_and_symlink_escape(
             self) -> None:

@@ -929,6 +929,17 @@ def project_demotion(
                    ) != expected_dry_validation or dry_run.get(
                        "approval_decision_state") != expected_dry_decision:
         gate_state = "blocked"
+        gate_reasons.append("source-artifact-malformed")
+    if validation_state != "valid" or decision_state != "approve":
+        gate_state = "blocked"
+        if not gate_reasons:
+            gate_reasons.append("approval-missing" if validation_state
+                                == "missing" else "approval-invalid")
+    if dry_run.get("readiness_state") != "unblocked":
+        gate_state = "blocked"
+        gate_reasons.append("readiness-input-invalid")
+    if gate_reasons:
+        gate_state = "blocked"
     return {
         "demotion_decision_validation_state":
         validation_state,
@@ -939,7 +950,11 @@ def project_demotion(
         "demotion_gate_state":
         gate_state,
         "demotion_gate_reason_codes":
-        sorted(set(str(value) for value in gate_reasons)),
+        sorted(
+            set(
+                str(value)
+                for value in gate_reasons
+                if isinstance(value, str) and value)),
     }
 
 
