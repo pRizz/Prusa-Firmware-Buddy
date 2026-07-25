@@ -14,6 +14,7 @@ import phase35_cutover_decision_artifact as phase35
 ROOT = Path(__file__).resolve().parents[2]
 CONTRACT = ROOT / "tools/bazel/manifests/phase35_cutover_decision_artifact_contract.json"
 PHASE32_REGISTER = "build/ci-evidence/phase32/blocker-register.json"
+PHASE33_NORMALIZED_REGISTER = "build/ci-evidence/phase33/normalized-decision-records.json"
 PHASE33_EXCEPTION_REGISTER = "build/ci-evidence/phase33/exception-decision-register.json"
 PHASE33_RESIDUAL_REGISTER = "build/ci-evidence/phase33/residual-risk-decision-register.json"
 PHASE34_LEDGER = "build/ci-evidence/phase34/readiness-coverage-ledger.json"
@@ -243,6 +244,8 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
             "affected_gates": ["final-simulator-evidence"],
             "reason_codes": ["evidence-failed"],
             "readiness_effect": "blocked",
+            "exception_decision_refs": [],
+            "residual_risk_decision_refs": [],
         }
 
     def make_temp_root(self) -> tuple[tempfile.TemporaryDirectory[str], Path]:
@@ -257,6 +260,25 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, destination)
         return temp_dir, root
+
+    def write_audit_targets(self, root: Path,
+                            source: dict[str, object]) -> None:
+        payloads: dict[str, object] = {}
+        for audit_source in phase35.audit_sources_from_bundle(source):
+            target_ref = str(audit_source["target_ref"])
+            if target_ref.startswith("external://"):
+                continue
+            target_path, separator, _ = target_ref.partition("#")
+            digest_source = audit_source["digest_source"]
+            if separator:
+                payload = payloads.setdefault(target_path, {"rows": []})
+                self.assertIsInstance(payload, dict)
+                payload["rows"].append(digest_source)
+            else:
+                self.assertNotIn(target_path, payloads)
+                payloads[target_path] = digest_source
+        for target_path, payload in payloads.items():
+            phase35.write_json(root / target_path, payload)
 
     def test_cutover_01_contract_identity_lifecycle_and_closed_verdict_enum(
             self) -> None:
@@ -664,10 +686,14 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
             "expiry_or_review_trigger": "review-before-cutover",
             "affected_gates": ["final-simulator-evidence"],
         }
+        ledger = {
+            **self.ledger_row(), "exception_decision_refs":
+            [f"{PHASE33_NORMALIZED_REGISTER}#exception-1"]
+        }
 
         # Act
         scope, reasons = phase35.build_repair_scope([blocker],
-                                                    [self.ledger_row()],
+                                                    [ledger],
                                                     [exception], [])
 
         # Assert
@@ -678,6 +704,95 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
                 f"{PHASE33_EXCEPTION_REGISTER}#exception-1/expiry_or_review_trigger",
                 f"{PHASE33_EXCEPTION_REGISTER}#exception-1/affected_gates",
             ],
+        )
+
+    def test_cutover_03_write_bundle_preserves_exception_covered_approval(
+            self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        blocker = self.blocker_row(blocker_kind="exception_request")
+        exception = self.exception()
+        unrelated_ref = f"{PHASE32_REGISTER}#unrelated"
+        source = {
+            "receipts": [{
+                "receipt_ref": "external://phase31/sanitized-packet",
+                "receipt": {
+                    "submission_id": "submission-1"
+                },
+            }],
+            "blockers": [blocker],
+            "exceptions": [exception],
+            "residuals": [{
+                "decision_id": "risk-unrelated",
+                "source_row_refs": [unrelated_ref],
+                "linked_blocker_refs": [unrelated_ref],
+                "follow_up_refs": ["external://phase33/risk-follow-up"],
+                "affected_gates": ["other-gate"],
+            }],
+            "retained": [{
+                "decision_id": "retained-unrelated",
+                "source_row_refs": [unrelated_ref],
+            }],
+            "readiness_handoff": {
+                "decision_id": "readiness-1"
+            },
+            "demotion_handoff": self.demotion_handoff(supplied=False),
+            "packet": {
+                "readiness_state": "unblocked",
+                "reason_codes": [],
+            },
+            "dry_run": self.demotion_dry_run(
+                readiness_state="unblocked",
+                approval_validation_state="missing",
+                approval_decision_state="missing",
+                reason_codes=["approval-missing"],
+            ),
+            "ledger": {
+                "rows": [{
+                    **self.ledger_row(),
+                    "coverage_state":
+                    "exception-covered",
+                    "readiness_effect":
+                    "unblocked",
+                    "reason_codes": [],
+                    "exception_decision_refs":
+                    [f"{PHASE33_NORMALIZED_REGISTER}#exception-1"],
+                }]
+            },
+            "normalized": [],
+        }
+        self.write_audit_targets(root, source)
+        contract = self.contract()
+        phase34_contract = json.loads(
+            (root / "tools/bazel/manifests/phase34_final_readiness_demotion_dry_run_contract.json"
+             ).read_text(encoding="utf-8"))
+
+        # Act
+        phase35.write_bundle(
+            root,
+            Path("build/ci-evidence/phase35"),
+            contract,
+            phase34_contract,
+            {},
+            source,
+        )
+
+        # Assert
+        decision = json.loads(
+            (root / "build/ci-evidence/phase35/cutover-decision.json"
+             ).read_text(encoding="utf-8"))
+        route = json.loads(
+            (root / "build/ci-evidence/phase35/next-milestone-route.json"
+             ).read_text(encoding="utf-8"))
+        self.assertEqual(decision["cutover_verdict"],
+                         "approved-with-exceptions")
+        self.assertNotIn("route-scope-incomplete",
+                         decision["reason_codes"])
+        self.assertEqual(len(route["follow_up_scope"]), 1)
+        self.assertEqual(
+            route["follow_up_scope"][0]["exception_refs"],
+            [f"{PHASE33_EXCEPTION_REGISTER}#exception-1"],
         )
 
     def test_cutover_03_repair_scope_adds_exact_residual_risk_criteria(
@@ -691,10 +806,14 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
             "follow_up_refs": ["external://phase33/risk-follow-up"],
             "affected_gates": ["final-simulator-evidence"],
         }
+        ledger = {
+            **self.ledger_row(), "residual_risk_decision_refs":
+            [f"{PHASE33_NORMALIZED_REGISTER}#risk-1"]
+        }
 
         # Act
         scope, reasons = phase35.build_repair_scope([blocker],
-                                                    [self.ledger_row()], [],
+                                                    [ledger], [],
                                                     [residual])
 
         # Assert
@@ -752,7 +871,10 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
             ),
             (
                 "fabricated-exception",
-                [self.ledger_row()],
+                [{
+                    **self.ledger_row(), "exception_decision_refs":
+                    [f"{PHASE33_NORMALIZED_REGISTER}#exception-1"]
+                }],
                 [{
                     "decision_id": "exception-1",
                     "source_row_refs": [f"{PHASE32_REGISTER}#other"],
