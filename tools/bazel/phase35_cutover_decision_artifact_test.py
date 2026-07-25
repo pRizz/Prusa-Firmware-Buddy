@@ -949,6 +949,38 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
                 with self.assertRaises(phase35.VerificationError):
                     phase35.scan_security(payload)
 
+    def test_t_35_03_external_refs_reject_traversal_and_malformed_uris(
+            self) -> None:
+        cases = [
+            "external://phase31/../../private",
+            "external://phase31/%2e%2e/private",
+            "external://phase31/safe\\private",
+            "external://phase99/safe",
+            "external://phase31/safe?query=unsafe",
+            "external://phase31/safe#",
+            "external://phase31/safe#row/../private",
+            "maintainer://owner/../private",
+            "owner://phase34/safe\u0001",
+        ]
+        for ref in cases:
+            with self.subTest(ref=ref):
+                # Arrange / Act / Assert
+                with self.assertRaises(phase35.VerificationError):
+                    phase35.validate_ref(ref)
+
+    def test_t_35_03_external_refs_accept_contract_rooted_safe_uris(
+            self) -> None:
+        # Arrange
+        refs = [
+            "external://phase31/sanitized-packet",
+            "maintainer://cutover-owner",
+            "owner://phase34/simulator",
+        ]
+
+        # Act / Assert
+        for ref in refs:
+            phase35.validate_ref(ref)
+
     def test_t_35_04_lifecycle_and_contract_drift_fail_closed(self) -> None:
         # Arrange
         contract = self.contract()

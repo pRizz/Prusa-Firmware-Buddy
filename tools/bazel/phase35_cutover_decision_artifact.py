@@ -11,6 +11,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
 PHASE = "35-cutover-decision-artifact"
@@ -290,14 +291,43 @@ def validate_exact_fields(value: dict[str, Any], expected_fields: set[str],
 def validate_ref(value: str, field: str = "ref") -> None:
     if not isinstance(value, str) or not value:
         raise VerificationError(f"{field} must be a non-blank string")
+    if "\\" in value or any(ord(character) < 32 for character in value):
+        raise VerificationError(f"unsafe ref in {field}: {value}")
     if not value.startswith(ALLOWED_REF_PREFIXES):
         raise VerificationError(f"unsafe ref in {field}: {value}")
     if value.startswith(("external://", "maintainer://", "owner://")):
+        parsed = urlsplit(value)
+        if (parsed.scheme not in {"external", "maintainer", "owner"}
+                or not parsed.netloc or parsed.query or "@" in parsed.netloc
+                or ":" in parsed.netloc):
+            raise VerificationError(f"unsafe ref in {field}: {value}")
+        if parsed.scheme == "external" and (
+                parsed.netloc not in {
+                    f"phase{phase}"
+                    for phase in range(23, 35)
+                } or not parsed.path.startswith("/")
+                or parsed.path in {"", "/"}):
+            raise VerificationError(f"unsafe ref in {field}: {value}")
+        decoded_parts = Path(unquote(parsed.path)).parts
+        if any(part in {".", ".."} for part in decoded_parts):
+            raise VerificationError(f"unsafe ref in {field}: {value}")
+        if parsed.fragment:
+            decoded_fragment = unquote(parsed.fragment)
+            fragment_parts = decoded_fragment.split("/")
+            if any(part in {"", ".", ".."} for part in fragment_parts):
+                raise VerificationError(f"unsafe ref in {field}: {value}")
+        elif "#" in value:
+            raise VerificationError(f"unsafe ref in {field}: {value}")
         return
-    path_text = value.split("#", 1)[0]
+    path_text, separator, fragment = value.partition("#")
     path = Path(path_text)
     if path.is_absolute() or ".." in path.parts or "\\" in path_text:
         raise VerificationError(f"unsafe ref in {field}: {value}")
+    if separator:
+        decoded_fragment = unquote(fragment)
+        fragment_parts = decoded_fragment.split("/")
+        if any(part in {"", ".", ".."} for part in fragment_parts):
+            raise VerificationError(f"unsafe ref in {field}: {value}")
 
 
 def scan_security(value: Any,
