@@ -1,6 +1,6 @@
 ---
 phase: 35-cutover-decision-artifact
-reviewed: 2026-07-25T22:26:42Z
+reviewed: 2026-07-25T23:07:36Z
 depth: standard
 files_reviewed: 7
 files_reviewed_list:
@@ -12,88 +12,71 @@ files_reviewed_list:
   - tools/bazel/rust_workflow.sh
   - justfile
 findings:
-  critical: 2
-  warning: 4
+  critical: 1
+  warning: 0
   info: 1
-  total: 7
+  total: 2
 status: issues_found
 ---
 
 # Phase 35: Code Review Report
 
-**Reviewed:** 2026-07-25T22:26:42Z
+**Reviewed:** 2026-07-25T23:07:36Z
 **Depth:** standard
 **Files Reviewed:** 7
 **Status:** issues_found
 
 ## Summary
 
-The Phase 35 contract, generator, tests, Bazel targets, shell workflow, and `just` facade were reviewed against the repo-local guidance, `AGENTS.bright-builds.md`, `standards-overrides.md`, and the Bright Builds architecture, code-shape, testing, and verification standards.
+The persisted seven-file Phase 35 scope was re-reviewed after the iteration-2 fixes. The review applied the repo-local guidance, `AGENTS.bright-builds.md`, `standards-overrides.md`, and the Bright Builds architecture, code-shape, testing, and verification standards.
 
-The 31 focused Python tests, bytecode compilation, contract check, wiring check, and existing-output security scan pass. Adversarial checks nevertheless confirmed that unvalidated snapshot content can escape the security scan, mutable Phase 33 registers can change the decision after Phase 34 validation, dangling audit links pass the production self-check, stale demotion approval can retain an open gate, and unsafe external refs are accepted. The current generated blocked route also covers only 43 of the 47 blocked Phase 34 ledger rows.
+The prior CR-02, WR-04, and WR-05 cases are resolved. Focused adversarial tests confirm that stale canonical exceptions cannot be upgraded by legacy `validation_state`/`active`/`exact_scope` fields, percent-encoded backslashes and controls are rejected, and a valid exception-covered readiness bundle remains `approved-with-exceptions` with a targeted follow-up scope.
+
+One new critical containment issue was reproduced: validation rejects a symlinked Phase 34 root but does not inspect individual source artifacts, and the common JSON loader follows a nested artifact symlink outside the repository. The existing oversized-module maintainability item also remains open.
+
+The 45 focused Python tests, bytecode compilation, contract check, wiring check, existing-output security scan, shell syntax check, scoped diff check, Bazel target query, Bazel test target, and full Bazel Phase 35 verification chain pass. Bazel upgraded `MODULE.bazel.lock` metadata during verification; that side effect was restored.
 
 ## Critical Issues
 
-### CR-01: Secret-tainted source snapshots bypass every security scan
+### CR-01: Nested source-artifact symlinks bypass the declared containment boundary
 
-**File:** `tools/bazel/phase35_cutover_decision_artifact.py:797-802`
-**Issue:** The Phase 34 run manifest and contract are validated only for a small required subset, then copied verbatim at lines 1069-1076. `run_security_scan` explicitly skips every `contract-snapshots/` artifact at lines 1102-1104. Extra forbidden fields or text therefore enter the supposedly sanitized Phase 35 bundle undetected. An adversarial manifest containing `token_value` passed `validate_phase34_manifest`.
+**File:** `tools/bazel/phase35_cutover_decision_artifact.py:239-255`
+**Issue:** `validate_paths` checks only the components of the Phase 34 root and Phase 35 output root at lines 414-436. `load_json` then calls `is_file()` and `read_text()` on every nested artifact without rejecting a symlink or verifying the resolved file remains under the repository root. A temporary Phase 34 directory containing `final-readiness-run-manifest.json` as a symlink to an outside JSON file passed `validate_paths`, and `load_json` read the outside sentinel value. The same loader is used for the manifest, packet, ledger, register, snapshot, and audit-link targets, so this violates the contract's `resolved-root-contained` and `no-symlink-escape` requirements and can move cutover authority inputs outside the contracted source roots.
 **Fix:**
 
 ```python
-manifest = load_json(root, manifest_path)
-scan_security(manifest, manifest_path.as_posix())
-validate_exact_fields(manifest, PHASE34_MANIFEST_FIELDS)
+def resolve_source_file(root: Path, relative_path: Path) -> Path:
+    current = root
+    for part in relative_path.parts:
+        current /= part
+        if current.is_symlink():
+            raise VerificationError(
+                f"source artifact contains a symlink escape: {relative_path}"
+            )
 
-phase34_contract = load_json(root, PHASE34_CONTRACT_PATH)
-scan_security(phase34_contract, PHASE34_CONTRACT_PATH.as_posix())
-validate_phase34_contract(phase34_contract)
+    resolved_root = root.resolve(strict=True)
+    resolved = (root / relative_path).resolve(strict=True)
+    if resolved_root not in resolved.parents:
+        raise VerificationError(
+            f"source artifact escapes repository root: {relative_path}"
+        )
+    if not resolved.is_file():
+        raise VerificationError(f"source artifact missing: {relative_path}")
+    return resolved
 ```
 
-Scan all emitted snapshots as well, using a snapshot-aware policy that permits contract vocabulary such as prohibited-field names but rejects secret-bearing values and uncontracted fields.
-
-### CR-02: Mutable Phase 33 registers can change an already validated cutover decision
-
-**File:** `tools/bazel/phase35_cutover_decision_artifact.py:839-850`
-**Issue:** Phase 35 follows register refs from the snapshotted Phase 33 handoff back to live `build/ci-evidence/phase33` files without a digest or exact projection binding them to the Phase 34 run. Those files can be regenerated or edited while retaining the static lifecycle ID. The verdict path then labels every approving exception `valid` and `exact_scope` at lines 984-991 instead of validating its lifecycle, timestamp, scope, and identity. Removing an exception after Phase 34 used it can turn an exception-bearing decision into clean `approved`; adding or altering one can produce `approved-with-exceptions` without Phase 34 ever validating that exact set.
-**Fix:** Snapshot the exact Phase 33 registers consumed by Phase 34, or record and verify their canonical digests in the Phase 34 manifest. Derive the active exception set from the Phase 34 canonical ledger and require exact equality with fully revalidated Phase 33 exception rows. Never synthesize `validation_state` or `exact_scope`.
-
-## Warnings
-
-### WR-01: Production audit-link validation compares the index with itself
-
-**File:** `tools/bazel/phase35_cutover_decision_artifact.py:959-960`
-**Issue:** Both production checks call `validate_audit_links(links, links)` (also lines 940-942), so missing, extra, dangling, lifecycle, category, and digest mismatches cannot be discovered independently. `derive_audit_links` also does not resolve local targets or fragments. A link to nonexistent `build/ci-evidence/phase34/does-not-exist.json` returned no validation reasons in an adversarial check.
-**Fix:** Independently derive the expected semantic link set from validated source artifacts, separately construct the emitted index, resolve every local file/fragment, recompute digests from the resolved sanitized target, and compare the two sets.
-
-### WR-02: Targeted repair scope omits Phase 34-created blockers
-
-**File:** `tools/bazel/phase35_cutover_decision_artifact.py:1001-1005`
-**Issue:** Repair scope and `blocker_ids` are built only from the snapshotted Phase 32 register, while the loaded Phase 34 `readiness-blocker-summary.json` is never used. In the current quick artifacts, Phase 34 has 47 blocked ledger rows but Phase 35 emits only 43 repair scopes, omitting the four required-stream rows that produced `coverage-incomplete`.
-**Fix:** Derive blockers from the Phase 34 blocker summary/canonical blocked ledger rows. Map every row to source-backed owner/action/criterion refs, and add `route-scope-incomplete` when any blocked row cannot be represented.
-
-### WR-03: A stale or invalid demotion approval can retain an open gate
-
-**File:** `tools/bazel/phase35_cutover_decision_artifact.py:691-705`
-**Issue:** The gate is blocked only when the projected validation/value disagrees with the dry-run fields. A stale approval paired with `approval_validation_state: invalid`, `approval_decision_state: approve`, and `gate_state: open` is emitted as stale/approve/open. This contradicts the fail-closed demotion boundary.
-**Fix:** Require `validation_state == "valid"`, `decision_state == "approve"`, unblocked matching readiness, and no blocking gate reasons before preserving `open`; otherwise force `blocked` and add a source-artifact or approval reason.
-
-### WR-04: External refs bypass traversal and separator validation
-
-**File:** `tools/bazel/phase35_cutover_decision_artifact.py:244-250`
-**Issue:** `validate_ref` returns immediately for `external://`, `maintainer://`, and `owner://`. Values such as `external://phase31/../../private` are accepted even though the contract requires no parent traversal and safe refs.
-**Fix:** Parse allowed URI schemes, require the exact permitted authority/path prefix, and reject dot segments, backslashes, control characters, and malformed fragments before returning.
+Use this helper in `load_json` before reading and add a regression with a real Phase 34 directory plus a symlinked nested manifest or audit target that must raise `VerificationError`.
 
 ## Info
 
-### IN-01: The verifier has crossed the repository's module-size refactor trigger
+### IN-01: The verifier remains far beyond the repository's module-size refactor trigger
 
 **File:** `tools/bazel/phase35_cutover_decision_artifact.py:1`
-**Issue:** The 1,246-line file combines contract parsing, path and security policy, verdict logic, audit indexing, repair routing, demotion projection, rendering, output I/O, CLI parsing, and wiring inspection. This exceeds the Bright Builds roughly 628-line refactor trigger and makes boundary-validation omissions harder to see.
-**Fix:** Split pure verdict/route/demotion reducers, source-schema validation, audit-link validation, and the filesystem/CLI shell into focused modules while retaining the current public entrypoint.
+**Issue:** The 1,674-line generator combines contract parsing, security and URI policy, source validation, decision logic, audit resolution, repair routing, demotion projection, rendering, output mutation, and wiring inspection. This remains beyond the Bright Builds roughly 628-line refactor trigger; the 1,397-line test module mirrors the same concentration.
+**Fix:** Split boundary validation, pure verdict/route/demotion reducers, audit-link resolution, and the filesystem/CLI shell into focused modules, with correspondingly focused tests.
 
 ***
 
-_Reviewed: 2026-07-25T22:26:42Z_
+_Reviewed: 2026-07-25T23:07:36Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
