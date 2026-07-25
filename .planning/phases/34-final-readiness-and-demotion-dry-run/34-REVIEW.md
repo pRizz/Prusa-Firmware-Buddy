@@ -1,6 +1,6 @@
 ---
 phase: 34-final-readiness-and-demotion-dry-run
-reviewed: 2026-07-25T19:40:57Z
+reviewed: 2026-07-25T20:12:00Z
 depth: standard
 files_reviewed: 7
 files_reviewed_list:
@@ -21,16 +21,16 @@ status: clean
 
 # Phase 34: Code Review Report
 
-**Reviewed:** 2026-07-25T19:40:57Z
+**Reviewed:** 2026-07-25T20:12:00Z
 **Depth:** standard
 **Files Reviewed:** 7
 **Status:** clean
 
 ## Summary
 
-The seven Phase 34 contract, verifier, test, Bazel, shell-workflow, and `just` files were re-reviewed after fix commits `991f4c3c2`, `3523c1f55`, `97fab7c39`, and `e144258d8`. All prior critical and warning exploit cases are closed, and no critical or warning-level regressions were found.
+The seven Phase 34 contract, verifier, test, Bazel, shell-workflow, and `just` files were re-reviewed after the original review fixes and gap-closure commits `71e213418` and `27cc6603f`. All prior critical and warning exploit cases are closed, and no critical or warning-level regressions were found.
 
-Python compilation passed, the full Phase 34 suite passed all 33 tests, contract-only validation passed, wiring-only validation passed, and the fix-range diff passed `git diff --check`. All reviewed files meet quality standards for correctness and security. The remaining file-cohesion concern is informational.
+Python compilation passed, the full Phase 34 suite passed all 36 tests, contract-only, security-only, and wiring-only validation passed, Phase 28 and Phase 31–34 passed 131 regression tests, and the fix-range diff passed `git diff --check`. All reviewed files meet quality standards for correctness and security. The remaining file-cohesion concern is informational.
 
 ## Prior Finding Closure
 
@@ -38,6 +38,14 @@ Python compilation passed, the full Phase 34 suite passed all 33 tests, contract
 - **CR-02 closed:** every consumed Phase 33 register and the Phase 32 blocker register now receives resolved containment checks. Focused tests confirm nested register symlinks are rejected.
 - **WR-01 closed:** missing, malformed, unsafe, forbidden, or symlinked demotion approval inputs now retain a minimal run manifest and blocked demotion dry-run artifact while returning a nonzero validation result.
 - **WR-02 closed:** Phase 32 overlay joins now require exact source ref, source stream, and affected gate agreement. Extra or mismatched blocker rows and dangling or wrong-gate decision refs remain visible as blocking ledger rows, and duplicate Phase 32 row IDs block readiness.
+
+## Gap-Closure Re-review
+
+- Phase 34 validates the exact Phase 31 contract identity and lifecycle before deriving the four required stream specifications.
+- Required stream source refs are derived from repository-relative adapter output roots and upstream row or row-table paths; duplicate, unknown, missing, or path-unsafe adapters fail closed.
+- Every absent stream creates a deterministic critical, ineligible `required-row-missing` ledger row.
+- Missing-stream semantics outrank Phase 32 classifications and approved exceptions, preventing a blocker overlay from turning absent evidence into an unblocked row.
+- The isolated open fixture now includes every required stream, and the omission regression removes each stream in turn while attempting exception coverage; all variants remain blocked.
 
 ## Info
 
@@ -49,6 +57,6 @@ Python compilation passed, the full Phase 34 suite passed all 33 tests, contract
 
 ***
 
-_Reviewed: 2026-07-25T19:40:57Z_
+_Reviewed: 2026-07-25T20:12:00Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_

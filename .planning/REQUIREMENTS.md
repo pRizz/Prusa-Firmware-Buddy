@@ -28,9 +28,9 @@ These requirements consume the v1.2 evidence and decision machinery with real sa
 
 ### Readiness and Demotion Trial
 
-- [ ] **READY-01**: Maintainer can generate a final readiness packet from real consumed evidence rows, retained-code decisions, approved exceptions, residual risks, blockers, and artifact references.
-- [ ] **READY-02**: Final readiness remains blocked when required evidence is absent, failed, stale, malformed, redaction-failed, underclassified, or not covered by an explicit approved exception.
-- [ ] **READY-03**: Reference-demotion dry run proves demotion remains blocked without a valid explicit demotion approval and opens only when readiness is otherwise unblocked and the approval input is valid.
+- [x] **READY-01**: Maintainer can generate a final readiness packet from real consumed evidence rows, retained-code decisions, approved exceptions, residual risks, blockers, and artifact references.
+- [x] **READY-02**: Final readiness remains blocked when required evidence is absent, failed, stale, malformed, redaction-failed, underclassified, or not covered by an explicit approved exception.
+- [x] **READY-03**: Reference-demotion dry run proves demotion remains blocked without a valid explicit demotion approval and opens only when readiness is otherwise unblocked and the approval input is valid.
 
 ### Cutover Decision
 
@@ -78,9 +78,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DECIDE-01 | Phase 33 | Complete |
 | DECIDE-02 | Phase 33 | Complete |
 | DECIDE-03 | Phase 33 | Complete |
-| READY-01 | Phase 34 | Pending |
-| READY-02 | Phase 34 | Pending |
-| READY-03 | Phase 34 | Pending |
+| READY-01 | Phase 34 | Complete |
+| READY-02 | Phase 34 | Complete |
+| READY-03 | Phase 34 | Complete |
 | CUTOVER-01 | Phase 35 | Pending |
 | CUTOVER-02 | Phase 35 | Pending |
 | CUTOVER-03 | Phase 35 | Pending |
@@ -89,12 +89,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 - v1.3 requirements: 16 total
 - Mapped to phases: 16
-- Complete: 10
-- Pending: 6
+- Complete: 13
+- Pending: 3
 - Unmapped: 0
 - Duplicate mappings: 0
 
 ______________________________________________________________________
 
 *Requirements defined: 2026-07-02*
-*Last updated: 2026-07-04 after Phase 33 completion*
+*Last updated: 2026-07-25 after Phase 34 completion*

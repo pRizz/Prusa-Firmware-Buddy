@@ -3,14 +3,14 @@ gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
 status: planning
-stopped_at: Phase 34 context gathered
-last_updated: "2026-07-25T18:24:08.607Z"
-last_activity: 2026-07-04 -- Phase 33 complete
+stopped_at: Phase 34 complete; Phase 35 ready to discuss
+last_updated: "2026-07-25T20:16:43.765Z"
+last_activity: "2026-07-25 -- Phase 34 complete"
 progress:
   total_phases: 5
-  completed_phases: 3
-  total_plans: 3
-  completed_plans: 3
+  completed_phases: 4
+  total_plans: 5
+  completed_plans: 5
   percent: 100
 ---
 
@@ -18,27 +18,27 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-04)
+See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Phase 34 - Final Readiness and Demotion Dry Run
+**Current focus:** Phase 35 — Cutover Decision Artifact
 
 ## Current Position
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
-Phase: 34 of 35 (4 of 5 in current milestone) - Final Readiness and Demotion Dry Run
+Phase: 35 of 35 (5 of 5 in current milestone) - Cutover Decision Artifact
 Plan: Not planned
-Status: Ready to plan Phase 34
-Last activity: 2026-07-04 -- Phase 33 complete
+Status: Ready to discuss Phase 35
+Last activity: 2026-07-25 -- Phase 34 complete
 
-Progress: [######----] 60% (3/5 v1.3 phases complete)
+Progress: [########--] 80% (4/5 v1.3 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- v1.3 plans completed: 3/3
-- v1.3 phases completed: 3/5
+- v1.3 plans completed: 5/5
+- v1.3 phases completed: 4/5
 - Previous milestone baseline: v1.2 completed 9 plans across 8 phases
 - Earlier milestone baseline: v1.1 completed 13 plans across 10 phases
 
@@ -49,13 +49,13 @@ Progress: [######----] 60% (3/5 v1.3 phases complete)
 | 31. Final Evidence Intake | 1/1 | - | - |
 | 32. Blocker Register and Evidence Triage | 1/1 | 19min | 19min |
 | 33. Maintainer Decision Inputs | 1/1 | 15min | 15min |
-| 34. Final Readiness and Demotion Dry Run | 0/TBD | - | - |
+| 34. Final Readiness and Demotion Dry Run | 2/2 | - | - |
 | 35. Cutover Decision Artifact | 0/TBD | - | - |
 
 **Recent Trend:**
 
-- Last 5 completed plans: Phase 29 P02, Phase 30 P01, Phase 31 P01, Phase 32 P01, Phase 33 P01
-- Trend: v1.2 evidence execution, acceptance, final-readiness, upstream evidence-flow closure, metadata cleanup, and milestone archival are complete; v1.3 Phases 31, 32, and 33 are complete and Phase 34 is ready to plan.
+- Last 5 completed plans: Phase 31 P01, Phase 32 P01, Phase 33 P01, Phase 34 P01, Phase 34 P02
+- Trend: v1.3 Phases 31 through 34 are complete; Phase 35 is ready to turn the readiness result into an auditable cutover decision artifact.
 
 **Recent Completed Plan Detail:**
 
@@ -87,7 +87,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Plan Phase 34: Final Readiness and Demotion Dry Run.
+- Discuss and plan Phase 35: Cutover Decision Artifact.
 - Keep real evidence artifacts sanitized; use external refs for private keys, tokens, certificates, service payloads, raw crash dumps, and other secret-bearing data.
 
 ### Blockers/Concerns
@@ -101,6 +101,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-25T18:24:08.602Z
-Stopped at: Phase 34 context gathered
-Resume file: .planning/phases/34-final-readiness-and-demotion-dry-run/34-CONTEXT.md
+Last session: 2026-07-25T20:16:43.765Z
+Stopped at: Phase 34 complete; Phase 35 ready to discuss
+Resume file: None
