@@ -111,6 +111,16 @@ PHASE33_DECISION_VALUE_ENUMS = {
     "readiness": {"approve", "block"},
     "reference_demotion": {"approve", "reject"},
 }
+EXPECTED_GATE_BY_STREAM = {
+    "simulator": "final-simulator-evidence",
+    "hardware-media-safety": "final-hardware-safety-media-evidence",
+    "live-service": "final-live-network-transfer-evidence",
+    "release-signing": "final-release-artifact-signing-evidence",
+    "upstream-result": "final-upstream-result-evidence",
+    "retained-code": "final-retained-code-acceptance",
+    "readiness": "final-readiness",
+    "unknown": "cutover-decision",
+}
 FORBIDDEN_FIELD_NAMES = {
     "access_token",
     "api_key",
@@ -436,6 +446,7 @@ def derive_expected_rows(receipts: list[dict[str, Any]]) -> list[dict[str, Any]]
                     "row_id": stable_row_id(stream, source_ref),
                     "source_stream": stream,
                     "source_ref": source_ref,
+                    "expected_gate": EXPECTED_GATE_BY_STREAM.get(stream, EXPECTED_GATE_BY_STREAM["unknown"]),
                     "requirement_ids": sorted({str(value) for value in receipt.get("requirement_ids", [])}),
                     "proof_eligibility": "ineligible" if problem_kind else "eligible",
                     "evidence_status": str(receipt.get("evidence_status") or ("failed" if receipt.get("failure_reason") else "passed")),
@@ -648,16 +659,177 @@ def evaluate_coverage(
     decisions: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     expected_rows = derive_expected_rows(receipts)
-    blockers_by_source: dict[str, list[dict[str, Any]]] = {}
-    for blocker in blocker_rows:
-        source_ref = str(blocker.get("source_ref") or "")
-        blockers_by_source.setdefault(source_ref, []).append(blocker)
-    ledger = []
+    blocker_id_counts: dict[str, int] = {}
+    blockers_by_join_key: dict[tuple[str, str], list[tuple[int, dict[str, Any]]]] = {}
+    blockers_by_id: dict[str, list[tuple[int, dict[str, Any]]]] = {}
+    for index, blocker in enumerate(blocker_rows):
+        blocker_id = str(blocker.get("row_id") or "")
+        blocker_id_counts[blocker_id] = blocker_id_counts.get(blocker_id, 0) + 1
+        join_key = (
+            str(blocker.get("source_ref") or ""),
+            str(blocker.get("affected_gate") or ""),
+        )
+        blockers_by_join_key.setdefault(join_key, []).append((index, blocker))
+        blockers_by_id.setdefault(blocker_id, []).append((index, blocker))
+
+    ledger: list[dict[str, Any]] = []
+    matched_blocker_indices: set[int] = set()
     for expected in expected_rows:
-        matches = blockers_by_source.get(str(expected["source_ref"]), [])
-        maybe_blocker = matches[0] if matches else None
-        ledger.append(coverage_for_row(expected, maybe_blocker, len(matches) > 1, decisions))
+        join_key = (str(expected["source_ref"]), str(expected["expected_gate"]))
+        matches = [
+            (index, blocker)
+            for index, blocker in blockers_by_join_key.get(join_key, [])
+            if blocker.get("source_stream") == expected["source_stream"]
+        ]
+        matches.sort(key=lambda item: (str(item[1].get("row_id") or ""), json.dumps(item[1], sort_keys=True)))
+        matched_blocker_indices.update(index for index, _ in matches)
+        maybe_blocker = matches[0][1] if matches else None
+        duplicate_classification = len(matches) > 1
+        if maybe_blocker is not None:
+            blocker_id = str(maybe_blocker.get("row_id") or "")
+            duplicate_classification = duplicate_classification or blocker_id_counts.get(blocker_id, 0) > 1
+        ledger.append(coverage_for_row(expected, maybe_blocker, duplicate_classification, decisions))
+
+    duplicate_blocker_ids = {
+        blocker_id
+        for blocker_id, count in blocker_id_counts.items()
+        if count > 1
+    }
+    for index, blocker in enumerate(blocker_rows):
+        if index in matched_blocker_indices:
+            continue
+        reasons = ["dangling-row-ref"]
+        if str(blocker.get("row_id") or "") in duplicate_blocker_ids:
+            reasons.append("duplicate-row")
+        ledger.append(dangling_blocker_row(blocker, index, reasons))
+
+    decision_id_counts: dict[str, int] = {}
+    for decision in decisions:
+        decision_id = str(decision.get("decision_id") or "")
+        decision_id_counts[decision_id] = decision_id_counts.get(decision_id, 0) + 1
+    for index, decision in enumerate(decisions):
+        reasons = dangling_decision_reasons(
+            decision,
+            blockers_by_id,
+            matched_blocker_indices,
+        )
+        if decision_id_counts.get(str(decision.get("decision_id") or ""), 0) > 1:
+            reasons.append("duplicate-row")
+        if reasons:
+            ledger.append(dangling_decision_row(decision, index, sorted(set(reasons))))
     return ledger
+
+
+def dangling_blocker_row(
+    blocker: dict[str, Any],
+    index: int,
+    reason_codes: list[str],
+) -> dict[str, Any]:
+    blocker_id = str(blocker.get("row_id") or f"row-{index}")
+    affected_gate = str(blocker.get("affected_gate") or "")
+    source_ref = str(blocker.get("source_ref") or "")
+    return {
+        "row_id": stable_row_id("dangling-phase32", f"{blocker_id}\0{index}\0{source_ref}\0{affected_gate}"),
+        "source_stream": str(blocker.get("source_stream") or "unknown"),
+        "source_ref": source_ref,
+        "requirement_ids": sorted({str(value) for value in blocker.get("requirement_ids", [])}),
+        "affected_gates": [affected_gate] if affected_gate else [],
+        "proof_eligibility": str(blocker.get("proof_eligibility") or "ineligible"),
+        "evidence_status": "unmatched",
+        "row_problem_kind": str(blocker.get("row_problem_kind") or "unknown_unclassified"),
+        "blocker_kind": str(blocker.get("blocker_kind") or "unresolved_decision_blocker"),
+        "severity": str(blocker.get("severity") or "critical"),
+        "evidence_refs": sorted({str(ref) for ref in blocker.get("evidence_refs", []) if isinstance(ref, str)}),
+        "artifact_refs": [],
+        "classification_ref": f"{PHASE32_REGISTER_REF}#{blocker_id}",
+        "retained_code_decision_refs": [],
+        "residual_risk_decision_refs": [],
+        "exception_decision_refs": [],
+        "readiness_decision_refs": [],
+        "coverage_state": "dangling-blocker",
+        "readiness_effect": "blocked",
+        "reason_codes": sorted(set(reason_codes)),
+    }
+
+
+def dangling_decision_reasons(
+    decision: dict[str, Any],
+    blockers_by_id: dict[str, list[tuple[int, dict[str, Any]]]],
+    matched_blocker_indices: set[int],
+) -> list[str]:
+    source_refs = decision.get("source_row_refs")
+    if not isinstance(source_refs, list) or not source_refs:
+        return ["dangling-row-ref"]
+    affected_gates = {
+        str(value)
+        for value in decision.get("affected_gates", [])
+        if isinstance(value, str)
+    }
+    prefix = f"{PHASE32_REGISTER_REF}#"
+    reasons: list[str] = []
+    for source_ref in source_refs:
+        if not isinstance(source_ref, str) or not source_ref.startswith(prefix):
+            reasons.append("dangling-row-ref")
+            continue
+        blocker_id = source_ref[len(prefix):]
+        matches = blockers_by_id.get(blocker_id, [])
+        if len(matches) != 1:
+            reasons.append("dangling-row-ref")
+            if len(matches) > 1:
+                reasons.append("duplicate-row")
+            continue
+        blocker_index, blocker = matches[0]
+        if blocker_index not in matched_blocker_indices:
+            reasons.append("dangling-row-ref")
+        affected_gate = str(blocker.get("affected_gate") or "")
+        if not affected_gate or affected_gate not in affected_gates:
+            reasons.append("dangling-row-ref")
+    return reasons
+
+
+def dangling_decision_row(
+    decision: dict[str, Any],
+    index: int,
+    reason_codes: list[str],
+) -> dict[str, Any]:
+    decision_id = str(decision.get("decision_id") or f"decision-{index}")
+    decision_ref = f"build/ci-evidence/phase33/normalized-decision-records.json#{decision_id}"
+    source_refs = [
+        str(ref)
+        for ref in decision.get("source_row_refs", [])
+        if isinstance(ref, str)
+    ]
+    affected_gates = sorted({
+        str(value)
+        for value in decision.get("affected_gates", [])
+        if isinstance(value, str) and value
+    })
+    return {
+        "row_id": stable_row_id("dangling-phase33", f"{decision_id}\0{index}"),
+        "source_stream": "phase33-decision",
+        "source_ref": decision_ref,
+        "requirement_ids": REQUIRED_REQUIREMENT_IDS,
+        "affected_gates": affected_gates,
+        "proof_eligibility": "ineligible",
+        "evidence_status": "unmatched",
+        "row_problem_kind": "unknown_unclassified",
+        "blocker_kind": "unresolved_decision_blocker",
+        "severity": "critical",
+        "evidence_refs": sorted(set(source_refs)),
+        "artifact_refs": sorted({
+            str(ref)
+            for ref in decision.get("artifact_refs", [])
+            if isinstance(ref, str)
+        }),
+        "classification_ref": "",
+        "retained_code_decision_refs": [],
+        "residual_risk_decision_refs": [],
+        "exception_decision_refs": [],
+        "readiness_decision_refs": [decision_ref] if decision.get("decision_type") == "readiness" else [],
+        "coverage_state": "dangling-decision",
+        "readiness_effect": "blocked",
+        "reason_codes": reason_codes,
+    }
 
 
 def evaluate_demotion(

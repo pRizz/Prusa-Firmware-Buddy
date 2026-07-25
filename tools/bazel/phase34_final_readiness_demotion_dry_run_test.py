@@ -427,6 +427,91 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
         self.assertEqual(ledger[0]["readiness_effect"], "unblocked")
         self.assertEqual(ledger[0]["classification_ref"], "")
 
+    def test_sparse_overlay_requires_exact_stream_and_affected_gate(self) -> None:
+        cases = [
+            ("wrong-stream", "live-service", "final-simulator-evidence"),
+            ("wrong-gate", "simulator", "final-live-network-transfer-evidence"),
+        ]
+        for case_name, source_stream, affected_gate in cases:
+            with self.subTest(case=case_name):
+                # Arrange
+                module = self.load_module()
+                source_ref = "build/ci-evidence/phase23/upstream-simulator-result-row.json"
+                receipt = self.receipt("simulator", source_ref)
+                blocker = self.blocker_row("wrong-overlay", source_ref, affected_gate=affected_gate)
+                blocker["source_stream"] = source_stream
+
+                # Act
+                ledger = module.evaluate_coverage([receipt], [blocker], [])
+
+                # Assert
+                self.assertEqual(ledger[0]["coverage_state"], "clean-no-blocker")
+                dangling_rows = [row for row in ledger if "dangling-row-ref" in row["reason_codes"]]
+                self.assertEqual(len(dangling_rows), 1)
+                self.assertEqual(dangling_rows[0]["readiness_effect"], "blocked")
+
+    def test_extra_phase32_blocker_row_is_retained_as_dangling(self) -> None:
+        # Arrange
+        module = self.load_module()
+        expected_ref = "build/ci-evidence/phase23/upstream-simulator-result-row.json"
+        extra_ref = "build/ci-evidence/phase25/upstream-live-service-result-row.json"
+        receipt = self.receipt("simulator", expected_ref)
+        blocker = self.blocker_row("extra-blocker", extra_ref)
+
+        # Act
+        ledger = module.evaluate_coverage([receipt], [blocker], [])
+
+        # Assert
+        self.assertEqual(ledger[0]["coverage_state"], "clean-no-blocker")
+        self.assertTrue(any(row["classification_ref"].endswith("#extra-blocker") for row in ledger))
+        self.assertTrue(any("dangling-row-ref" in row["reason_codes"] for row in ledger))
+
+    def test_nonexistent_and_wrong_gate_decision_refs_are_dangling(self) -> None:
+        cases = [
+            ("nonexistent", f"{PHASE32_REGISTER}#missing-row", "final-simulator-evidence"),
+            ("wrong-gate", f"{PHASE32_REGISTER}#exception-row", "final-live-network-transfer-evidence"),
+        ]
+        for case_name, decision_ref, affected_gate in cases:
+            with self.subTest(case=case_name):
+                # Arrange
+                module = self.load_module()
+                source_ref = "build/ci-evidence/phase23/upstream-simulator-result-row.json"
+                receipt = self.receipt(
+                    "simulator",
+                    source_ref,
+                    evidence_status="failed",
+                    exception_status="exception-requested",
+                )
+                blocker = self.blocker_row("exception-row", source_ref, row_problem_kind="exception_requested")
+                blocker_ref = f"{PHASE32_REGISTER}#exception-row"
+                decisions = [
+                    self.decision("approve-exception", "exception", "approve", blocker_ref),
+                    self.decision("dangling-decision", "readiness", "block", decision_ref, affected_gate=affected_gate),
+                ]
+
+                # Act
+                ledger = module.evaluate_coverage([receipt], [blocker], decisions)
+
+                # Assert
+                self.assertEqual(ledger[0]["coverage_state"], "exception-covered")
+                dangling_rows = [row for row in ledger if row["coverage_state"] == "dangling-decision"]
+                self.assertEqual(len(dangling_rows), 1)
+                self.assertIn("dangling-row-ref", dangling_rows[0]["reason_codes"])
+
+    def test_duplicate_phase32_row_ids_block_readiness(self) -> None:
+        # Arrange
+        module = self.load_module()
+        source_ref = "build/ci-evidence/phase23/upstream-simulator-result-row.json"
+        receipt = self.receipt("simulator", source_ref, evidence_status="failed")
+        blocker = self.blocker_row("duplicate-blocker", source_ref)
+
+        # Act
+        ledger = module.evaluate_coverage([receipt], [blocker, dict(blocker)], [])
+
+        # Assert
+        self.assertEqual(ledger[0]["readiness_effect"], "blocked")
+        self.assertIn("duplicate-row", ledger[0]["reason_codes"])
+
     def test_problem_row_without_phase32_classification_is_underclassified(self) -> None:
         # Arrange
         module = self.load_module()
