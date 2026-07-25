@@ -621,7 +621,7 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
         self.assertNotEqual(secret_result.returncode, 0)
         self.assertIn("token_value", secret_result.stdout)
         self.assertNotEqual(marker_result.returncode, 0)
-        self.assertIn("cutover verdict approved", marker_result.stdout)
+        self.assertIn("cutover-verdict", marker_result.stdout)
 
     def test_lifecycle_and_source_contract_mismatch_fail_closed(self) -> None:
         cases = [
