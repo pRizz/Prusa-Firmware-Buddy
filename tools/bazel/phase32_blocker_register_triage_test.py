@@ -93,8 +93,7 @@ PRODUCER_CONTAINER_MAPPINGS = {
         "source_row_kind": "exception_request",
         "source_subject_id": "phase27-exception-decision-register-container",
         "decision_axis": "exception",
-        "decision_subject_id":
-        "phase27-exception-decision-register-container",
+        "decision_subject_id": "phase27-exception-decision-register-container",
         "source_stream": "retained-code",
         "affected_gate": "final-retained-code-acceptance",
     },
@@ -112,8 +111,7 @@ PRODUCER_CONTAINER_MAPPINGS = {
     "build/ci-evidence/phase28/exception-residual-risk-summary.json": {
         "source_domain": "readiness",
         "producer_phase": "phase28",
-        "producer_artifact_kind":
-        "phase28_exception_residual_risk_summary",
+        "producer_artifact_kind": "phase28_exception_residual_risk_summary",
         "source_row_kind": "residual_risk",
         "source_subject_id":
         "phase28-exception-residual-risk-summary-container",
@@ -1196,10 +1194,10 @@ class Phase32ProducerShapeTest(unittest.TestCase):
         rows = self.read_json(
             root, "build/ci-evidence/phase32/blocker-register.json")["rows"]
         handoff = self.read_json(
-            root,
-            "build/ci-evidence/phase32/downstream-handoff-manifest.json")
+            root, "build/ci-evidence/phase32/downstream-handoff-manifest.json")
         handoff_row_ids = {
-            identity["row_id"] for identity in handoff["row_identities"]
+            identity["row_id"]
+            for identity in handoff["row_identities"]
         }
         self.assertEqual(handoff["row_count"], len(rows))
         if included_row_id is not None:
@@ -1219,18 +1217,16 @@ class Phase32ProducerShapeTest(unittest.TestCase):
         rows = self.assert_phase32_bundle(root,
                                           included_row_id=expected_row_id)
         container_rows = [
-            row for row in rows
-            if row["producer_artifact_kind"]
-            == mapping["producer_artifact_kind"]
+            row for row in rows if
+            row["producer_artifact_kind"] == mapping["producer_artifact_kind"]
             and row["source_subject_id"] == mapping["source_subject_id"]
         ]
         self.assertEqual(len(container_rows), 1)
         row = container_rows[0]
         expected_source_ref = f"{artifact_path}#container"
-        expected_decision_impact = (
-            "repair_required_before_cutover"
-            if expected_problem_kind == "malformed" else
-            "cutover_verdict_blocked")
+        expected_decision_impact = ("repair_required_before_cutover"
+                                    if expected_problem_kind == "malformed"
+                                    else "cutover_verdict_blocked")
         for field in [
                 "source_domain",
                 "producer_phase",
@@ -1266,8 +1262,8 @@ class Phase32ProducerShapeTest(unittest.TestCase):
             if row["source_subject_id"] == mapping["source_subject_id"]
         ])
         self.assertFalse([
-            row for row in rows if row["producer_artifact_kind"]
-            == mapping["producer_artifact_kind"]
+            row for row in rows if row["producer_artifact_kind"] ==
+            mapping["producer_artifact_kind"]
         ])
 
     def test_phase27_residual_missing_rows_is_malformed(self) -> None:
@@ -1328,8 +1324,7 @@ class Phase32ProducerShapeTest(unittest.TestCase):
         artifact_path = (
             "build/ci-evidence/phase27/exception-decision-register.json")
         exceptions = self.read_json(root, artifact_path)
-        exceptions[
-            "producer_artifact_kind"] = "phase27_residual_risk_register"
+        exceptions["producer_artifact_kind"] = "phase27_residual_risk_register"
         self.write_json(root, artifact_path, exceptions)
 
         # Act
@@ -1393,8 +1388,8 @@ class Phase32ProducerShapeTest(unittest.TestCase):
         rows = self.read_json(
             root, "build/ci-evidence/phase32/blocker-register.json")["rows"]
         ordinary_rows = [
-            row for row in rows if row["producer_artifact_kind"]
-            == "phase28_exception_residual_risk_summary"
+            row for row in rows if row["producer_artifact_kind"] ==
+            "phase28_exception_residual_risk_summary"
             and row["row_id"] != container_row["row_id"]
         ]
         self.assertFalse(ordinary_rows)
@@ -1530,14 +1525,12 @@ class Phase32ProducerShapeTest(unittest.TestCase):
             attacker_table_path,
             self.read_json(root, expected_table_path),
         )
-        receipt_path = (
-            "build/ci-evidence/phase31/stream-receipts/"
-            "release-signing-final-intake-receipt.json")
+        receipt_path = ("build/ci-evidence/phase31/stream-receipts/"
+                        "release-signing-final-intake-receipt.json")
         receipt = self.read_json(root, receipt_path)
         receipt["consumed_upstream_row_refs"] = [attacker_table_path]
         receipt["validator_output_refs"] = [
-            attacker_table_path
-            if ref == expected_table_path else ref
+            attacker_table_path if ref == expected_table_path else ref
             for ref in receipt["validator_output_refs"]
         ]
         self.write_json(root, receipt_path, receipt)
@@ -1550,8 +1543,7 @@ class Phase32ProducerShapeTest(unittest.TestCase):
         rows = self.read_json(
             root, "build/ci-evidence/phase32/blocker-register.json")["rows"]
         release_rows = [
-            row for row in rows
-            if row["source_domain"] == "release_signing"
+            row for row in rows if row["source_domain"] == "release_signing"
         ]
         self.assertEqual(len(release_rows), 1)
         self.assertEqual(release_rows[0]["row_problem_kind"],
@@ -1599,8 +1591,8 @@ class Phase32ProducerShapeTest(unittest.TestCase):
         rows = self.read_json(
             root, "build/ci-evidence/phase32/blocker-register.json")["rows"]
         demotion_rows = [
-            row for row in rows if row["producer_artifact_kind"]
-            == "phase27_phase28_handoff_manifest"
+            row for row in rows if row["producer_artifact_kind"] ==
+            "phase27_phase28_handoff_manifest"
         ]
         self.assertEqual(len(demotion_rows), 1)
         self.assertEqual(demotion_rows[0]["row_problem_kind"],
@@ -1612,12 +1604,10 @@ class Phase32ProducerShapeTest(unittest.TestCase):
         # Arrange
         temp_dir, root = self.generate_producer_fixture()
         self.addCleanup(temp_dir.cleanup)
-        demotion_path = (
-            "build/ci-evidence/phase28/"
-            "reference-demotion-authorization-record.json")
+        demotion_path = ("build/ci-evidence/phase28/"
+                         "reference-demotion-authorization-record.json")
         demotion = self.read_json(root, demotion_path)
-        demotion["reference_demotion_authorization"] = (
-            "unexpected-new-state")
+        demotion["reference_demotion_authorization"] = ("unexpected-new-state")
         self.write_json(root, demotion_path, demotion)
 
         # Act
@@ -1628,8 +1618,8 @@ class Phase32ProducerShapeTest(unittest.TestCase):
         rows = self.read_json(
             root, "build/ci-evidence/phase32/blocker-register.json")["rows"]
         demotion_rows = [
-            row for row in rows if row["producer_artifact_kind"]
-            == "phase28_reference_demotion_authorization_record"
+            row for row in rows if row["producer_artifact_kind"] ==
+            "phase28_reference_demotion_authorization_record"
         ]
         self.assertEqual(len(demotion_rows), 1)
         self.assertEqual(demotion_rows[0]["row_problem_kind"],
@@ -1654,8 +1644,8 @@ class Phase32ProducerShapeTest(unittest.TestCase):
         rows = self.read_json(
             root, "build/ci-evidence/phase32/blocker-register.json")["rows"]
         residual_rows = [
-            row for row in rows if row["producer_artifact_kind"]
-            == "phase27_residual_risk_register"
+            row for row in rows if
+            row["producer_artifact_kind"] == "phase27_residual_risk_register"
             and row["source_subject_id"] == residual["rows"][0]["row_id"]
         ]
         self.assertEqual(len(residual_rows), 1)
@@ -1682,8 +1672,8 @@ class Phase32ProducerShapeTest(unittest.TestCase):
         rows = self.read_json(
             root, "build/ci-evidence/phase32/blocker-register.json")["rows"]
         readiness_rows = [
-            row for row in rows if row["producer_artifact_kind"]
-            == "phase28_blocker_summary"
+            row for row in rows
+            if row["producer_artifact_kind"] == "phase28_blocker_summary"
             and row["source_subject_id"] == criterion_id
         ]
         self.assertEqual(len(readiness_rows), 1)

@@ -279,6 +279,58 @@ STREAM_GATE_DEFAULTS = {
     "readiness": "final-readiness",
     "unknown": "cutover-decision",
 }
+PHASE27_28_CONTAINER_ADAPTERS = {
+    Path("build/ci-evidence/phase27/residual-risk-register.json"): {
+        "collection_field": "rows",
+        "source_domain": "retained_code",
+        "producer_phase": "phase27",
+        "producer_artifact_kind": "phase27_residual_risk_register",
+        "source_row_kind": "residual_risk",
+        "source_subject_id": "phase27-residual-risk-register-container",
+        "decision_axis": "residual_risk",
+        "decision_subject_id": "phase27-residual-risk-register-container",
+        "source_stream": "retained-code",
+        "affected_gate": "final-retained-code-acceptance",
+    },
+    Path("build/ci-evidence/phase27/exception-decision-register.json"): {
+        "collection_field": "rows",
+        "source_domain": "retained_code",
+        "producer_phase": "phase27",
+        "producer_artifact_kind": "phase27_exception_decision_register",
+        "source_row_kind": "exception_request",
+        "source_subject_id": "phase27-exception-decision-register-container",
+        "decision_axis": "exception",
+        "decision_subject_id": "phase27-exception-decision-register-container",
+        "source_stream": "retained-code",
+        "affected_gate": "final-retained-code-acceptance",
+    },
+    Path("build/ci-evidence/phase28/blocker-summary.json"): {
+        "collection_field": "blockers",
+        "source_domain": "readiness",
+        "producer_phase": "phase28",
+        "producer_artifact_kind": "phase28_blocker_summary",
+        "source_row_kind": "readiness_blocker",
+        "source_subject_id": "phase28-blocker-summary-container",
+        "decision_axis": "readiness",
+        "decision_subject_id": "phase28-blocker-summary-container",
+        "source_stream": "readiness",
+        "affected_gate": "final-readiness",
+    },
+    Path("build/ci-evidence/phase28/exception-residual-risk-summary.json"): {
+        "collection_field": "rows",
+        "source_domain": "readiness",
+        "producer_phase": "phase28",
+        "producer_artifact_kind": "phase28_exception_residual_risk_summary",
+        "source_row_kind": "residual_risk",
+        "source_subject_id":
+        "phase28-exception-residual-risk-summary-container",
+        "decision_axis": "residual_risk",
+        "decision_subject_id":
+        "phase28-exception-residual-risk-summary-container",
+        "source_stream": "readiness",
+        "affected_gate": "final-readiness",
+    },
+}
 
 
 class VerificationError(Exception):
@@ -473,8 +525,8 @@ def validate_contract(contract: dict[str, Any]) -> None:
     if phase26_adapter.get("selected_stream") != "release-signing":
         raise VerificationError(
             "Phase 26 table adapter must select release-signing")
-    if phase26_adapter.get(
-            "expected_artifact_path") != EXPECTED_PHASE26_TABLE_PATH.as_posix():
+    if phase26_adapter.get("expected_artifact_path"
+                           ) != EXPECTED_PHASE26_TABLE_PATH.as_posix():
         raise VerificationError(
             "Phase 26 table adapter must require the contracted upstream row table path"
         )
@@ -778,15 +830,15 @@ def release_receipt_provenance_problem(
         if not isinstance(receipt.get(field), str)
     ]
     if invalid_string_fields:
-        return (
-            "accepted release receipt has invalid provenance field types: "
-            f"{', '.join(invalid_string_fields)}")
+        return ("accepted release receipt has invalid provenance field types: "
+                f"{', '.join(invalid_string_fields)}")
 
     packet_sha256 = str(receipt["packet_sha256"])
     if re.fullmatch(r"[0-9a-f]{64}", packet_sha256) is None:
         return "accepted release receipt packet_sha256 must be a lowercase SHA-256 digest"
     if not receipt["submission_id"] or not receipt[
-            "submitter_identity_ref"] or not receipt["receipt_generated_at_utc"]:
+            "submitter_identity_ref"] or not receipt[
+                "receipt_generated_at_utc"]:
         return "accepted release receipt identity and timestamp provenance must be non-empty"
     if receipt["stream"] != "release-signing":
         return "accepted release receipt stream must be release-signing"
@@ -812,9 +864,8 @@ def release_receipt_provenance_problem(
 
     consumed_refs = string_list(receipt.get("consumed_upstream_row_refs"))
     if consumed_refs != [expected_table_path.as_posix()]:
-        return (
-            "accepted release receipt must consume exactly the contracted "
-            f"Phase 26 table at {expected_table_path.as_posix()}")
+        return ("accepted release receipt must consume exactly the contracted "
+                f"Phase 26 table at {expected_table_path.as_posix()}")
 
     validator_output_refs = string_list(receipt.get("validator_output_refs"))
     if expected_table_path.as_posix() not in validator_output_refs:
@@ -831,8 +882,8 @@ def release_receipt_provenance_blocker(
     receipt: dict[str, Any],
     failure_reason: str,
 ) -> dict[str, Any]:
-    submission_id = str(receipt.get("submission_id")
-                        or "release-signing-receipt")
+    submission_id = str(
+        receipt.get("submission_id") or "release-signing-receipt")
     return build_blocker_row(
         source_domain="release_signing",
         producer_phase="phase26",
@@ -1146,6 +1197,68 @@ def missing_optional_row(path: Path, source_stream: str,
     )
 
 
+def load_phase27_28_container(
+    root: Path,
+    artifact_path: Path,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    mapping = PHASE27_28_CONTAINER_ADAPTERS.get(artifact_path)
+    if mapping is None:
+        raise VerificationError(
+            f"no Phase 27/28 container adapter for {artifact_path.as_posix()}")
+    try:
+        container = json.loads(read_text(root, artifact_path))
+    except json.JSONDecodeError as error:
+        raise VerificationError(
+            f"{artifact_path.as_posix()} is not valid JSON: {error}"
+        ) from error
+
+    problem_kind: str | None = None
+    failure_reason = ""
+    if not isinstance(container, dict):
+        problem_kind = "unknown_unclassified"
+        failure_reason = "producer artifact must contain a top-level object"
+    elif ("producer_artifact_kind" in container
+          and container.get("producer_artifact_kind")
+          != mapping["producer_artifact_kind"]):
+        problem_kind = "unknown_unclassified"
+        failure_reason = (
+            "producer artifact has an incompatible producer_artifact_kind")
+    else:
+        collection_field = mapping["collection_field"]
+        collection = container.get(collection_field)
+        if not isinstance(collection, list):
+            problem_kind = "malformed"
+            failure_reason = (
+                f"producer artifact {collection_field} must be a list")
+        elif not all(isinstance(item, dict) for item in collection):
+            problem_kind = "malformed"
+            failure_reason = (
+                f"producer artifact {collection_field} must contain only objects"
+            )
+        else:
+            return list(collection), []
+
+    source_ref = f"{artifact_path.as_posix()}#container"
+    problem_row = build_blocker_row(
+        source_domain=mapping["source_domain"],
+        producer_phase=mapping["producer_phase"],
+        producer_artifact_kind=mapping["producer_artifact_kind"],
+        source_row_kind=mapping["source_row_kind"],
+        source_subject_id=mapping["source_subject_id"],
+        decision_axis=mapping["decision_axis"],
+        decision_subject_id=mapping["decision_subject_id"],
+        source_stream=mapping["source_stream"],
+        source_ref=source_ref,
+        signal={
+            "adapter_problem_kind": problem_kind,
+            "affected_gate": mapping["affected_gate"],
+            "evidence_refs": [artifact_path.as_posix()],
+            "failure_reason": failure_reason,
+        },
+    )
+    return [], [problem_row]
+
+
 def phase27_rows(root: Path, phase27_output_dir: Path) -> list[dict[str, Any]]:
     phase27_dir = path_under(phase27_output_dir, DEFAULT_PHASE27_OUTPUT_DIR,
                              "--phase27-output-dir")
@@ -1159,12 +1272,10 @@ def phase27_rows(root: Path, phase27_output_dir: Path) -> list[dict[str, Any]]:
             missing_optional_row(residual_path, "retained-code",
                                  "residual_risk_decision_required"))
     else:
-        residual = load_json(root, residual_path)
-        for item_index, item in enumerate(
-                require_list(residual.get("rows"), "phase27 residual rows")):
-            if not isinstance(item, dict):
-                raise VerificationError(
-                    "phase27 residual rows must be objects")
+        residual_items, residual_problem_rows = load_phase27_28_container(
+            root, residual_path)
+        rows.extend(residual_problem_rows)
+        for item_index, item in enumerate(residual_items):
             row_type = str(item.get("row_type") or "")
             source_stream = ("retained-code" if row_type
                              == "retained_code_decision" else "readiness")
@@ -1223,13 +1334,10 @@ def phase27_rows(root: Path, phase27_output_dir: Path) -> list[dict[str, Any]]:
             missing_optional_row(exception_path, "retained-code",
                                  "exception_decision_required"))
     else:
-        exceptions = load_json(root, exception_path)
-        for item_index, item in enumerate(
-                require_list(exceptions.get("rows"),
-                             "phase27 exception rows")):
-            if not isinstance(item, dict):
-                raise VerificationError(
-                    "phase27 exception rows must be objects")
+        exception_items, exception_problem_rows = load_phase27_28_container(
+            root, exception_path)
+        rows.extend(exception_problem_rows)
+        for item_index, item in enumerate(exception_items):
             row_type = str(item.get("row_type") or "")
             source_stream = "retained-code" if row_type == "retained_code_decision" else "readiness"
             gate_id = str(
@@ -1284,12 +1392,10 @@ def phase27_rows(root: Path, phase27_output_dir: Path) -> list[dict[str, Any]]:
             "criterion_id": "final-reference-demotion-allowed",
             "evidence_refs": [handoff_path.as_posix()],
         } if is_blocked else {
-            "adapter_problem_kind":
-            "unknown_unclassified",
+            "adapter_problem_kind": "unknown_unclassified",
             "failure_reason":
             f"unsupported Phase 27 demotion authorization: {authorization}",
-            "criterion_id":
-            "final-reference-demotion-allowed",
+            "criterion_id": "final-reference-demotion-allowed",
             "evidence_refs": [handoff_path.as_posix()],
         })
         policy_override = ({
@@ -1314,8 +1420,7 @@ def phase27_rows(root: Path, phase27_output_dir: Path) -> list[dict[str, Any]]:
                 decision_axis="demotion",
                 decision_subject_id="final-reference-demotion-allowed",
                 source_stream="readiness",
-                source_ref=
-                f"{handoff_path.as_posix()}#demotion-authorization",
+                source_ref=f"{handoff_path.as_posix()}#demotion-authorization",
                 signal=signal,
                 policy_override=policy_override,
             ))
@@ -1341,12 +1446,10 @@ def phase28_rows(root: Path, phase28_output_dir: Path) -> list[dict[str, Any]]:
             missing_optional_row(blocker_path, "readiness",
                                  "final_readiness_blocked"))
     else:
-        blocker_summary = load_json(root, blocker_path)
-        for item_index, item in enumerate(
-                require_list(blocker_summary.get("blockers"),
-                             "phase28 blockers")):
-            if not isinstance(item, dict):
-                raise VerificationError("phase28 blockers must be objects")
+        blocker_items, blocker_problem_rows = load_phase27_28_container(
+            root, blocker_path)
+        rows.extend(blocker_problem_rows)
+        for item_index, item in enumerate(blocker_items):
             criterion_id = str(
                 item.get("criterion_id")
                 or f"unknown-readiness-row-{item_index}")
@@ -1391,13 +1494,10 @@ def phase28_rows(root: Path, phase28_output_dir: Path) -> list[dict[str, Any]]:
             missing_optional_row(residual_path, "readiness",
                                  "residual_risk_decision_required"))
     else:
-        residual_summary = load_json(root, residual_path)
-        for item_index, item in enumerate(
-                require_list(residual_summary.get("rows"),
-                             "phase28 residual rows")):
-            if not isinstance(item, dict):
-                raise VerificationError(
-                    "phase28 residual rows must be objects")
+        residual_items, residual_problem_rows = load_phase27_28_container(
+            root, residual_path)
+        rows.extend(residual_problem_rows)
+        for item_index, item in enumerate(residual_items):
             criterion_id = str(
                 item.get("criterion_id")
                 or f"unknown-residual-row-{item_index}")
@@ -1446,12 +1546,10 @@ def phase28_rows(root: Path, phase28_output_dir: Path) -> list[dict[str, Any]]:
                 "criterion_id": "final-reference-demotion-allowed",
                 "evidence_refs": [demotion_path.as_posix()],
             } if is_blocked else {
-                "adapter_problem_kind":
-                "unknown_unclassified",
+                "adapter_problem_kind": "unknown_unclassified",
                 "failure_reason":
                 f"unsupported Phase 28 demotion authorization: {authorization}",
-                "criterion_id":
-                "final-reference-demotion-allowed",
+                "criterion_id": "final-reference-demotion-allowed",
                 "evidence_refs": [demotion_path.as_posix()],
             })
             policy_override = ({
