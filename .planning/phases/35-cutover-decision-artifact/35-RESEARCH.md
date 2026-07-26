@@ -280,4 +280,3 @@ Also run `git diff --check` and review the final diff for unintended generated o
 ## Planning Conclusion
 
 Phase 35 is suitable for one three-task plan. The highest-risk work is not code volume; it is proving that audit links are complete and that the three independent concepts—readiness, cutover verdict, and demotion authorization—never collapse into one implicit approval. The plan should make those truth tables and anti-joins explicit before implementation begins.
-
