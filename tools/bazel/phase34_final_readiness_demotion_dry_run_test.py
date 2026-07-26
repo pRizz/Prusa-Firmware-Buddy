@@ -450,6 +450,89 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
             *extra,
         )
 
+    def seed_prior_phase34_authority(self, root: Path) -> None:
+        self.write_json(
+            root,
+            f"{OUTPUT_DIR}/final-readiness-packet.json",
+            {
+                "readiness_state": "unblocked",
+                "cutover_verdict_state": "approved",
+                "production_cutover_route_state": "open",
+            },
+        )
+        self.write_json(
+            root,
+            f"{OUTPUT_DIR}/demotion-dry-run.json",
+            {
+                "readiness_state": "unblocked",
+                "gate_state": "open",
+            },
+        )
+        self.write_json(
+            root,
+            f"{OUTPUT_DIR}/stale-prior-authority.json",
+            {
+                "cutover_verdict": "approved",
+                "route": "production-cutover-planning",
+            },
+        )
+
+    def assert_source_failure_replaces_prior_authority(
+        self,
+        mutate_source,
+        expected_reason_code: str,
+    ) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_fixture(root, self.required_stream_receipts(), [])
+        self.seed_prior_phase34_authority(root)
+        mutate_source(root)
+
+        # Act
+        result = self.run_quick(root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertIn(expected_reason_code, result.stdout)
+        self.assertFalse(
+            (root / OUTPUT_DIR / "stale-prior-authority.json").exists()
+        )
+        for artifact in GENERATED_ARTIFACTS:
+            self.assertTrue((root / OUTPUT_DIR / artifact).is_file(), artifact)
+        manifest = self.read_json(
+            root,
+            f"{OUTPUT_DIR}/final-readiness-run-manifest.json",
+        )
+        packet = self.read_json(
+            root,
+            f"{OUTPUT_DIR}/final-readiness-packet.json",
+        )
+        demotion = self.read_json(
+            root,
+            f"{OUTPUT_DIR}/demotion-dry-run.json",
+        )
+        self.assertEqual(
+            manifest["source_failure_reason_code"],
+            expected_reason_code,
+        )
+        self.assertEqual(manifest["run_state"], "blocked-source-failure")
+        self.assertEqual(packet["readiness_state"], "blocked")
+        self.assertEqual(packet["cutover_verdict_state"], "blocked")
+        self.assertEqual(
+            packet["production_cutover_route_state"],
+            "blocked",
+        )
+        self.assertEqual(demotion["readiness_state"], "blocked")
+        self.assertEqual(demotion["gate_state"], "blocked")
+        combined_output = "\n".join(
+            (root / OUTPUT_DIR / artifact).read_text(encoding="utf-8")
+            for artifact in GENERATED_ARTIFACTS
+            if not artifact.startswith("contract-snapshots/")
+        )
+        self.assertNotIn("production-cutover-planning", combined_output)
+        self.assertNotIn('"cutover_verdict": "approved"', combined_output)
+
     def test_contract_declares_complete_ledger_gate_and_artifacts(self) -> None:
         # Arrange
         contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
@@ -1366,6 +1449,95 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
                 self.assertEqual(manifest["run_state"], "blocked-invalid-approval")
                 self.assertEqual(dry_run["gate_state"], "blocked")
                 self.assertEqual(dry_run["approval_validation_state"], expected_validation)
+
+    def test_missing_phase31_manifest_replaces_seeded_prior_authority(self) -> None:
+        def remove_manifest(root: Path) -> None:
+            (root / PHASE31_MANIFEST).unlink()
+
+        self.assert_source_failure_replaces_prior_authority(
+            remove_manifest,
+            "phase31-input-invalid",
+        )
+
+    def test_malformed_phase31_receipt_replaces_seeded_prior_authority(self) -> None:
+        def corrupt_receipt(root: Path) -> None:
+            manifest = self.read_json(root, PHASE31_MANIFEST)
+            receipt_ref = manifest["receipt_refs"][0]
+            (root / receipt_ref).write_text("{", encoding="utf-8")
+
+        self.assert_source_failure_replaces_prior_authority(
+            corrupt_receipt,
+            "phase31-input-invalid",
+        )
+
+    def test_malformed_phase33_handoff_replaces_seeded_prior_authority(self) -> None:
+        def corrupt_handoff(root: Path) -> None:
+            (root / PHASE33_HANDOFF).write_text("{", encoding="utf-8")
+
+        self.assert_source_failure_replaces_prior_authority(
+            corrupt_handoff,
+            "phase33-handoff-invalid",
+        )
+
+    def test_invalid_normalized_decisions_replace_seeded_prior_authority(self) -> None:
+        def invalidate_decisions(root: Path) -> None:
+            self.write_json(
+                root,
+                "build/ci-evidence/phase33/normalized-decision-records.json",
+                {"rows": [{"decision_id": "incomplete-decision"}]},
+            )
+
+        self.assert_source_failure_replaces_prior_authority(
+            invalidate_decisions,
+            "phase33-normalized-decisions-invalid",
+        )
+
+    def test_stale_readiness_input_replaces_seeded_prior_authority(self) -> None:
+        def stale_readiness(root: Path) -> None:
+            relative_path = (
+                "build/ci-evidence/phase33/readiness-decision-handoff.json"
+            )
+            readiness = self.read_json(root, relative_path)
+            readiness["phase_lifecycle_id"] = "stale-phase33-lifecycle"
+            self.write_json(root, relative_path, readiness)
+
+        self.assert_source_failure_replaces_prior_authority(
+            stale_readiness,
+            "phase33-readiness-input-invalid",
+        )
+
+    def test_invalid_register_digest_input_replaces_seeded_prior_authority(self) -> None:
+        def corrupt_register(root: Path) -> None:
+            (
+                root
+                / "build/ci-evidence/phase33/decision-validation-report.json"
+            ).write_text("{", encoding="utf-8")
+
+        self.assert_source_failure_replaces_prior_authority(
+            corrupt_register,
+            "phase33-register-invalid",
+        )
+
+    def test_malformed_phase32_register_replaces_seeded_prior_authority(self) -> None:
+        def corrupt_register(root: Path) -> None:
+            (root / PHASE32_REGISTER).write_text("{", encoding="utf-8")
+
+        self.assert_source_failure_replaces_prior_authority(
+            corrupt_register,
+            "phase32-blocker-register-invalid",
+        )
+
+    def test_missing_demotion_handoff_replaces_seeded_prior_authority(self) -> None:
+        def remove_demotion(root: Path) -> None:
+            (
+                root
+                / "build/ci-evidence/phase33/demotion-decision-handoff.json"
+            ).unlink()
+
+        self.assert_source_failure_replaces_prior_authority(
+            remove_demotion,
+            "phase33-demotion-input-invalid",
+        )
 
     def test_absolute_path_is_rejected(self) -> None:
         # Arrange
