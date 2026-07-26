@@ -297,9 +297,8 @@ PHASE35_VERIFY_COMMANDS = [
     "python3 tools/bazel/phase32_blocker_register_triage.py --quick --phase31-output-dir build/ci-evidence/phase31 --phase27-output-dir build/ci-evidence/phase27 --phase28-output-dir build/ci-evidence/phase28 --output-dir build/ci-evidence/phase32",
     "python3 tools/bazel/phase33_maintainer_decision_inputs.py --quick --phase32-handoff build/ci-evidence/phase32/downstream-handoff-manifest.json --output-dir build/ci-evidence/phase33",
     "python3 tools/bazel/phase34_final_readiness_demotion_dry_run.py --wiring-only",
-    "python3 tools/bazel/phase34_final_readiness_demotion_dry_run.py --quick --phase31-output-dir build/ci-evidence/phase31 --phase33-handoff build/ci-evidence/phase33/downstream-handoff-manifest.json --output-dir build/ci-evidence/phase34",
     "python3 tools/bazel/phase35_cutover_decision_artifact.py --wiring-only",
-    "python3 tools/bazel/phase35_cutover_decision_artifact.py --quick --phase34-output-dir build/ci-evidence/phase34 --output-dir build/ci-evidence/phase35",
+    "run_phase38_coordinator",
 ]
 PHASE35_TEST_COMMANDS = [
     "python3 tools/bazel/phase35_cutover_decision_artifact_test.py",
@@ -2383,7 +2382,8 @@ def shell_case_commands(text: str, name: str) -> list[str] | None:
             stripped = body.strip()
             if stripped == ";;":
                 return commands
-            if stripped.startswith("python3 "):
+            if (stripped.startswith("python3 ")
+                    or stripped == "run_phase38_coordinator"):
                 commands.append(stripped)
     return None
 

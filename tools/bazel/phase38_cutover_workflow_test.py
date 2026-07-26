@@ -10,6 +10,9 @@ from unittest.mock import patch
 import phase38_cutover_workflow as workflow
 
 
+ROOT = Path(__file__).resolve().parents[2]
+
+
 def approved_authority(
     *,
     demotion_validation_state: str = "missing",
@@ -429,6 +432,126 @@ class CoordinatorTests(unittest.TestCase):
             result.reason_category,
             "phase34-authority-invalid",
         )
+
+
+class WiringTests(unittest.TestCase):
+
+    def read_repo_file(self, relative_path: str) -> str:
+        return (ROOT / relative_path).read_text(encoding="utf-8")
+
+    def test_tools_bazel_exposes_phase38_targets_and_runfiles(self) -> None:
+        # Arrange
+        build = self.read_repo_file("tools/bazel/BUILD.bazel")
+        required = [
+            'name = "phase38_actual_producer_runfiles"',
+            'name = "phase38_verify"',
+            'name = "phase38_verify_tests"',
+            '"phase38_cutover_workflow.py"',
+            '"phase38_cutover_workflow_test.py"',
+            '"phase38_cutover_workflow_integration_test.py"',
+            '"phase34_decision_reconciliation_integration_test.py"',
+            '"phase35_cutover_decision_artifact_test.py"',
+            '":phase38_actual_producer_runfiles"',
+        ]
+
+        # Act
+        missing = [snippet for snippet in required if snippet not in build]
+
+        # Assert
+        self.assertEqual(missing, [])
+
+    def test_phase38_runfiles_include_actual_producer_dependencies(
+        self,
+    ) -> None:
+        # Arrange
+        build = self.read_repo_file("tools/bazel/BUILD.bazel")
+        required = [
+            '"phase23_simulator_evidence_execution.py"',
+            '"phase24_hardware_media_safety_evidence_execution.py"',
+            '"phase25_live_service_evidence_execution.py"',
+            '"phase26_release_signing_upstream_evidence.py"',
+            '"phase27_retained_code_acceptance_decisions.py"',
+            '"phase28_final_readiness_packet.py"',
+            '"phase31_final_evidence_intake.py"',
+            '"phase32_blocker_register_triage.py"',
+            '"phase33_maintainer_decision_inputs.py"',
+            '"phase34_final_readiness_demotion_dry_run.py"',
+            '"phase35_cutover_decision_artifact.py"',
+            '"manifests/phase35_cutover_decision_artifact_contract.json"',
+        ]
+
+        # Act
+        missing = [snippet for snippet in required if snippet not in build]
+
+        # Assert
+        self.assertEqual(missing, [])
+
+    def test_shell_uses_one_coordinator_with_explicit_status_propagation(
+        self,
+    ) -> None:
+        # Arrange
+        shell = self.read_repo_file("tools/bazel/rust_workflow.sh")
+        required = [
+            "run_phase38_coordinator() {",
+            "if python3 tools/bazel/phase38_cutover_workflow.py --quick; then",
+            "phase38_status=$?",
+            'return "$phase38_status"',
+            "phase38_verify)",
+            "phase38_verify_tests)",
+        ]
+
+        # Act
+        missing = [snippet for snippet in required if snippet not in shell]
+
+        # Assert
+        self.assertEqual(missing, [])
+        phase35_body = shell.split("  phase35_verify)", 1)[1].split(
+            "    ;;",
+            1,
+        )[0]
+        self.assertEqual(
+            phase35_body.count("run_phase38_coordinator"),
+            1,
+        )
+        self.assertNotIn(
+            "phase34_final_readiness_demotion_dry_run.py --quick",
+            phase35_body,
+        )
+        self.assertNotIn(
+            "phase35_cutover_decision_artifact.py --quick",
+            phase35_body,
+        )
+
+    def test_root_bazel_exposes_phase38_aliases(self) -> None:
+        # Arrange
+        build = self.read_repo_file("BUILD.bazel")
+
+        # Act / Assert
+        self.assertIn(
+            'name = "phase38_verify",\n'
+            '    actual = "//tools/bazel:phase38_verify",',
+            build,
+        )
+        self.assertIn(
+            'name = "phase38_verify_tests",\n'
+            '    actual = "//tools/bazel:phase38_verify_tests",',
+            build,
+        )
+
+    def test_just_phase38_runs_tests_before_publication(self) -> None:
+        # Arrange
+        justfile = self.read_repo_file("justfile")
+        expected_recipe = (
+            "phase38-verify:\n"
+            "    bazel run //tools/bazel:phase38_verify_tests\n"
+            "    bazel run //tools/bazel:phase38_verify\n"
+        )
+
+        # Act
+        maybe_recipe_index = justfile.find(expected_recipe)
+
+        # Assert
+        self.assertNotEqual(maybe_recipe_index, -1)
 
 
 if __name__ == "__main__":

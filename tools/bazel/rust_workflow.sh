@@ -7,6 +7,16 @@ command_name="$(basename "$0")"
 cd "$root"
 export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$root/target/rust}"
 
+run_phase38_coordinator() {
+  local phase38_status
+  if python3 tools/bazel/phase38_cutover_workflow.py --quick; then
+    phase38_status=0
+  else
+    phase38_status=$?
+  fi
+  return "$phase38_status"
+}
+
 case "$command_name" in
   rust_format_check)
     cargo fmt --all -- --check
@@ -231,12 +241,31 @@ case "$command_name" in
     python3 tools/bazel/phase32_blocker_register_triage.py --quick --phase31-output-dir build/ci-evidence/phase31 --phase27-output-dir build/ci-evidence/phase27 --phase28-output-dir build/ci-evidence/phase28 --output-dir build/ci-evidence/phase32
     python3 tools/bazel/phase33_maintainer_decision_inputs.py --quick --phase32-handoff build/ci-evidence/phase32/downstream-handoff-manifest.json --output-dir build/ci-evidence/phase33
     python3 tools/bazel/phase34_final_readiness_demotion_dry_run.py --wiring-only
-    python3 tools/bazel/phase34_final_readiness_demotion_dry_run.py --quick --phase31-output-dir build/ci-evidence/phase31 --phase33-handoff build/ci-evidence/phase33/downstream-handoff-manifest.json --output-dir build/ci-evidence/phase34
     python3 tools/bazel/phase35_cutover_decision_artifact.py --wiring-only
-    python3 tools/bazel/phase35_cutover_decision_artifact.py --quick --phase34-output-dir build/ci-evidence/phase34 --output-dir build/ci-evidence/phase35
+    run_phase38_coordinator
     ;;
   phase35_verify_tests)
     python3 tools/bazel/phase35_cutover_decision_artifact_test.py
+    ;;
+  phase38_verify)
+    python3 tools/bazel/phase31_final_evidence_intake.py --quick --output-dir build/ci-evidence/phase31
+    python3 tools/bazel/phase26_release_signing_upstream_evidence.py --quick --output-dir build/ci-evidence/phase26
+    python3 tools/bazel/phase27_retained_code_acceptance_decisions.py --quick --phase26-upstream-rows build/ci-evidence/phase26/upstream-result-row-table.json --output-dir build/ci-evidence/phase27
+    python3 tools/bazel/phase28_final_readiness_packet.py --quick --phase26-upstream-rows build/ci-evidence/phase26/upstream-result-row-table.json --phase27-handoff build/ci-evidence/phase27/phase28-handoff-manifest.json --output-dir build/ci-evidence/phase28
+    python3 tools/bazel/phase32_blocker_register_triage.py --quick --phase31-output-dir build/ci-evidence/phase31 --phase27-output-dir build/ci-evidence/phase27 --phase28-output-dir build/ci-evidence/phase28 --output-dir build/ci-evidence/phase32
+    python3 tools/bazel/phase33_maintainer_decision_inputs.py --quick --phase32-handoff build/ci-evidence/phase32/downstream-handoff-manifest.json --output-dir build/ci-evidence/phase33
+    python3 tools/bazel/phase34_final_readiness_demotion_dry_run.py --wiring-only
+    python3 tools/bazel/phase35_cutover_decision_artifact.py --wiring-only
+    run_phase38_coordinator
+    ;;
+  phase38_verify_tests)
+    python3 tools/bazel/phase33_maintainer_decision_inputs_test.py
+    python3 tools/bazel/phase34_decision_reconciliation_test.py
+    python3 tools/bazel/phase34_final_readiness_demotion_dry_run_test.py
+    python3 tools/bazel/phase34_decision_reconciliation_integration_test.py
+    python3 tools/bazel/phase35_cutover_decision_artifact_test.py
+    python3 tools/bazel/phase38_cutover_workflow_test.py
+    python3 tools/bazel/phase38_cutover_workflow_integration_test.py
     ;;
   *)
     printf 'Unknown Rust workflow target: %s\n' "$command_name" >&2

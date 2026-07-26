@@ -640,6 +640,16 @@ alias(
 )
 
 alias(
+    name = "phase38_verify",
+    actual = "//tools/bazel:phase38_verify",
+)
+
+alias(
+    name = "phase38_verify_tests",
+    actual = "//tools/bazel:phase38_verify_tests",
+)
+
+alias(
     name = "phase22_verify",
     actual = "//tools/bazel:phase22_verify",
 )

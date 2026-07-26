@@ -1045,6 +1045,67 @@ shell_binary(
 )
 
 filegroup(
+    name = "phase38_actual_producer_runfiles",
+    srcs = [
+        "phase23_simulator_evidence_execution.py",
+        "phase24_hardware_media_safety_evidence_execution.py",
+        "phase25_live_service_evidence_execution.py",
+        "phase26_release_signing_upstream_evidence.py",
+        "phase27_retained_code_acceptance_decisions.py",
+        "phase28_final_readiness_packet.py",
+        "phase31_final_evidence_intake.py",
+        "phase32_blocker_normalization.py",
+        "phase32_blocker_register_triage.py",
+        "phase33_maintainer_decision_inputs.py",
+        "phase34_decision_reconciliation.py",
+        "phase34_final_readiness_demotion_dry_run.py",
+        "phase35_cutover_decision_artifact.py",
+        "phase38_cutover_workflow.py",
+        "manifests/foreign_code_inventory.json",
+        "manifests/phase11_cutover_readiness.json",
+        "manifests/phase11_retained_code_justifications.json",
+        "manifests/phase17_release_candidate_evidence_contract.json",
+        "manifests/phase18_cutover_review_contract.json",
+        "manifests/phase20_release_candidate_artifacts_contract.json",
+        "manifests/phase20_release_environment_inputs.template.json",
+        "manifests/phase23_simulator_evidence_execution_contract.json",
+        "manifests/phase24_hardware_media_safety_evidence_execution_contract.json",
+        "manifests/phase25_live_service_evidence_execution_contract.json",
+        "manifests/phase26_release_signing_upstream_evidence_contract.json",
+        "manifests/phase27_retained_code_acceptance_decisions_contract.json",
+        "manifests/phase28_final_readiness_packet_contract.json",
+        "manifests/phase31_final_evidence_intake_contract.json",
+        "manifests/phase32_blocker_register_triage_contract.json",
+        "manifests/phase33_maintainer_decision_inputs_contract.json",
+        "manifests/phase34_final_readiness_demotion_dry_run_contract.json",
+        "manifests/phase35_cutover_decision_artifact_contract.json",
+        "manifests/unsafe_boundary_audit.json",
+    ],
+)
+
+shell_binary(
+    name = "phase38_verify",
+    src = "rust_workflow.sh",
+    data = [":phase38_actual_producer_runfiles"],
+)
+
+shell_binary(
+    name = "phase38_verify_tests",
+    src = "rust_workflow.sh",
+    data = [
+        "phase32_blocker_register_triage_test.py",
+        "phase33_maintainer_decision_inputs_test.py",
+        "phase34_decision_reconciliation_integration_test.py",
+        "phase34_decision_reconciliation_test.py",
+        "phase34_final_readiness_demotion_dry_run_test.py",
+        "phase35_cutover_decision_artifact_test.py",
+        "phase38_cutover_workflow_integration_test.py",
+        "phase38_cutover_workflow_test.py",
+        ":phase38_actual_producer_runfiles",
+    ],
+)
+
+filegroup(
     name = "unsafe_boundary_audit",
     srcs = ["manifests/unsafe_boundary_audit.json"],
 )
