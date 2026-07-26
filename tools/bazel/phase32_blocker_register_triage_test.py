@@ -1119,6 +1119,48 @@ class Phase32ProducerShapeTest(unittest.TestCase):
             if row["source_domain"] == "release_signing"
         ])
 
+    def test_release_receipt_rejects_same_basename_outside_phase26_path(
+            self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+        expected_table_path = (
+            "build/ci-evidence/phase26/upstream-result-row-table.json")
+        attacker_table_path = (
+            "arbitrary/attacker/upstream-result-row-table.json")
+        self.write_json(
+            root,
+            attacker_table_path,
+            self.read_json(root, expected_table_path),
+        )
+        receipt_path = (
+            "build/ci-evidence/phase31/stream-receipts/"
+            "release-signing-final-intake-receipt.json")
+        receipt = self.read_json(root, receipt_path)
+        receipt["consumed_upstream_row_refs"] = [attacker_table_path]
+        receipt["validator_output_refs"] = [
+            attacker_table_path
+            if ref == expected_table_path else ref
+            for ref in receipt["validator_output_refs"]
+        ]
+        self.write_json(root, receipt_path, receipt)
+
+        # Act
+        result = self.run_phase32(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        rows = self.read_json(
+            root, "build/ci-evidence/phase32/blocker-register.json")["rows"]
+        release_rows = [
+            row for row in rows
+            if row["source_domain"] == "release_signing"
+        ]
+        self.assertEqual(len(release_rows), 1)
+        self.assertEqual(release_rows[0]["row_problem_kind"],
+                         "unknown_unclassified")
+        self.assertEqual(release_rows[0]["severity"], "critical")
+
     def test_phase27_and_phase28_producers_preserve_all_decision_identities(
             self) -> None:
         # Arrange
