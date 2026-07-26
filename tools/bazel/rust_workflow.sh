@@ -218,7 +218,10 @@ case "$command_name" in
     python3 tools/bazel/phase34_final_readiness_demotion_dry_run.py --quick --phase31-output-dir build/ci-evidence/phase31 --phase33-handoff build/ci-evidence/phase33/downstream-handoff-manifest.json --output-dir build/ci-evidence/phase34
     ;;
   phase34_verify_tests)
+    python3 tools/bazel/phase33_maintainer_decision_inputs_test.py
+    python3 tools/bazel/phase34_decision_reconciliation_test.py
     python3 tools/bazel/phase34_final_readiness_demotion_dry_run_test.py
+    python3 tools/bazel/phase34_decision_reconciliation_integration_test.py
     ;;
   phase35_verify)
     python3 tools/bazel/phase31_final_evidence_intake.py --quick --output-dir build/ci-evidence/phase31

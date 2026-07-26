@@ -1905,6 +1905,9 @@ def check_wiring(root: Path) -> None:
             'name = "phase34_source_ref_manifests"',
             'name = "phase34_verify"',
             'name = "phase34_verify_tests"',
+            '"phase34_decision_reconciliation.py"',
+            '"phase34_decision_reconciliation_test.py"',
+            '"phase34_decision_reconciliation_integration_test.py"',
             "//:phase34_final_readiness_demotion_dry_run_docs",
         ],
         "BUILD.bazel": [
@@ -1932,7 +1935,10 @@ def check_wiring(root: Path) -> None:
     if shell_case_commands(workflow, "phase34_verify") != PHASE34_VERIFY_COMMANDS:
         errors.append("tools/bazel/rust_workflow.sh phase34_verify command order is invalid")
     if shell_case_commands(workflow, "phase34_verify_tests") != [
-        "python3 tools/bazel/phase34_final_readiness_demotion_dry_run_test.py"
+        "python3 tools/bazel/phase33_maintainer_decision_inputs_test.py",
+        "python3 tools/bazel/phase34_decision_reconciliation_test.py",
+        "python3 tools/bazel/phase34_final_readiness_demotion_dry_run_test.py",
+        "python3 tools/bazel/phase34_decision_reconciliation_integration_test.py",
     ]:
         errors.append("tools/bazel/rust_workflow.sh phase34_verify_tests command is invalid")
     if just_recipe_commands(texts.get("justfile", ""), "phase34-verify") != [
