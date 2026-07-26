@@ -141,13 +141,19 @@ def evaluate_final_status(
     authority: FinalAuthority,
 ) -> WorkflowResult:
     authority_consistent = _authority_is_consistent(authority)
+    operations_succeeded = (
+        phase34_outcome.status == 0
+        and phase35_outcome.status == 0
+    )
     production_cutover_planning = (
-        authority_consistent
+        operations_succeeded
+        and authority_consistent
         and authority.verdict == "approved"
         and authority.route == "production-cutover-planning"
     )
     reference_demotion_authorized = (
-        authority_consistent
+        operations_succeeded
+        and authority_consistent
         and authority.readiness_state == "unblocked"
         and authority.demotion_validation_state == "valid"
         and authority.demotion_decision_state == "approve"
@@ -184,7 +190,11 @@ def evaluate_final_status(
         reason_category=reason_category,
         phase34_status=phase34_outcome.status,
         phase35_status=phase35_outcome.status,
-        final_authority_available=authority.available and authority_consistent,
+        final_authority_available=(
+            operations_succeeded
+            and authority.available
+            and authority_consistent
+        ),
         verdict=authority.verdict,
         route=authority.route,
         readiness_state=authority.readiness_state,

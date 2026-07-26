@@ -97,6 +97,48 @@ class FinalStatusTests(unittest.TestCase):
         self.assertEqual(result.status, 9)
         self.assertEqual(result.reason_category, "source-artifact-malformed")
 
+    def test_phase34_failure_revokes_otherwise_open_authority(self) -> None:
+        # Arrange
+        authority = approved_authority(
+            demotion_validation_state="valid",
+            demotion_decision_state="approve",
+            demotion_gate_state="open",
+        )
+
+        # Act
+        result = workflow.evaluate_final_status(
+            workflow.CommandOutcome(7, "phase34-operation-failed"),
+            workflow.CommandOutcome(0, "none"),
+            authority,
+        )
+
+        # Assert
+        self.assertEqual(result.status, 7)
+        self.assertFalse(result.final_authority_available)
+        self.assertFalse(result.production_cutover_planning)
+        self.assertFalse(result.reference_demotion_authorized)
+
+    def test_phase35_failure_revokes_otherwise_open_authority(self) -> None:
+        # Arrange
+        authority = approved_authority(
+            demotion_validation_state="valid",
+            demotion_decision_state="approve",
+            demotion_gate_state="open",
+        )
+
+        # Act
+        result = workflow.evaluate_final_status(
+            workflow.CommandOutcome(0, "none"),
+            workflow.CommandOutcome(9, "phase35-operation-failed"),
+            authority,
+        )
+
+        # Assert
+        self.assertEqual(result.status, 9)
+        self.assertFalse(result.final_authority_available)
+        self.assertFalse(result.production_cutover_planning)
+        self.assertFalse(result.reference_demotion_authorized)
+
     def test_first_nonzero_phase34_status_wins_when_both_producers_fail(
         self,
     ) -> None:
