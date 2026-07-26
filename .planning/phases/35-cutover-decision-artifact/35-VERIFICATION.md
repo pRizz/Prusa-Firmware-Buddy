@@ -1,139 +1,136 @@
 ---
 phase: 35-cutover-decision-artifact
-verified: 2026-07-25T23:22:09Z
-status: gaps_found
-score: 4/5 must-haves verified
+verified: 2026-07-26T00:02:24Z
+status: passed
+score: 5/5 must-haves verified
 generated_by: gsd-verifier
 lifecycle_mode: yolo
 phase_lifecycle_id: 35-2026-07-25T21-06-10
-generated_at: 2026-07-25T23:22:09Z
+generated_at: 2026-07-26T00:02:24Z
 lifecycle_validated: true
 overrides_applied: 0
-gaps:
-  - truth: "Maintainer can generate exactly one cutover verdict from the closed enum approved, blocked, or approved-with-exceptions, and every invalid or incomplete input fails to blocked."
-    status: partial
-    reason: "The reducer and valid-input generator are closed and deterministic, but a malformed or missing source artifact raises before Phase 35 replaces existing output. A stale approved decision can therefore survive a failed regeneration instead of being replaced by a minimal blocked decision and targeted-repair route."
-    artifacts:
-      - path: "tools/bazel/phase35_cutover_decision_artifact.py"
-        issue: "run_quick loads and validates the Phase 34 bundle before write_bundle resets output; main catches VerificationError and returns nonzero without invalidating stale output or writing the PLAN-required minimal blocked manifest/decision/route."
-      - path: "tools/bazel/phase35_cutover_decision_artifact_test.py"
-        issue: "Lifecycle/contract drift tests assert only that validation raises; no regression proves malformed or missing sources replace a prior approved artifact with durable blocked output."
-    missing:
-      - "Invalidate stale Phase 35 outputs before consuming untrusted Phase 34 inputs, or atomically replace them with a minimal blocked manifest, cutover decision, and targeted-blocker-repair route on every source-validation failure."
-      - "Add an end-to-end regression starting with a prior approved output and a malformed, missing, stale, lifecycle-mismatched, secret-tainted, or unsafe source; assert the command is nonzero and no approved artifact remains authoritative."
+re_verification:
+  previous_status: "gaps_found"
+  previous_score: 4/5
+  gaps_closed:
+    - "Every source-validation failure now returns nonzero only after atomically replacing any prior approved Phase 35 output with the exact three-file blocked manifest, decision, and targeted-repair route."
+  gaps_remaining: []
+  regressions: []
 ---
 
 # Phase 35: Cutover Decision Artifact Verification Report
 
 **Phase Goal:** Maintainers can produce an auditable go/no-go cutover artifact that routes the project to production cutover or targeted blocker repair.
-**Verified:** 2026-07-25T23:22:09Z
-**Status:** gaps_found
-**Re-verification:** No — initial verification
+**Verified:** 2026-07-26T00:02:24Z
+**Status:** passed
+**Re-verification:** Yes — after gap closure in Plan 35-02
 
 ## Goal Achievement
 
 ### Observable Truths
 
-The four roadmap success criteria and five plan truths merge into five distinct observable truths.
+The four roadmap success criteria and plan-level detail merge into five distinct observable truths.
 
 | # | Truth | Status | Evidence |
 | --- | --- | --- | --- |
-| 1 | Maintainer can generate exactly one closed-enum cutover verdict, and every invalid or incomplete input fails to a durable blocked artifact. | ✗ FAILED | `evaluate_verdict` is closed and fail-closed, and valid blocked input generates one blocked artifact. However, `run_quick` loads the Phase 34 bundle before `write_bundle` resets output (`phase35_cutover_decision_artifact.py:1526-1532`). A missing-manifest spot-check returned `VerificationError` while preserving a pre-existing `{"cutover_verdict":"approved"}` artifact. |
-| 2 | Maintainer can audit the verdict through one canonical exact-set link index covering all nine required categories. | ✓ VERIFIED | Contract declares all nine kinds and exact row fields. The 48-test suite covers deterministic IDs/order, all nine categories, local/external digest rules, missing/extra/duplicate/dangling/lifecycle/category/digest anti-joins, resolved targets, and symlinked audit targets. Current quick output contains 47 unique links with no duplicate IDs or missing local digests; zero-count categories reflect the intentionally empty default evidence/decision fixture. |
-| 3 | Approved routes only to production-cutover planning; blocked and exception-bearing verdicts route to source-backed targeted repair and require a fresh decision. | ✓ VERIFIED | `build_route` implements the exclusive truth table with `planning_only: true` and `production_actions_authorized: false`. Current output is blocked with 47 repair rows, including all 4 Phase-34-created missing-stream blockers; every row has the exact nine fields and nonempty owner, action, and exit/review criteria. |
-| 4 | Cutover verdict, demotion input validation/value/source, and demotion gate state/reasons remain independent. | ✓ VERIFIED | `project_demotion` preserves missing, malformed, stale, lifecycle-mismatched, invalid, valid approve, and valid reject states and forces the gate blocked unless validation is valid, the decision is approve, readiness is unblocked, and gate reasons are empty. Current output remains missing/missing/blocked with `approval-missing` and `readiness-input-invalid`; targeted tests prove cutover approval and an open gate do not imply each other. |
-| 5 | The default quick path emits blocked plus targeted repair without synthesizing evidence, approval, exceptions, or demotion authority. | ✓ VERIFIED | `just phase35-verify` regenerated Phase 31-34 fail-closed prerequisites and the exact eight-file Phase 35 bundle. Output is `blocked`, `targeted-blocker-repair`, `requires_fresh_cutover_decision: true`, `production_actions_authorized: false`, `raw_evidence_consumed: false`, and missing/blocked demotion state. |
+| 1 | Maintainer can generate exactly one closed-enum cutover verdict, and every invalid or incomplete source fails to a durable blocked artifact. | ✓ VERIFIED | `evaluate_verdict` remains closed and fail-closed. The Plan 35-02 source-failure path stages, validates, and atomically installs exactly `cutover-decision-run-manifest.json`, `cutover-decision.json`, and `next-milestone-route.json` before returning nonzero. Nine end-to-end cases begin with prior approved/production/audit/snapshot output and prove it is replaced for missing, malformed, unreadable UTF-8, stale, lifecycle-mismatched, secret-tainted, symlinked, and otherwise unsafe sources. |
+| 2 | Maintainer can audit the verdict through one canonical exact-set link index covering all nine required categories. | ✓ VERIFIED | The contract declares all nine link kinds and exact row fields. Tests cover deterministic IDs/order, all categories, local/external digest rules, missing/extra/duplicate/dangling/lifecycle/category/digest anti-joins, resolved targets, and symlink containment. Current normal output has 47 unique links across five populated categories and explicit zero counts for the other four. |
+| 3 | Approved routes only to production-cutover planning; blocked and exception-bearing verdicts route to source-backed targeted repair and require a fresh decision. | ✓ VERIFIED | `build_route` implements the exclusive truth table with `planning_only: true` and `production_actions_authorized: false`. Current normal output is blocked with 47 named repair scopes. Source-failure output is also blocked and targeted-repair, but intentionally contains no untrusted source-derived scope. |
+| 4 | Cutover verdict, demotion input validation/value/source, and demotion gate state/reasons remain independent. | ✓ VERIFIED | Normal projections preserve missing, malformed, stale, lifecycle-mismatched, valid-approve, and valid-reject demotion states. Every source-failure decision independently records `demotion_decision_validation_state: invalid`, `demotion_decision_state: missing`, `demotion_decision_source_refs: []`, and `demotion_gate_state: blocked`; tests prove cutover approval cannot imply demotion authority. |
+| 5 | The default quick path emits the exact eight-artifact bundle and does not synthesize evidence, approval, exceptions, or demotion authority. | ✓ VERIFIED | `just phase35-verify` regenerated and validated the Phase 31-35 chain. The Phase 35 run manifest names exactly eight artifacts. Current output is `blocked`, routes to `targeted-blocker-repair`, requires a fresh decision, authorizes no production action, records `raw_evidence_consumed: false`, and keeps demotion missing/blocked. |
 
-**Score:** 4/5 truths verified
+**Score:** 5/5 truths verified
 
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
 | --- | --- | --- | --- |
-| `tools/bazel/manifests/phase35_cutover_decision_artifact_contract.json` | Closed verdict/route, audit-link, lifecycle, security, output, and demotion-separation contract | ✓ VERIFIED | Exists, 345 lines, exact identity/lifecycle/requirements, exact eight generated artifacts, nine link kinds, reason codes, truth tables, and prohibited-authority semantics; `--contract-only` passed. |
-| `tools/bazel/phase35_cutover_decision_artifact_test.py` | Focused truth-table, security, routing, audit, projection, containment, and wiring regressions | ⚠️ PARTIAL | Exists, 1,465 lines, and all 48 tests pass. It includes the iteration 1-3 regressions, but does not test durable blocked replacement when source loading fails before output generation. |
-| `tools/bazel/phase35_cutover_decision_artifact.py` | Standard-library verifier and deterministic artifact generator | ⚠️ PARTIAL | Exists, 1,699 lines, substantive, wired, and passes normal contract/security/wiring/quick flows. The source-error output-preservation path is not fail-closed at the artifact boundary. |
-| `tools/bazel/BUILD.bazel` | Phase 35 source manifests and verifier/test targets | ✓ VERIFIED | `phase35_source_ref_manifests`, `phase35_verify`, and `phase35_verify_tests` exist and both Bazel targets passed through `just phase35-verify`. |
-| `BUILD.bazel` | Phase 35 docs filegroup and root aliases | ✓ VERIFIED | Docs filegroup plus `phase35_verify` and `phase35_verify_tests` aliases exist; Bazel analysis and execution passed. |
-| `tools/bazel/rust_workflow.sh` | Ordered prerequisite regeneration and Phase 35 dispatch | ✓ VERIFIED | Exact case arms and command order are present; `bash -n`, `--wiring-only`, and the full workflow passed. |
-| `justfile` | Developer-facing verification facade | ✓ VERIFIED | `phase35-verify` runs tests before generation; the recipe passed. |
-| `build/ci-evidence/phase35/*` | Exact deterministic decision bundle | ✓ VERIFIED for valid blocked input | Exactly eight contract-defined files exist. JSON fields, report projection, link counts, route scope, lifecycle, and raw-evidence flag validate. |
+| `tools/bazel/manifests/phase35_cutover_decision_artifact_contract.json` | Closed verdict/route, audit-link, lifecycle, security, normal-output, source-failure, and demotion-separation contract | ✓ VERIFIED | Exists, 433 lines, and now specifies the exact three-file source-failure bundle, seven safe reason codes, blocked routing, empty untrusted projections, and independent demotion fields. `--contract-only` passed. |
+| `tools/bazel/phase35_cutover_decision_artifact_test.py` | Focused truth-table, security, routing, audit, projection, containment, wiring, and stale-approval replacement regressions | ✓ VERIFIED | Exists, 1,845 lines. All 58 tests pass; nine source-failure tests explicitly seed prior approved output and verify nonzero exit plus exact durable blocked replacement. |
+| `tools/bazel/phase35_cutover_decision_artifact.py` | Standard-library verifier and deterministic atomic artifact generator | ✓ VERIFIED | Exists, 2,107 lines. Normal and source-failure bundles are staged and validated before canonical installation. Errors are reduced to contract-listed safe reason codes and emitted only after blocked replacement. |
+| `tools/bazel/BUILD.bazel` | Phase 35 sources and verifier/test targets | ✓ VERIFIED | `phase35_source_ref_manifests`, `phase35_verify`, and `phase35_verify_tests` exist; both Bazel targets passed. |
+| `BUILD.bazel` | Phase 35 docs filegroup and root aliases | ✓ VERIFIED | Docs filegroup and root verifier/test aliases exist; Bazel analysis and execution passed. |
+| `tools/bazel/rust_workflow.sh` | Ordered prerequisite regeneration and Phase 35 dispatch | ✓ VERIFIED | Exact Phase 31-35 order and command arms are present; `bash -n`, wiring mode, and the full workflow passed. |
+| `justfile` | Developer-facing Phase 35 verification facade | ✓ VERIFIED | `phase35-verify` runs tests before generation; the recipe passed. |
+| `build/ci-evidence/phase35/*` | Exact deterministic normal decision bundle | ✓ VERIFIED | Exactly eight contract-defined files exist after the normal workflow: five top-level artifacts and three contract/source snapshots. |
 
 ### Key Link Verification
 
-The generic key-link checker reported 2/5 because three plan regexes contain escaped-dot patterns that do not match the implementation's `Path` constants or exact workflow command text. Manual source and behavioral verification confirms all five links.
-
 | From | To | Via | Status | Details |
 | --- | --- | --- | --- | --- |
-| Phase 35 verifier | Phase 34 run manifest | Exact immediate source path, identity, lifecycle, output root, artifact set, snapshot refs, and security validation | ✓ WIRED | `load_bundle` begins from `final-readiness-run-manifest.json`; no alternate filesystem search or caller verdict input exists. |
-| Phase 35 verifier | Canonical audit-link index | Independently derived source rows, deterministic projection, exact-set comparison, resolved-target validation, and digest recomputation | ✓ WIRED | Unit tests mutate every anti-join axis and resolve local fragments; current index has 47 unique links and valid local digests. |
-| Audit-link index | Cutover decision and Markdown | Shared canonical link rows and counts | ✓ WIRED | `write_bundle` derives index, counts, decision ref, and report from the same in-memory links; generated-output validation recomputes report equality. |
-| Cutover decision | Next-milestone route | Closed verdict-to-route truth table | ✓ WIRED | All three route cases are tested; current decision and route agree on blocked/targeted repair. |
-| `rust_workflow.sh` | Phase 35 verifier | Ordered Phase 31-34 quick regeneration, Phase 34/35 wiring checks, then Phase 35 quick generation | ✓ WIRED | `just phase35-verify` executed both Bazel targets and the complete prerequisite chain successfully. |
+| Phase 35 verifier | Phase 34 run manifest | Exact immediate source path, identity, lifecycle, artifact set, snapshot refs, freshness, containment, and security validation | ✓ WIRED | `load_bundle` begins from the Phase 34 manifest; unsafe or invalid input enters the atomic source-failure replacement path. |
+| Source-validation failure | Canonical Phase 35 output | Staged exact three-file fallback, validation, then atomic directory replacement | ✓ WIRED | Plan 35-02 key-link verification passes. End-to-end regressions prove prior approval, production route, audit index, report, and snapshots are absent after failure. |
+| Phase 35 verifier | Canonical audit-link index | Independently derived rows, deterministic projection, exact-set comparison, resolved-target validation, and digest recomputation | ✓ WIRED | Current index contains 47 unique source-backed links; all local links are digest-bound. |
+| Audit-link index | Cutover decision and Markdown | Shared canonical link rows and counts | ✓ WIRED | Decision counts and report projection derive from the same validated index. |
+| Cutover decision | Next-milestone route | Closed verdict-to-route truth table | ✓ WIRED | All three verdict cases are tested; current decision and route agree on blocked/targeted repair. |
+| `rust_workflow.sh` | Phase 35 verifier | Ordered Phase 31-34 regeneration, wiring/security checks, then Phase 35 generation | ✓ WIRED | `just phase35-verify` executed both Bazel targets and the complete prerequisite chain successfully. |
+
+Plan 35-02's automated artifact check reports 3/3 artifacts passed and its key-link check reports 4/4 links verified. The older Plan 35-01 generic checker still cannot interpret three escaped-dot regexes, but manual source tracing and successful behavior checks verify those links.
 
 ### Data-Flow Trace (Level 4)
 
 | Artifact | Data Variable | Source | Produces Real Data | Status |
 | --- | --- | --- | --- | --- |
-| `phase35_cutover_decision_artifact.py` | `source` bundle | Validated Phase 34 run manifest, ledger, packet, blocker summary, dry run, Phase 31/32 snapshots, and digest-bound Phase 33 registers | Yes | ✓ FLOWING |
-| `cutover-audit-link-index.json` | `links` | Canonical Phase 31-34 evidence, blocker, decision, readiness, and demotion sources | Yes; categories may be empty when the default upstream fixture has no accepted evidence or maintainer decisions | ✓ FLOWING |
-| `cutover-decision.json` | verdict, reasons, blockers, demotion projection | Readiness packet/ledger, active canonical exceptions, audit validation, repair-scope validation, and Phase 33/34 demotion inputs | Yes | ✓ FLOWING for valid inputs; ✗ stale output can survive source-load failure |
-| `next-milestone-route.json` | route and follow-up scope | Closed route table plus all blocked or exception-covered Phase 34 ledger rows | Yes; current bundle has 47 traceable scope rows | ✓ FLOWING |
-| `redacted-cutover-decision-report.md` | report projection | The same in-memory decision, route, and canonical link index as JSON | Yes | ✓ FLOWING |
+| `phase35_cutover_decision_artifact.py` normal path | `source` bundle | Validated Phase 34 manifest, ledger, packet, blocker summary, dry run, snapshots, and digest-bound Phase 33 registers | Yes | ✓ FLOWING |
+| `cutover-audit-link-index.json` | `links` | Canonical Phase 31-34 evidence, blocker, decision, readiness, and demotion sources | Yes; empty categories remain explicit zero-count categories | ✓ FLOWING |
+| `cutover-decision.json` normal path | verdict, reasons, blockers, demotion projection | Readiness packet/ledger, active exceptions, audit validation, repair-scope validation, and Phase 33/34 demotion inputs | Yes | ✓ FLOWING |
+| `next-milestone-route.json` normal path | route and follow-up scope | Closed route table plus every blocked or exception-covered Phase 34 ledger row | Yes; current bundle has 47 traceable scopes | ✓ FLOWING |
+| Source-failure bundle | safe reason, blocked verdict, independent demotion state, targeted route | Sanitized `VerificationError.reason_code`; no untrusted source fields | Yes, intentionally fail-closed | ✓ FLOWING |
 
 ### Behavioral Spot-Checks
 
 | Behavior | Command | Result | Status |
 | --- | --- | --- | --- |
-| Focused Phase 35 regression suite | `env PYTHONDONTWRITEBYTECODE=1 python3 -B tools/bazel/phase35_cutover_decision_artifact_test.py -q` | 48 tests in 3.895s, OK | ✓ PASS |
+| Former-gap reproduction | `Phase35SourceFailureReplacementTest -v` | 9/9 cases passed. Each seeds prior approved output, receives nonzero, and validates the exact three-file blocked replacement with no approval remnant. | ✓ PASS |
+| Full Phase 35 regression suite | `env PYTHONDONTWRITEBYTECODE=1 python3 -B tools/bazel/phase35_cutover_decision_artifact_test.py -q` | 58 tests in 0.081s, OK | ✓ PASS |
 | Contract, wiring, security, shell syntax, and whitespace | Phase 35 `--contract-only`, `--wiring-only`, `--security-only`; `bash -n`; `git diff --check` | All exit 0 | ✓ PASS |
-| Repository verification facade | `just phase35-verify` | Both Bazel targets passed; Phase 31-35 quick chain regenerated and validated | ✓ PASS |
-| Default generated projection | Direct JSON audit | Blocked; targeted repair; 47 blockers/scopes; missing demotion decision; blocked demotion gate; no production authority | ✓ PASS |
-| Invalid-source durable fail-closed behavior | Temporary root with missing Phase 34 manifest and pre-existing approved Phase 35 decision | Command raised `source artifact missing`; stale approved JSON remained unchanged | ✗ FAIL |
-| Bazel lockfile hygiene | SHA-256 before/after restoration | Bazel changed lock version 26→28; restored to original SHA-256 `21587df8a47a42952e5301f59f4809b23eba5f336780847d0c3bc02422275a03` | ✓ PASS |
+| Repository verification facade | `just phase35-verify` | `//tools/bazel:phase35_verify_tests` and `//tools/bazel:phase35_verify` passed; normal exact eight-artifact bundle regenerated | ✓ PASS |
+| Phase 34 regression | `env PYTHONDONTWRITEBYTECODE=1 python3 -B tools/bazel/phase34_final_readiness_demotion_dry_run_test.py -q` | 36 tests in 2.530s, OK | ✓ PASS |
+| Default generated projection | Direct file-set and JSON audit | Eight files; blocked; targeted repair; 47 links/scopes; missing demotion decision; blocked demotion gate; no production authority | ✓ PASS |
+| Bazel lockfile hygiene | SHA-256 before/after restoration | Restored to baseline `21587df8a47a42952e5301f59f4809b23eba5f336780847d0c3bc02422275a03` | ✓ PASS |
 
 ### Requirements Coverage
 
-| Requirement | Source Plan | Description | Status | Evidence |
+| Requirement | Source Plans | Description | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| CUTOVER-01 | 35-01 | Produce one explicit approved, blocked, or approved-with-exceptions artifact | ✗ BLOCKED | The closed reducer and valid-input artifact path work, but invalid source loading can leave an earlier approved artifact intact rather than publishing or preserving an authoritative blocked result. |
-| CUTOVER-02 | 35-01 | Link every blocker, exception, residual risk, evidence packet, retained-code decision, readiness result, and demotion decision needed to audit the verdict | ✓ SATISFIED | Nine-kind schema, canonical link derivation, lifecycle/category checks, safe refs, digests, exact anti-joins, resolved targets, and shared projections are implemented and tested. |
-| CUTOVER-03 | 35-01 | Route approved to production planning and blocked/exception-bearing to named targeted repair | ✓ SATISFIED | Exclusive route table, planning-only boundary, fresh-decision requirement, 47 source-backed current scopes, and exception/residual criteria are implemented and tested. |
+| CUTOVER-01 | 35-01, 35-02 | Produce one explicit approved, blocked, or approved-with-exceptions artifact | ✓ SATISFIED | Closed reducer, all verdict cases, exact normal bundle, and durable blocked replacement on every source-validation failure are implemented and tested. |
+| CUTOVER-02 | 35-01, 35-02 | Link every blocker, exception, residual risk, evidence packet, retained-code decision, readiness result, and demotion decision needed to audit the verdict | ✓ SATISFIED | Nine-kind schema, canonical derivation, lifecycle/category checks, safe refs, digests, exact anti-joins, resolved targets, shared projections, and removal of stale audit artifacts on failure are verified. |
+| CUTOVER-03 | 35-01, 35-02 | Route approved to production planning and blocked/exception-bearing to named targeted repair | ✓ SATISFIED | Exclusive truth table, planning-only boundary, fresh-decision requirement, 47 source-backed normal scopes, and safe targeted repair on source failure are verified. |
 
-All three requirement IDs declared in PLAN frontmatter are present in `.planning/REQUIREMENTS.md`, map only to Phase 35, and are accounted for. No orphaned Phase 35 requirements exist.
+All three Phase 35 requirement IDs are present in `.planning/REQUIREMENTS.md`, map only to Phase 35, and have implementation evidence. No orphaned Phase 35 requirements exist.
 
-### Review-Fix Lineage
+### Review-Fix and Gap-Closure Lineage
 
-| Review iteration | Fixes confirmed in reachable code/tests | Status |
+| Iteration | Fixes confirmed in reachable code/tests | Status |
 | --- | --- | --- |
-| Iteration 1 | `715620b63` snapshot scanning; `e02a0bb61` Phase 33 digest/projection binding; `296ff7420` resolved canonical audit links; `0b89d013c` all Phase 34 blocker routing; `63376eb19` stale demotion gate blocking; `47cfc7dac` external URI validation | ✓ VERIFIED |
-| Iteration 2 | `28b5e2ee9` legacy exception-field rejection; `a508f7ab3` decoded external-ref validation; `bdb5632e1` exception-covered route preservation | ✓ VERIFIED |
-| Capped final review | `9410e9d13` adds shared nested source-file containment plus file, parent-directory, and local-audit-target symlink regressions | ✓ VERIFIED |
-| Final fix report | `35-REVIEW-FIX.md` iteration 3, one finding in scope, one fixed, zero skipped | ✓ `status: all_fixed` |
+| Review iteration 1 | `715620b63`, `e02a0bb61`, `296ff7420`, `0b89d013c`, `63376eb19`, `47cfc7dac` | ✓ VERIFIED |
+| Review iteration 2 | `28b5e2ee9`, `a508f7ab3`, `bdb5632e1` | ✓ VERIFIED |
+| Capped final review | `9410e9d13` shared nested source containment and symlink regressions | ✓ VERIFIED |
+| Gap closure tests | `09ad9b56e` exact source-failure contract and stale-approval regressions | ✓ VERIFIED |
+| Gap closure implementation | `dbced213b` staged validation and atomic normal/fallback replacement | ✓ VERIFIED |
 
-The current 48-test suite exercises all of these repairs. The new gap is an untested output-state error path after source validation fails; it is not a regression of the closed review findings above.
+`git show --check` is clean for both Plan 35-02 commits. `35-REVIEW-FIX.md` remains `status: all_fixed`.
 
 ### Anti-Patterns Found
 
 | File | Line | Pattern | Severity | Impact |
 | --- | --- | --- | --- | --- |
-| `tools/bazel/phase35_cutover_decision_artifact.py` | 1526-1532, 1693-1695 | Validation exception returns before output invalidation or minimal blocked replacement | 🛑 Blocker | A prior approved artifact can remain present after a failed regeneration, violating the durable fail-closed contract. |
-| `tools/bazel/phase35_cutover_decision_artifact.py` | file length 1,699 lines | Mixed-responsibility module exceeds the Bright Builds ~628-line refactor trigger | ℹ️ Info | Boundary validation, reducers, audit resolution, output mutation, CLI, and wiring remain concentrated; this is the final review's non-blocking maintainability note. |
-| `tools/bazel/phase35_cutover_decision_artifact_test.py` | file length 1,465 lines | Test module exceeds the same advisory trigger | ℹ️ Info | Focused test methods remain identifiable and all pass, but future separation would improve navigation. |
+| `tools/bazel/phase35_cutover_decision_artifact.py` | file length 2,107 lines | Mixed-responsibility module exceeds the Bright Builds advisory refactor trigger | ℹ️ Info | Maintainability concern only; normal and failure behavior is substantive, wired, and fully exercised. |
+| `tools/bazel/phase35_cutover_decision_artifact_test.py` | file length 1,845 lines | Test module exceeds the same advisory trigger | ℹ️ Info | Navigation concern only; tests remain focused by behavior and all pass. |
 
-No TODO/FIXME/placeholder implementations, console-only handlers, or user-visible hardcoded empty-data stubs were found. Empty lists/dictionaries in the verifier are accumulators, explicit defaults, or fail-closed sentinels.
+No TODO/FIXME/placeholder implementations, console-only handlers, user-visible hardcoded empty-data stubs, or blocker anti-patterns were found.
 
 ### Human Verification Required
 
-None. Phase 35 is deterministic CLI/data-transformation/artifact-generation logic and can be verified programmatically. Real external evidence and maintainer approvals are upstream inputs; the Phase 35 capability and safety boundaries are testable with sanitized fixtures.
+None. Phase 35 is deterministic CLI, data-transformation, and artifact-generation logic. Its normal and failure boundaries are fully testable with sanitized fixtures.
 
 ### Gaps Summary
 
-One root-cause gap blocks full goal achievement. Normal valid blocked inputs, all verdict/route truth tables, audit completeness, demotion separation, security/containment repairs, and repository wiring pass. But `run_quick` does not establish a blocked output state before consuming untrusted Phase 34 sources, and its exception handler writes no fallback artifact. If a prior run produced `approved`, a later malformed or missing source can make regeneration fail while leaving that approval on disk. The phase needs atomic output-state handling plus an end-to-end stale-approval regression before CUTOVER-01 and the combined fail-closed truth can be verified.
+The previous gap is closed. Source validation no longer returns while leaving stale approval authoritative: all covered failure families first install a validated exact three-file blocked bundle, independently block demotion, remove production/audit/report/snapshot remnants, and then return nonzero. Normal inputs continue to generate the exact eight-file auditable decision bundle. No gaps, regressions, deferred items, or verification overrides remain.
 
-No later phase in the current milestone explicitly owns this gap, so it is not deferred. No verification overrides apply.
+The pre-existing `.planning/config.json` modification was preserved. Bazel's `MODULE.bazel.lock` side effect was restored to its baseline hash.
 
 ***
 
-_Verified: 2026-07-25T23:22:09Z_
+_Verified: 2026-07-26T00:02:24Z_
 _Verifier: the agent (gsd-verifier)_

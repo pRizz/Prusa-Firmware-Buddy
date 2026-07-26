@@ -77,7 +77,7 @@ Full phase details are archived in `.planning/milestones/v1.2-ROADMAP.md`.
 - [x] **Phase 32: Blocker Register and Evidence Triage** - Maintainers can classify every failed, missing, stale, malformed, redaction-failed, placeholder, or exceptioned row into one blocker register. (completed 2026-07-03)
 - [x] **Phase 33: Maintainer Decision Inputs** - Maintainers can record retained-code, residual-risk, exception, final-readiness, and demotion decisions as explicit machine-readable inputs. (completed 2026-07-04)
 - [x] **Phase 34: Final Readiness and Demotion Dry Run** - Maintainers can generate readiness from real consumed rows and prove demotion stays blocked without valid explicit approval. (completed 2026-07-25)
-- [x] **Phase 35: Cutover Decision Artifact** - Maintainers can publish an auditable approved, blocked, or approved-with-exceptions verdict that routes the next milestone. (completed 2026-07-25)
+- [x] **Phase 35: Cutover Decision Artifact** - Maintainers can publish an auditable approved, blocked, or approved-with-exceptions verdict that routes the next milestone. (completed 2026-07-26)
 
 ## Phase Details
 
@@ -140,9 +140,10 @@ Plans:
   2. The decision artifact links every blocker, exception, residual risk, evidence packet, retained-code decision, readiness result, and demotion decision needed to audit the verdict.
   3. An approved verdict routes the next milestone to production cutover planning, while blocked or exception-bearing verdicts route to targeted blocker repair with named follow-up scope.
   4. The artifact preserves reference-demotion authorization as an explicit decision state rather than deriving it from green evidence or cutover approval alone.
-**Plans**: 1 plan
+**Plans**: 2 plans
 Plans:
 - [x] 35-01-PLAN.md - Contract-first auditable cutover verdict, canonical audit-link index, next-milestone routing, demotion-state separation, and verification wiring.
+- [x] 35-02-PLAN.md - Durable fail-closed replacement of stale cutover approvals when source validation fails.
 
 ## Requirement Coverage
 
@@ -161,11 +162,11 @@ Plans:
 | READY-01 | Phase 34 | Complete |
 | READY-02 | Phase 34 | Complete |
 | READY-03 | Phase 34 | Complete |
-| CUTOVER-01 | Phase 35 | Pending |
-| CUTOVER-02 | Phase 35 | Pending |
-| CUTOVER-03 | Phase 35 | Pending |
+| CUTOVER-01 | Phase 35 | Complete |
+| CUTOVER-02 | Phase 35 | Complete |
+| CUTOVER-03 | Phase 35 | Complete |
 
-**Coverage:** 16/16 v1.3 requirements mapped. 13 complete, 3 pending. No orphaned requirements. No duplicate requirement mappings.
+**Coverage:** 16/16 v1.3 requirements mapped and complete. No orphaned requirements. No duplicate requirement mappings.
 
 ## Progress
 
@@ -188,4 +189,4 @@ Phases execute in numeric order across archived milestones. v1.3 continues after
 | 32. Blocker Register and Evidence Triage | v1.3 | 1/1 | Complete    | 2026-07-03 |
 | 33. Maintainer Decision Inputs | v1.3 | 1/1 | Complete    | 2026-07-04 |
 | 34. Final Readiness and Demotion Dry Run | v1.3 | 2/2 | Complete    | 2026-07-25 |
-| 35. Cutover Decision Artifact | v1.3 | 2/2 | Complete   | 2026-07-25 |
+| 35. Cutover Decision Artifact | v1.3 | 2/2 | Complete    | 2026-07-26 |

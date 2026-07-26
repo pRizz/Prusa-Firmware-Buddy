@@ -2,10 +2,10 @@
 gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
-status: verifying
-stopped_at: Completed 35-02-PLAN.md
-last_updated: "2026-07-25T23:57:09.873Z"
-last_activity: "2026-07-25"
+status: complete
+stopped_at: Phase 35 verification passed
+last_updated: "2026-07-26T00:04:04.921Z"
+last_activity: "2026-07-26"
 progress:
   total_phases: 5
   completed_phases: 5
@@ -27,9 +27,9 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
 Phase: 35 (Cutover Decision Artifact) — COMPLETE
-Plan: 1 of 1
-Status: Phase complete — ready for verification
-Last activity: 2026-07-25
+Plan: 2 of 2
+Status: Phase complete — verification passed
+Last activity: 2026-07-26
 
 Progress: [##########] 100% (5/5 v1.3 phases complete)
 
@@ -37,8 +37,8 @@ Progress: [##########] 100% (5/5 v1.3 phases complete)
 
 **Velocity:**
 
-- v1.3 plans completed: 5/5
-- v1.3 phases completed: 4/5
+- v1.3 plans completed: 7/7
+- v1.3 phases completed: 5/5
 - Previous milestone baseline: v1.2 completed 9 plans across 8 phases
 - Earlier milestone baseline: v1.1 completed 13 plans across 10 phases
 
@@ -50,12 +50,12 @@ Progress: [##########] 100% (5/5 v1.3 phases complete)
 | 32. Blocker Register and Evidence Triage | 1/1 | 19min | 19min |
 | 33. Maintainer Decision Inputs | 1/1 | 15min | 15min |
 | 34. Final Readiness and Demotion Dry Run | 2/2 | - | - |
-| 35. Cutover Decision Artifact | 0/TBD | - | - |
+| 35. Cutover Decision Artifact | 2/2 | 34m42s | 17m21s |
 
 **Recent Trend:**
 
-- Last 5 completed plans: Phase 31 P01, Phase 32 P01, Phase 33 P01, Phase 34 P01, Phase 34 P02
-- Trend: v1.3 Phases 31 through 34 are complete; Phase 35 is ready to turn the readiness result into an auditable cutover decision artifact.
+- Last 5 completed plans: Phase 33 P01, Phase 34 P01, Phase 34 P02, Phase 35 P01, Phase 35 P02
+- Trend: all five v1.3 phases and all seven plans are complete; Phase 35 verification passed 5/5 must-haves.
 
 **Recent Completed Plan Detail:**
 
@@ -95,7 +95,6 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Discuss and plan Phase 35: Cutover Decision Artifact.
 - Keep real evidence artifacts sanitized; use external refs for private keys, tokens, certificates, service payloads, raw crash dumps, and other secret-bearing data.
 
 ### Blockers/Concerns
@@ -109,6 +108,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-25T23:57:09.867Z
-Stopped at: Completed 35-02-PLAN.md
+Last session: 2026-07-26T00:04:04.921Z
+Stopped at: Phase 35 verification passed
 Resume file: None
