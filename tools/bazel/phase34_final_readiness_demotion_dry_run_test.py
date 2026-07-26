@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -570,6 +571,30 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
         self.assertEqual(
             contract["decision_domain_policy"]["canonical_rows_from"],
             "phase32 canonical Phase 27/28 decision-domain rows",
+        )
+        self.assertEqual(
+            contract["source_failure_policy"]["reason_codes"],
+            [
+                "phase31-input-invalid",
+                "phase33-handoff-invalid",
+                "phase33-normalized-decisions-invalid",
+                "phase33-readiness-input-invalid",
+                "phase33-register-invalid",
+                "phase32-blocker-register-invalid",
+                "phase33-demotion-input-invalid",
+            ],
+        )
+        self.assertEqual(
+            contract["source_failure_policy"]["blocked_authority_fields"],
+            {
+                "readiness_state": "blocked",
+                "cutover_verdict_state": "blocked",
+                "production_cutover_route_state": "blocked",
+                "demotion_gate_state": "blocked",
+            },
+        )
+        self.assertFalse(
+            contract["source_failure_policy"]["copies_source_payloads"]
         )
         self.assertTrue(
             {
@@ -1243,7 +1268,12 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
 
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
-                self.assertIn("unknown Phase 33 decision_id", result.stdout)
+                expected_reason = (
+                    "phase33-readiness-input-invalid"
+                    if projection_name == "readiness"
+                    else "phase33-demotion-input-invalid"
+                )
+                self.assertIn(expected_reason, result.stdout)
 
     def test_duplicate_normalized_decision_ids_are_rejected(self) -> None:
         # Arrange
@@ -1262,7 +1292,10 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("duplicate Phase 33 decision_id", result.stdout)
+        self.assertIn(
+            "phase33-normalized-decisions-invalid",
+            result.stdout,
+        )
 
     def test_projection_decision_axis_and_value_must_authorize_projection(self) -> None:
         cases = [
@@ -1296,7 +1329,10 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
 
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
-                self.assertIn("does not authorize reference_demotion=approve", result.stdout)
+                self.assertIn(
+                    "phase33-demotion-input-invalid",
+                    result.stdout,
+                )
 
     def test_projection_metadata_and_source_refs_must_match_normalized_decision(self) -> None:
         cases = [
@@ -1320,7 +1356,10 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
 
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
-                self.assertIn(f"projection mismatch for {field}", result.stdout)
+                self.assertIn(
+                    "phase33-demotion-input-invalid",
+                    result.stdout,
+                )
 
     def test_normalized_decision_timestamp_must_be_iso_utc(self) -> None:
         # Arrange
@@ -1339,7 +1378,10 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("must be ISO UTC", result.stdout)
+        self.assertIn(
+            "phase33-normalized-decisions-invalid",
+            result.stdout,
+        )
 
     def test_missing_invalid_stale_and_rejected_approval_write_durable_blocked_result(self) -> None:
         cases = [
@@ -1357,10 +1399,9 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
                 readiness = {
                     "phase": "33-maintainer-decision-inputs",
                     "phase_lifecycle_id": "33-2026-07-04T01-36-41",
-                    "handoff_state": "approval-input-recorded",
-                    "readiness_input_supplied": True,
-                    "decision_id": "approve-readiness",
-                    "source_row_refs": [],
+                    "handoff_state": "blocked-pending-maintainer-input",
+                    "readiness_input_supplied": False,
+                    "blocked_source_row_refs": [],
                 }
                 blocker_rows = []
                 decisions = []
@@ -1446,7 +1487,11 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
                 self.assertTrue((root / OUTPUT_DIR / "demotion-dry-run.json").is_file())
                 manifest = self.read_json(root, f"{OUTPUT_DIR}/final-readiness-run-manifest.json")
                 dry_run = self.read_json(root, f"{OUTPUT_DIR}/demotion-dry-run.json")
-                self.assertEqual(manifest["run_state"], "blocked-invalid-approval")
+                self.assertEqual(manifest["run_state"], "blocked-source-failure")
+                self.assertEqual(
+                    manifest["source_failure_reason_code"],
+                    "phase33-demotion-input-invalid",
+                )
                 self.assertEqual(dry_run["gate_state"], "blocked")
                 self.assertEqual(dry_run["approval_validation_state"], expected_validation)
 
@@ -1539,6 +1584,43 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
             "phase33-demotion-input-invalid",
         )
 
+    def test_source_failure_publication_validates_stage_and_canonical_bundle(
+        self,
+    ) -> None:
+        # Arrange
+        module = self.load_module()
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        relative_output = Path(OUTPUT_DIR)
+        full_output = root / relative_output
+
+        # Act
+        with (
+            mock.patch.object(
+                module,
+                "validate_generated_outputs",
+                wraps=module.validate_generated_outputs,
+            ) as generated_validation,
+            mock.patch.object(
+                module,
+                "validate_output_security",
+                wraps=module.validate_output_security,
+            ) as security_validation,
+        ):
+            module.publish_source_failure_bundle(
+                root,
+                relative_output,
+                full_output,
+                "phase31-input-invalid",
+            )
+
+        # Assert
+        self.assertEqual(generated_validation.call_count, 2)
+        self.assertEqual(security_validation.call_count, 2)
+        self.assertTrue(
+            (full_output / "final-readiness-run-manifest.json").is_file()
+        )
+
     def test_absolute_path_is_rejected(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -1549,7 +1631,7 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("repo-relative", result.stdout)
+        self.assertIn("phase31-input-invalid", result.stdout)
 
     def test_parent_traversal_is_rejected(self) -> None:
         # Arrange
@@ -1561,7 +1643,7 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("parent traversal", result.stdout)
+        self.assertIn("phase33-handoff-invalid", result.stdout)
 
     def test_wrong_input_root_is_rejected(self) -> None:
         # Arrange
@@ -1573,7 +1655,7 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("build/ci-evidence/phase31", result.stdout)
+        self.assertIn("phase31-input-invalid", result.stdout)
 
     def test_input_output_overlap_is_rejected(self) -> None:
         # Arrange
@@ -1592,7 +1674,7 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("outside", result.stdout)
+        self.assertIn("phase33-handoff-invalid", result.stdout)
 
     def test_symlink_escape_is_rejected(self) -> None:
         # Arrange
@@ -1636,7 +1718,15 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
 
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
-                self.assertIn("symlink escape", result.stdout)
+                expected_reason = {
+                    "normalized-decision-records.json":
+                    "phase33-normalized-decisions-invalid",
+                    "readiness-decision-handoff.json":
+                    "phase33-readiness-input-invalid",
+                    "demotion-decision-handoff.json":
+                    "phase33-demotion-input-invalid",
+                }[register_name]
+                self.assertIn(expected_reason, result.stdout)
 
     def test_nested_phase32_register_symlink_escape_is_rejected(self) -> None:
         # Arrange
@@ -1656,7 +1746,7 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("symlink escape", result.stdout)
+        self.assertIn("phase32-blocker-register-invalid", result.stdout)
 
     def test_security_rejects_secret_fields_unsafe_refs_and_overclaim_markers(self) -> None:
         # Arrange
@@ -1674,7 +1764,7 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
 
         # Assert
         self.assertNotEqual(secret_result.returncode, 0)
-        self.assertIn("token_value", secret_result.stdout)
+        self.assertIn("phase31-input-invalid", secret_result.stdout)
         self.assertNotEqual(marker_result.returncode, 0)
         self.assertIn("cutover-verdict", marker_result.stdout)
 

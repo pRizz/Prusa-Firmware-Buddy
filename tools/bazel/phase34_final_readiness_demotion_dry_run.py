@@ -222,6 +222,21 @@ PHASE34_VERIFY_COMMANDS = [
         "--output-dir build/ci-evidence/phase34"
     ),
 ]
+SOURCE_FAILURE_REASON_CODES = [
+    "phase31-input-invalid",
+    "phase33-handoff-invalid",
+    "phase33-normalized-decisions-invalid",
+    "phase33-readiness-input-invalid",
+    "phase33-register-invalid",
+    "phase32-blocker-register-invalid",
+    "phase33-demotion-input-invalid",
+]
+SOURCE_FAILURE_AUTHORITY_FIELDS = {
+    "readiness_state": "blocked",
+    "cutover_verdict_state": "blocked",
+    "production_cutover_route_state": "blocked",
+    "demotion_gate_state": "blocked",
+}
 
 
 class VerificationError(Exception):
@@ -446,6 +461,24 @@ def validate_contract(contract: dict[str, Any]) -> None:
         "approval_decision_state": "approve",
     }:
         raise VerificationError("demotion dry-run open predicate is invalid")
+    source_failure_policy = contract.get("source_failure_policy")
+    if not isinstance(source_failure_policy, dict):
+        raise VerificationError("source_failure_policy must be an object")
+    if source_failure_policy.get("reason_codes") != SOURCE_FAILURE_REASON_CODES:
+        raise VerificationError(
+            "source_failure_policy.reason_codes must list the exact safe vocabulary"
+        )
+    if (
+        source_failure_policy.get("blocked_authority_fields")
+        != SOURCE_FAILURE_AUTHORITY_FIELDS
+    ):
+        raise VerificationError(
+            "source_failure_policy.blocked_authority_fields must block every authority projection"
+        )
+    if source_failure_policy.get("copies_source_payloads") is not False:
+        raise VerificationError(
+            "source_failure_policy.copies_source_payloads must be false"
+        )
 
 
 def load_contract(root: Path = ROOT) -> dict[str, Any]:
@@ -1467,46 +1500,111 @@ def phase33_register_digests(root: Path, register_refs: dict[str, Any]) -> dict[
     }
 
 
-def load_phase33(
+def load_phase33_handoff(
     root: Path,
     handoff_arg: str | Path,
     full_output: Path,
-) -> tuple[Path, dict[str, Any], list[dict[str, Any]], dict[str, Any], dict[str, Any], dict[str, Any]]:
+) -> tuple[Path, dict[str, Any], dict[str, Any]]:
     raw_path = repo_relative_path(handoff_arg, "--phase33-handoff")
     resolved_input = (root / raw_path).resolve(strict=False)
     if resolved_input == full_output or full_output in resolved_input.parents:
-        raise VerificationError("--phase33-handoff must be outside the generated --output-dir")
-    handoff_path = path_under(raw_path, PHASE33_OUTPUT_ROOT, "--phase33-handoff")
-    resolved_under(root, handoff_path, PHASE33_OUTPUT_ROOT, "--phase33-handoff")
+        raise VerificationError(
+            "--phase33-handoff must be outside the generated --output-dir"
+        )
+    handoff_path = path_under(
+        raw_path,
+        PHASE33_OUTPUT_ROOT,
+        "--phase33-handoff",
+    )
+    resolved_under(
+        root,
+        handoff_path,
+        PHASE33_OUTPUT_ROOT,
+        "--phase33-handoff",
+    )
     handoff = load_json(root, handoff_path)
     scan_json(handoff, handoff_path)
     if handoff.get("artifact_name") != "phase33-maintainer-decision-inputs":
-        raise VerificationError("Phase 33 handoff artifact_name must be phase33-maintainer-decision-inputs")
+        raise VerificationError(
+            "Phase 33 handoff artifact_name must be phase33-maintainer-decision-inputs"
+        )
     if handoff.get("phase_lifecycle_id") != PHASE33_LIFECYCLE_ID:
-        raise VerificationError(f"Phase 33 handoff phase_lifecycle_id must be {PHASE33_LIFECYCLE_ID}")
+        raise VerificationError(
+            f"Phase 33 handoff phase_lifecycle_id must be {PHASE33_LIFECYCLE_ID}"
+        )
     if handoff.get("raw_evidence_consumed") not in {None, False}:
-        raise VerificationError("Phase 33 handoff raw_evidence_consumed must be false")
+        raise VerificationError(
+            "Phase 33 handoff raw_evidence_consumed must be false"
+        )
     source_inputs = handoff.get("source_inputs")
-    if not isinstance(source_inputs, dict) or source_inputs.get("phase32_canonical_register_ref") != PHASE32_REGISTER_REF:
-        raise VerificationError(f"Phase 33 handoff must reference {PHASE32_REGISTER_REF}")
+    if (
+        not isinstance(source_inputs, dict)
+        or source_inputs.get("phase32_canonical_register_ref")
+        != PHASE32_REGISTER_REF
+    ):
+        raise VerificationError(
+            f"Phase 33 handoff must reference {PHASE32_REGISTER_REF}"
+        )
     register_refs = handoff.get("register_refs")
     if not isinstance(register_refs, dict):
         raise VerificationError("Phase 33 handoff register_refs must be an object")
+    return handoff_path, handoff, register_refs
 
-    normalized = load_phase33_register(root, register_refs, "normalized_decision_records")
-    readiness = load_phase33_register(root, register_refs, "readiness_decision_handoff")
-    raw_decisions = require_list(normalized.get("rows"), "normalized decision rows")
-    if not all(isinstance(row, dict) for row in raw_decisions):
-        raise VerificationError("normalized decision rows must contain objects")
-    decisions = [dict(row) for row in raw_decisions]
-    validate_normalized_decisions(decisions)
+
+def load_phase32_blocker_register(root: Path) -> dict[str, Any]:
     blocker_register_path = Path(PHASE32_REGISTER_REF)
-    resolved_under(root, blocker_register_path, Path("build/ci-evidence/phase32"), "Phase 32 blocker register")
+    resolved_under(
+        root,
+        blocker_register_path,
+        Path("build/ci-evidence/phase32"),
+        "Phase 32 blocker register",
+    )
     blocker_register = load_json(root, blocker_register_path)
     scan_json(blocker_register, blocker_register_path)
     if blocker_register.get("phase_lifecycle_id") != PHASE32_LIFECYCLE_ID:
-        raise VerificationError(f"Phase 32 blocker register phase_lifecycle_id must be {PHASE32_LIFECYCLE_ID}")
-    return handoff_path, handoff, decisions, readiness, register_refs, blocker_register
+        raise VerificationError(
+            f"Phase 32 blocker register phase_lifecycle_id must be {PHASE32_LIFECYCLE_ID}"
+        )
+    return blocker_register
+
+
+def validate_readiness_handoff(
+    readiness: dict[str, Any],
+    decisions_by_id: dict[str, dict[str, Any]],
+) -> None:
+    if readiness.get("phase_lifecycle_id") != PHASE33_LIFECYCLE_ID:
+        raise VerificationError(
+            "Phase 33 readiness handoff lifecycle is stale or malformed"
+        )
+    handoff_state = readiness.get("handoff_state")
+    if handoff_state == "blocked-pending-maintainer-input":
+        if readiness.get("readiness_input_supplied") is not False:
+            raise VerificationError(
+                "blocked Phase 33 readiness handoff must not claim supplied input"
+            )
+        return
+    if handoff_state != "approval-input-recorded":
+        raise VerificationError("Phase 33 readiness handoff state is invalid")
+    validate_handoff_decision(
+        readiness,
+        decisions_by_id,
+        "readiness",
+        "approve",
+        ("source_row_refs", "rationale"),
+    )
+
+
+def validate_demotion_handoff(
+    demotion: dict[str, Any],
+    decisions_by_id: dict[str, dict[str, Any]],
+) -> tuple[str, str, list[str]]:
+    validation, decision, source_refs, maybe_error = approval_state(
+        demotion,
+        decisions_by_id,
+    )
+    if maybe_error is not None:
+        raise VerificationError(maybe_error)
+    return validation, decision, source_refs
 
 
 def approval_state(
@@ -1597,30 +1695,236 @@ def reset_output_root(full_output: Path) -> None:
     full_output.mkdir(parents=True, exist_ok=True)
 
 
-def write_invalid_approval_artifacts(
+def source_failure_ledger_row(reason_code: str) -> dict[str, Any]:
+    return {
+        "row_id": f"phase34-source-failure-{reason_code}",
+        "ledger_row_kind": "evidence",
+        "source_domain": "source-validation",
+        "producer_phase": "phase34",
+        "producer_artifact_kind": "blocked-source-failure",
+        "source_row_kind": "safe-source-failure",
+        "source_subject_id": reason_code,
+        "decision_axis": "",
+        "decision_subject_id": "",
+        "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
+        "source_stream": "source-validation",
+        "source_ref": f"external://phase34/source-failure/{reason_code}",
+        "requirement_ids": REQUIRED_REQUIREMENT_IDS,
+        "affected_gates": [
+            "final-readiness",
+            "cutover-decision",
+            "production-cutover-route",
+            "final-reference-demotion-allowed",
+        ],
+        "proof_eligibility": "ineligible",
+        "evidence_status": "invalid",
+        "row_problem_kind": "source_validation_failed",
+        "blocker_kind": "source_failure",
+        "severity": "critical",
+        "evidence_refs": [],
+        "artifact_refs": [],
+        "classification_ref": "",
+        "retained_code_decision_refs": [],
+        "residual_risk_decision_refs": [],
+        "exception_decision_refs": [],
+        "readiness_decision_refs": [],
+        "demotion_decision_refs": [],
+        "coverage_state": "blocked-source-failure",
+        "readiness_effect": "blocked",
+        "reason_codes": [reason_code],
+    }
+
+
+def write_safe_source_failure_snapshots(
+    root: Path,
+    output_dir: Path,
+    reason_code: str,
+) -> list[str]:
+    snapshot_dir = output_dir / "contract-snapshots"
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(
+        root / CONTRACT_MANIFEST,
+        snapshot_dir / CONTRACT_MANIFEST.name,
+    )
+    shutil.copy2(
+        root / PHASE33_CONTRACT,
+        snapshot_dir / PHASE33_CONTRACT.name,
+    )
+    safe_snapshot = {
+        "snapshot_state": "unavailable-source-failure",
+        "source_failure_reason_code": reason_code,
+        "raw_evidence_consumed": False,
+    }
+    write_json(
+        snapshot_dir / "phase33-downstream-handoff-manifest.json",
+        safe_snapshot,
+    )
+    write_json(
+        snapshot_dir / "phase32-blocker-register.json",
+        {**safe_snapshot, "rows": []},
+    )
+    write_json(
+        snapshot_dir / "phase31-final-intake-manifest.json",
+        safe_snapshot,
+    )
+    write_json(
+        snapshot_dir / "phase31-accepted-receipts.json",
+        {**safe_snapshot, "receipts": []},
+    )
+    return [
+        artifact
+        for artifact in GENERATED_ARTIFACTS
+        if artifact.startswith("contract-snapshots/")
+    ]
+
+
+def write_source_failure_bundle(
+    root: Path,
     relative_output: Path,
-    full_output: Path,
-    handoff_path: Path,
+    staging_output: Path,
+    reason_code: str,
     approval_validation_state: str,
 ) -> None:
-    reset_output_root(full_output)
-    demotion = evaluate_demotion("blocked", approval_validation_state, "missing", [])
+    reset_output_root(staging_output)
+    snapshot_refs = write_safe_source_failure_snapshots(
+        root,
+        staging_output,
+        reason_code,
+    )
+    ledger_rows = [source_failure_ledger_row(reason_code)]
+    demotion = evaluate_demotion(
+        "blocked",
+        approval_validation_state,
+        "missing",
+        [],
+    )
+    demotion["source_failure_reason_code"] = reason_code
+    packet = {
+        "phase": PHASE,
+        "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
+        "requirement_ids": REQUIRED_REQUIREMENT_IDS,
+        "readiness_state": "blocked",
+        "cutover_verdict_state": "blocked",
+        "production_cutover_route_state": "blocked",
+        "reason_codes": [reason_code],
+        "ledger_rows": ledger_rows,
+        "demotion_dry_run": demotion,
+        "raw_evidence_consumed": False,
+    }
+    blocker_summary = {
+        "readiness_state": "blocked",
+        "reason_codes": [reason_code],
+        "blocker_count": 1,
+        "blockers": ledger_rows,
+    }
     run_manifest = {
         "artifact_name": "phase34-final-readiness-demotion-dry-run",
         "phase": PHASE,
         "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
+        "generated_at_utc": utc_now(),
         "output_root": relative_output.as_posix(),
-        "run_state": "blocked-invalid-approval",
-        "approval_validation_state": approval_validation_state,
-        "generated_artifacts": [
-            "final-readiness-run-manifest.json",
-            "demotion-dry-run.json",
+        "run_state": "blocked-source-failure",
+        "source_failure_reason_code": reason_code,
+        "readiness_state": "blocked",
+        "cutover_verdict_state": "blocked",
+        "production_cutover_route_state": "blocked",
+        "demotion_gate_state": "blocked",
+        "generated_artifacts": GENERATED_ARTIFACTS,
+        "snapshot_refs": [
+            (relative_output / artifact).as_posix()
+            for artifact in snapshot_refs
         ],
-        "source_refs": [handoff_path.as_posix()],
+        "source_refs": [],
+        "phase33_register_digests": {},
         "raw_evidence_consumed": False,
     }
-    write_json(full_output / "final-readiness-run-manifest.json", run_manifest)
-    write_json(full_output / "demotion-dry-run.json", demotion)
+    ledger = {
+        "phase": PHASE,
+        "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
+        "canonical": True,
+        "rows": ledger_rows,
+    }
+    write_json(
+        staging_output / "final-readiness-run-manifest.json",
+        run_manifest,
+    )
+    write_json(
+        staging_output / "readiness-coverage-ledger.json",
+        ledger,
+    )
+    write_json(
+        staging_output / "final-readiness-packet.json",
+        packet,
+    )
+    write_json(
+        staging_output / "readiness-blocker-summary.json",
+        blocker_summary,
+    )
+    write_json(staging_output / "demotion-dry-run.json", demotion)
+    (staging_output / "redacted-readiness-report.md").write_text(
+        report_text(packet, ledger_rows),
+        encoding="utf-8",
+    )
+    validate_generated_outputs(staging_output)
+    validate_output_security(
+        staging_output,
+        relative_output.as_posix(),
+    )
+
+
+def replace_output_with_staging(
+    full_output: Path,
+    staging_output: Path,
+) -> None:
+    backup_output = full_output.with_name(
+        f".{full_output.name}.source-failure-backup"
+    )
+    if backup_output.exists():
+        if backup_output.is_symlink() or not backup_output.is_dir():
+            raise VerificationError(
+                "Phase 34 source-failure backup is not a normal directory"
+            )
+        shutil.rmtree(backup_output)
+    moved_prior = False
+    if full_output.exists():
+        if full_output.is_symlink() or not full_output.is_dir():
+            raise VerificationError(
+                "Phase 34 canonical output is not a normal directory"
+            )
+        full_output.rename(backup_output)
+        moved_prior = True
+    try:
+        staging_output.rename(full_output)
+    except OSError as error:
+        if moved_prior and backup_output.is_dir() and not full_output.exists():
+            backup_output.rename(full_output)
+        raise VerificationError(
+            "Phase 34 blocked source-failure bundle installation failed"
+        ) from error
+    if moved_prior and backup_output.exists():
+        shutil.rmtree(backup_output)
+
+
+def publish_source_failure_bundle(
+    root: Path,
+    relative_output: Path,
+    full_output: Path,
+    reason_code: str,
+    approval_validation_state: str = "invalid",
+) -> None:
+    staging_output = full_output.with_name(
+        f".{full_output.name}.source-failure-staging"
+    )
+    write_source_failure_bundle(
+        root,
+        relative_output,
+        staging_output,
+        reason_code,
+        approval_validation_state,
+    )
+    replace_output_with_staging(full_output, staging_output)
+    validate_generated_outputs(full_output)
+    validate_output_security(full_output, relative_output.as_posix())
 
 
 def copy_snapshots(
@@ -1784,43 +2088,114 @@ def validate_generated_outputs(output_dir: Path) -> None:
         raise VerificationError("redacted report is not derived from packet state")
 
 
-def run_quick(root: Path, phase31_output: str, phase33_handoff: str, output_arg: str) -> str | None:
+def run_quick(
+    root: Path,
+    phase31_output: str,
+    phase33_handoff: str,
+    output_arg: str,
+) -> str | None:
     load_contract(root)
-    required_streams = load_phase31_required_streams(root)
     relative_output, full_output = output_paths(root, output_arg)
-    raw_handoff_path = repo_relative_path(phase33_handoff, "--phase33-handoff")
-    resolved_handoff = (root / raw_handoff_path).resolve(strict=False)
-    if resolved_handoff == full_output or full_output in resolved_handoff.parents:
-        raise VerificationError("--phase33-handoff must be outside the generated --output-dir")
-    path_under(raw_handoff_path, Path("build/ci-evidence/phase33"), "--phase33-handoff")
-    manifest_path, manifest, receipts, accepted_receipt_rows = load_phase31(root, phase31_output)
-    handoff_path, handoff, decisions, readiness_input, register_refs, blocker_register = load_phase33(
-        root,
-        phase33_handoff,
-        full_output,
-    )
+    reason_code = SOURCE_FAILURE_REASON_CODES[1]
     try:
+        raw_handoff_path = repo_relative_path(
+            phase33_handoff,
+            "--phase33-handoff",
+        )
+        resolved_handoff = (root / raw_handoff_path).resolve(strict=False)
+        if (
+            resolved_handoff == full_output
+            or full_output in resolved_handoff.parents
+        ):
+            raise VerificationError(
+                "--phase33-handoff must be outside the generated --output-dir"
+            )
+        path_under(
+            raw_handoff_path,
+            PHASE33_OUTPUT_ROOT,
+            "--phase33-handoff",
+        )
+
+        reason_code = SOURCE_FAILURE_REASON_CODES[0]
+        required_streams = load_phase31_required_streams(root)
+        manifest_path, manifest, receipts, accepted_receipt_rows = load_phase31(
+            root,
+            phase31_output,
+        )
+
+        reason_code = SOURCE_FAILURE_REASON_CODES[1]
+        handoff_path, handoff, register_refs = load_phase33_handoff(
+            root,
+            phase33_handoff,
+            full_output,
+        )
+
+        reason_code = SOURCE_FAILURE_REASON_CODES[2]
+        normalized = load_phase33_register(
+            root,
+            register_refs,
+            "normalized_decision_records",
+        )
+        raw_decisions = require_list(
+            normalized.get("rows"),
+            "normalized decision rows",
+        )
+        if not all(isinstance(row, dict) for row in raw_decisions):
+            raise VerificationError(
+                "normalized decision rows must contain objects"
+            )
+        decisions = [dict(row) for row in raw_decisions]
+        decisions_by_id = validate_normalized_decisions(decisions)
+
+        reason_code = SOURCE_FAILURE_REASON_CODES[3]
+        readiness_input = load_phase33_register(
+            root,
+            register_refs,
+            "readiness_decision_handoff",
+        )
+        validate_readiness_handoff(readiness_input, decisions_by_id)
+
+        reason_code = SOURCE_FAILURE_REASON_CODES[5]
+        blocker_register = load_phase32_blocker_register(root)
+        blocker_rows = require_list(
+            blocker_register.get("rows"),
+            "Phase 32 blocker rows",
+        )
+        if not all(isinstance(row, dict) for row in blocker_rows):
+            raise VerificationError(
+                "Phase 32 blocker rows must contain objects"
+            )
+
+        reason_code = SOURCE_FAILURE_REASON_CODES[6]
         demotion_input = load_phase33_register(root, register_refs, "demotion_decision_handoff")
+        validation, decision, source_refs = validate_demotion_handoff(
+            demotion_input,
+            decisions_by_id,
+        )
+
+        reason_code = SOURCE_FAILURE_REASON_CODES[4]
+        register_digests = phase33_register_digests(root, register_refs)
     except VerificationError as error:
-        approval_validation_state = "invalid"
-        if str(error).startswith("missing required file:"):
-            approval_validation_state = "missing"
-        write_invalid_approval_artifacts(
+        approval_validation_state = (
+            "missing"
+            if reason_code == "phase33-demotion-input-invalid"
+            and str(error).startswith("missing required file:")
+            else "invalid"
+        )
+        publish_source_failure_bundle(
+            root,
             relative_output,
             full_output,
-            handoff_path,
+            reason_code,
             approval_validation_state,
         )
-        run_security_scan(root, relative_output)
-        return str(error)
-    blocker_rows = require_list(blocker_register.get("rows"), "Phase 32 blocker rows")
-    if not all(isinstance(row, dict) for row in blocker_rows):
-        raise VerificationError("Phase 32 blocker rows must contain objects")
-    decisions_by_id = validate_normalized_decisions(decisions)
-    register_digests = phase33_register_digests(root, register_refs)
+        return reason_code
     ledger = evaluate_coverage(receipts, blocker_rows, decisions, required_streams)
-    readiness, readiness_reasons, maybe_readiness_error = readiness_state(ledger, readiness_input, decisions_by_id)
-    validation, decision, source_refs, maybe_approval_error = approval_state(demotion_input, decisions_by_id)
+    readiness, readiness_reasons, maybe_readiness_error = readiness_state(
+        ledger,
+        readiness_input,
+        decisions_by_id,
+    )
     demotion = evaluate_demotion(readiness, validation, decision, source_refs)
     write_bundle(
         root,
@@ -1839,8 +2214,31 @@ def run_quick(root: Path, phase31_output: str, phase33_handoff: str, output_arg:
         register_digests,
     )
     run_security_scan(root, relative_output)
-    errors = [error for error in (maybe_readiness_error, maybe_approval_error) if error is not None]
-    return "\n".join(errors) or None
+    return maybe_readiness_error
+
+
+def validate_output_security(
+    full_output: Path,
+    display_root: str,
+) -> None:
+    errors = []
+    for artifact in NON_SNAPSHOT_OUTPUTS:
+        candidate = full_output / artifact
+        if not candidate.is_file():
+            continue
+        try:
+            text = candidate.read_text(encoding="utf-8")
+            reject_forbidden_text(Path(artifact), text)
+            if candidate.suffix == ".json":
+                reject_forbidden_fields(
+                    json.loads(text),
+                    artifact,
+                )
+        except (json.JSONDecodeError, VerificationError) as error:
+            errors.append(str(error))
+    if errors:
+        raise VerificationError("\n".join(errors))
+    print(f"Phase 34 security scan passed for {display_root}")
 
 
 def run_security_scan(root: Path, output_arg: str | Path = DEFAULT_OUTPUT_DIR) -> None:
@@ -1851,22 +2249,7 @@ def run_security_scan(root: Path, output_arg: str | Path = DEFAULT_OUTPUT_DIR) -
         return
     if full_output.is_symlink() or not full_output.is_dir():
         raise VerificationError(f"Phase 34 output root contains a symlink escape: {relative_output.as_posix()}")
-    errors = []
-    for artifact in NON_SNAPSHOT_OUTPUTS:
-        candidate = full_output / artifact
-        if not candidate.is_file():
-            continue
-        relative_path = candidate.relative_to(root)
-        try:
-            text = candidate.read_text(encoding="utf-8")
-            reject_forbidden_text(relative_path, text)
-            if candidate.suffix == ".json":
-                reject_forbidden_fields(json.loads(text), relative_path.as_posix())
-        except (json.JSONDecodeError, VerificationError) as error:
-            errors.append(str(error))
-    if errors:
-        raise VerificationError("\n".join(errors))
-    print(f"Phase 34 security scan passed for {relative_output.as_posix()}")
+    validate_output_security(full_output, relative_output.as_posix())
 
 
 def shell_case_commands(text: str, case_name: str) -> list[str] | None:

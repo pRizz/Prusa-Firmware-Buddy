@@ -172,8 +172,36 @@
     "decision-value-invalid",
     "decision-rejected",
     "decision-hard-blocker",
-    "decision-readiness-prerequisites-blocked"
+    "decision-readiness-prerequisites-blocked",
+    "phase31-input-invalid",
+    "phase33-handoff-invalid",
+    "phase33-normalized-decisions-invalid",
+    "phase33-readiness-input-invalid",
+    "phase33-register-invalid",
+    "phase32-blocker-register-invalid",
+    "phase33-demotion-input-invalid"
   ],
+  "source_failure_policy": {
+    "reason_codes": [
+      "phase31-input-invalid",
+      "phase33-handoff-invalid",
+      "phase33-normalized-decisions-invalid",
+      "phase33-readiness-input-invalid",
+      "phase33-register-invalid",
+      "phase32-blocker-register-invalid",
+      "phase33-demotion-input-invalid"
+    ],
+    "blocked_authority_fields": {
+      "readiness_state": "blocked",
+      "cutover_verdict_state": "blocked",
+      "production_cutover_route_state": "blocked",
+      "demotion_gate_state": "blocked"
+    },
+    "copies_source_payloads": false,
+    "publishes_before_nonzero_return": true,
+    "validates_generated_outputs": true,
+    "validates_security": true
+  },
   "hard_blocker_problem_kinds": [
     "redaction_failed",
     "source_ref_failed",
