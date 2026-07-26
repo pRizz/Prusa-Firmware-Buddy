@@ -1142,6 +1142,21 @@ def evaluate_coverage(
             ): result
             for result in reconciliation["rows"]
         }
+        decisions_by_ref = {
+            str(decision["decision_ref"]): decision
+            for decision in domain_decisions
+        }
+        blocking_diagnostics = [
+            diagnostic
+            for diagnostic in reconciliation["diagnostics"]
+            if (
+                decisions_by_ref.get(
+                    str(diagnostic.get("decision_ref") or ""),
+                    {},
+                ).get("decision_axis")
+                != "demotion"
+            )
+        ]
         prerequisites_blocked = (
             any(row["readiness_effect"] == "blocked" for row in ledger)
             or any(
@@ -1149,7 +1164,7 @@ def evaluate_coverage(
                 and result["decision_axis"] != "readiness"
                 for result in reconciliation["rows"]
             )
-            or bool(reconciliation["diagnostics"])
+            or bool(blocking_diagnostics)
         )
         if prerequisites_blocked:
             for result in results_by_identity.values():
@@ -1174,10 +1189,6 @@ def evaluate_coverage(
             ledger.append(
                 decision_domain_ledger_row(canonical_row, maybe_result)
             )
-        decisions_by_ref = {
-            str(decision["decision_ref"]): decision
-            for decision in domain_decisions
-        }
         for diagnostic_index, diagnostic in enumerate(
             reconciliation["diagnostics"]
         ):

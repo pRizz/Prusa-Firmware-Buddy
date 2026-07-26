@@ -571,6 +571,77 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
             ["decision-target-missing"],
         )
 
+    def test_demotion_only_diagnostic_does_not_block_readiness_row(self) -> None:
+        # Arrange
+        module = self.load_module()
+        readiness_row = self.decision_domain_row(
+            "canonical-readiness-row",
+            "readiness",
+            "final-readiness",
+            producer_phase="phase28",
+            source_domain="readiness",
+            source_stream="readiness",
+        )
+        demotion_row = self.decision_domain_row(
+            "canonical-demotion-row",
+            "demotion",
+            "reference-demotion",
+            producer_phase="phase28",
+            source_domain="readiness",
+            source_stream="readiness",
+        )
+        readiness_ref = f"{PHASE32_REGISTER}#canonical-readiness-row"
+        demotion_ref = f"{PHASE32_REGISTER}#canonical-demotion-row"
+        readiness_decision = self.decision(
+            "approve-readiness",
+            "readiness",
+            "approve",
+            readiness_ref,
+            affected_gate="final-readiness",
+            decision_subject_id="final-readiness",
+        )
+        demotion_decision = self.decision(
+            "approve-demotion",
+            "reference_demotion",
+            "approve",
+            demotion_ref,
+            affected_gate="final-reference-demotion-allowed",
+            decision_subject_id="reference-demotion",
+        )
+        demotion_decision["decision_targets"][0]["row_ref"] = (
+            f"{PHASE32_REGISTER}#missing-demotion-row"
+        )
+        demotion_decision["source_row_refs"] = [
+            f"{PHASE32_REGISTER}#missing-demotion-row"
+        ]
+
+        # Act
+        ledger = module.evaluate_coverage(
+            [],
+            [readiness_row, demotion_row],
+            [readiness_decision, demotion_decision],
+        )
+
+        # Assert
+        retained_readiness = next(
+            row
+            for row in ledger
+            if row["row_id"] == "canonical-readiness-row"
+        )
+        demotion_diagnostics = [
+            row
+            for row in ledger
+            if "decision-target-row-mismatch" in row["reason_codes"]
+        ]
+        self.assertEqual(retained_readiness["readiness_effect"], "unblocked")
+        self.assertTrue(demotion_diagnostics)
+        self.assertTrue(
+            all(
+                row["readiness_effect"] == "independent"
+                for row in demotion_diagnostics
+            )
+        )
+
     def test_retained_bundle_preserves_dual_source_ledger_identity(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
