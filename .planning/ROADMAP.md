@@ -79,7 +79,7 @@ Full phase details are archived in `.planning/milestones/v1.2-ROADMAP.md`.
 - [x] **Phase 34: Final Readiness and Demotion Dry Run** - Maintainers can generate readiness from real consumed rows and prove demotion stays blocked without valid explicit approval. (completed 2026-07-25)
 - [x] **Phase 35: Cutover Decision Artifact** - Maintainers can publish an auditable approved, blocked, or approved-with-exceptions verdict that routes the next milestone. (completed 2026-07-26)
 - [x] **Phase 36: Normalize Evidence and Blocker Rows** - Normalize release row tables and decision-domain blocker identities so downstream readiness consumes the real producer shapes. (completed 2026-07-26)
-- [ ] **Phase 37: Reconcile Decisions Into Readiness** - Join retained-code, residual-risk, exception, and readiness decisions into resolvable Phase 34 ledger rows.
+- [x] **Phase 37: Reconcile Decisions Into Readiness** - Join retained-code, residual-risk, exception, and readiness decisions into resolvable Phase 34 ledger rows. (completed 2026-07-26)
 - [ ] **Phase 38: Fail-Closed Cutover Workflow** - Make upstream failures replace stale authority and prove blocked, approved, and targeted-repair paths end to end.
 - [ ] **Phase 39: Milestone Metadata Reconciliation** - Restore requirement-completion metadata and reconcile roadmap plan details before re-audit.
 
@@ -247,6 +247,6 @@ Phases execute in numeric order across archived milestones. v1.3 continues after
 | 34. Final Readiness and Demotion Dry Run | v1.3 | 2/2 | Complete    | 2026-07-25 |
 | 35. Cutover Decision Artifact | v1.3 | 2/2 | Complete    | 2026-07-26 |
 | 36. Normalize Evidence and Blocker Rows | v1.3 | 2/2 | Complete    | 2026-07-26 |
-| 37. Reconcile Decisions Into Readiness | v1.3 | 1/2 | In Progress|  |
+| 37. Reconcile Decisions Into Readiness | v1.3 | 2/2 | Complete   | 2026-07-26 |
 | 38. Fail-Closed Cutover Workflow | v1.3 | 0/TBD | Pending | — |
 | 39. Milestone Metadata Reconciliation | v1.3 | 0/TBD | Pending | — |

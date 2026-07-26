@@ -2,16 +2,16 @@
 gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
-status: executing
-stopped_at: Completed 37-01-PLAN.md
-last_updated: "2026-07-26T07:51:06.281Z"
+status: verifying
+stopped_at: Completed 37-02-PLAN.md
+last_updated: "2026-07-26T08:18:35.796Z"
 last_activity: "2026-07-26"
 progress:
   total_phases: 9
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 11
-  completed_plans: 10
-  percent: 91
+  completed_plans: 11
+  percent: 100
 ---
 
 # Project State
@@ -26,12 +26,12 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
-Phase: 37 (Reconcile Decisions Into Readiness) — EXECUTING
+Phase: 37 (Reconcile Decisions Into Readiness) — COMPLETE
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-26
 
-Progress: [#######---] 67% (6/9 v1.3 phases complete)
+Progress: [########--] 78% (7/9 v1.3 phases complete)
 
 ## Performance Metrics
 
@@ -69,6 +69,7 @@ Progress: [#######---] 67% (6/9 v1.3 phases complete)
 | Phase 36 P01 | 28min | 3 tasks | 7 files |
 | Phase 36 P02 | 11min | 2 tasks | 2 files |
 | Phase 37 P01 | 12min | 2 tasks | 5 files |
+| Phase 37 P02 | 22min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -102,6 +103,9 @@ Recent decisions affecting current work:
 - [Phase 37]: Resolve decisions only through the complete row_ref + decision_axis + decision_subject_id identity.
 - [Phase 37]: Treat conflicting typed targets as blockers instead of selecting a decision by timestamp.
 - [Phase 37]: Keep canonical demotion authorization independent from readiness effects.
+- [Phase 37]: Keep Phase 31 accepted-final receipts as the sole evidence completeness authority while Phase 32 contributes distinct canonical decision-domain rows.
+- [Phase 37]: Derive retained Phase 34 views from one typed ledger while keeping demotion-only diagnostics independent from readiness.
+- [Phase 37]: Run all Phase 33/34 reconciliation suites through the existing just phase34-verify facade before publication.
 
 ### Pending Todos
 
@@ -118,6 +122,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-26T07:51:06.278Z
-Stopped at: Completed 37-01-PLAN.md
+Last session: 2026-07-26T08:18:35.756Z
+Stopped at: Completed 37-02-PLAN.md
 Resume file: None
