@@ -292,6 +292,21 @@ def path_under(value: str | Path, expected_root: Path, field: str) -> Path:
     return path
 
 
+def resolved_under(root: Path, relative_path: Path, expected_root: Path, field: str) -> Path:
+    current = root
+    for part in relative_path.parts:
+        current = current / part
+        if current.is_symlink():
+            raise VerificationError(f"{field} contains a symlink escape: {relative_path.as_posix()}")
+    full_path = (root / relative_path).resolve(strict=False)
+    trusted_root = (root / expected_root).resolve(strict=False)
+    try:
+        full_path.relative_to(trusted_root)
+    except ValueError as error:
+        raise VerificationError(f"{field} resolves outside {expected_root.as_posix()}: {relative_path.as_posix()}") from error
+    return full_path
+
+
 def path_is_under(path: Path, parent: Path) -> bool:
     try:
         path.relative_to(parent)
@@ -451,6 +466,7 @@ def load_contract(root: Path = ROOT) -> dict[str, Any]:
 
 def load_phase32_handoff(root: Path, handoff_arg: str | Path) -> tuple[Path, dict[str, Any], dict[str, dict[str, Any]], dict[str, Any]]:
     handoff_path = path_under(handoff_arg, PHASE32_OUTPUT_ROOT, "--phase32-handoff")
+    resolved_under(root, handoff_path, PHASE32_OUTPUT_ROOT, "--phase32-handoff")
     handoff = load_json(root, handoff_path)
     scan_json_payload(handoff, handoff_path)
     if handoff.get("phase_lifecycle_id") != PHASE32_LIFECYCLE_ID:
@@ -459,6 +475,7 @@ def load_phase32_handoff(root: Path, handoff_arg: str | Path) -> tuple[Path, dic
     if register_ref != PHASE32_REGISTER_REF:
         raise VerificationError(f"canonical_register_ref must be {PHASE32_REGISTER_REF}")
     register_path = path_under(register_ref, PHASE32_OUTPUT_ROOT, "canonical_register_ref")
+    resolved_under(root, register_path, PHASE32_OUTPUT_ROOT, "canonical_register_ref")
     register = load_json(root, register_path)
     scan_json_payload(register, register_path)
     if register.get("phase_lifecycle_id") != PHASE32_LIFECYCLE_ID:
@@ -503,6 +520,7 @@ def load_maintainer_decisions(root: Path, maybe_decisions_path: str | None, row_
     if maybe_decisions_path is None:
         return [], False
     decisions_path = repo_relative_path(maybe_decisions_path, "--maintainer-decisions")
+    resolved_under(root, decisions_path, Path("."), "--maintainer-decisions")
     data = load_json(root, decisions_path)
     scan_json_payload(data, decisions_path)
     if data.get("schema_version") != "1":
@@ -1108,6 +1126,7 @@ def run_security_scan(root: Path, maybe_decisions_path: str | None = None, outpu
     if maybe_decisions_path is not None:
         try:
             decisions_path = repo_relative_path(maybe_decisions_path, "--maintainer-decisions")
+            resolved_under(root, decisions_path, Path("."), "--maintainer-decisions")
             data = load_json(root, decisions_path)
             scan_json_payload(data, decisions_path)
         except VerificationError as error:

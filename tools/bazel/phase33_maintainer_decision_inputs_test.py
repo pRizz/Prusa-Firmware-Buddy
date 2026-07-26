@@ -98,6 +98,15 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         full_path.write_text(text, encoding="utf-8")
         return path
 
+    def replace_with_external_symlink(self, root: Path, relative_path: str) -> None:
+        source = root / relative_path
+        external_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(external_dir.cleanup)
+        external_path = Path(external_dir.name) / source.name
+        shutil.copy2(source, external_path)
+        source.unlink()
+        source.symlink_to(external_path)
+
     def make_temp_root(self) -> tuple[tempfile.TemporaryDirectory[str], Path]:
         temp_dir = tempfile.TemporaryDirectory()
         root = Path(temp_dir.name)
@@ -488,6 +497,65 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn(f"canonical_register_ref must be {PHASE32_REGISTER_REF}", result.stdout)
+        self.assertFalse((root / "build/ci-evidence/phase33").exists())
+
+    def test_quick_rejects_symlinked_phase32_handoff_before_writing_outputs(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_fixture(root, [self.blocker_row("known-row")])
+        self.replace_with_external_symlink(
+            root,
+            "build/ci-evidence/phase32/downstream-handoff-manifest.json",
+        )
+
+        # Act
+        result = self.run_quick(root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--phase32-handoff contains a symlink escape", result.stdout)
+        self.assertFalse((root / "build/ci-evidence/phase33").exists())
+
+    def test_quick_rejects_symlinked_phase32_register_before_writing_outputs(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_fixture(root, [self.blocker_row("known-row")])
+        self.replace_with_external_symlink(root, PHASE32_REGISTER_REF)
+
+        # Act
+        result = self.run_quick(root)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("canonical_register_ref contains a symlink escape", result.stdout)
+        self.assertFalse((root / "build/ci-evidence/phase33").exists())
+
+    def test_quick_rejects_symlinked_maintainer_decisions_before_writing_outputs(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_fixture(root, [self.blocker_row("known-row")])
+        decisions_path = self.write_decisions(
+            root,
+            [
+                self.decision(
+                    "block-readiness",
+                    "readiness",
+                    "block",
+                    [self.blocker_ref("known-row")],
+                )
+            ],
+        )
+        self.replace_with_external_symlink(root, decisions_path)
+
+        # Act
+        result = self.run_quick(root, decisions_path)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--maintainer-decisions contains a symlink escape", result.stdout)
         self.assertFalse((root / "build/ci-evidence/phase33").exists())
 
     def test_quick_rejects_maintainer_input_inside_output_root_without_deleting_it(self) -> None:
