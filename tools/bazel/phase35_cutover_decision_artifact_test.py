@@ -1610,6 +1610,25 @@ class Phase35GuardedPublicationTest(unittest.TestCase):
         self.assertTrue(stage.exists())
         self.assert_guard_blocks(root)
 
+    def test_guard_creation_interruption_leaves_presence_blocking(self) -> None:
+        # Arrange
+        temp_dir, root, canonical, stage = self.make_install_fixture()
+        self.addCleanup(temp_dir.cleanup)
+
+        def interrupt_guard_creation(path: Path) -> None:
+            path.touch()
+            raise OSError("injected guard creation interruption")
+
+        # Act / Assert
+        with mock.patch.object(phase35,
+                               "touch_guard",
+                               side_effect=interrupt_guard_creation):
+            with self.assertRaises(phase35.VerificationError):
+                phase35.install_staged_bundle(root, stage, canonical,
+                                              lambda _: None)
+        self.assertTrue(canonical.exists())
+        self.assert_guard_blocks(root)
+
     def test_prior_to_backup_rename_failure_retains_guard_and_prior(
             self) -> None:
         # Arrange
@@ -1769,6 +1788,30 @@ class Phase35GuardedPublicationTest(unittest.TestCase):
                 root = Path(temp_dir.name)
                 guard = root / phase35.AUTHORITY_GUARD
                 phase35.write_json(guard, payload)
+
+                # Act / Assert
+                with self.assertRaises(phase35.VerificationError):
+                    phase35.ensure_canonical_authority(
+                        root, phase35.DEFAULT_OUTPUT)
+                with self.assertRaises(phase35.VerificationError):
+                    phase35.run_security_scan(root)
+
+        for name, create_guard in {
+                "unsafe":
+                lambda guard, outside: guard.symlink_to(outside),
+                "unreadable":
+                lambda guard, _: guard.mkdir(parents=True),
+        }.items():
+            with self.subTest(name=name):
+                # Arrange
+                temp_dir = tempfile.TemporaryDirectory()
+                self.addCleanup(temp_dir.cleanup)
+                root = Path(temp_dir.name)
+                guard = root / phase35.AUTHORITY_GUARD
+                guard.parent.mkdir(parents=True)
+                outside = root / "outside-guard.json"
+                outside.write_text("{}", encoding="utf-8")
+                create_guard(guard, outside)
 
                 # Act / Assert
                 with self.assertRaises(phase35.VerificationError):

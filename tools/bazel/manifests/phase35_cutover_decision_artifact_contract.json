@@ -319,6 +319,20 @@
     "production_actions_authorized": false,
     "reference_demotion_requirement": "POST-01"
   },
+  "authority_guard": {
+    "artifact": "build/ci-evidence/.phase35-authority-guard.json",
+    "required_fields": [
+      "phase",
+      "phase_lifecycle_id",
+      "authority_state",
+      "reason_code",
+      "attempted_output_root"
+    ],
+    "phase_lifecycle_id": "35-2026-07-25T21-06-10",
+    "authority_state": "blocked",
+    "safe_reason_code": "publication-in-progress",
+    "attempted_output_root": "build/ci-evidence/phase35"
+  },
   "default_behavior": {
     "cutover_verdict": "blocked",
     "route": "targeted-blocker-repair",

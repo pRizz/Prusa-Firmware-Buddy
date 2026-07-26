@@ -9,6 +9,7 @@ import re
 import shutil
 import sys
 import tempfile
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -26,6 +27,16 @@ PHASE34_CONTRACT_PATH = Path(
 )
 DEFAULT_PHASE34_OUTPUT = Path("build/ci-evidence/phase34")
 DEFAULT_OUTPUT = Path("build/ci-evidence/phase35")
+AUTHORITY_GUARD = Path("build/ci-evidence/.phase35-authority-guard.json")
+PREVIOUS_OUTPUT = Path("build/ci-evidence/.phase35-previous")
+AUTHORITY_GUARD_FIELDS = [
+    "phase",
+    "phase_lifecycle_id",
+    "authority_state",
+    "reason_code",
+    "attempted_output_root",
+]
+AUTHORITY_GUARD_REASON = "publication-in-progress"
 PHASE32_REGISTER_REF = "build/ci-evidence/phase32/blocker-register.json"
 PHASE34_LEDGER_REF = "build/ci-evidence/phase34/readiness-coverage-ledger.json"
 PHASE33_NORMALIZED_REGISTER = "build/ci-evidence/phase33/normalized-decision-records.json"
@@ -138,6 +149,7 @@ PHASE35_CONTRACT_FIELDS = {
     "audit_link_failure_modes",
     "audit_link_schema",
     "authority_boundaries",
+    "authority_guard",
     "blocked_reason_codes",
     "cutover_decision_fields",
     "default_behavior",
@@ -166,6 +178,7 @@ PHASE35_CONTRACT_FIELDS = {
 PHASE34_CONTRACT_FIELDS = {
     "artifact_name",
     "blocked_reason_codes",
+    "decision_domain_policy",
     "default_behavior",
     "demotion_dry_run_schema",
     "generated_artifacts",
@@ -183,6 +196,7 @@ PHASE34_CONTRACT_FIELDS = {
     "schema_version",
     "source_contracts",
     "source_inputs",
+    "source_failure_policy",
     "sparse_blocker_overlay_policy",
     "test_command",
     "verification_commands",
@@ -606,6 +620,16 @@ def validate_contract(contract: dict[str, Any]) -> None:
         raise VerificationError("Phase 35 requirement_ids are invalid")
     if contract.get("generated_artifacts") != GENERATED_ARTIFACTS:
         raise VerificationError("Phase 35 generated_artifacts are invalid")
+    expected_guard = {
+        "artifact": AUTHORITY_GUARD.as_posix(),
+        "required_fields": AUTHORITY_GUARD_FIELDS,
+        "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
+        "authority_state": "blocked",
+        "safe_reason_code": AUTHORITY_GUARD_REASON,
+        "attempted_output_root": DEFAULT_OUTPUT.as_posix(),
+    }
+    if contract.get("authority_guard") != expected_guard:
+        raise VerificationError("Phase 35 authority_guard is invalid")
     schema = contract.get("audit_link_schema")
     if not isinstance(
             schema, dict) or schema.get("kinds") != AUDIT_KINDS or schema.get(
@@ -1553,37 +1577,349 @@ def create_staging_directory(root: Path, relative_output: Path) -> Path:
             "unable to create Phase 35 staging directory") from error
 
 
-def discard_staging_directory(stage: Path | None) -> None:
+def validate_mutation_target(
+    root: Path,
+    relative_target: Path,
+    expected_target: Path,
+    target_name: str,
+    *,
+    expect_directory: bool,
+    allow_missing: bool,
+) -> Path:
+    target = repo_relative(relative_target, target_name)
+    expected = repo_relative(expected_target, f"expected {target_name}")
+    if target != expected:
+        raise VerificationError(
+            f"Phase 35 {target_name} target is outside its canonical path",
+            "unsafe-ref",
+        )
+    root_resolved = root.resolve(strict=False)
+    candidate = root / target
+    current = root
+    for index, part in enumerate(target.parts):
+        current /= part
+        if current.is_symlink():
+            raise VerificationError(
+                f"Phase 35 {target_name} target contains a symlink escape",
+                "unsafe-ref",
+            )
+        if index < len(target.parts) - 1 and current.exists(
+        ) and not current.is_dir():
+            raise VerificationError(
+                f"Phase 35 {target_name} parent is not a directory",
+                "unsafe-ref",
+            )
+    resolved = candidate.resolve(strict=False)
+    if resolved != root_resolved and root_resolved not in resolved.parents:
+        raise VerificationError(
+            f"Phase 35 {target_name} target escapes the repository",
+            "unsafe-ref",
+        )
+    if candidate.exists():
+        valid_type = (candidate.is_dir()
+                      if expect_directory else candidate.is_file())
+        if not valid_type:
+            raise VerificationError(
+                f"Phase 35 {target_name} target has the wrong type",
+                "unsafe-ref",
+            )
+    elif not allow_missing:
+        raise VerificationError(
+            f"Phase 35 {target_name} target is missing",
+            "unsafe-ref",
+        )
+    return candidate
+
+
+def touch_guard(path: Path) -> None:
+    path.touch(exist_ok=True)
+
+
+def write_guard_payload(path: Path, payload: dict[str, object]) -> None:
+    write_json(path, payload)
+
+
+def rename_path(source: Path, target: Path) -> None:
+    source.rename(target)
+
+
+def remove_directory(path: Path) -> None:
+    shutil.rmtree(path)
+
+
+def remove_guard(path: Path) -> None:
+    path.unlink()
+
+
+def authority_guard_payload() -> dict[str, object]:
+    return {
+        "phase": PHASE,
+        "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
+        "authority_state": "blocked",
+        "reason_code": AUTHORITY_GUARD_REASON,
+        "attempted_output_root": DEFAULT_OUTPUT.as_posix(),
+    }
+
+
+def validate_authority_guard(root: Path) -> None:
+    guard = validate_mutation_target(
+        root,
+        AUTHORITY_GUARD,
+        AUTHORITY_GUARD,
+        "authority guard",
+        expect_directory=False,
+        allow_missing=False,
+    )
+    try:
+        payload = json.loads(guard.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, UnicodeError, OSError) as error:
+        raise VerificationError(
+            "Phase 35 authority guard is unreadable",
+            "unsafe-ref",
+        ) from error
+    if not isinstance(payload, dict) or list(payload) != AUTHORITY_GUARD_FIELDS:
+        raise VerificationError("Phase 35 authority guard is malformed",
+                                "unsafe-ref")
+    if payload != authority_guard_payload():
+        raise VerificationError("Phase 35 authority guard is stale or unsafe",
+                                "unsafe-ref")
+
+
+def ensure_canonical_authority(root: Path, relative_output: Path) -> None:
+    validate_mutation_target(
+        root,
+        relative_output,
+        DEFAULT_OUTPUT,
+        "canonical output",
+        expect_directory=True,
+        allow_missing=True,
+    )
+    guard = root / AUTHORITY_GUARD
+    if not guard.exists() and not guard.is_symlink():
+        return
+    validate_authority_guard(root)
+    raise VerificationError("Phase 35 canonical authority is blocked",
+                            "unsafe-ref")
+
+
+def publish_authority_guard(root: Path) -> None:
+    guard = validate_mutation_target(
+        root,
+        AUTHORITY_GUARD,
+        AUTHORITY_GUARD,
+        "authority guard",
+        expect_directory=False,
+        allow_missing=True,
+    )
+    guard.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        validate_mutation_target(
+            root,
+            AUTHORITY_GUARD,
+            AUTHORITY_GUARD,
+            "authority guard",
+            expect_directory=False,
+            allow_missing=True,
+        )
+        touch_guard(guard)
+        validate_mutation_target(
+            root,
+            AUTHORITY_GUARD,
+            AUTHORITY_GUARD,
+            "authority guard",
+            expect_directory=False,
+            allow_missing=False,
+        )
+        write_guard_payload(guard, authority_guard_payload())
+        validate_authority_guard(root)
+    except (OSError, VerificationError) as error:
+        raise VerificationError(
+            "unable to publish Phase 35 authority guard",
+            "unsafe-ref",
+        ) from error
+
+
+def discard_staging_directory(root: Path, stage: Path | None) -> None:
     if stage is None or not stage.exists():
         return
-    shutil.rmtree(stage)
+    relative_stage = stage.relative_to(root)
+    validate_mutation_target(
+        root,
+        relative_stage,
+        relative_stage,
+        "staging output",
+        expect_directory=True,
+        allow_missing=False,
+    )
+    try:
+        remove_directory(stage)
+    except OSError as error:
+        raise VerificationError(
+            "unable to discard Phase 35 staging directory") from error
 
 
-def install_staged_bundle(stage: Path, canonical_output: Path) -> None:
-    if canonical_output.is_symlink():
-        raise VerificationError("Phase 35 output contains a symlink escape",
+def restore_previous_bundle(root: Path, canonical_output: Path,
+                            backup: Path) -> None:
+    if canonical_output.exists():
+        validate_mutation_target(
+            root,
+            DEFAULT_OUTPUT,
+            DEFAULT_OUTPUT,
+            "canonical output",
+            expect_directory=True,
+            allow_missing=False,
+        )
+        remove_directory(canonical_output)
+    validate_mutation_target(
+        root,
+        PREVIOUS_OUTPUT,
+        PREVIOUS_OUTPUT,
+        "previous output",
+        expect_directory=True,
+        allow_missing=False,
+    )
+    validate_mutation_target(
+        root,
+        DEFAULT_OUTPUT,
+        DEFAULT_OUTPUT,
+        "canonical output",
+        expect_directory=True,
+        allow_missing=True,
+    )
+    rename_path(backup, canonical_output)
+
+
+def install_staged_bundle(
+    root: Path,
+    stage: Path,
+    canonical_output: Path,
+    validate_installed: Callable[[Path], None],
+) -> None:
+    relative_stage = stage.relative_to(root)
+    if canonical_output != root / DEFAULT_OUTPUT:
+        raise VerificationError("Phase 35 canonical output path is invalid",
                                 "unsafe-ref")
-    if canonical_output.exists() and not canonical_output.is_dir():
-        raise VerificationError("Phase 35 output is not a normal directory",
-                                "unsafe-ref")
-    parent = canonical_output.parent
-    backup = Path(tempfile.mkdtemp(prefix=".phase35-previous-", dir=parent))
-    backup.rmdir()
+    backup = root / PREVIOUS_OUTPUT
+    publish_authority_guard(root)
+    validate_mutation_target(
+        root,
+        relative_stage,
+        relative_stage,
+        "staging output",
+        expect_directory=True,
+        allow_missing=False,
+    )
+    validate_mutation_target(
+        root,
+        DEFAULT_OUTPUT,
+        DEFAULT_OUTPUT,
+        "canonical output",
+        expect_directory=True,
+        allow_missing=True,
+    )
+    validate_mutation_target(
+        root,
+        PREVIOUS_OUTPUT,
+        PREVIOUS_OUTPUT,
+        "previous output",
+        expect_directory=True,
+        allow_missing=True,
+    )
+    if backup.exists():
+        raise VerificationError(
+            "Phase 35 recoverable backup already exists")
+
     moved_previous = False
+    installed = False
     try:
         if canonical_output.exists():
-            canonical_output.rename(backup)
+            validate_mutation_target(
+                root,
+                DEFAULT_OUTPUT,
+                DEFAULT_OUTPUT,
+                "canonical output",
+                expect_directory=True,
+                allow_missing=False,
+            )
+            validate_mutation_target(
+                root,
+                PREVIOUS_OUTPUT,
+                PREVIOUS_OUTPUT,
+                "previous output",
+                expect_directory=True,
+                allow_missing=True,
+            )
+            rename_path(canonical_output, backup)
             moved_previous = True
-        stage.rename(canonical_output)
-    except OSError as error:
-        if moved_previous and backup.exists():
-            shutil.rmtree(backup)
-        if stage.exists():
-            shutil.rmtree(stage)
+        validate_mutation_target(
+            root,
+            relative_stage,
+            relative_stage,
+            "staging output",
+            expect_directory=True,
+            allow_missing=False,
+        )
+        validate_mutation_target(
+            root,
+            DEFAULT_OUTPUT,
+            DEFAULT_OUTPUT,
+            "canonical output",
+            expect_directory=True,
+            allow_missing=True,
+        )
+        rename_path(stage, canonical_output)
+        installed = True
+        validate_installed(canonical_output)
+    except (OSError, VerificationError) as error:
+        try:
+            if moved_previous:
+                restore_previous_bundle(root, canonical_output, backup)
+            elif installed and canonical_output.exists():
+                validate_mutation_target(
+                    root,
+                    DEFAULT_OUTPUT,
+                    DEFAULT_OUTPUT,
+                    "canonical output",
+                    expect_directory=True,
+                    allow_missing=False,
+                )
+                remove_directory(canonical_output)
+            if stage.exists():
+                discard_staging_directory(root, stage)
+        except (OSError, VerificationError) as recovery_error:
+            raise VerificationError(
+                "unable to recover Phase 35 staged publication") from recovery_error
         raise VerificationError(
             "unable to install Phase 35 staged bundle") from error
-    if moved_previous and backup.exists():
-        shutil.rmtree(backup)
+
+    if moved_previous:
+        validate_mutation_target(
+            root,
+            PREVIOUS_OUTPUT,
+            PREVIOUS_OUTPUT,
+            "previous output",
+            expect_directory=True,
+            allow_missing=False,
+        )
+        try:
+            remove_directory(backup)
+        except OSError as error:
+            raise VerificationError(
+                "unable to remove Phase 35 recoverable backup") from error
+    validate_authority_guard(root)
+    guard = validate_mutation_target(
+        root,
+        AUTHORITY_GUARD,
+        AUTHORITY_GUARD,
+        "authority guard",
+        expect_directory=False,
+        allow_missing=False,
+    )
+    try:
+        remove_guard(guard)
+    except OSError as error:
+        raise VerificationError(
+            "unable to clear Phase 35 authority guard") from error
 
 
 def source_failure_reason(error: VerificationError) -> str:
@@ -1769,6 +2105,43 @@ def validate_generated_outputs(output: Path) -> None:
                 f"generated artifact is unreadable: {artifact}") from error
 
 
+def validate_installed_full_bundle(output: Path) -> None:
+    validate_generated_outputs(output)
+    try:
+        decision = json.loads(
+            (output / "cutover-decision.json").read_text(encoding="utf-8"))
+        route = json.loads(
+            (output /
+             "next-milestone-route.json").read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, UnicodeError, OSError) as error:
+        raise VerificationError(
+            "Phase 35 installed decision is unreadable") from error
+    verdict = decision.get("cutover_verdict")
+    follow_up_scope = route.get("follow_up_scope")
+    if verdict not in {"approved", "blocked", "approved-with-exceptions"
+                       } or not isinstance(follow_up_scope, list):
+        raise VerificationError(
+            "Phase 35 installed verdict or route is invalid")
+    if route != build_route(str(verdict), follow_up_scope):
+        raise VerificationError(
+            "Phase 35 installed route contradicts its verdict")
+    validation_state = decision.get("demotion_decision_validation_state")
+    decision_state = decision.get("demotion_decision_state")
+    gate_state = decision.get("demotion_gate_state")
+    gate_reasons = decision.get("demotion_gate_reason_codes")
+    if (validation_state not in {
+            "missing", "valid", "invalid", "malformed", "stale",
+            "lifecycle-mismatched"
+    } or decision_state not in {"missing", "approve", "reject"}
+            or gate_state not in {"blocked", "open"}
+            or not isinstance(gate_reasons, list)
+            or (gate_state == "open"
+                and (validation_state != "valid"
+                     or decision_state != "approve" or gate_reasons))):
+        raise VerificationError(
+            "Phase 35 installed demotion projection is invalid")
+
+
 def write_bundle(
     root: Path,
     relative_output: Path,
@@ -1922,21 +2295,32 @@ def run_quick(root: Path, phase34_arg: str, output_arg: str) -> None:
             source,
             staging_output=stage,
         )
-        install_staged_bundle(stage, canonical_output)
-        stage = None
-        run_security_scan(root, output.as_posix())
     except VerificationError as error:
-        discard_staging_directory(stage)
+        publish_authority_guard(root)
+        discard_staging_directory(root, stage)
         reason_code = source_failure_reason(error)
         failure_stage = create_staging_directory(root, output)
         try:
             write_source_failure_bundle(output, failure_stage, reason_code)
-            install_staged_bundle(failure_stage, canonical_output)
+            install_staged_bundle(
+                root,
+                failure_stage,
+                canonical_output,
+                validate_source_failure_bundle,
+            )
         except VerificationError:
-            discard_staging_directory(failure_stage)
+            if failure_stage.exists():
+                discard_staging_directory(root, failure_stage)
             raise
         raise VerificationError("Phase 35 source validation failed",
                                 reason_code) from error
+    install_staged_bundle(
+        root,
+        stage,
+        canonical_output,
+        validate_installed_full_bundle,
+    )
+    run_security_scan(root, output.as_posix())
 
 
 def run_security_scan(root: Path,
@@ -1945,6 +2329,7 @@ def run_security_scan(root: Path,
     if output != DEFAULT_OUTPUT:
         raise VerificationError(
             f"--output-dir must be {DEFAULT_OUTPUT.as_posix()}")
+    ensure_canonical_authority(root, output)
     full_output = root / output
     if not full_output.exists():
         print(f"no Phase 35 outputs to scan at {output.as_posix()}")
