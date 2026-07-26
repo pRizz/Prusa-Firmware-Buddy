@@ -355,6 +355,21 @@ def _run_phase35(root: Path) -> CommandOutcome:
 
 
 def coordinate_workflow(root: Path = ROOT) -> WorkflowResult:
+    try:
+        phase35.publish_authority_guard(root)
+    except phase35.VerificationError:
+        guard_failure = CommandOutcome(
+            1,
+            "phase35-authority-guard-blocking",
+        )
+        return evaluate_final_status(
+            CommandOutcome(0, "none"),
+            guard_failure,
+            FinalAuthority.unavailable(
+                "phase35-authority-guard-blocking"
+            ),
+        )
+
     phase34_outcome = _run_phase34(root)
     if not _phase34_authority_is_valid(root):
         invalid_phase34 = CommandOutcome(

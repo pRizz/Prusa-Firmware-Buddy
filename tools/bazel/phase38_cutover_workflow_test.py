@@ -408,6 +408,9 @@ class CoordinatorTests(unittest.TestCase):
         # Arrange
         calls: list[str] = []
 
+        def publish_guard(_root: Path) -> None:
+            calls.append("publish-phase35-guard")
+
         def run_phase34(_root: Path) -> workflow.CommandOutcome:
             calls.append("phase34")
             return workflow.CommandOutcome(4, "phase31-input-invalid")
@@ -422,6 +425,11 @@ class CoordinatorTests(unittest.TestCase):
 
         # Act
         with (
+            patch.object(
+                workflow.phase35,
+                "publish_authority_guard",
+                side_effect=publish_guard,
+            ),
             patch.object(workflow, "_run_phase34", side_effect=run_phase34),
             patch.object(
                 workflow,
@@ -440,7 +448,12 @@ class CoordinatorTests(unittest.TestCase):
         # Assert
         self.assertEqual(
             calls,
-            ["phase34", "validate-phase34", "phase35"],
+            [
+                "publish-phase35-guard",
+                "phase34",
+                "validate-phase34",
+                "phase35",
+            ],
         )
         self.assertEqual(result.status, 4)
 
@@ -474,6 +487,37 @@ class CoordinatorTests(unittest.TestCase):
             result.reason_category,
             "phase34-authority-invalid",
         )
+        with self.assertRaises(workflow.WorkflowError):
+            workflow.require_clear_authority_guard(self.root)
+
+    def test_guard_publication_failure_skips_both_producers(self) -> None:
+        # Arrange
+        phase34 = unittest.mock.Mock()
+        phase35 = unittest.mock.Mock()
+
+        # Act
+        with (
+            patch.object(
+                workflow.phase35,
+                "publish_authority_guard",
+                side_effect=workflow.phase35.VerificationError(
+                    "injected guard failure",
+                ),
+            ),
+            patch.object(workflow, "_run_phase34", phase34),
+            patch.object(workflow, "_run_phase35", phase35),
+        ):
+            result = workflow.coordinate_workflow(self.root)
+
+        # Assert
+        phase34.assert_not_called()
+        phase35.assert_not_called()
+        self.assertNotEqual(result.status, 0)
+        self.assertEqual(
+            result.reason_category,
+            "phase35-authority-guard-blocking",
+        )
+        self.assertFalse(result.final_authority_available)
 
 
 class WiringTests(unittest.TestCase):

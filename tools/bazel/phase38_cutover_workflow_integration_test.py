@@ -373,6 +373,56 @@ class Phase38ActualProducerWorkflowTest(unittest.TestCase):
             "phase33-handoff-invalid",
         )
 
+    def test_invalid_phase34_publication_guards_seeded_phase35_approval(
+        self,
+    ) -> None:
+        # Arrange
+        root = self.clone_baseline()
+        self.seed_prior_approval(root)
+        phase34_output = root / "build/ci-evidence/phase34"
+        shutil.rmtree(phase34_output)
+        external_phase34 = root / "outside-phase34"
+        external_phase34.mkdir()
+        phase34_output.symlink_to(
+            external_phase34,
+            target_is_directory=True,
+        )
+
+        # Act
+        result, status = self.run_coordinator(root)
+        authority_check = self.run_command(
+            root,
+            [
+                "python3",
+                "tools/bazel/phase35_cutover_decision_artifact.py",
+                "--security-only",
+            ],
+        )
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertEqual(
+            status["reason_category"],
+            "phase34-authority-invalid",
+        )
+        self.assertFalse(status["final_authority_available"])
+        self.assertFalse(status["production_cutover_planning"])
+        self.assertFalse(status["reference_demotion_authorized"])
+        decision = self.read_json(root, PHASE35_DECISION)
+        route = self.read_json(root, PHASE35_ROUTE)
+        self.assertEqual(decision["cutover_verdict"], "approved")
+        self.assertEqual(route["route"], "production-cutover-planning")
+        guard = self.read_json(
+            root,
+            "build/ci-evidence/.phase35-authority-guard.json",
+        )
+        self.assertEqual(guard["authority_state"], "blocked")
+        self.assertNotEqual(
+            authority_check.returncode,
+            0,
+            authority_check.stdout,
+        )
+
     def test_approved_cutover_with_missing_demotion_stays_closed(self) -> None:
         # Arrange
         root = self.clone_baseline()
