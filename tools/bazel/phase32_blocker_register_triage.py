@@ -1215,7 +1215,7 @@ def phase27_rows(root: Path, phase27_output_dir: Path) -> list[dict[str, Any]]:
                         "ineligible",
                         "required_next_action":
                         "Route residual-risk or retained-code item to Phase 33 decision input.",
-                    },
+                    } if maybe_unknown_kind is None else None,
                 ))
 
     if not (root / exception_path).exists():
@@ -1353,6 +1353,9 @@ def phase28_rows(root: Path, phase28_output_dir: Path) -> list[dict[str, Any]]:
             raw_status = str(
                 item.get("phase27_status") or item.get("phase26_status")
                 or "blocked")
+            problem_status = phase28_problem_status(raw_status)
+            is_unknown_status = classify_problem_kind(
+                {"status": problem_status}) == "unknown_unclassified"
             rows.append(
                 build_blocker_row(
                     source_domain="readiness",
@@ -1365,7 +1368,7 @@ def phase28_rows(root: Path, phase28_output_dir: Path) -> list[dict[str, Any]]:
                     source_stream="readiness",
                     source_ref=f"{blocker_path.as_posix()}#{criterion_id}",
                     signal={
-                        "status": phase28_problem_status(raw_status),
+                        "status": problem_status,
                         "criterion_id": criterion_id,
                         "evidence_refs": [blocker_path.as_posix()],
                     },
@@ -1380,7 +1383,7 @@ def phase28_rows(root: Path, phase28_output_dir: Path) -> list[dict[str, Any]]:
                         "ineligible",
                         "required_next_action":
                         "Resolve readiness blocker or route it through explicit later decision input.",
-                    },
+                    } if not is_unknown_status else None,
                 ))
 
     if not (root / residual_path).exists():

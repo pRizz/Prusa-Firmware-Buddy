@@ -1261,6 +1261,61 @@ class Phase32ProducerShapeTest(unittest.TestCase):
                          "unknown_unclassified")
         self.assertEqual(demotion_rows[0]["severity"], "critical")
 
+    def test_phase27_unknown_residual_row_type_remains_critical(self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+        residual_path = (
+            "build/ci-evidence/phase27/residual-risk-register.json")
+        residual = self.read_json(root, residual_path)
+        residual["rows"][0]["row_type"] = "unexpected-new-row-type"
+        self.write_json(root, residual_path, residual)
+
+        # Act
+        result = self.run_phase32(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        rows = self.read_json(
+            root, "build/ci-evidence/phase32/blocker-register.json")["rows"]
+        residual_rows = [
+            row for row in rows if row["producer_artifact_kind"]
+            == "phase27_residual_risk_register"
+            and row["source_subject_id"] == residual["rows"][0]["row_id"]
+        ]
+        self.assertEqual(len(residual_rows), 1)
+        self.assertEqual(residual_rows[0]["row_problem_kind"],
+                         "unknown_unclassified")
+        self.assertEqual(residual_rows[0]["severity"], "critical")
+
+    def test_phase28_unknown_readiness_status_remains_critical(self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+        blocker_path = "build/ci-evidence/phase28/blocker-summary.json"
+        blocker_summary = self.read_json(root, blocker_path)
+        criterion_id = blocker_summary["blockers"][0]["criterion_id"]
+        blocker_summary["blockers"][0]["phase27_status"] = (
+            "unexpected-new-status")
+        self.write_json(root, blocker_path, blocker_summary)
+
+        # Act
+        result = self.run_phase32(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        rows = self.read_json(
+            root, "build/ci-evidence/phase32/blocker-register.json")["rows"]
+        readiness_rows = [
+            row for row in rows if row["producer_artifact_kind"]
+            == "phase28_blocker_summary"
+            and row["source_subject_id"] == criterion_id
+        ]
+        self.assertEqual(len(readiness_rows), 1)
+        self.assertEqual(readiness_rows[0]["row_problem_kind"],
+                         "unknown_unclassified")
+        self.assertEqual(readiness_rows[0]["severity"], "critical")
+
     def test_phase27_and_phase28_producers_preserve_all_decision_identities(
             self) -> None:
         # Arrange
