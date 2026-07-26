@@ -496,6 +496,55 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
         # Assert
         self.assertNotEqual(result.returncode, 0, result.stdout)
         self.assertIn(expected_reason_code, result.stdout)
+        self.assert_blocked_source_failure_bundle(
+            root,
+            expected_reason_code,
+        )
+
+    def assert_injected_read_failure_replaces_prior_authority(
+        self,
+        target_ref: str,
+        expected_reason_code: str,
+    ) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_fixture(root, self.required_stream_receipts(), [])
+        self.seed_prior_phase34_authority(root)
+        module = self.load_module()
+        target = root / target_ref
+        original_read_text = Path.read_text
+
+        def fail_target_read(
+            candidate: Path,
+            *args,
+            **kwargs,
+        ) -> str:
+            if candidate == target:
+                raise PermissionError("injected read failure")
+            return original_read_text(candidate, *args, **kwargs)
+
+        # Act
+        with mock.patch.object(Path, "read_text", fail_target_read):
+            reason_code = module.run_quick(
+                root,
+                "build/ci-evidence/phase31",
+                PHASE33_HANDOFF,
+                OUTPUT_DIR,
+            )
+
+        # Assert
+        self.assertEqual(reason_code, expected_reason_code)
+        self.assert_blocked_source_failure_bundle(
+            root,
+            expected_reason_code,
+        )
+
+    def assert_blocked_source_failure_bundle(
+        self,
+        root: Path,
+        expected_reason_code: str,
+    ) -> None:
         self.assertFalse(
             (root / OUTPUT_DIR / "stale-prior-authority.json").exists()
         )
@@ -1515,6 +1564,25 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
             "phase31-input-invalid",
         )
 
+    def test_invalid_utf8_phase31_manifest_replaces_seeded_prior_authority(
+        self,
+    ) -> None:
+        def corrupt_manifest(root: Path) -> None:
+            (root / PHASE31_MANIFEST).write_bytes(b"\xff")
+
+        self.assert_source_failure_replaces_prior_authority(
+            corrupt_manifest,
+            "phase31-input-invalid",
+        )
+
+    def test_phase31_receipt_read_error_replaces_seeded_prior_authority(
+        self,
+    ) -> None:
+        self.assert_injected_read_failure_replaces_prior_authority(
+            "build/ci-evidence/phase31/stream-receipts/receipt-0.json",
+            "phase31-input-invalid",
+        )
+
     def test_malformed_phase33_handoff_replaces_seeded_prior_authority(self) -> None:
         def corrupt_handoff(root: Path) -> None:
             (root / PHASE33_HANDOFF).write_text("{", encoding="utf-8")
@@ -1522,6 +1590,25 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
         self.assert_source_failure_replaces_prior_authority(
             corrupt_handoff,
             "phase33-handoff-invalid",
+        )
+
+    def test_invalid_utf8_phase33_handoff_replaces_seeded_prior_authority(
+        self,
+    ) -> None:
+        def corrupt_handoff(root: Path) -> None:
+            (root / PHASE33_HANDOFF).write_bytes(b"\xff")
+
+        self.assert_source_failure_replaces_prior_authority(
+            corrupt_handoff,
+            "phase33-handoff-invalid",
+        )
+
+    def test_phase33_register_read_error_replaces_seeded_prior_authority(
+        self,
+    ) -> None:
+        self.assert_injected_read_failure_replaces_prior_authority(
+            "build/ci-evidence/phase33/normalized-decision-records.json",
+            "phase33-normalized-decisions-invalid",
         )
 
     def test_invalid_normalized_decisions_replace_seeded_prior_authority(self) -> None:

@@ -258,8 +258,10 @@ def load_json(root: Path, relative_path: Path, field: str | None = None) -> dict
         raise VerificationError(f"missing required file: {relative_path.as_posix()}")
     try:
         value = json.loads(full_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as error:
-        raise VerificationError(f"{relative_path.as_posix()} is not valid JSON: {error}") from error
+    except (json.JSONDecodeError, UnicodeError, OSError) as error:
+        raise VerificationError(
+            f"{field or relative_path.as_posix()} is unreadable or invalid JSON"
+        ) from error
     if not isinstance(value, dict):
         raise VerificationError(f"{field or relative_path.as_posix()} must contain a top-level object")
     return value
