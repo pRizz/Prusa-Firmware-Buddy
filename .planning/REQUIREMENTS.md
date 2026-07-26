@@ -12,12 +12,12 @@ These requirements consume the v1.2 evidence and decision machinery with real sa
 - [ ] **INTAKE-01**: Maintainer can supply final simulator evidence packets for startup, G-code, GUI, storage, transfer, and selected failure flows using sanitized real-run inputs.
 - [ ] **INTAKE-02**: Maintainer can supply final hardware/media/safety evidence packets for supported printer families, storage media, UI input, MMU, RS485, toolchanger, watchdog, thermal, motion, and safe-output scenarios.
 - [ ] **INTAKE-03**: Maintainer can supply final live-service evidence packets for Connect, PrusaLink/WUI, TLS, telemetry, proxy, transfer, negative-protocol, long-transfer, and crash-dump flows.
-- [ ] **INTAKE-04**: Release manager can supply final release/signing/provenance evidence from real release-environment outputs without exposing private keys, tokens, certificates, service payloads, raw crash dumps, or other secret-bearing data.
+- [x] **INTAKE-04**: Release manager can supply final release/signing/provenance evidence from real release-environment outputs without exposing private keys, tokens, certificates, service payloads, raw crash dumps, or other secret-bearing data.
 
 ### Evidence Triage
 
-- [ ] **TRIAGE-01**: Maintainer can aggregate all consumed simulator, hardware/media/safety, live-service, release/signing, upstream-result, retained-code, and readiness rows into a single blocker register.
-- [ ] **TRIAGE-02**: Maintainer can classify each failed, missing, stale, malformed, redaction-failed, or exceptioned row with owner, severity, affected gate, required next action, and decision impact.
+- [x] **TRIAGE-01**: Maintainer can aggregate all consumed simulator, hardware/media/safety, live-service, release/signing, upstream-result, retained-code, and readiness rows into a single blocker register.
+- [x] **TRIAGE-02**: Maintainer can classify each failed, missing, stale, malformed, redaction-failed, or exceptioned row with owner, severity, affected gate, required next action, and decision impact.
 - [x] **TRIAGE-03**: Maintainer can prove quick/default placeholder outputs, smoke fixtures, and local-only dry-run rows are rejected as final cutover proof.
 
 ### Maintainer Decisions
@@ -71,9 +71,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INTAKE-01 | Phase 39 | Pending |
 | INTAKE-02 | Phase 39 | Pending |
 | INTAKE-03 | Phase 39 | Pending |
-| INTAKE-04 | Phase 36 | Pending |
-| TRIAGE-01 | Phase 36 | Pending |
-| TRIAGE-02 | Phase 36 | Pending |
+| INTAKE-04 | Phase 36 | Complete |
+| TRIAGE-01 | Phase 36 | Complete |
+| TRIAGE-02 | Phase 36 | Complete |
 | TRIAGE-03 | Phase 32 | Complete |
 | DECIDE-01 | Phase 37 | Pending |
 | DECIDE-02 | Phase 37 | Pending |
@@ -89,8 +89,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 - v1.3 requirements: 16 total
 - Mapped to phases: 16
-- Complete: 3
-- Pending: 13
+- Complete: 6
+- Pending: 10
 - Unmapped: 0
 - Duplicate mappings: 0
 

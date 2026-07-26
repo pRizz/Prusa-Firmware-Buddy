@@ -3,15 +3,15 @@ gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
 status: executing
-stopped_at: Phase 36 context gathered
-last_updated: "2026-07-26T01:11:51.586Z"
-last_activity: 2026-07-26 -- Phase 36 planning complete
+stopped_at: Phase 36 complete; Phase 37 not started
+last_updated: "2026-07-26T03:40:43.949Z"
+last_activity: 2026-07-26 -- Phase 36 verified complete
 progress:
   total_phases: 9
-  completed_phases: 5
-  total_plans: 8
-  completed_plans: 7
-  percent: 88
+  completed_phases: 6
+  total_plans: 9
+  completed_plans: 9
+  percent: 100
 ---
 
 # Project State
@@ -21,24 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Phase 35 — Cutover Decision Artifact
+**Current focus:** Phase 37 — Reconcile Decisions Into Readiness
 
 ## Current Position
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
-Phase: 35 (Cutover Decision Artifact) — COMPLETE
-Plan: 2 of 2
-Status: Ready to execute
-Last activity: 2026-07-26 -- Phase 36 planning complete
+Phase: 37 (Reconcile Decisions Into Readiness) — NOT STARTED
+Plan: Not started
+Status: Phase 36 complete; ready to discuss Phase 37
+Last activity: 2026-07-26 -- Phase 36 verified complete
 
-Progress: [##########] 100% (5/5 v1.3 phases complete)
+Progress: [#######---] 67% (6/9 v1.3 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- v1.3 plans completed: 7/7
-- v1.3 phases completed: 5/5
+- v1.3 plans completed: 9/9 currently planned
+- v1.3 phases completed: 6/9
 - Previous milestone baseline: v1.2 completed 9 plans across 8 phases
 - Earlier milestone baseline: v1.1 completed 13 plans across 10 phases
 
@@ -51,11 +51,12 @@ Progress: [##########] 100% (5/5 v1.3 phases complete)
 | 33. Maintainer Decision Inputs | 1/1 | 15min | 15min |
 | 34. Final Readiness and Demotion Dry Run | 2/2 | - | - |
 | 35. Cutover Decision Artifact | 2/2 | 34m42s | 17m21s |
+| 36. Normalize Evidence and Blocker Rows | 2/2 | 39min | 19m30s |
 
 **Recent Trend:**
 
-- Last 5 completed plans: Phase 33 P01, Phase 34 P01, Phase 34 P02, Phase 35 P01, Phase 35 P02
-- Trend: all five v1.3 phases and all seven plans are complete; Phase 35 verification passed 5/5 must-haves.
+- Last 5 completed plans: Phase 34 P02, Phase 35 P01, Phase 35 P02, Phase 36 P01, Phase 36 P02
+- Trend: six of nine v1.3 phases are complete; Phase 36 verification passed 14/14 must-haves after gap closure.
 
 **Recent Completed Plan Detail:**
 
@@ -65,6 +66,8 @@ Progress: [##########] 100% (5/5 v1.3 phases complete)
 | Phase 33 P01 | 15min | 3 tasks | 8 files |
 | Phase 35 P01 | 20m42s | 3 tasks | 8 files |
 | Phase 35 P02 | 14min | 2 tasks | 3 files |
+| Phase 36 P01 | 28min | 3 tasks | 7 files |
+| Phase 36 P02 | 11min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -92,6 +95,9 @@ Recent decisions affecting current work:
 - [Phase 35]: Any source-boundary failure publishes the exact durable three-artifact blocked bundle before the command returns nonzero.
 - [Phase 35]: Both normal and failure bundles are validated in sibling staging directories before replacing the canonical output.
 - [Phase 35]: Failure output keeps cutover verdict, demotion validation and value, source lineage, and demotion gate state independent.
+- [Phase 36]: Canonical blocker row IDs derive only from the immutable producer source tuple; decision axis and subject remain a separate exact resolution identity.
+- [Phase 36]: Phase 26 release tables are adapted only through an accepted-final Phase 31 receipt bound to the exact contracted artifact path.
+- [Phase 36]: Recognized malformed and unsupported Phase 27/28 producer containers publish visible critical proof-ineligible rows while valid empty and nested producer bundles remain supported.
 
 ### Pending Todos
 

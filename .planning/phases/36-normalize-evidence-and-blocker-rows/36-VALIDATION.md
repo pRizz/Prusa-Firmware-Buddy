@@ -1,7 +1,7 @@
 ---
 phase: "36"
 slug: "normalize-evidence-and-blocker-rows"
-status: draft
+status: verified
 nyquist_compliant: true
 wave_0_complete: true
 created: "2026-07-26"
@@ -38,9 +38,11 @@ ______________________________________________________________________
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 36-01-01 | 01 | 1 | INTAKE-04, TRIAGE-01, TRIAGE-02 | T-36-01 through T-36-05 | Atomic Phase 26 table validation prevents partial proof eligibility; malformed and unknown inputs remain visible critical blockers | unit | `python3 tools/bazel/phase32_blocker_normalization_test.py -q` | ❌ W0 | ⬜ pending |
-| 36-01-02 | 01 | 1 | TRIAGE-01, TRIAGE-02 | T-36-02 through T-36-06 | Immutable source tuples produce stable collision-checked row IDs while decision axes stay exact and separate | unit/integration | `python3 tools/bazel/phase32_blocker_normalization_test.py -q` | ❌ W0 | ⬜ pending |
-| 36-01-03 | 01 | 1 | INTAKE-04, TRIAGE-01, TRIAGE-02 | T-36-01 through T-36-07 | Real Phase 26 output flows through Phase 31 and real Phase 27/28 outputs reach Phase 32 without provenance bypass, secret propagation, or authority overclaim | integration | `python3 tools/bazel/phase32_blocker_register_triage_test.py Phase32ProducerShapeTest -q` | ✅ existing | ⬜ pending |
+| 36-01-01 | 01 | 1 | INTAKE-04, TRIAGE-01, TRIAGE-02 | T-36-01 through T-36-05 | Atomic Phase 26 table validation prevents partial proof eligibility; malformed and unknown inputs remain visible critical blockers | unit | `python3 tools/bazel/phase32_blocker_normalization_test.py -q` | ✅ created | ✅ green |
+| 36-01-02 | 01 | 1 | TRIAGE-01, TRIAGE-02 | T-36-02 through T-36-06 | Immutable source tuples produce stable collision-checked row IDs while decision axes stay exact and separate | unit/integration | `python3 tools/bazel/phase32_blocker_normalization_test.py -q` | ✅ created | ✅ green |
+| 36-01-03 | 01 | 1 | INTAKE-04, TRIAGE-01, TRIAGE-02 | T-36-01 through T-36-07 | Real Phase 26 output flows through Phase 31 and real Phase 27/28 outputs reach Phase 32 without provenance bypass, secret propagation, or authority overclaim | integration | `python3 tools/bazel/phase32_blocker_register_triage_test.py Phase32ProducerShapeTest -q` | ✅ existing | ✅ green |
+| 36-02-01 | 02 | 2 | TRIAGE-01, TRIAGE-02 | T-36-02, T-36-03, T-36-07 | Every Phase 27/28 collection site accepts valid empty lists and exposes malformed or unsupported containers without aborting publication | integration | `python3 tools/bazel/phase32_blocker_register_triage_test.py Phase32ProducerShapeTest -q` | ✅ created | ✅ green |
+| 36-02-02 | 02 | 2 | TRIAGE-01, TRIAGE-02 | T-36-02 through T-36-07 | Canonical container blockers retain stable identity, exact classification, safe provenance, nested-path compatibility, and complete bundle publication | integration | `just phase32-verify` | ✅ existing | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 

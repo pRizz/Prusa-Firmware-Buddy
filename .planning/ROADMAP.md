@@ -78,7 +78,7 @@ Full phase details are archived in `.planning/milestones/v1.2-ROADMAP.md`.
 - [x] **Phase 33: Maintainer Decision Inputs** - Maintainers can record retained-code, residual-risk, exception, final-readiness, and demotion decisions as explicit machine-readable inputs. (completed 2026-07-04)
 - [x] **Phase 34: Final Readiness and Demotion Dry Run** - Maintainers can generate readiness from real consumed rows and prove demotion stays blocked without valid explicit approval. (completed 2026-07-25)
 - [x] **Phase 35: Cutover Decision Artifact** - Maintainers can publish an auditable approved, blocked, or approved-with-exceptions verdict that routes the next milestone. (completed 2026-07-26)
-- [ ] **Phase 36: Normalize Evidence and Blocker Rows** - Normalize release row tables and decision-domain blocker identities so downstream readiness consumes the real producer shapes.
+- [x] **Phase 36: Normalize Evidence and Blocker Rows** - Normalize release row tables and decision-domain blocker identities so downstream readiness consumes the real producer shapes. (completed 2026-07-26)
 - [ ] **Phase 37: Reconcile Decisions Into Readiness** - Join retained-code, residual-risk, exception, and readiness decisions into resolvable Phase 34 ledger rows.
 - [ ] **Phase 38: Fail-Closed Cutover Workflow** - Make upstream failures replace stale authority and prove blocked, approved, and targeted-repair paths end to end.
 - [ ] **Phase 39: Milestone Metadata Reconciliation** - Restore requirement-completion metadata and reconcile roadmap plan details before re-audit.
@@ -109,7 +109,10 @@ Plans:
   2. Every failed, missing, stale, malformed, redaction-failed, or exceptioned row is classified with owner, severity, affected gate, required next action, and decision impact.
   3. Quick/default placeholder outputs, smoke fixtures, and local-only dry-run rows are visibly rejected as final cutover proof.
   4. The blocker register distinguishes repair items, exception requests, and unresolved decision blockers.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [x] 36-01-PLAN.md - Normalize actual Phase 26 release tables and add stable exact identities for Phase 27/28 decision-domain rows.
+- [x] 36-02-PLAN.md - Preserve malformed and unsupported Phase 27/28 producer containers as canonical fail-closed blockers while continuing to publish the complete Phase 32 bundle.
 
 ### Phase 33: Maintainer Decision Inputs
 **Goal**: Maintainers can record explicit machine-readable retained-code, residual-risk, exception, final-readiness, and reference-demotion decisions without inferring authorization from evidence status.
@@ -205,9 +208,9 @@ Plans:
 | INTAKE-01 | Phase 39 | Pending |
 | INTAKE-02 | Phase 39 | Pending |
 | INTAKE-03 | Phase 39 | Pending |
-| INTAKE-04 | Phase 36 | Pending |
-| TRIAGE-01 | Phase 36 | Pending |
-| TRIAGE-02 | Phase 36 | Pending |
+| INTAKE-04 | Phase 36 | Complete |
+| TRIAGE-01 | Phase 36 | Complete |
+| TRIAGE-02 | Phase 36 | Complete |
 | TRIAGE-03 | Phase 32 | Complete |
 | DECIDE-01 | Phase 37 | Pending |
 | DECIDE-02 | Phase 37 | Pending |
@@ -243,7 +246,7 @@ Phases execute in numeric order across archived milestones. v1.3 continues after
 | 33. Maintainer Decision Inputs | v1.3 | 1/1 | Complete    | 2026-07-04 |
 | 34. Final Readiness and Demotion Dry Run | v1.3 | 2/2 | Complete    | 2026-07-25 |
 | 35. Cutover Decision Artifact | v1.3 | 2/2 | Complete    | 2026-07-26 |
-| 36. Normalize Evidence and Blocker Rows | v1.3 | 0/TBD | Pending | — |
+| 36. Normalize Evidence and Blocker Rows | v1.3 | 2/2 | Complete    | 2026-07-26 |
 | 37. Reconcile Decisions Into Readiness | v1.3 | 0/TBD | Pending | — |
 | 38. Fail-Closed Cutover Workflow | v1.3 | 0/TBD | Pending | — |
 | 39. Milestone Metadata Reconciliation | v1.3 | 0/TBD | Pending | — |
