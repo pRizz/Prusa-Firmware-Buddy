@@ -212,17 +212,17 @@ Plans:
 | TRIAGE-01 | Phase 36 | Complete |
 | TRIAGE-02 | Phase 36 | Complete |
 | TRIAGE-03 | Phase 32 | Complete |
-| DECIDE-01 | Phase 37 | Pending |
-| DECIDE-02 | Phase 37 | Pending |
+| DECIDE-01 | Phase 37 | Complete |
+| DECIDE-02 | Phase 37 | Complete |
 | DECIDE-03 | Phase 33 | Complete |
-| READY-01 | Phase 37 | Pending |
+| READY-01 | Phase 37 | Complete |
 | READY-02 | Phase 38 | Pending |
 | READY-03 | Phase 38 | Pending |
 | CUTOVER-01 | Phase 38 | Pending |
 | CUTOVER-02 | Phase 35 | Complete |
 | CUTOVER-03 | Phase 38 | Pending |
 
-**Coverage:** 16/16 v1.3 requirements mapped; 3 complete and 13 pending gap closure. No orphaned requirements. No duplicate requirement mappings.
+**Coverage:** 16/16 v1.3 requirements mapped; 9 complete and 7 pending gap closure. No orphaned requirements. No duplicate requirement mappings.
 
 ## Progress
 

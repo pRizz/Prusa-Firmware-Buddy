@@ -89,8 +89,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 - v1.3 requirements: 16 total
 - Mapped to phases: 16
-- Complete: 6
-- Pending: 10
+- Complete: 9
+- Pending: 7
 - Unmapped: 0
 - Duplicate mappings: 0
 
