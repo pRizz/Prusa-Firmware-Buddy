@@ -498,6 +498,31 @@ class Phase35CutoverDecisionArtifactTest(unittest.TestCase):
                 # Assert
                 self.assertEqual(result["cutover_verdict"], "blocked")
 
+    def test_cutover_reasons_ignore_independent_demotion_diagnostics(
+            self) -> None:
+        # Arrange
+        ledger = [{
+            "readiness_effect": "independent",
+            "reason_codes": ["approval-missing"],
+        }]
+
+        # Act
+        reasons = phase35.cutover_reason_codes("unblocked", ledger)
+
+        # Assert
+        self.assertEqual(reasons, [])
+
+    def test_cutover_reasons_fail_closed_for_blocked_readiness_without_rows(
+            self) -> None:
+        # Arrange
+        ledger: list[dict[str, object]] = []
+
+        # Act
+        reasons = phase35.cutover_reason_codes("blocked", ledger)
+
+        # Assert
+        self.assertEqual(reasons, ["readiness-input-invalid"])
+
     def test_cutover_01_exception_boundaries_fail_closed(self) -> None:
         canonical = self.exception()
         cases = [

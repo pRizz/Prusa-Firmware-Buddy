@@ -22,6 +22,9 @@ PHASE34_DEMOTION = "build/ci-evidence/phase34/demotion-dry-run.json"
 PHASE35_DECISION = "build/ci-evidence/phase35/cutover-decision.json"
 PHASE35_ROUTE = "build/ci-evidence/phase35/next-milestone-route.json"
 RUNTIME_FILES = [
+    "tools/bazel/phase23_simulator_evidence_execution.py",
+    "tools/bazel/phase24_hardware_media_safety_evidence_execution.py",
+    "tools/bazel/phase25_live_service_evidence_execution.py",
     "tools/bazel/phase35_cutover_decision_artifact.py",
     "tools/bazel/phase38_cutover_workflow.py",
     "tools/bazel/manifests/phase35_cutover_decision_artifact_contract.json",
@@ -279,14 +282,9 @@ class Phase38ActualProducerWorkflowTest(unittest.TestCase):
             row
             for row in decisions
             if isinstance(row, dict)
-            and row.get("decision_type") == "retained_code"
+            and row.get("decision_type") == "readiness"
         )
-        mismatched_ref = (
-            "build/ci-evidence/phase32/blocker-register.json"
-            "#phase38-targeted-repair-defect"
-        )
-        decision["decision_targets"][0]["row_ref"] = mismatched_ref
-        decision["source_row_refs"] = [mismatched_ref]
+        decision["decision_value"] = "block"
         self.write_json(root, PHASE33_NORMALIZED, normalized)
 
         # Act

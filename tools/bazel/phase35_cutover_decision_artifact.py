@@ -1421,6 +1421,22 @@ def active_exception_ids_from_ledger(
     return sorted(active_ids)
 
 
+def cutover_reason_codes(
+    readiness_state: str,
+    ledger_rows: list[dict[str, Any]],
+) -> list[str]:
+    reasons = sorted({
+        str(reason)
+        for row in ledger_rows
+        if row.get("readiness_effect") == "blocked"
+        for reason in row.get("reason_codes", [])
+        if isinstance(reason, str) and reason
+    })
+    if readiness_state != "unblocked" and not reasons:
+        return ["readiness-input-invalid"]
+    return reasons
+
+
 def load_bundle(
         root: Path, phase34: Path,
         contract: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -2161,9 +2177,7 @@ def write_bundle(
         | set(validate_resolved_audit_links(root, index_links)))
     ledger_rows = source["ledger"]["rows"]
     readiness_state = str(source["packet"].get("readiness_state") or "blocked")
-    upstream_reasons = [
-        str(reason) for reason in source["packet"].get("reason_codes", [])
-    ]
+    upstream_reasons = cutover_reason_codes(readiness_state, ledger_rows)
     reason_map = {
         "required-row-missing": "coverage-incomplete",
         "duplicate-row": "source-artifact-duplicate",
