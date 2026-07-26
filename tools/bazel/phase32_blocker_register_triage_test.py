@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from types import ModuleType
 
 ROOT = Path(__file__).resolve().parents[2]
 VERIFIER = ROOT / "tools/bazel/phase32_blocker_register_triage.py"
@@ -21,6 +22,22 @@ SOURCE_CONTRACTS = [
     "tools/bazel/manifests/phase26_release_signing_upstream_evidence_contract.json",
     "tools/bazel/manifests/phase27_retained_code_acceptance_decisions_contract.json",
     "tools/bazel/manifests/phase28_final_readiness_packet_contract.json",
+]
+PRODUCER_MODULES = [
+    "tools/bazel/phase26_release_signing_upstream_evidence.py",
+    "tools/bazel/phase27_retained_code_acceptance_decisions.py",
+    "tools/bazel/phase28_final_readiness_packet.py",
+    "tools/bazel/phase31_final_evidence_intake.py",
+]
+PRODUCER_INPUTS = [
+    "tools/bazel/manifests/phase11_cutover_readiness.json",
+    "tools/bazel/manifests/phase11_retained_code_justifications.json",
+    "tools/bazel/manifests/foreign_code_inventory.json",
+    "tools/bazel/manifests/unsafe_boundary_audit.json",
+    "tools/bazel/manifests/phase17_release_candidate_evidence_contract.json",
+    "tools/bazel/manifests/phase18_cutover_review_contract.json",
+    "tools/bazel/manifests/phase20_release_candidate_artifacts_contract.json",
+    "tools/bazel/manifests/phase20_release_environment_inputs.template.json",
 ]
 REQUIRED_ROW_FIELDS = {
     "row_id",
@@ -813,6 +830,373 @@ class Phase32BlockerRegisterTriageTest(unittest.TestCase):
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("demotion_allowed", result.stdout)
+
+
+class Phase32ProducerShapeTest(unittest.TestCase):
+
+    def read_json(self, root: Path, path: str) -> dict[str, object]:
+        return json.loads((root / path).read_text(encoding="utf-8"))
+
+    def write_json(self, root: Path, path: str, data: dict[str,
+                                                           object]) -> None:
+        full_path = root / path
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        full_path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n",
+                             encoding="utf-8")
+
+    def load_producer(self, root: Path, module_name: str) -> ModuleType:
+        module_path = root / f"tools/bazel/{module_name}.py"
+        spec = importlib.util.spec_from_file_location(
+            f"phase32_producer_fixture_{module_name}", module_path)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    def make_producer_root(
+            self) -> tuple[tempfile.TemporaryDirectory[str], Path]:
+        temp_dir = tempfile.TemporaryDirectory()
+        root = Path(temp_dir.name).resolve()
+        relative_paths = {
+            VERIFIER.relative_to(ROOT),
+            NORMALIZATION.relative_to(ROOT),
+            CONTRACT.relative_to(ROOT),
+            *[Path(path) for path in SOURCE_CONTRACTS],
+            *[Path(path) for path in PRODUCER_MODULES],
+            *[Path(path) for path in PRODUCER_INPUTS],
+        }
+        for relative_path in relative_paths:
+            destination = root / relative_path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ROOT / relative_path, destination)
+        return temp_dir, root
+
+    def phase26_all_passed_output(self, root: Path,
+                                  phase26: ModuleType) -> str:
+        phase26.check_contract(root)
+        phase18 = self.read_json(
+            root, "tools/bazel/manifests/phase18_cutover_review_contract.json")
+        generated_at = "2026-07-26T01:00:00Z"
+        consumed_rows = {}
+        for requirement in phase26.phase18_upstream_requirements(phase18):
+            criterion_id = str(requirement["criterion_id"])
+            consumed_rows[criterion_id] = {
+                "artifact_refs":
+                [f"external://phase26/artifacts/{criterion_id}.json"],
+                "criterion_id":
+                criterion_id,
+                "evidence_family":
+                requirement["evidence_family"],
+                "evidence_refs":
+                [f"external://phase26/evidence/{criterion_id}.json"],
+                "exception_status":
+                "none",
+                "failure_reason":
+                "none",
+                "generated_at_utc":
+                generated_at,
+                "maintainer_state":
+                "accepted",
+                "owning_phase":
+                requirement["source_phase"],
+                "redaction_status":
+                "passed",
+                "requirement_ids":
+                list(requirement["requirement_ids"]),
+                "source_lifecycle_id":
+                requirement["source_lifecycle_id"],
+                "source_lifecycle_status":
+                "current",
+                "source_ref_status":
+                "passed",
+                "source_requirement_ids":
+                list(requirement["requirement_ids"]),
+                "status":
+                "passed",
+            }
+        output_dir = Path("build/ci-evidence/phase26")
+        upstream_rows = phase26.build_upstream_rows(
+            root,
+            output_dir,
+            {},
+            True,
+            generated_at,
+            consumed_rows,
+        )
+        table_path = output_dir / "upstream-result-row-table.json"
+        phase26.write_json(root, table_path, {"rows": upstream_rows})
+        phase26.write_json(
+            root,
+            output_dir / "release-upstream-run-manifest.json",
+            {
+                "artifact_name": "phase26-release-signing-upstream-evidence",
+                "generated_at_utc": generated_at,
+                "output_root": output_dir.as_posix(),
+                "phase": phase26.PHASE,
+                "phase_lifecycle_id": phase26.PHASE_LIFECYCLE_ID,
+                "real_release_evidence_supplied": True,
+                "release_status": "passed",
+                "upstream_criteria_count": len(upstream_rows),
+            },
+        )
+        return table_path.as_posix()
+
+    def phase31_accept_release_output(self, root: Path,
+                                      phase31: ModuleType) -> None:
+        contract = self.read_json(
+            root,
+            "tools/bazel/manifests/phase31_final_evidence_intake_contract.json"
+        )
+        adapter = phase31.contract_adapters(contract)["release-signing"]
+        receipt, _ = phase31.validate_stream_output(
+            root,
+            adapter,
+            Path("build/ci-evidence/phase26"),
+            "external://phase31/submitters/release-maintainer",
+            ["producer-fixture", "phase26"],
+            "a" * 64,
+        )
+        output_dir = phase31.reset_output_root(
+            root, Path("build/ci-evidence/phase31"))
+        phase31.write_phase31_outputs(root, output_dir, [receipt], [])
+
+    def phase27_maintainer_input(self, root: Path,
+                                 phase27: ModuleType) -> dict[str, object]:
+        checked = phase27.check_contract(root)
+        phase18 = checked["phase18_contract"]
+        contract = checked["contract"]
+        maintainer_input = phase27.maintainer_input_template(phase18, contract)
+        retained_rows = maintainer_input["retained_code_decisions"]
+        for index, row in enumerate(retained_rows):
+            row["decision"] = "exception" if index == 0 else "approve"
+            row["approver"] = "phase32-producer-fixture-maintainer"
+            row["decision_timestamp"] = "2026-07-26T01:05:00Z"
+            row["rationale"] = "Producer-shaped retained-code review completed."
+            row["residual_risk"] = "Bounded residual risk remains documented."
+            row["redaction_summary"] = "Reference-only evidence; scan passed."
+            if index != 0:
+                continue
+            exception = row["exception"]
+            exception.update({
+                "scope": row["packet_id"],
+                "rationale": "A bounded retained-code exception is required.",
+                "approver": row["approver"],
+                "approver_role": row["approver_role"],
+                "affected_printer_or_release_surface":
+                "retained runtime compatibility boundary",
+                "mitigation_or_follow_up":
+                "Review the retained boundary at the next release gate.",
+                "expiry_or_review_trigger": "Next release-candidate review",
+                "evidence_refs": list(row["evidence_refs"]),
+                "residual_risk": row["residual_risk"],
+                "owner": row["approver"],
+            })
+
+        for row in maintainer_input["final_readiness_decisions"]:
+            criterion_id = str(row["criterion_id"])
+            is_blocked = criterion_id in {
+                "final-maintainer-decision",
+                "final-reference-demotion-allowed",
+            }
+            row["decision"] = "reject" if is_blocked else "approve"
+            row["status"] = "blocked" if is_blocked else "passed"
+            row["approver"] = "phase32-producer-fixture-maintainer"
+            row["approver_role"] = self.final_role_for_criterion(criterion_id)
+            row["decision_timestamp"] = "2026-07-26T01:05:00Z"
+            row["rationale"] = "Producer-shaped final criterion review completed."
+            row["evidence_refs"] = [
+                f"external://phase26/evidence/{criterion_id}.json"
+            ]
+            row["residual_risk"] = "Bounded residual risk remains documented."
+            row["redaction_summary"] = "Reference-only evidence; scan passed."
+        return maintainer_input
+
+    def final_role_for_criterion(self, criterion_id: str) -> str:
+        if criterion_id == "final-hardware-safety-media-evidence":
+            return "safety-maintainer"
+        if criterion_id == "final-live-network-transfer-evidence":
+            return "network-security-maintainer"
+        if criterion_id in {
+                "final-release-artifact-signing-evidence",
+                "final-reference-demotion-allowed",
+        }:
+            return "release-maintainer"
+        return "cutover-maintainer"
+
+    def generate_producer_fixture(
+        self, ) -> tuple[tempfile.TemporaryDirectory[str], Path]:
+        temp_dir, root = self.make_producer_root()
+        phase26 = self.load_producer(
+            root, "phase26_release_signing_upstream_evidence")
+        phase27 = self.load_producer(
+            root, "phase27_retained_code_acceptance_decisions")
+        phase28 = self.load_producer(root, "phase28_final_readiness_packet")
+        phase31 = self.load_producer(root, "phase31_final_evidence_intake")
+
+        table_path = self.phase26_all_passed_output(root, phase26)
+        self.phase31_accept_release_output(root, phase31)
+
+        maintainer_input = self.phase27_maintainer_input(root, phase27)
+        maintainer_input_path = "build/ci-evidence/phase27-maintainer-input.json"
+        phase27.write_json(root, Path(maintainer_input_path), maintainer_input)
+        phase27.write_phase27_outputs(
+            root,
+            Path("build/ci-evidence/phase27"),
+            maintainer_input_path,
+            table_path,
+        )
+
+        phase26_path, phase26_rows = phase28.load_phase26_rows(
+            root, table_path)
+        phase27_path, handoff, phase27_bundle = phase28.load_phase27_bundle(
+            root, "build/ci-evidence/phase27/phase28-handoff-manifest.json")
+        phase28.write_phase28_outputs(
+            root,
+            phase28.check_contract(root),
+            phase26_path,
+            phase26_rows,
+            phase27_path,
+            handoff,
+            phase27_bundle,
+            None,
+            "build/ci-evidence/phase28",
+        )
+        return temp_dir, root
+
+    def run_phase32(self, root: Path) -> subprocess.CompletedProcess[str]:
+        verifier = root / "tools/bazel/phase32_blocker_register_triage.py"
+        return subprocess.run(
+            [
+                "python3",
+                verifier.as_posix(),
+                "--quick",
+                "--phase31-output-dir",
+                "build/ci-evidence/phase31",
+                "--phase27-output-dir",
+                "build/ci-evidence/phase27",
+                "--phase28-output-dir",
+                "build/ci-evidence/phase28",
+                "--output-dir",
+                "build/ci-evidence/phase32",
+            ],
+            cwd=root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            check=False,
+            shell=False,
+        )
+
+    def test_all_passed_phase26_table_crosses_phase31_without_release_blocker(
+            self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+
+        # Act
+        result = self.run_phase32(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        phase26_rows = self.read_json(
+            root,
+            "build/ci-evidence/phase26/upstream-result-row-table.json")["rows"]
+        receipt = self.read_json(
+            root,
+            "build/ci-evidence/phase31/stream-receipts/release-signing-final-intake-receipt.json"
+        )
+        register_rows = self.read_json(
+            root, "build/ci-evidence/phase32/blocker-register.json")["rows"]
+        self.assertTrue(all(row["status"] == "passed" for row in phase26_rows))
+        self.assertEqual(receipt["finality_status"], "accepted-final")
+        self.assertEqual(
+            receipt["consumed_upstream_row_refs"],
+            ["build/ci-evidence/phase26/upstream-result-row-table.json"],
+        )
+        self.assertFalse([
+            row for row in register_rows
+            if row["source_domain"] == "release_signing"
+        ])
+
+    def test_phase27_and_phase28_producers_preserve_all_decision_identities(
+            self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+
+        # Act
+        result = self.run_phase32(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        register_path = "build/ci-evidence/phase32/blocker-register.json"
+        rows = self.read_json(root, register_path)["rows"]
+        decision_rows = [
+            row for row in rows
+            if row["producer_phase"] in {"phase27", "phase28"}
+        ]
+        self.assertEqual(
+            {row["decision_axis"]
+             for row in decision_rows},
+            {
+                "retained_code",
+                "residual_risk",
+                "exception",
+                "readiness",
+                "demotion",
+            },
+        )
+        self.assertTrue(
+            any(row["decision_axis"] == "retained_code"
+                and row["source_subject_id"].startswith("packet-")
+                for row in decision_rows))
+        self.assertTrue(
+            any(row["decision_axis"] == "exception"
+                and row["source_subject_id"].startswith("packet-")
+                for row in decision_rows))
+        self.assertTrue(
+            any(row["decision_axis"] == "readiness"
+                and row["source_subject_id"] == "final-maintainer-decision"
+                for row in decision_rows))
+        demotion_rows = [
+            row for row in decision_rows if row["decision_axis"] == "demotion"
+        ]
+        self.assertTrue(demotion_rows)
+        self.assertEqual(
+            {row["decision_subject_id"]
+             for row in demotion_rows},
+            {"final-reference-demotion-allowed"},
+        )
+        register_text = (root / register_path).read_text(encoding="utf-8")
+        self.assertNotIn("demotion_allowed", register_text)
+        self.assertNotIn("final readiness approved", register_text.casefold())
+        self.assertTrue(
+            all(row["proof_eligibility"] == "ineligible"
+                for row in decision_rows))
+
+        before_ids = {
+            (row["producer_artifact_kind"], row["source_subject_id"]):
+            row["row_id"]
+            for row in decision_rows if row["decision_axis"] == "retained_code"
+        }
+        residual_path = "build/ci-evidence/phase27/residual-risk-register.json"
+        residual_register = self.read_json(root, residual_path)
+        residual_register["rows"][0]["owner"] = "changed-owner"
+        residual_register["rows"][0][
+            "residual_risk"] = "Changed mutable risk wording."
+        self.write_json(root, residual_path, residual_register)
+        rerun = self.run_phase32(root)
+        self.assertEqual(rerun.returncode, 0, rerun.stdout)
+        rerun_rows = self.read_json(root, register_path)["rows"]
+        after_ids = {
+            (row["producer_artifact_kind"], row["source_subject_id"]):
+            row["row_id"]
+            for row in rerun_rows
+            if row["producer_phase"] in {"phase27", "phase28"}
+            and row["decision_axis"] == "retained_code"
+        }
+        self.assertEqual(before_ids, after_ids)
 
 
 if __name__ == "__main__":

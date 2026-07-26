@@ -192,6 +192,7 @@ case "$command_name" in
     python3 tools/bazel/phase32_blocker_register_triage.py --quick --phase31-output-dir build/ci-evidence/phase31 --phase27-output-dir build/ci-evidence/phase27 --phase28-output-dir build/ci-evidence/phase28 --output-dir build/ci-evidence/phase32
     ;;
   phase32_verify_tests)
+    python3 tools/bazel/phase32_blocker_normalization_test.py
     python3 tools/bazel/phase32_blocker_register_triage_test.py
     ;;
   phase33_verify)
