@@ -42,8 +42,21 @@
     "raw_evidence_consumed": false
   },
   "ledger_schema": {
+    "row_kinds": [
+      "evidence",
+      "decision-domain"
+    ],
     "required_fields": [
       "row_id",
+      "ledger_row_kind",
+      "source_domain",
+      "producer_phase",
+      "producer_artifact_kind",
+      "source_row_kind",
+      "source_subject_id",
+      "decision_axis",
+      "decision_subject_id",
+      "phase_lifecycle_id",
       "source_stream",
       "source_ref",
       "requirement_ids",
@@ -60,10 +73,21 @@
       "residual_risk_decision_refs",
       "exception_decision_refs",
       "readiness_decision_refs",
+      "demotion_decision_refs",
       "coverage_state",
       "readiness_effect",
       "reason_codes"
     ]
+  },
+  "decision_domain_policy": {
+    "canonical_rows_from": "phase32 canonical Phase 27/28 decision-domain rows",
+    "evidence_authority": "phase31 accepted-final receipts only",
+    "exact_decision_target_fields": [
+      "row_ref",
+      "decision_axis",
+      "decision_subject_id"
+    ],
+    "readiness_and_demotion_are_orthogonal": true
   },
   "sparse_blocker_overlay_policy": {
     "expected_rows_from": "phase31 accepted-final receipts and consumed_upstream_row_refs",
@@ -135,7 +159,20 @@
     "readiness-input-invalid",
     "approval-missing",
     "approval-invalid",
-    "approval-rejected"
+    "approval-rejected",
+    "decision-target-missing",
+    "decision-target-row-mismatch",
+    "decision-target-axis-mismatch",
+    "decision-target-subject-mismatch",
+    "decision-target-duplicate",
+    "decision-target-conflict",
+    "decision-target-multi-match",
+    "decision-target-malformed",
+    "decision-lifecycle-stale",
+    "decision-value-invalid",
+    "decision-rejected",
+    "decision-hard-blocker",
+    "decision-readiness-prerequisites-blocked"
   ],
   "hard_blocker_problem_kinds": [
     "redaction_failed",

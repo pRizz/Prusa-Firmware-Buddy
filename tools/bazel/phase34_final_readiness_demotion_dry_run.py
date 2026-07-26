@@ -12,6 +12,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from phase34_decision_reconciliation import reconcile_decision_rows
+
 
 ROOT = Path(__file__).resolve().parents[2]
 PHASE = "34-final-readiness-and-demotion-dry-run"
@@ -39,6 +41,15 @@ REQUIRED_PHASE31_STREAMS = (
 )
 LEDGER_FIELDS = [
     "row_id",
+    "ledger_row_kind",
+    "source_domain",
+    "producer_phase",
+    "producer_artifact_kind",
+    "source_row_kind",
+    "source_subject_id",
+    "decision_axis",
+    "decision_subject_id",
+    "phase_lifecycle_id",
     "source_stream",
     "source_ref",
     "requirement_ids",
@@ -55,6 +66,7 @@ LEDGER_FIELDS = [
     "residual_risk_decision_refs",
     "exception_decision_refs",
     "readiness_decision_refs",
+    "demotion_decision_refs",
     "coverage_state",
     "readiness_effect",
     "reason_codes",
@@ -102,6 +114,7 @@ PHASE33_REQUIRED_DECISION_FIELDS = [
     "decision_type",
     "decision_value",
     "source_row_refs",
+    "decision_targets",
     "maintainer_identity_ref",
     "maintainer_role",
     "owner_signoff_ref",
@@ -117,6 +130,14 @@ PHASE33_DECISION_VALUE_ENUMS = {
     "readiness": {"approve", "block"},
     "reference_demotion": {"approve", "reject"},
 }
+PHASE33_DECISION_AXES = {
+    "retained_code": "retained_code",
+    "residual_risk": "residual_risk",
+    "exception": "exception",
+    "readiness": "readiness",
+    "reference_demotion": "demotion",
+}
+DECISION_DOMAIN_PRODUCER_PHASES = {"phase27", "phase28"}
 EXPECTED_GATE_BY_STREAM = {
     "simulator": "final-simulator-evidence",
     "hardware-media-safety": "final-hardware-safety-media-evidence",
@@ -380,6 +401,23 @@ def validate_contract(contract: dict[str, Any]) -> None:
     ledger_schema = contract.get("ledger_schema")
     if not isinstance(ledger_schema, dict) or string_list(ledger_schema.get("required_fields"), "ledger fields") != LEDGER_FIELDS:
         raise VerificationError("ledger_schema.required_fields must match the Phase 34 interface")
+    if ledger_schema.get("row_kinds") != ["evidence", "decision-domain"]:
+        raise VerificationError("ledger_schema.row_kinds must define evidence and decision-domain rows")
+    decision_policy = contract.get("decision_domain_policy")
+    if not isinstance(decision_policy, dict):
+        raise VerificationError("decision_domain_policy must be an object")
+    if decision_policy.get("canonical_rows_from") != "phase32 canonical Phase 27/28 decision-domain rows":
+        raise VerificationError("decision-domain rows must come from canonical Phase 32 Phase 27/28 rows")
+    if decision_policy.get("evidence_authority") != "phase31 accepted-final receipts only":
+        raise VerificationError("Phase 31 must remain the sole evidence authority")
+    if decision_policy.get("exact_decision_target_fields") != [
+        "row_ref",
+        "decision_axis",
+        "decision_subject_id",
+    ]:
+        raise VerificationError("decision targets must use the exact typed identity")
+    if decision_policy.get("readiness_and_demotion_are_orthogonal") is not True:
+        raise VerificationError("readiness and demotion must remain orthogonal")
     if string_list(contract.get("generated_artifacts"), "generated_artifacts") != GENERATED_ARTIFACTS:
         raise VerificationError("generated_artifacts must list the exact Phase 34 bundle")
     source_contracts = require_list(contract.get("source_contracts"), "source_contracts")
@@ -481,7 +519,7 @@ def receipt_problem_kind(receipt: dict[str, Any]) -> str:
     return ""
 
 
-def derive_expected_rows(
+def derive_evidence_rows(
     receipts: list[dict[str, Any]],
     required_streams: dict[str, dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
@@ -505,6 +543,17 @@ def derive_expected_rows(
             rows.append(
                 {
                     "row_id": stable_row_id(stream, source_ref),
+                    "ledger_row_kind": "evidence",
+                    "source_domain": "final_evidence_intake",
+                    "producer_phase": "phase31",
+                    "producer_artifact_kind": "phase31_final_intake_receipt",
+                    "source_row_kind": "accepted_final_receipt",
+                    "source_subject_id": str(
+                        receipt.get("submission_id") or source_ref
+                    ),
+                    "decision_axis": "",
+                    "decision_subject_id": "",
+                    "phase_lifecycle_id": PHASE31_LIFECYCLE_ID,
                     "source_stream": stream,
                     "source_ref": source_ref,
                     "expected_gate": EXPECTED_GATE_BY_STREAM.get(stream, EXPECTED_GATE_BY_STREAM["unknown"]),
@@ -525,6 +574,15 @@ def derive_expected_rows(
         rows.append(
             {
                 "row_id": stable_row_id(stream, source_ref),
+                "ledger_row_kind": "evidence",
+                "source_domain": "final_evidence_intake",
+                "producer_phase": "phase31",
+                "producer_artifact_kind": "phase31_required_stream",
+                "source_row_kind": "missing_required_stream",
+                "source_subject_id": stream,
+                "decision_axis": "",
+                "decision_subject_id": "",
+                "phase_lifecycle_id": PHASE31_LIFECYCLE_ID,
                 "source_stream": stream,
                 "source_ref": source_ref,
                 "expected_gate": str(specification["expected_gate"]),
@@ -540,6 +598,14 @@ def derive_expected_rows(
     for row in rows:
         row["duplicate_source_ref"] = row["source_ref"] in duplicate_refs
     return sorted(rows, key=lambda row: (row["source_stream"], row["source_ref"], row["row_id"]))
+
+
+def derive_expected_rows(
+    receipts: list[dict[str, Any]],
+    required_streams: dict[str, dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    """Compatibility name for the Phase 31 evidence-row constructor."""
+    return derive_evidence_rows(receipts, required_streams)
 
 
 def decisions_for(
@@ -585,17 +651,52 @@ def validate_normalized_decisions(decisions: list[dict[str, Any]]) -> dict[str, 
         if maybe_values is None:
             raise VerificationError(f"{decision_id} unknown decision_type: {decision_type}")
         decision_value = require_string(decision.get("decision_value"), f"{decision_id}.decision_value")
-        if decision_value not in maybe_values:
-            raise VerificationError(f"{decision_id} invalid decision_value for {decision_type}: {decision_value}")
         if decision.get("phase") != "33-maintainer-decision-inputs":
             raise VerificationError(f"{decision_id}.phase must be 33-maintainer-decision-inputs")
-        if decision.get("phase_lifecycle_id") != PHASE33_LIFECYCLE_ID:
-            raise VerificationError(f"{decision_id}.phase_lifecycle_id must be {PHASE33_LIFECYCLE_ID}")
-        if decision.get("decision_axis") != decision_type:
-            raise VerificationError(f"{decision_id}.decision_axis must match decision_type")
+        require_string(
+            decision.get("phase_lifecycle_id"),
+            f"{decision_id}.phase_lifecycle_id",
+        )
+        require_string(
+            decision.get("decision_axis"),
+            f"{decision_id}.decision_axis",
+        )
         source_refs = string_list(decision.get("source_row_refs"), f"{decision_id}.source_row_refs")
         if not source_refs:
             raise VerificationError(f"{decision_id}.source_row_refs must contain at least one entry")
+        raw_targets = require_list(
+            decision.get("decision_targets"),
+            f"{decision_id}.decision_targets",
+        )
+        if not raw_targets:
+            raise VerificationError(
+                f"{decision_id}.decision_targets must contain at least one entry"
+            )
+        decision_targets: list[dict[str, str]] = []
+        for target_index, raw_target in enumerate(raw_targets):
+            if not isinstance(raw_target, dict):
+                raise VerificationError(
+                    f"{decision_id}.decision_targets[{target_index}] must be an object"
+                )
+            target = {
+                field: require_string(
+                    raw_target.get(field),
+                    f"{decision_id}.decision_targets[{target_index}].{field}",
+                )
+                for field in (
+                    "row_ref",
+                    "decision_axis",
+                    "decision_subject_id",
+                )
+            }
+            decision_targets.append(target)
+        if source_refs != [
+            target["row_ref"] for target in decision_targets
+        ]:
+            raise VerificationError(
+                f"{decision_id}.source_row_refs must exactly project "
+                "decision_targets[*].row_ref"
+            )
         for field in ("maintainer_identity_ref", "maintainer_role", "owner_signoff_ref", "rationale"):
             require_string(decision.get(field), f"{decision_id}.{field}")
         require_iso_utc(
@@ -622,6 +723,10 @@ def validate_handoff_decision(
     decision = maybe_decision
     if decision.get("decision_type") != expected_type or decision.get("decision_value") != expected_value:
         raise VerificationError(f"{decision_id} does not authorize {expected_type}={expected_value}")
+    if decision.get("phase_lifecycle_id") != PHASE33_LIFECYCLE_ID:
+        raise VerificationError(
+            f"{decision_id}.phase_lifecycle_id must be {PHASE33_LIFECYCLE_ID}"
+        )
     for field in matching_fields:
         if projection.get(field) != decision.get(field):
             raise VerificationError(f"{decision_id} projection mismatch for {field}")
@@ -722,6 +827,15 @@ def coverage_for_row(
     ]
     row = {
         "row_id": expected["row_id"],
+        "ledger_row_kind": expected["ledger_row_kind"],
+        "source_domain": expected["source_domain"],
+        "producer_phase": expected["producer_phase"],
+        "producer_artifact_kind": expected["producer_artifact_kind"],
+        "source_row_kind": expected["source_row_kind"],
+        "source_subject_id": expected["source_subject_id"],
+        "decision_axis": expected["decision_axis"],
+        "decision_subject_id": expected["decision_subject_id"],
+        "phase_lifecycle_id": expected["phase_lifecycle_id"],
         "source_stream": expected["source_stream"],
         "source_ref": expected["source_ref"],
         "requirement_ids": expected["requirement_ids"],
@@ -738,11 +852,226 @@ def coverage_for_row(
         "residual_risk_decision_refs": residual_refs,
         "exception_decision_refs": exception_refs,
         "readiness_decision_refs": decision_refs(readiness_decisions),
+        "demotion_decision_refs": [],
         "coverage_state": coverage_state,
         "readiness_effect": readiness_effect,
         "reason_codes": sorted(set(reason_codes)),
     }
     return row
+
+
+def is_decision_domain_row(row: dict[str, Any]) -> bool:
+    return (
+        row.get("producer_phase") in DECISION_DOMAIN_PRODUCER_PHASES
+        and row.get("source_domain") in {"retained_code", "readiness"}
+        and row.get("decision_axis") in set(PHASE33_DECISION_AXES.values())
+        and all(
+            isinstance(row.get(field), str) and row[field].strip()
+            for field in (
+                "row_id",
+                "producer_artifact_kind",
+                "source_row_kind",
+                "source_subject_id",
+                "decision_subject_id",
+            )
+        )
+    )
+
+
+def derive_decision_domain_rows(
+    blocker_rows: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    rows = []
+    for blocker in blocker_rows:
+        if not is_decision_domain_row(blocker):
+            continue
+        row = dict(blocker)
+        row["phase_lifecycle_id"] = str(
+            blocker.get("phase_lifecycle_id") or PHASE32_LIFECYCLE_ID
+        )
+        rows.append(row)
+    return sorted(
+        rows,
+        key=lambda row: (
+            str(row["row_id"]),
+            str(row["decision_axis"]),
+            str(row["decision_subject_id"]),
+        ),
+    )
+
+
+def canonical_decision_ref(decision: dict[str, Any]) -> str:
+    return (
+        "build/ci-evidence/phase33/normalized-decision-records.json#"
+        f"{decision.get('decision_id')}"
+    )
+
+
+def decision_targets_domain_rows(
+    decision: dict[str, Any],
+    decision_rows: list[dict[str, Any]],
+) -> bool:
+    row_refs = {
+        f"{PHASE32_REGISTER_REF}#{row['row_id']}"
+        for row in decision_rows
+    }
+    axis_subjects = {
+        (str(row["decision_axis"]), str(row["decision_subject_id"]))
+        for row in decision_rows
+    }
+    raw_targets = decision.get("decision_targets")
+    if not isinstance(raw_targets, list):
+        return False
+    for target in raw_targets:
+        if not isinstance(target, dict):
+            continue
+        if target.get("row_ref") in row_refs:
+            return True
+        if (
+            str(target.get("decision_axis") or ""),
+            str(target.get("decision_subject_id") or ""),
+        ) in axis_subjects:
+            return True
+    return False
+
+
+def decision_domain_ledger_row(
+    canonical_row: dict[str, Any],
+    reconciliation: dict[str, Any],
+) -> dict[str, Any]:
+    decision_refs_by_axis = {
+        "retained_code": [],
+        "residual_risk": [],
+        "exception": [],
+        "readiness": [],
+        "demotion": [],
+    }
+    decision_refs_by_axis[str(canonical_row["decision_axis"])] = list(
+        reconciliation["linked_decision_refs"]
+    )
+    affected_gate = str(canonical_row.get("affected_gate") or "")
+    return {
+        "row_id": str(canonical_row["row_id"]),
+        "ledger_row_kind": "decision-domain",
+        "source_domain": str(canonical_row["source_domain"]),
+        "producer_phase": str(canonical_row["producer_phase"]),
+        "producer_artifact_kind": str(
+            canonical_row["producer_artifact_kind"]
+        ),
+        "source_row_kind": str(canonical_row["source_row_kind"]),
+        "source_subject_id": str(canonical_row["source_subject_id"]),
+        "decision_axis": str(canonical_row["decision_axis"]),
+        "decision_subject_id": str(canonical_row["decision_subject_id"]),
+        "phase_lifecycle_id": str(canonical_row["phase_lifecycle_id"]),
+        "source_stream": str(canonical_row.get("source_stream") or "unknown"),
+        "source_ref": str(canonical_row.get("source_ref") or ""),
+        "requirement_ids": sorted({
+            str(value)
+            for value in canonical_row.get("requirement_ids", [])
+        }),
+        "affected_gates": [affected_gate] if affected_gate else [],
+        "proof_eligibility": str(
+            canonical_row.get("proof_eligibility") or "ineligible"
+        ),
+        "evidence_status": "decision-domain",
+        "row_problem_kind": str(
+            canonical_row.get("row_problem_kind") or "unknown_unclassified"
+        ),
+        "blocker_kind": str(
+            canonical_row.get("blocker_kind")
+            or "unresolved_decision_blocker"
+        ),
+        "severity": str(canonical_row.get("severity") or "critical"),
+        "evidence_refs": sorted({
+            str(ref)
+            for ref in canonical_row.get("evidence_refs", [])
+            if isinstance(ref, str)
+        }),
+        "artifact_refs": sorted({
+            str(ref)
+            for ref in canonical_row.get("artifact_refs", [])
+            if isinstance(ref, str)
+        }),
+        "classification_ref": (
+            f"{PHASE32_REGISTER_REF}#{canonical_row['row_id']}"
+        ),
+        "retained_code_decision_refs": decision_refs_by_axis[
+            "retained_code"
+        ],
+        "residual_risk_decision_refs": decision_refs_by_axis[
+            "residual_risk"
+        ],
+        "exception_decision_refs": decision_refs_by_axis["exception"],
+        "readiness_decision_refs": decision_refs_by_axis["readiness"],
+        "demotion_decision_refs": decision_refs_by_axis["demotion"],
+        "coverage_state": reconciliation["coverage_state"],
+        "readiness_effect": reconciliation["readiness_effect"],
+        "reason_codes": list(reconciliation["reason_codes"]),
+    }
+
+
+def decision_diagnostic_row(
+    diagnostic: dict[str, str],
+    index: int,
+    decisions_by_ref: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    decision_ref = str(
+        diagnostic.get("decision_ref") or f"decision-diagnostic-{index}"
+    )
+    maybe_decision = decisions_by_ref.get(decision_ref)
+    decision_axis = (
+        str(maybe_decision.get("decision_axis") or "")
+        if maybe_decision is not None
+        else ""
+    )
+    readiness_effect = (
+        "independent" if decision_axis == "demotion" else "blocked"
+    )
+    return {
+        "row_id": stable_row_id(
+            "decision-diagnostic",
+            f"{decision_ref}\0{diagnostic.get('reason_code')}\0{index}",
+        ),
+        "ledger_row_kind": "decision-domain",
+        "source_domain": "phase33_decision",
+        "producer_phase": "phase33",
+        "producer_artifact_kind": "normalized_decision_records",
+        "source_row_kind": "decision_diagnostic",
+        "source_subject_id": decision_ref,
+        "decision_axis": decision_axis,
+        "decision_subject_id": "",
+        "phase_lifecycle_id": PHASE33_LIFECYCLE_ID,
+        "source_stream": "phase33-decision",
+        "source_ref": decision_ref,
+        "requirement_ids": REQUIRED_REQUIREMENT_IDS,
+        "affected_gates": [],
+        "proof_eligibility": "ineligible",
+        "evidence_status": "invalid",
+        "row_problem_kind": "unknown_unclassified",
+        "blocker_kind": "unresolved_decision_blocker",
+        "severity": "critical",
+        "evidence_refs": [],
+        "artifact_refs": [],
+        "classification_ref": "",
+        "retained_code_decision_refs": (
+            [decision_ref] if decision_axis == "retained_code" else []
+        ),
+        "residual_risk_decision_refs": (
+            [decision_ref] if decision_axis == "residual_risk" else []
+        ),
+        "exception_decision_refs": (
+            [decision_ref] if decision_axis == "exception" else []
+        ),
+        "readiness_decision_refs": (
+            [decision_ref] if decision_axis == "readiness" else []
+        ),
+        "demotion_decision_refs": (
+            [decision_ref] if decision_axis == "demotion" else []
+        ),
+        "coverage_state": "blocked",
+        "readiness_effect": readiness_effect,
+        "reason_codes": [str(diagnostic["reason_code"])],
+    }
 
 
 def evaluate_coverage(
@@ -751,11 +1080,14 @@ def evaluate_coverage(
     decisions: list[dict[str, Any]],
     required_streams: dict[str, dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
-    expected_rows = derive_expected_rows(receipts, required_streams)
+    expected_rows = derive_evidence_rows(receipts, required_streams)
+    decision_domain_rows = derive_decision_domain_rows(blocker_rows)
     blocker_id_counts: dict[str, int] = {}
     blockers_by_join_key: dict[tuple[str, str], list[tuple[int, dict[str, Any]]]] = {}
     blockers_by_id: dict[str, list[tuple[int, dict[str, Any]]]] = {}
     for index, blocker in enumerate(blocker_rows):
+        if is_decision_domain_row(blocker):
+            continue
         blocker_id = str(blocker.get("row_id") or "")
         blocker_id_counts[blocker_id] = blocker_id_counts.get(blocker_id, 0) + 1
         join_key = (
@@ -783,13 +1115,87 @@ def evaluate_coverage(
             duplicate_classification = duplicate_classification or blocker_id_counts.get(blocker_id, 0) > 1
         ledger.append(coverage_for_row(expected, maybe_blocker, duplicate_classification, decisions))
 
+    domain_decisions = [
+        {
+            **decision,
+            "decision_ref": canonical_decision_ref(decision),
+        }
+        for decision in decisions
+        if decision_targets_domain_rows(decision, decision_domain_rows)
+    ]
+    handled_decision_ids = {
+        str(decision.get("decision_id") or "")
+        for decision in domain_decisions
+    }
+    if decision_domain_rows:
+        reconciliation = reconcile_decision_rows(
+            decision_domain_rows,
+            domain_decisions,
+            expected_phase32_lifecycle_id=PHASE32_LIFECYCLE_ID,
+            expected_phase33_lifecycle_id=PHASE33_LIFECYCLE_ID,
+        )
+        results_by_identity = {
+            (
+                str(result["row_id"]),
+                str(result["decision_axis"]),
+                str(result["decision_subject_id"]),
+            ): result
+            for result in reconciliation["rows"]
+        }
+        prerequisites_blocked = (
+            any(row["readiness_effect"] == "blocked" for row in ledger)
+            or any(
+                result["readiness_effect"] == "blocked"
+                and result["decision_axis"] != "readiness"
+                for result in reconciliation["rows"]
+            )
+            or bool(reconciliation["diagnostics"])
+        )
+        if prerequisites_blocked:
+            for result in results_by_identity.values():
+                if (
+                    result["decision_axis"] == "readiness"
+                    and result["readiness_effect"] == "unblocked"
+                ):
+                    result["coverage_state"] = "blocked"
+                    result["readiness_effect"] = "blocked"
+                    result["reason_codes"] = [
+                        "decision-readiness-prerequisites-blocked"
+                    ]
+        for canonical_row in decision_domain_rows:
+            identity = (
+                str(canonical_row["row_id"]),
+                str(canonical_row["decision_axis"]),
+                str(canonical_row["decision_subject_id"]),
+            )
+            maybe_result = results_by_identity.get(identity)
+            if maybe_result is None:
+                continue
+            ledger.append(
+                decision_domain_ledger_row(canonical_row, maybe_result)
+            )
+        decisions_by_ref = {
+            str(decision["decision_ref"]): decision
+            for decision in domain_decisions
+        }
+        for diagnostic_index, diagnostic in enumerate(
+            reconciliation["diagnostics"]
+        ):
+            ledger.append(
+                decision_diagnostic_row(
+                    diagnostic,
+                    diagnostic_index,
+                    decisions_by_ref,
+                )
+            )
+
     duplicate_blocker_ids = {
         blocker_id
         for blocker_id, count in blocker_id_counts.items()
         if count > 1
     }
     for index, blocker in enumerate(blocker_rows):
-        if index in matched_blocker_indices:
+        if index in matched_blocker_indices or is_decision_domain_row(blocker):
             continue
         reasons = ["dangling-row-ref"]
         if str(blocker.get("row_id") or "") in duplicate_blocker_ids:
@@ -801,6 +1207,8 @@ def evaluate_coverage(
         decision_id = str(decision.get("decision_id") or "")
         decision_id_counts[decision_id] = decision_id_counts.get(decision_id, 0) + 1
     for index, decision in enumerate(decisions):
+        if str(decision.get("decision_id") or "") in handled_decision_ids:
+            continue
         reasons = dangling_decision_reasons(
             decision,
             blockers_by_id,
@@ -823,6 +1231,26 @@ def dangling_blocker_row(
     source_ref = str(blocker.get("source_ref") or "")
     return {
         "row_id": stable_row_id("dangling-phase32", f"{blocker_id}\0{index}\0{source_ref}\0{affected_gate}"),
+        "ledger_row_kind": "decision-domain",
+        "source_domain": str(blocker.get("source_domain") or "unknown"),
+        "producer_phase": str(blocker.get("producer_phase") or "phase32"),
+        "producer_artifact_kind": str(
+            blocker.get("producer_artifact_kind")
+            or "unmatched_blocker_register_row"
+        ),
+        "source_row_kind": str(
+            blocker.get("source_row_kind") or "unmatched_blocker"
+        ),
+        "source_subject_id": str(
+            blocker.get("source_subject_id") or blocker_id
+        ),
+        "decision_axis": str(blocker.get("decision_axis") or ""),
+        "decision_subject_id": str(
+            blocker.get("decision_subject_id") or ""
+        ),
+        "phase_lifecycle_id": str(
+            blocker.get("phase_lifecycle_id") or PHASE32_LIFECYCLE_ID
+        ),
         "source_stream": str(blocker.get("source_stream") or "unknown"),
         "source_ref": source_ref,
         "requirement_ids": sorted({str(value) for value in blocker.get("requirement_ids", [])}),
@@ -839,6 +1267,7 @@ def dangling_blocker_row(
         "residual_risk_decision_refs": [],
         "exception_decision_refs": [],
         "readiness_decision_refs": [],
+        "demotion_decision_refs": [],
         "coverage_state": "dangling-blocker",
         "readiness_effect": "blocked",
         "reason_codes": sorted(set(reason_codes)),
@@ -899,6 +1328,17 @@ def dangling_decision_row(
     })
     return {
         "row_id": stable_row_id("dangling-phase33", f"{decision_id}\0{index}"),
+        "ledger_row_kind": "decision-domain",
+        "source_domain": "phase33_decision",
+        "producer_phase": "phase33",
+        "producer_artifact_kind": "normalized_decision_records",
+        "source_row_kind": "unmatched_decision",
+        "source_subject_id": decision_id,
+        "decision_axis": str(decision.get("decision_axis") or ""),
+        "decision_subject_id": "",
+        "phase_lifecycle_id": str(
+            decision.get("phase_lifecycle_id") or PHASE33_LIFECYCLE_ID
+        ),
         "source_stream": "phase33-decision",
         "source_ref": decision_ref,
         "requirement_ids": REQUIRED_REQUIREMENT_IDS,
@@ -919,8 +1359,13 @@ def dangling_decision_row(
         "residual_risk_decision_refs": [],
         "exception_decision_refs": [],
         "readiness_decision_refs": [decision_ref] if decision.get("decision_type") == "readiness" else [],
+        "demotion_decision_refs": [decision_ref] if decision.get("decision_axis") == "demotion" else [],
         "coverage_state": "dangling-decision",
-        "readiness_effect": "blocked",
+        "readiness_effect": (
+            "independent"
+            if decision.get("decision_axis") == "demotion"
+            else "blocked"
+        ),
         "reason_codes": reason_codes,
     }
 
@@ -1101,7 +1546,12 @@ def readiness_state(
     readiness: dict[str, Any],
     decisions_by_id: dict[str, dict[str, Any]],
 ) -> tuple[str, list[str], str | None]:
-    reason_codes = sorted({reason for row in ledger for reason in row["reason_codes"]})
+    reason_codes = sorted({
+        reason
+        for row in ledger
+        if row["readiness_effect"] == "blocked"
+        for reason in row["reason_codes"]
+    })
     maybe_error = None
     if not ledger:
         reason_codes.append("required-row-missing")
@@ -1201,12 +1651,17 @@ def report_text(packet: dict[str, Any], ledger: list[dict[str, Any]]) -> str:
         f"gate_state: {packet['demotion_dry_run']['gate_state']}",
         f"reason_codes: {', '.join(packet['reason_codes']) or 'none'}",
         "",
-        "| Row | Stream | Coverage | Readiness | Reasons |",
-        "| --- | --- | --- | --- | --- |",
+        "| Row | Kind | Producer | Source kind | Decision axis | Decision subject | Stream | Coverage | Readiness | Reasons |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for row in ledger:
         values = [
             row["row_id"],
+            row["ledger_row_kind"],
+            row["producer_phase"],
+            row["source_row_kind"],
+            row["decision_axis"] or "none",
+            row["decision_subject_id"] or "none",
             row["source_stream"],
             row["coverage_state"],
             row["readiness_effect"],
@@ -1298,6 +1753,15 @@ def validate_generated_outputs(output_dir: Path) -> None:
     blockers = json.loads((output_dir / "readiness-blocker-summary.json").read_text(encoding="utf-8"))
     demotion = json.loads((output_dir / "demotion-dry-run.json").read_text(encoding="utf-8"))
     report = (output_dir / "redacted-readiness-report.md").read_text(encoding="utf-8")
+    for index, row in enumerate(ledger.get("rows", [])):
+        missing_fields = [
+            field for field in LEDGER_FIELDS if field not in row
+        ]
+        if missing_fields:
+            raise VerificationError(
+                f"ledger row {index} missing required fields: "
+                f"{', '.join(missing_fields)}"
+            )
     if packet.get("ledger_rows") != ledger.get("rows"):
         raise VerificationError("packet and canonical ledger rows differ")
     expected_blockers = [row for row in ledger.get("rows", []) if row.get("readiness_effect") == "blocked"]

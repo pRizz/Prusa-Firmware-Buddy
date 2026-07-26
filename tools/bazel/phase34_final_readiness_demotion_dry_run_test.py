@@ -31,6 +31,15 @@ EXPECTED_GATE_BY_STREAM = {
 }
 LEDGER_FIELDS = [
     "row_id",
+    "ledger_row_kind",
+    "source_domain",
+    "producer_phase",
+    "producer_artifact_kind",
+    "source_row_kind",
+    "source_subject_id",
+    "decision_axis",
+    "decision_subject_id",
+    "phase_lifecycle_id",
     "source_stream",
     "source_ref",
     "requirement_ids",
@@ -47,6 +56,7 @@ LEDGER_FIELDS = [
     "residual_risk_decision_refs",
     "exception_decision_refs",
     "readiness_decision_refs",
+    "demotion_decision_refs",
     "coverage_state",
     "readiness_effect",
     "reason_codes",
@@ -99,6 +109,7 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
             "tools/bazel/manifests/phase32_blocker_register_triage_contract.json",
             "tools/bazel/manifests/phase33_maintainer_decision_inputs_contract.json",
             "tools/bazel/manifests/phase28_final_readiness_packet_contract.json",
+            "tools/bazel/phase34_decision_reconciliation.py",
         ]:
             source = ROOT / relative_path
             destination = root / relative_path
@@ -177,6 +188,44 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
             "evidence_refs": [source_ref],
         }
 
+    def decision_domain_row(
+        self,
+        row_id: str,
+        decision_axis: str,
+        decision_subject_id: str,
+        *,
+        producer_phase: str = "phase27",
+        source_domain: str = "retained_code",
+        source_stream: str = "retained-code",
+    ) -> dict[str, object]:
+        return {
+            "row_id": row_id,
+            "source_domain": source_domain,
+            "producer_phase": producer_phase,
+            "producer_artifact_kind": f"{producer_phase}_{decision_axis}_register",
+            "source_row_kind": f"{decision_axis}_decision",
+            "source_subject_id": decision_subject_id,
+            "decision_axis": decision_axis,
+            "decision_subject_id": decision_subject_id,
+            "source_stream": source_stream,
+            "source_ref": (
+                f"build/ci-evidence/{producer_phase}/"
+                f"{decision_axis}-register.json#{decision_subject_id}"
+            ),
+            "requirement_ids": ["READY-01"],
+            "affected_gate": "final-readiness",
+            "row_problem_kind": "missing",
+            "blocker_kind": "unresolved_decision_blocker",
+            "severity": "medium",
+            "owner_ref": "maintainer://phase34-test",
+            "required_next_action": "Record an exact typed maintainer decision.",
+            "decision_impact": f"{decision_axis}_decision_required",
+            "proof_eligibility": "ineligible",
+            "evidence_refs": [
+                f"build/ci-evidence/{producer_phase}/{decision_axis}-register.json"
+            ],
+        }
+
     def decision(
         self,
         decision_id: str,
@@ -185,12 +234,24 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
         blocker_ref: str,
         *,
         affected_gate: str = "final-simulator-evidence",
+        decision_subject_id: str | None = None,
     ) -> dict[str, object]:
+        decision_axis = (
+            "demotion" if decision_type == "reference_demotion" else decision_type
+        )
+        maybe_subject_id = decision_subject_id or blocker_ref.rsplit("#", 1)[-1]
         row = {
             "decision_id": decision_id,
             "decision_type": decision_type,
             "decision_value": decision_value,
             "source_row_refs": [blocker_ref],
+            "decision_targets": [
+                {
+                    "row_ref": blocker_ref,
+                    "decision_axis": decision_axis,
+                    "decision_subject_id": maybe_subject_id,
+                }
+            ],
             "maintainer_identity_ref": "maintainer://phase34-test",
             "maintainer_role": "firmware-maintainer",
             "owner_signoff_ref": "maintainer://phase34-owner",
@@ -202,7 +263,7 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
             "phase_lifecycle_id": "33-2026-07-04T01-36-41",
             "source_row_ids": [blocker_ref.rsplit("#", 1)[-1]],
             "affected_gates": [affected_gate],
-            "decision_axis": decision_type,
+            "decision_axis": decision_axis,
         }
         if decision_type == "exception":
             row["linked_blocker_refs"] = [blocker_ref]
@@ -419,6 +480,175 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
             "required-row-missing",
         )
         self.assertFalse(contract["source_inputs"]["raw_evidence_consumed"])
+        self.assertEqual(
+            contract["ledger_schema"]["row_kinds"],
+            ["evidence", "decision-domain"],
+        )
+        self.assertEqual(
+            contract["decision_domain_policy"]["canonical_rows_from"],
+            "phase32 canonical Phase 27/28 decision-domain rows",
+        )
+        self.assertTrue(
+            {
+                "decision-target-missing",
+                "decision-target-row-mismatch",
+                "decision-target-axis-mismatch",
+                "decision-target-subject-mismatch",
+                "decision-target-duplicate",
+                "decision-target-conflict",
+                "decision-lifecycle-stale",
+                "decision-value-invalid",
+            }.issubset(contract["blocked_reason_codes"])
+        )
+
+    def test_valid_decision_domain_row_is_first_class_and_not_dangling(self) -> None:
+        # Arrange
+        module = self.load_module()
+        source_ref = REQUIRED_STREAM_SOURCE_REFS["simulator"]
+        canonical_row = self.decision_domain_row(
+            "canonical-retained-row",
+            "retained_code",
+            "retained-component",
+        )
+        row_ref = f"{PHASE32_REGISTER}#canonical-retained-row"
+        decision = self.decision(
+            "accept-retained",
+            "retained_code",
+            "accept",
+            row_ref,
+            decision_subject_id="retained-component",
+        )
+
+        # Act
+        ledger = module.evaluate_coverage(
+            [self.receipt("simulator", source_ref)],
+            [canonical_row],
+            [decision],
+        )
+
+        # Assert
+        decision_rows = [
+            row for row in ledger if row["ledger_row_kind"] == "decision-domain"
+        ]
+        self.assertEqual(len(decision_rows), 1)
+        self.assertEqual(decision_rows[0]["row_id"], "canonical-retained-row")
+        self.assertEqual(decision_rows[0]["decision_axis"], "retained_code")
+        self.assertEqual(
+            decision_rows[0]["decision_subject_id"],
+            "retained-component",
+        )
+        self.assertEqual(decision_rows[0]["coverage_state"], "covered")
+        self.assertEqual(decision_rows[0]["readiness_effect"], "unblocked")
+        self.assertEqual(
+            decision_rows[0]["retained_code_decision_refs"],
+            [
+                "build/ci-evidence/phase33/"
+                "normalized-decision-records.json#accept-retained"
+            ],
+        )
+        self.assertFalse(
+            any(row["coverage_state"] == "dangling-blocker" for row in ledger)
+        )
+
+    def test_uncovered_decision_domain_row_preserves_specific_reason(self) -> None:
+        # Arrange
+        module = self.load_module()
+        canonical_row = self.decision_domain_row(
+            "canonical-risk-row",
+            "residual_risk",
+            "risk-component",
+        )
+
+        # Act
+        ledger = module.evaluate_coverage([], [canonical_row], [])
+
+        # Assert
+        self.assertEqual(len(ledger), 1)
+        self.assertEqual(ledger[0]["ledger_row_kind"], "decision-domain")
+        self.assertEqual(ledger[0]["coverage_state"], "blocked")
+        self.assertEqual(
+            ledger[0]["reason_codes"],
+            ["decision-target-missing"],
+        )
+
+    def test_retained_bundle_preserves_dual_source_ledger_identity(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        retained_row = self.decision_domain_row(
+            "canonical-retained-row",
+            "retained_code",
+            "retained-component",
+        )
+        readiness_row = self.decision_domain_row(
+            "canonical-readiness-row",
+            "readiness",
+            "final-readiness",
+            producer_phase="phase28",
+            source_domain="readiness",
+            source_stream="readiness",
+        )
+        retained_ref = f"{PHASE32_REGISTER}#canonical-retained-row"
+        readiness_ref = f"{PHASE32_REGISTER}#canonical-readiness-row"
+        retained_decision = self.decision(
+            "accept-retained",
+            "retained_code",
+            "accept",
+            retained_ref,
+            decision_subject_id="retained-component",
+        )
+        readiness_decision = self.decision(
+            "approve-readiness",
+            "readiness",
+            "approve",
+            readiness_ref,
+            affected_gate="final-readiness",
+            decision_subject_id="final-readiness",
+        )
+        readiness = {
+            "phase": "33-maintainer-decision-inputs",
+            "phase_lifecycle_id": "33-2026-07-04T01-36-41",
+            "handoff_state": "approval-input-recorded",
+            "readiness_input_supplied": True,
+            "decision_id": "approve-readiness",
+            "source_row_refs": [readiness_ref],
+            "phase34_must_generate_final_readiness": True,
+            "rationale": readiness_decision["rationale"],
+        }
+        self.write_fixture(
+            root,
+            self.required_stream_receipts(),
+            [retained_row, readiness_row],
+            [retained_decision, readiness_decision],
+            readiness,
+        )
+
+        # Act
+        result = self.run_quick(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        packet = self.read_json(root, f"{OUTPUT_DIR}/final-readiness-packet.json")
+        ledger = self.read_json(
+            root,
+            f"{OUTPUT_DIR}/readiness-coverage-ledger.json",
+        )
+        report = (
+            root / OUTPUT_DIR / "redacted-readiness-report.md"
+        ).read_text(encoding="utf-8")
+        self.assertEqual(packet["readiness_state"], "unblocked")
+        self.assertEqual(packet["ledger_rows"], ledger["rows"])
+        self.assertEqual(
+            {row["ledger_row_kind"] for row in ledger["rows"]},
+            {"evidence", "decision-domain"},
+        )
+        retained = next(
+            row
+            for row in ledger["rows"]
+            if row["row_id"] == "canonical-retained-row"
+        )
+        self.assertEqual(retained["source_subject_id"], "retained-component")
+        self.assertIn("canonical-retained-row", report)
 
     def test_quick_default_writes_blocked_packet_and_dry_run(self) -> None:
         # Arrange
@@ -896,7 +1126,15 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
                 decisions, readiness, demotion = self.approved_projection_fixture(blocker_ref)
                 demotion_decision = decisions[1]
                 demotion_decision[field] = value
-                demotion_decision["decision_axis"] = demotion_decision["decision_type"]
+                decision_axis = (
+                    "demotion"
+                    if demotion_decision["decision_type"] == "reference_demotion"
+                    else demotion_decision["decision_type"]
+                )
+                demotion_decision["decision_axis"] = decision_axis
+                demotion_decision["decision_targets"][0][
+                    "decision_axis"
+                ] = decision_axis
                 self.write_fixture(root, [self.receipt("simulator", source_ref)], [blocker], decisions, readiness, demotion)
 
                 # Act
