@@ -247,6 +247,6 @@ Phases execute in numeric order across archived milestones. v1.3 continues after
 | 34. Final Readiness and Demotion Dry Run | v1.3 | 2/2 | Complete    | 2026-07-25 |
 | 35. Cutover Decision Artifact | v1.3 | 2/2 | Complete    | 2026-07-26 |
 | 36. Normalize Evidence and Blocker Rows | v1.3 | 2/2 | Complete    | 2026-07-26 |
-| 37. Reconcile Decisions Into Readiness | v1.3 | 0/TBD | Pending | — |
+| 37. Reconcile Decisions Into Readiness | v1.3 | 1/2 | In Progress|  |
 | 38. Fail-Closed Cutover Workflow | v1.3 | 0/TBD | Pending | — |
 | 39. Milestone Metadata Reconciliation | v1.3 | 0/TBD | Pending | — |

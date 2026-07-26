@@ -3,15 +3,15 @@ gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
 status: executing
-stopped_at: Phase 37 context gathered
-last_updated: "2026-07-26T07:36:16.871Z"
-last_activity: 2026-07-26 -- Phase 37 planning complete
+stopped_at: Completed 37-01-PLAN.md
+last_updated: "2026-07-26T07:51:06.281Z"
+last_activity: "2026-07-26"
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 11
-  completed_plans: 9
-  percent: 82
+  completed_plans: 10
+  percent: 91
 ---
 
 # Project State
@@ -26,10 +26,10 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
-Phase: 37 (Reconcile Decisions Into Readiness) — NOT STARTED
-Plan: Not started
+Phase: 37 (Reconcile Decisions Into Readiness) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-07-26 -- Phase 37 planning complete
+Last activity: 2026-07-26
 
 Progress: [#######---] 67% (6/9 v1.3 phases complete)
 
@@ -68,6 +68,7 @@ Progress: [#######---] 67% (6/9 v1.3 phases complete)
 | Phase 35 P02 | 14min | 2 tasks | 3 files |
 | Phase 36 P01 | 28min | 3 tasks | 7 files |
 | Phase 36 P02 | 11min | 2 tasks | 2 files |
+| Phase 37 P01 | 12min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -98,6 +99,9 @@ Recent decisions affecting current work:
 - [Phase 36]: Canonical blocker row IDs derive only from the immutable producer source tuple; decision axis and subject remain a separate exact resolution identity.
 - [Phase 36]: Phase 26 release tables are adapted only through an accepted-final Phase 31 receipt bound to the exact contracted artifact path.
 - [Phase 36]: Recognized malformed and unsupported Phase 27/28 producer containers publish visible critical proof-ineligible rows while valid empty and nested producer bundles remain supported.
+- [Phase 37]: Resolve decisions only through the complete row_ref + decision_axis + decision_subject_id identity.
+- [Phase 37]: Treat conflicting typed targets as blockers instead of selecting a decision by timestamp.
+- [Phase 37]: Keep canonical demotion authorization independent from readiness effects.
 
 ### Pending Todos
 
@@ -114,6 +118,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-26T07:02:15.498Z
-Stopped at: Phase 37 context gathered
-Resume file: .planning/phases/37-reconcile-decisions-into-readiness/37-CONTEXT.md
+Last session: 2026-07-26T07:51:06.278Z
+Stopped at: Completed 37-01-PLAN.md
+Resume file: None

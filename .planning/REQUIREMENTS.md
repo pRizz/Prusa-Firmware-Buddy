@@ -22,13 +22,13 @@ These requirements consume the v1.2 evidence and decision machinery with real sa
 
 ### Maintainer Decisions
 
-- [ ] **DECIDE-01**: Maintainer can record retained-code acceptance, rejection, or approved exception decisions with residual-risk rationale and owner signoff.
-- [ ] **DECIDE-02**: Maintainer can record final-readiness approval or block decisions using machine-readable inputs that consume the triaged evidence rows and approved exceptions.
+- [x] **DECIDE-01**: Maintainer can record retained-code acceptance, rejection, or approved exception decisions with residual-risk rationale and owner signoff.
+- [x] **DECIDE-02**: Maintainer can record final-readiness approval or block decisions using machine-readable inputs that consume the triaged evidence rows and approved exceptions.
 - [x] **DECIDE-03**: Maintainer can record reference-demotion approval or rejection as a separate explicit decision that cannot be inferred from green evidence alone.
 
 ### Readiness and Demotion Trial
 
-- [ ] **READY-01**: Maintainer can generate a final readiness packet from real consumed evidence rows, retained-code decisions, approved exceptions, residual risks, blockers, and artifact references.
+- [x] **READY-01**: Maintainer can generate a final readiness packet from real consumed evidence rows, retained-code decisions, approved exceptions, residual risks, blockers, and artifact references.
 - [ ] **READY-02**: Final readiness remains blocked when required evidence is absent, failed, stale, malformed, redaction-failed, underclassified, or not covered by an explicit approved exception.
 - [ ] **READY-03**: Reference-demotion dry run proves demotion remains blocked without a valid explicit demotion approval and opens only when readiness is otherwise unblocked and the approval input is valid.
 
@@ -75,10 +75,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TRIAGE-01 | Phase 36 | Complete |
 | TRIAGE-02 | Phase 36 | Complete |
 | TRIAGE-03 | Phase 32 | Complete |
-| DECIDE-01 | Phase 37 | Pending |
-| DECIDE-02 | Phase 37 | Pending |
+| DECIDE-01 | Phase 37 | Complete |
+| DECIDE-02 | Phase 37 | Complete |
 | DECIDE-03 | Phase 33 | Complete |
-| READY-01 | Phase 37 | Pending |
+| READY-01 | Phase 37 | Complete |
 | READY-02 | Phase 38 | Pending |
 | READY-03 | Phase 38 | Pending |
 | CUTOVER-01 | Phase 38 | Pending |
