@@ -1161,6 +1161,62 @@ class Phase32ProducerShapeTest(unittest.TestCase):
                          "unknown_unclassified")
         self.assertEqual(release_rows[0]["severity"], "critical")
 
+    def test_phase27_unknown_demotion_authorization_is_critical_blocker(
+            self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+        handoff_path = (
+            "build/ci-evidence/phase27/phase28-handoff-manifest.json")
+        handoff = self.read_json(root, handoff_path)
+        handoff["demotion_authorization"] = "unexpected-new-state"
+        self.write_json(root, handoff_path, handoff)
+
+        # Act
+        result = self.run_phase32(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        rows = self.read_json(
+            root, "build/ci-evidence/phase32/blocker-register.json")["rows"]
+        demotion_rows = [
+            row for row in rows if row["producer_artifact_kind"]
+            == "phase27_phase28_handoff_manifest"
+        ]
+        self.assertEqual(len(demotion_rows), 1)
+        self.assertEqual(demotion_rows[0]["row_problem_kind"],
+                         "unknown_unclassified")
+        self.assertEqual(demotion_rows[0]["severity"], "critical")
+
+    def test_phase28_unknown_demotion_authorization_is_critical_blocker(
+            self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+        demotion_path = (
+            "build/ci-evidence/phase28/"
+            "reference-demotion-authorization-record.json")
+        demotion = self.read_json(root, demotion_path)
+        demotion["reference_demotion_authorization"] = (
+            "unexpected-new-state")
+        self.write_json(root, demotion_path, demotion)
+
+        # Act
+        result = self.run_phase32(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        rows = self.read_json(
+            root, "build/ci-evidence/phase32/blocker-register.json")["rows"]
+        demotion_rows = [
+            row for row in rows if row["producer_artifact_kind"]
+            == "phase28_reference_demotion_authorization_record"
+        ]
+        self.assertEqual(len(demotion_rows), 1)
+        self.assertEqual(demotion_rows[0]["row_problem_kind"],
+                         "unknown_unclassified")
+        self.assertEqual(demotion_rows[0]["severity"], "critical")
+
     def test_phase27_and_phase28_producers_preserve_all_decision_identities(
             self) -> None:
         # Arrange

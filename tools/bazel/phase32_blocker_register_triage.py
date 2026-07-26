@@ -1250,37 +1250,48 @@ def phase27_rows(root: Path, phase27_output_dir: Path) -> list[dict[str, Any]]:
                                  "demotion_decision_required"))
     else:
         handoff = load_json(root, handoff_path)
-        if handoff.get("demotion_authorization") == "blocked":
-            rows.append(
-                build_blocker_row(
-                    source_domain="readiness",
-                    producer_phase="phase27",
-                    producer_artifact_kind="phase27_phase28_handoff_manifest",
-                    source_row_kind="demotion_authorization",
-                    source_subject_id="final-reference-demotion-allowed",
-                    decision_axis="demotion",
-                    decision_subject_id="final-reference-demotion-allowed",
-                    source_stream="readiness",
-                    source_ref=
-                    f"{handoff_path.as_posix()}#demotion-authorization",
-                    signal={
-                        "status": "missing",
-                        "criterion_id": "final-reference-demotion-allowed",
-                        "evidence_refs": [handoff_path.as_posix()]
-                    },
-                    policy_override={
-                        "blocker_kind":
-                        "unresolved_decision_blocker",
-                        "severity":
-                        "high",
-                        "decision_impact":
-                        "demotion_decision_required",
-                        "proof_eligibility":
-                        "ineligible",
-                        "required_next_action":
-                        "Route reference-demotion authorization to the later explicit maintainer decision gate.",
-                    },
-                ))
+        authorization = handoff.get("demotion_authorization")
+        is_blocked = authorization == "blocked"
+        signal = ({
+            "status": "missing",
+            "criterion_id": "final-reference-demotion-allowed",
+            "evidence_refs": [handoff_path.as_posix()],
+        } if is_blocked else {
+            "adapter_problem_kind":
+            "unknown_unclassified",
+            "failure_reason":
+            f"unsupported Phase 27 demotion authorization: {authorization}",
+            "criterion_id":
+            "final-reference-demotion-allowed",
+            "evidence_refs": [handoff_path.as_posix()],
+        })
+        policy_override = ({
+            "blocker_kind":
+            "unresolved_decision_blocker",
+            "severity":
+            "high",
+            "decision_impact":
+            "demotion_decision_required",
+            "proof_eligibility":
+            "ineligible",
+            "required_next_action":
+            "Route reference-demotion authorization to the later explicit maintainer decision gate.",
+        } if is_blocked else None)
+        rows.append(
+            build_blocker_row(
+                source_domain="readiness",
+                producer_phase="phase27",
+                producer_artifact_kind="phase27_phase28_handoff_manifest",
+                source_row_kind="demotion_authorization",
+                source_subject_id="final-reference-demotion-allowed",
+                decision_axis="demotion",
+                decision_subject_id="final-reference-demotion-allowed",
+                source_stream="readiness",
+                source_ref=
+                f"{handoff_path.as_posix()}#demotion-authorization",
+                signal=signal,
+                policy_override=policy_override,
+            ))
     return rows
 
 
@@ -1397,7 +1408,34 @@ def phase28_rows(root: Path, phase28_output_dir: Path) -> list[dict[str, Any]]:
                                  "demotion_decision_required"))
     else:
         demotion = load_json(root, demotion_path)
-        if demotion.get("reference_demotion_authorization") == "blocked":
+        authorization = demotion.get("reference_demotion_authorization")
+        if authorization != "approved":
+            is_blocked = authorization == "blocked"
+            signal = ({
+                "status": "missing",
+                "criterion_id": "final-reference-demotion-allowed",
+                "evidence_refs": [demotion_path.as_posix()],
+            } if is_blocked else {
+                "adapter_problem_kind":
+                "unknown_unclassified",
+                "failure_reason":
+                f"unsupported Phase 28 demotion authorization: {authorization}",
+                "criterion_id":
+                "final-reference-demotion-allowed",
+                "evidence_refs": [demotion_path.as_posix()],
+            })
+            policy_override = ({
+                "blocker_kind":
+                "unresolved_decision_blocker",
+                "severity":
+                "high",
+                "decision_impact":
+                "demotion_decision_required",
+                "proof_eligibility":
+                "ineligible",
+                "required_next_action":
+                "Provide a valid explicit demotion decision in the later demotion gate.",
+            } if is_blocked else None)
             rows.append(
                 build_blocker_row(
                     source_domain="readiness",
@@ -1411,23 +1449,8 @@ def phase28_rows(root: Path, phase28_output_dir: Path) -> list[dict[str, Any]]:
                     source_stream="readiness",
                     source_ref=
                     f"{demotion_path.as_posix()}#reference-demotion-authorization",
-                    signal={
-                        "status": "missing",
-                        "criterion_id": "final-reference-demotion-allowed",
-                        "evidence_refs": [demotion_path.as_posix()]
-                    },
-                    policy_override={
-                        "blocker_kind":
-                        "unresolved_decision_blocker",
-                        "severity":
-                        "high",
-                        "decision_impact":
-                        "demotion_decision_required",
-                        "proof_eligibility":
-                        "ineligible",
-                        "required_next_action":
-                        "Provide a valid explicit demotion decision in the later demotion gate.",
-                    },
+                    signal=signal,
+                    policy_override=policy_override,
                 ))
     return rows
 
