@@ -50,6 +50,13 @@
   "canonical_row_schema": {
     "required_fields": [
       "row_id",
+      "source_domain",
+      "producer_phase",
+      "producer_artifact_kind",
+      "source_row_kind",
+      "source_subject_id",
+      "decision_axis",
+      "decision_subject_id",
       "source_stream",
       "source_ref",
       "requirement_ids",
@@ -65,6 +72,50 @@
     ]
   },
   "enums": {
+    "source_domain": [
+      "final_evidence_intake",
+      "release_signing",
+      "retained_code",
+      "readiness"
+    ],
+    "producer_phase": [
+      "phase26",
+      "phase27",
+      "phase28",
+      "phase31",
+      "phase32"
+    ],
+    "producer_artifact_kind": [
+      "phase26_upstream_result_row_table",
+      "phase27_exception_decision_register",
+      "phase27_phase28_handoff_manifest",
+      "phase27_residual_risk_register",
+      "phase28_blocker_summary",
+      "phase28_exception_residual_risk_summary",
+      "phase28_reference_demotion_authorization_record",
+      "phase31_final_intake_receipt",
+      "phase31_rejected_submissions",
+      "phase32_missing_source_artifact"
+    ],
+    "source_row_kind": [
+      "demotion_authorization",
+      "exception_request",
+      "final_readiness_decision",
+      "intake_receipt",
+      "missing_source_artifact",
+      "readiness_blocker",
+      "rejected_submission",
+      "residual_risk",
+      "retained_code_decision",
+      "upstream_result_criterion"
+    ],
+    "decision_axis": [
+      "retained_code",
+      "residual_risk",
+      "exception",
+      "readiness",
+      "demotion"
+    ],
     "blocker_kind": [
       "repair_item",
       "exception_request",
@@ -106,6 +157,70 @@
       "demotion_decision_required",
       "cutover_verdict_blocked"
     ]
+  },
+  "producer_adapters": {
+    "phase26_release_signing_table": {
+      "selected_stream": "release-signing",
+      "producer_phase": "phase26",
+      "producer_artifact_kind": "phase26_upstream_result_row_table",
+      "expected_artifact_name": "phase26-release-signing-upstream-evidence",
+      "expected_artifact_path": "build/ci-evidence/phase26/upstream-result-row-table.json",
+      "accepted_receipt_finality": "accepted-final",
+      "container_field": "rows",
+      "container_field_must_be_non_empty_list": true,
+      "required_row_fields_from": "source_contracts.phase26.upstream_policy.row_required_fields",
+      "complete_unique_criterion_coverage_from": "source_contracts.phase26.upstream_policy.canonical_phase18_criteria",
+      "recognized_invalid_shape_problem_kind": "malformed",
+      "unsupported_envelope_row_kind_or_status_problem_kind": "unknown_unclassified",
+      "atomic_validation": true,
+      "partial_row_acceptance": false,
+      "passed_rows_emit_blockers": false
+    }
+  },
+  "canonical_identity_policy": {
+    "row_id_source_fields": [
+      "source_domain",
+      "producer_phase",
+      "producer_artifact_kind",
+      "source_row_kind",
+      "source_subject_id"
+    ],
+    "mutable_fields_excluded_from_row_id": [
+      "owner_ref",
+      "row_problem_kind",
+      "severity",
+      "status",
+      "evidence_refs",
+      "source_ref",
+      "generated_at_utc",
+      "required_next_action"
+    ],
+    "decision_identity_fields": [
+      "decision_axis",
+      "decision_subject_id"
+    ],
+    "exact_matching_only": true,
+    "forbidden_fallback_match_fields": [
+      "affected_gate",
+      "source_ref",
+      "source_stream",
+      "path",
+      "prefix"
+    ],
+    "duplicate_source_tuples": "reject",
+    "incompatible_source_decision_remapping": "reject"
+  },
+  "fail_closed_shape_policy": {
+    "recognized_invalid_shape": {
+      "row_problem_kind": "malformed",
+      "severity": "critical",
+      "proof_eligibility": "ineligible"
+    },
+    "unsupported_envelope_row_kind_or_status": {
+      "row_problem_kind": "unknown_unclassified",
+      "severity": "critical",
+      "proof_eligibility": "ineligible"
+    }
   },
   "owner_defaults": {
     "simulator": "simulator-maintainer",
