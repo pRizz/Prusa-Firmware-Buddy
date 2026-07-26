@@ -39,6 +39,13 @@ GENERATED_ARTIFACTS = [
     "contract-snapshots/phase32-blocker-register.json",
 ]
 PHASE32_REGISTER_REF = "build/ci-evidence/phase32/blocker-register.json"
+DECISION_TYPE_AXES = {
+    "retained_code": "retained_code",
+    "residual_risk": "residual_risk",
+    "exception": "exception",
+    "readiness": "readiness",
+    "reference_demotion": "demotion",
+}
 
 
 class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
@@ -118,9 +125,22 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         decision_impact: str = "final_readiness_blocked",
         affected_gate: str = "final-simulator-evidence",
         source_stream: str = "simulator",
+        decision_axis: str | None = None,
+        decision_subject_id: str | None = None,
     ) -> dict[str, object]:
+        maybe_decision_axis = decision_axis
+        if maybe_decision_axis is None:
+            maybe_decision_axis = {
+                "retained_code_decision_required": "retained_code",
+                "residual_risk_decision_required": "residual_risk",
+                "exception_decision_required": "exception",
+                "final_readiness_blocked": "readiness",
+                "demotion_decision_required": "demotion",
+            }[decision_impact]
         return {
             "row_id": row_id,
+            "decision_axis": maybe_decision_axis,
+            "decision_subject_id": decision_subject_id or row_id,
             "source_stream": source_stream,
             "source_ref": f"external://phase32/{row_id}",
             "requirement_ids": ["DECIDE-01"],
@@ -166,10 +186,20 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         source_row_refs: list[str],
         **extra: object,
     ) -> dict[str, object]:
+        decision_axis = DECISION_TYPE_AXES.get(decision_type, decision_type)
+        decision_targets = [
+            {
+                "row_ref": source_row_ref,
+                "decision_axis": decision_axis,
+                "decision_subject_id": source_row_ref.rsplit("#", 1)[-1],
+            }
+            for source_row_ref in source_row_refs
+        ]
         data: dict[str, object] = {
             "decision_id": decision_id,
             "decision_type": decision_type,
             "decision_value": decision_value,
+            "decision_targets": decision_targets,
             "source_row_refs": source_row_refs,
             "maintainer_identity_ref": "maintainer://alice",
             "maintainer_role": "cutover-maintainer",
@@ -224,9 +254,191 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
             decision_types,
             ["retained_code", "residual_risk", "exception", "readiness", "reference_demotion"],
         )
+        self.assertIn("decision_targets", contract["decision_record_schema"]["required_fields"])
+        self.assertEqual(
+            contract["decision_target_schema"]["required_fields"],
+            ["row_ref", "decision_axis", "decision_subject_id"],
+        )
         self.assertEqual(contract["generated_artifacts"], GENERATED_ARTIFACTS)
         self.assertIn("demotion_allowed", contract["prohibited_output_markers"])
         self.assertIn("just phase33-verify", contract["verification_commands"])
+
+    def test_exact_typed_targets_are_preserved_in_normalized_handoff(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        row = self.blocker_row(
+            "retained-row",
+            decision_impact="retained_code_decision_required",
+            source_stream="retained-code",
+            decision_subject_id="retained-subject",
+        )
+        self.write_phase32_fixture(root, [row])
+        decision = self.decision(
+            "accept-retained",
+            "retained_code",
+            "accept",
+            [self.blocker_ref("retained-row")],
+            residual_risk_rationale="Accepted with explicit residual-risk rationale.",
+        )
+        decision["decision_targets"][0]["decision_subject_id"] = "retained-subject"
+        decisions_path = self.write_decisions(root, [decision])
+
+        # Act
+        result = self.run_quick(root, decisions_path)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        normalized = self.read_json(root, "build/ci-evidence/phase33/normalized-decision-records.json")
+        record = normalized["rows"][0]
+        self.assertEqual(
+            record["decision_targets"],
+            [
+                {
+                    "row_ref": self.blocker_ref("retained-row"),
+                    "decision_axis": "retained_code",
+                    "decision_subject_id": "retained-subject",
+                }
+            ],
+        )
+        self.assertEqual(
+            record["source_row_refs"],
+            [target["row_ref"] for target in record["decision_targets"]],
+        )
+
+    def test_typed_target_requires_all_identity_fields(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_fixture(root, [self.blocker_row("readiness-row")])
+        decision = self.decision(
+            "missing-target-subject",
+            "readiness",
+            "block",
+            [self.blocker_ref("readiness-row")],
+        )
+        decision["decision_targets"][0].pop("decision_subject_id")
+        decisions_path = self.write_decisions(root, [decision])
+
+        # Act
+        result = self.run_quick(root, decisions_path)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("decision_targets[0].decision_subject_id", result.stdout)
+
+    def test_typed_target_projection_must_equal_source_row_refs(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_fixture(
+            root,
+            [self.blocker_row("first-readiness-row"), self.blocker_row("second-readiness-row")],
+        )
+        decision = self.decision(
+            "mismatched-projection",
+            "readiness",
+            "block",
+            [self.blocker_ref("first-readiness-row")],
+        )
+        decision["source_row_refs"] = [self.blocker_ref("second-readiness-row")]
+        decisions_path = self.write_decisions(root, [decision])
+
+        # Act
+        result = self.run_quick(root, decisions_path)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("source_row_refs must exactly project decision_targets", result.stdout)
+
+    def test_typed_targets_reject_duplicate_triples(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_fixture(root, [self.blocker_row("readiness-row")])
+        decision = self.decision(
+            "duplicate-triple",
+            "readiness",
+            "block",
+            [self.blocker_ref("readiness-row"), self.blocker_ref("readiness-row")],
+        )
+        decisions_path = self.write_decisions(root, [decision])
+
+        # Act
+        result = self.run_quick(root, decisions_path)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("duplicate decision target triple", result.stdout)
+
+    def test_typed_targets_reject_duplicate_row_refs_with_colliding_identity(self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_phase32_fixture(root, [self.blocker_row("readiness-row")])
+        decision = self.decision(
+            "duplicate-row-ref",
+            "readiness",
+            "block",
+            [self.blocker_ref("readiness-row"), self.blocker_ref("readiness-row")],
+        )
+        decision["decision_targets"][1]["decision_subject_id"] = "colliding-subject"
+        decisions_path = self.write_decisions(root, [decision])
+
+        # Act
+        result = self.run_quick(root, decisions_path)
+
+        # Assert
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("duplicate decision target row_ref", result.stdout)
+
+    def test_typed_targets_reject_axis_subject_and_row_mismatches_without_fallback(self) -> None:
+        cases = [
+            ("axis", {"decision_axis": "readiness"}, "decision target axis mismatch"),
+            ("subject", {"decision_subject_id": "similar-subject"}, "decision target subject mismatch"),
+            (
+                "row",
+                {"row_ref": self.blocker_ref("missing-row")},
+                "decision target row mismatch",
+            ),
+        ]
+
+        for label, mutation, expected in cases:
+            with self.subTest(label=label):
+                # Arrange
+                temp_dir, root = self.make_temp_root()
+                self.addCleanup(temp_dir.cleanup)
+                self.write_phase32_fixture(
+                    root,
+                    [
+                        self.blocker_row(
+                            "risk-row",
+                            decision_impact="residual_risk_decision_required",
+                            decision_subject_id="risk-subject",
+                        )
+                    ],
+                )
+                decision = self.decision(
+                    f"{label}-mismatch",
+                    "residual_risk",
+                    "reject",
+                    [self.blocker_ref("risk-row")],
+                    affected_gates=[],
+                    follow_up_refs=[],
+                )
+                decision["decision_targets"][0]["decision_subject_id"] = "risk-subject"
+                decision["decision_targets"][0].update(mutation)
+                decision["source_row_refs"] = [
+                    target["row_ref"] for target in decision["decision_targets"]
+                ]
+                decisions_path = self.write_decisions(root, [decision])
+
+                # Act
+                result = self.run_quick(root, decisions_path)
+
+                # Assert
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(expected, result.stdout)
 
     def test_quick_without_maintainer_input_writes_template_and_blocked_handoffs(self) -> None:
         # Arrange
@@ -402,7 +614,7 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("duplicates", result.stdout)
+        self.assertIn("conflicts with decision target", result.stdout)
 
     def test_decision_type_must_match_phase32_decision_impact(self) -> None:
         cases = [
@@ -438,7 +650,7 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
 
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
-                self.assertIn("decision_impact", result.stdout)
+                self.assertIn("decision target axis mismatch", result.stdout)
 
     def test_hard_blocker_problem_kinds_reject_normal_acceptance(self) -> None:
         # Arrange
@@ -824,7 +1036,7 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         self.assertNotIn("demotion_allowed", readiness_text)
         self.assertNotIn("final_readiness_status", manifest_text)
 
-    def test_readiness_and_demotion_handoffs_use_latest_timestamp(self) -> None:
+    def test_conflicting_readiness_and_demotion_targets_fail_closed(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         self.addCleanup(temp_dir.cleanup)
@@ -867,13 +1079,8 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         result = self.run_quick(root, decisions_path)
 
         # Assert
-        self.assertEqual(result.returncode, 0, result.stdout)
-        readiness = self.read_json(root, "build/ci-evidence/phase33/readiness-decision-handoff.json")
-        demotion = self.read_json(root, "build/ci-evidence/phase33/demotion-decision-handoff.json")
-        self.assertEqual(readiness["handoff_state"], "blocked-by-maintainer-input")
-        self.assertEqual(readiness["decision_id"], "newer-readiness-block")
-        self.assertEqual(demotion["authorization_state"], "rejected")
-        self.assertEqual(demotion["decision_id"], "newer-demotion-reject")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("conflicts with decision target", result.stdout)
 
     def test_green_evidence_does_not_create_any_approval(self) -> None:
         # Arrange

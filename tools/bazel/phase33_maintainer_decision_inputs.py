@@ -39,6 +39,7 @@ REQUIRED_DECISION_FIELDS = [
     "decision_id",
     "decision_type",
     "decision_value",
+    "decision_targets",
     "source_row_refs",
     "maintainer_identity_ref",
     "maintainer_role",
@@ -48,6 +49,11 @@ REQUIRED_DECISION_FIELDS = [
     "evidence_refs",
     "artifact_refs",
 ]
+REQUIRED_DECISION_TARGET_FIELDS = [
+    "row_ref",
+    "decision_axis",
+    "decision_subject_id",
+]
 DECISION_VALUE_ENUMS = {
     "retained_code": ["accept", "reject", "exception_approve"],
     "residual_risk": ["accept", "reject"],
@@ -56,6 +62,13 @@ DECISION_VALUE_ENUMS = {
     "reference_demotion": ["approve", "reject"],
 }
 DECISION_TYPES = list(DECISION_VALUE_ENUMS)
+DECISION_TYPE_AXES = {
+    "retained_code": "retained_code",
+    "residual_risk": "residual_risk",
+    "exception": "exception",
+    "readiness": "readiness",
+    "reference_demotion": "demotion",
+}
 DECISION_TYPE_IMPACTS = {
     "retained_code": {"retained_code_decision_required"},
     "residual_risk": {"residual_risk_decision_required"},
@@ -401,6 +414,15 @@ def validate_contract(contract: dict[str, Any]) -> None:
     decision_schema = require_dict(contract.get("decision_record_schema"), "decision_record_schema")
     if require_string_list(decision_schema.get("required_fields"), "decision_record_schema.required_fields") != REQUIRED_DECISION_FIELDS:
         raise VerificationError("decision_record_schema.required_fields must match Phase 33 required fields")
+    target_schema = require_dict(contract.get("decision_target_schema"), "decision_target_schema")
+    if require_string_list(target_schema.get("required_fields"), "decision_target_schema.required_fields") != REQUIRED_DECISION_TARGET_FIELDS:
+        raise VerificationError("decision_target_schema.required_fields must match the exact typed target identity")
+    if require_string_list(target_schema.get("exact_phase32_match_fields"), "decision_target_schema.exact_phase32_match_fields") != REQUIRED_DECISION_TARGET_FIELDS:
+        raise VerificationError("decision_target_schema.exact_phase32_match_fields must require the complete typed target identity")
+    if target_schema.get("source_row_refs_projection") != "decision_targets[*].row_ref":
+        raise VerificationError("decision_target_schema.source_row_refs_projection is invalid")
+    if target_schema.get("fallback_matching_allowed") is not False:
+        raise VerificationError("decision_target_schema must prohibit fallback matching")
     enums = require_dict(contract.get("enums"), "enums")
     if require_string_list(enums.get("decision_type"), "enums.decision_type") != DECISION_TYPES:
         raise VerificationError("enums.decision_type must match Phase 33 decision axes")
@@ -510,19 +532,105 @@ def load_maintainer_decisions(root: Path, maybe_decisions_path: str | None, row_
 
 
 def reject_duplicate_axis_refs(decisions: list[dict[str, Any]]) -> None:
-    seen: dict[tuple[str, str], str] = {}
+    seen: dict[tuple[str, str, str], tuple[str, str]] = {}
     for decision in decisions:
-        decision_type = str(decision["decision_type"])
-        if decision_type not in {"retained_code", "residual_risk", "exception"}:
-            continue
-        for source_ref in decision["source_row_refs"]:
-            key = (decision_type, source_ref)
+        for target in decision["decision_targets"]:
+            key = (
+                str(target["row_ref"]),
+                str(target["decision_axis"]),
+                str(target["decision_subject_id"]),
+            )
             maybe_previous = seen.get(key)
             if maybe_previous is not None:
+                previous_id, previous_value = maybe_previous
+                conflict_kind = "conflicts with" if previous_value != decision["decision_value"] else "duplicates"
                 raise VerificationError(
-                    f"{decision['decision_id']} duplicates {source_ref} for {decision_type}; already decided by {maybe_previous}"
+                    f"{decision['decision_id']} {conflict_kind} decision target {key}; "
+                    f"already decided by {previous_id}"
                 )
-            seen[key] = str(decision["decision_id"])
+            seen[key] = (
+                str(decision["decision_id"]),
+                str(decision["decision_value"]),
+            )
+
+
+def validate_decision_targets(
+    decision_id: str,
+    decision_type: str,
+    raw_targets: Any,
+    source_row_refs: list[str],
+    row_map: dict[str, dict[str, Any]],
+) -> tuple[list[dict[str, str]], list[dict[str, Any]]]:
+    raw_target_list = require_list(raw_targets, f"{decision_id}.decision_targets")
+    if not raw_target_list:
+        raise VerificationError(f"{decision_id}.decision_targets must contain at least one entry")
+    expected_axis = DECISION_TYPE_AXES[decision_type]
+    targets: list[dict[str, str]] = []
+    source_rows: list[dict[str, Any]] = []
+    seen_refs: set[str] = set()
+    seen_triples: set[tuple[str, str, str]] = set()
+    for index, raw_target in enumerate(raw_target_list):
+        target = require_dict(raw_target, f"{decision_id}.decision_targets[{index}]")
+        target_values: dict[str, str] = {}
+        for field in REQUIRED_DECISION_TARGET_FIELDS:
+            target_values[field] = require_string(
+                target.get(field),
+                f"{decision_id}.decision_targets[{index}].{field}",
+            )
+        row_ref = target_values["row_ref"]
+        triple = tuple(target_values[field] for field in REQUIRED_DECISION_TARGET_FIELDS)
+        if triple in seen_triples:
+            raise VerificationError(
+                f"{decision_id} contains duplicate decision target triple: {triple}"
+            )
+        seen_triples.add(triple)
+        if row_ref in seen_refs:
+            raise VerificationError(
+                f"{decision_id} contains duplicate decision target row_ref: {row_ref}"
+            )
+        seen_refs.add(row_ref)
+
+        row_id = source_ref_row_id(
+            row_ref,
+            f"{decision_id}.decision_targets[{index}].row_ref",
+        )
+        maybe_row = row_map.get(row_id)
+        if maybe_row is None:
+            raise VerificationError(
+                f"{decision_id} decision target row mismatch: {row_ref}"
+            )
+        canonical_axis = require_string(
+            maybe_row.get("decision_axis"),
+            f"Phase 32 row {row_id}.decision_axis",
+        )
+        canonical_subject = require_string(
+            maybe_row.get("decision_subject_id"),
+            f"Phase 32 row {row_id}.decision_subject_id",
+        )
+        if target_values["decision_axis"] != expected_axis:
+            raise VerificationError(
+                f"{decision_id} decision target axis mismatch for {row_ref}: "
+                f"expected {expected_axis}, got {target_values['decision_axis']}"
+            )
+        if target_values["decision_axis"] != canonical_axis:
+            raise VerificationError(
+                f"{decision_id} decision target axis mismatch for {row_ref}: "
+                f"canonical Phase 32 axis is {canonical_axis}"
+            )
+        if target_values["decision_subject_id"] != canonical_subject:
+            raise VerificationError(
+                f"{decision_id} decision target subject mismatch for {row_ref}: "
+                f"canonical Phase 32 subject is {canonical_subject}"
+            )
+        targets.append(target_values)
+        source_rows.append(maybe_row)
+
+    projected_refs = [target["row_ref"] for target in targets]
+    if source_row_refs != projected_refs:
+        raise VerificationError(
+            f"{decision_id}.source_row_refs must exactly project decision_targets[*].row_ref"
+        )
+    return targets, source_rows
 
 
 def validate_decision(raw_decision: dict[str, Any], row_map: dict[str, dict[str, Any]]) -> dict[str, Any]:
@@ -537,7 +645,13 @@ def validate_decision(raw_decision: dict[str, Any], row_map: dict[str, dict[str,
     if decision_value not in DECISION_VALUE_ENUMS[decision_type]:
         raise VerificationError(f"{decision_id} invalid decision_value for {decision_type}: {decision_value}")
     source_row_refs = require_non_empty_string_list(raw_decision.get("source_row_refs"), f"{decision_id}.source_row_refs")
-    source_rows = validate_source_row_refs(decision_id, "source_row_refs", source_row_refs, row_map)
+    decision_targets, source_rows = validate_decision_targets(
+        decision_id,
+        decision_type,
+        raw_decision.get("decision_targets"),
+        source_row_refs,
+        row_map,
+    )
     for field in ("maintainer_identity_ref", "maintainer_role", "owner_signoff_ref", "rationale"):
         require_string(raw_decision.get(field), f"{decision_id}.{field}")
     require_iso_utc(require_string(raw_decision.get("decision_timestamp"), f"{decision_id}.decision_timestamp"), f"{decision_id}.decision_timestamp")
@@ -549,6 +663,7 @@ def validate_decision(raw_decision: dict[str, Any], row_map: dict[str, dict[str,
     decision["decision_id"] = decision_id
     decision["decision_type"] = decision_type
     decision["decision_value"] = decision_value
+    decision["decision_targets"] = decision_targets
     decision["source_row_refs"] = source_row_refs
     decision["source_rows"] = source_rows
     validate_axis_specific_decision(decision, row_map)
@@ -646,7 +761,7 @@ def normalized_decision_record(decision: dict[str, Any]) -> dict[str, Any]:
     row["phase_lifecycle_id"] = PHASE_LIFECYCLE_ID
     row["source_row_ids"] = [source_ref_row_id(ref) for ref in decision["source_row_refs"]]
     row["affected_gates"] = sorted({str(source_row.get("affected_gate", "")) for source_row in decision["source_rows"] if source_row.get("affected_gate")})
-    row["decision_axis"] = decision["decision_type"]
+    row["decision_axis"] = DECISION_TYPE_AXES[str(decision["decision_type"])]
     return row
 
 
@@ -804,9 +919,21 @@ def latest_decision(decisions: list[dict[str, Any]], decision_type: str) -> dict
 
 
 def maintainer_input_template(row_map: dict[str, dict[str, Any]]) -> dict[str, Any]:
-    maybe_first_row_ref = ""
+    maybe_target: dict[str, str] | None = None
     if row_map:
-        maybe_first_row_ref = f"{PHASE32_REGISTER_REF}#{next(iter(sorted(row_map)))}"
+        first_row_id = next(iter(sorted(row_map)))
+        first_row = row_map[first_row_id]
+        maybe_target = {
+            "row_ref": f"{PHASE32_REGISTER_REF}#{first_row_id}",
+            "decision_axis": require_string(
+                first_row.get("decision_axis"),
+                f"Phase 32 row {first_row_id}.decision_axis",
+            ),
+            "decision_subject_id": require_string(
+                first_row.get("decision_subject_id"),
+                f"Phase 32 row {first_row_id}.decision_subject_id",
+            ),
+        }
     return {
         "schema_version": "1",
         "phase": PHASE,
@@ -816,7 +943,8 @@ def maintainer_input_template(row_map: dict[str, dict[str, Any]]) -> dict[str, A
                 "decision_id": "phase33-example-decision",
                 "decision_type": "readiness",
                 "decision_value": "block",
-                "source_row_refs": [maybe_first_row_ref] if maybe_first_row_ref else [],
+                "decision_targets": [maybe_target] if maybe_target else [],
+                "source_row_refs": [maybe_target["row_ref"]] if maybe_target else [],
                 "maintainer_identity_ref": "maintainer://name-or-group",
                 "maintainer_role": "cutover-maintainer",
                 "owner_signoff_ref": "owner://signoff/ref",

@@ -38,6 +38,7 @@
       "decision_id",
       "decision_type",
       "decision_value",
+      "decision_targets",
       "source_row_refs",
       "maintainer_identity_ref",
       "maintainer_role",
@@ -47,6 +48,20 @@
       "evidence_refs",
       "artifact_refs"
     ]
+  },
+  "decision_target_schema": {
+    "required_fields": [
+      "row_ref",
+      "decision_axis",
+      "decision_subject_id"
+    ],
+    "exact_phase32_match_fields": [
+      "row_ref",
+      "decision_axis",
+      "decision_subject_id"
+    ],
+    "source_row_refs_projection": "decision_targets[*].row_ref",
+    "fallback_matching_allowed": false
   },
   "enums": {
     "decision_type": [
