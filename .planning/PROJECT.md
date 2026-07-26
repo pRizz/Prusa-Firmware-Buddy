@@ -20,7 +20,7 @@ Milestone v1.2 Cutover Evidence Execution and Acceptance shipped on 2026-07-02. 
 
 The replacement firmware is not yet cut over. Final reference demotion remains intentionally blocked until the validated external simulator, hardware, live-service, release, signing, upstream-result, retained-code, residual-risk, and maintainer-decision inputs are supplied, accepted, and followed by an explicit valid demotion approval.
 
-Milestone v1.3 Cutover Approval and Reference Demotion Trial is now active. Phases 31 through 34 are complete: final sanitized evidence intake, blocker triage, explicit maintainer decision inputs, contract-complete readiness generation, and a fail-closed reference-demotion dry run are in place. Phase 35 is next and should publish the auditable approved, blocked, or approved-with-exceptions cutover decision artifact.
+Milestone v1.3 Cutover Approval and Reference Demotion Trial is active. Phases 31 through 37 are complete: final sanitized evidence intake, blocker triage, explicit maintainer decisions, contract-complete readiness generation, a fail-closed reference-demotion dry run, an auditable cutover artifact, canonical blocker identities, and exact decision-to-readiness reconciliation are in place. Phase 38 is next and must make the full Phase 31–35 workflow replace stale authority on every upstream failure while routing valid complete inputs correctly.
 
 ## Current Milestone: v1.3 Cutover Approval and Reference Demotion Trial
 
@@ -76,12 +76,14 @@ Milestone v1.3 Cutover Approval and Reference Demotion Trial is now active. Phas
 - ✓ Maintainers can triage all failed, missing, stale, malformed, redaction-failed, or exceptioned evidence rows into a single blocker register with owners and next actions through Phase 32 blocker register and evidence triage
 - ✓ Maintainers can record retained-code, residual-risk, exception, final-readiness, and demotion decisions using explicit machine-readable inputs through Phase 33 maintainer decision inputs
 - ✓ Maintainers can generate a final readiness packet from all contract-required real consumed evidence streams and prove reference demotion remains fail-closed without separate valid explicit approval through Phase 34 final readiness and demotion dry run
+- ✓ Maintainers can reconcile canonical Phase 32 evidence and decision-domain rows with exact typed Phase 33 decisions into Phase 34 readiness, reaching unblocked only for complete valid producer inputs while stale, mismatched, duplicate, conflicting, rejected, hard-blocker, and symlink-escaped inputs remain fail-closed — validated in Phase 37
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-- [ ] Maintainers can produce a cutover go/no-go decision artifact that routes the project to production cutover or targeted blocker repair.
+- [ ] The full Phase 31–35 workflow replaces stale Phase 34/35 authority on every upstream failure and routes complete valid inputs to the correct approved, blocked, or targeted-repair result.
+- [ ] Phase 31 evidence-intake requirement metadata and roadmap counts agree with the executed artifacts before the v1.3 milestone is re-audited.
 
 ### Out of Scope
 
@@ -103,7 +105,7 @@ v1.1 used the archived v1.0 source-backed evidence baseline without redefining p
 
 v1.2 executed those gate capabilities. Phases 23, 24, and 25 added real-input execution contracts for simulator, hardware/media/safety, and live-service evidence while retaining quick/default outputs as blocked placeholders. Phase 26 added release/signing/provenance evidence handling and upstream result rows. Phase 27 added retained-code, residual-risk, exception, and final-readiness decision inputs. Phase 28 generated the final readiness packet while keeping readiness fail-closed and reference demotion separate. Phase 29 closed the upstream evidence flow from Phase 23-25 rows through Phase 26 into Phase 28. Phase 30 reconciled summary extraction, validation metadata, Phase 25 verification shape, state metadata, and the v1.2 milestone audit before archival.
 
-v1.3 uses the v1.2 machinery with real sanitized inputs instead of expanding the schema surface. Phases 31 through 34 now cover intake, triage, maintainer decisions, contract-complete final readiness, and fail-closed demotion dry-run behavior. Phase 35 remains to produce the durable cutover decision artifact. Retained vendor/HAL replacement, long-run dashboards, and new printer behavior remain future work unless the v1.3 evidence trial exposes a narrow blocker that must be repaired before a decision can be made.
+v1.3 uses the v1.2 machinery with real sanitized inputs instead of expanding the schema surface. Phases 31 through 37 now cover intake, triage, maintainer decisions, contract-complete final readiness, fail-closed demotion dry-run behavior, the durable cutover decision artifact, canonical producer identities, and exact decision reconciliation. Phase 38 remains to prove the full workflow replaces stale authority on upstream failure, and Phase 39 remains to reconcile milestone metadata before re-audit. Retained vendor/HAL replacement, long-run dashboards, and new printer behavior remain future work unless the v1.3 evidence trial exposes a narrow blocker that must be repaired before a decision can be made.
 
 The current architecture is a CMake-composed firmware target with board/printer feature gates, a FreeRTOS imperative shell, Marlin as the printing core, and application layers for GUI, Connect, WUI, transfers, persistent stores, puppies/MMU, resources, and packaging. The Rust rewrite should deliberately separate pure firmware/domain decisions from hardware, RTOS, filesystem, networking, UI, and packaging adapters where practical.
 
@@ -154,6 +156,7 @@ Known concerns to prioritize during planning include global build target couplin
 | Treat Phase 30 as requirement-neutral archival cleanup | Metadata reconciliation should close contradictory planning artifacts without creating new requirement IDs or changing firmware/evidence behavior. | Phase 30 updated state, summary extraction aliases, Phase 25 verification shape, validation metadata, and the v1.2 audit while preserving external evidence boundaries. |
 | Treat v1.3 as a cutover approval trial, not post-cutover hardening | The project has not demoted the C/C++ reference yet; the next highest-value work is to consume real evidence and produce a decision before replacing retained vendor/HAL surfaces or adding dashboards. | v1.3 is scoped to real evidence intake, blocker triage, maintainer decisions, final readiness, reference-demotion dry-run behavior, and a go/no-go decision artifact. |
 | Derive final-evidence completeness from the Phase 31 contract | Submitted accepted receipts are not themselves proof that every required stream is present; readiness needs an independent complete required set. | Phase 34 derives simulator, hardware/media/safety, live-service, and release/signing requirements from validated Phase 31 stream adapters, emits blocked missing rows, and prevents exceptions from covering absent evidence. |
+| Resolve decision readiness only through exact typed identity | Similar row, gate, path, prefix, axis, or subject values must never authorize a canonical blocker row. | Phase 37 binds `row_ref`, `decision_axis`, and `decision_subject_id` as one exact target, keeps demotion orthogonal, and rejects ambiguous, stale, invalid, hard-blocker, or symlink-escaped authority inputs. |
 
 ## Evolution
 
@@ -176,4 +179,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ______________________________________________________________________
 
-*Last updated: 2026-07-25 after Phase 34 completion*
+*Last updated: 2026-07-26 after Phase 37 completion*
