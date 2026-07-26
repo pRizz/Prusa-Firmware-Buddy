@@ -355,6 +355,28 @@ class Phase32BlockerRegisterTriageTest(unittest.TestCase):
         with self.assertRaises(module.VerificationError):
             module.validate_contract(contract)
 
+    def test_contract_validation_rejects_fail_closed_policy_mismatches(
+            self) -> None:
+        # Arrange
+        module = self.load_module()
+        cases = [
+            ("recognized_invalid_shape", "severity", "high"),
+            ("recognized_invalid_shape", "proof_eligibility", "eligible"),
+            ("unsupported_envelope_row_kind_or_status", "severity", "high"),
+            ("unsupported_envelope_row_kind_or_status", "proof_eligibility",
+             "eligible"),
+        ]
+
+        for policy_name, field, mismatched_value in cases:
+            with self.subTest(policy_name=policy_name, field=field):
+                contract = self.read_contract()
+                contract["fail_closed_shape_policy"][policy_name][
+                    field] = mismatched_value
+
+                # Act / Assert
+                with self.assertRaises(module.VerificationError):
+                    module.validate_contract(contract)
+
     def test_unknown_signals_fail_closed_as_critical_decision_blockers(
             self) -> None:
         # Arrange
@@ -1160,6 +1182,28 @@ class Phase32ProducerShapeTest(unittest.TestCase):
         self.assertEqual(release_rows[0]["row_problem_kind"],
                          "unknown_unclassified")
         self.assertEqual(release_rows[0]["severity"], "critical")
+
+    def test_malformed_phase26_table_emits_critical_blocker(self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+        table_path = (
+            "build/ci-evidence/phase26/upstream-result-row-table.json")
+        self.write_json(root, table_path, {"rows": []})
+
+        # Act
+        result = self.run_phase32(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        rows = self.read_json(
+            root, "build/ci-evidence/phase32/blocker-register.json")["rows"]
+        malformed_rows = [
+            row for row in rows if row["source_domain"] == "release_signing"
+            and row["row_problem_kind"] == "malformed"
+        ]
+        self.assertEqual(len(malformed_rows), 1)
+        self.assertEqual(malformed_rows[0]["severity"], "critical")
 
     def test_phase27_unknown_demotion_authorization_is_critical_blocker(
             self) -> None:

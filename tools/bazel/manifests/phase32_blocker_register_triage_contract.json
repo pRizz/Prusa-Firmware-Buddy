@@ -256,7 +256,7 @@
     },
     "malformed": {
       "blocker_kind": "repair_item",
-      "severity": "high",
+      "severity": "critical",
       "decision_impact": "repair_required_before_cutover",
       "proof_eligibility": "ineligible",
       "required_next_action": "Repair the submitted evidence schema before final intake can use it."

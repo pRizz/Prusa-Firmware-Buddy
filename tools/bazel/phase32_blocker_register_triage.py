@@ -494,6 +494,33 @@ def validate_contract(contract: dict[str, Any]) -> None:
         raise VerificationError(
             f"policy_map missing problem kinds: {', '.join(sorted(missing_policy))}"
         )
+    fail_closed_policy = require_dict(
+        contract.get("fail_closed_shape_policy"),
+        "fail_closed_shape_policy",
+    )
+    fail_closed_problem_kinds = {
+        "recognized_invalid_shape": "malformed",
+        "unsupported_envelope_row_kind_or_status": "unknown_unclassified",
+    }
+    for policy_name, expected_problem_kind in fail_closed_problem_kinds.items(
+    ):
+        shape_policy = require_dict(
+            fail_closed_policy.get(policy_name),
+            f"fail_closed_shape_policy.{policy_name}",
+        )
+        if shape_policy.get("row_problem_kind") != expected_problem_kind:
+            raise VerificationError(
+                f"fail_closed_shape_policy.{policy_name}.row_problem_kind must be {expected_problem_kind}"
+            )
+        problem_policy = require_dict(
+            policy_map.get(expected_problem_kind),
+            f"policy_map.{expected_problem_kind}",
+        )
+        for field in ("severity", "proof_eligibility"):
+            if shape_policy.get(field) != problem_policy.get(field):
+                raise VerificationError(
+                    f"fail_closed_shape_policy.{policy_name}.{field} must match policy_map.{expected_problem_kind}.{field}"
+                )
 
     generated_artifacts = set(
         require_list(contract.get("generated_artifacts"),
