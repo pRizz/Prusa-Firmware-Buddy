@@ -9,34 +9,34 @@ These requirements consume the v1.2 evidence and decision machinery with real sa
 
 ### Evidence Intake
 
-- [x] **INTAKE-01**: Maintainer can supply final simulator evidence packets for startup, G-code, GUI, storage, transfer, and selected failure flows using sanitized real-run inputs.
-- [x] **INTAKE-02**: Maintainer can supply final hardware/media/safety evidence packets for supported printer families, storage media, UI input, MMU, RS485, toolchanger, watchdog, thermal, motion, and safe-output scenarios.
-- [x] **INTAKE-03**: Maintainer can supply final live-service evidence packets for Connect, PrusaLink/WUI, TLS, telemetry, proxy, transfer, negative-protocol, long-transfer, and crash-dump flows.
-- [x] **INTAKE-04**: Release manager can supply final release/signing/provenance evidence from real release-environment outputs without exposing private keys, tokens, certificates, service payloads, raw crash dumps, or other secret-bearing data.
+- [ ] **INTAKE-01**: Maintainer can supply final simulator evidence packets for startup, G-code, GUI, storage, transfer, and selected failure flows using sanitized real-run inputs.
+- [ ] **INTAKE-02**: Maintainer can supply final hardware/media/safety evidence packets for supported printer families, storage media, UI input, MMU, RS485, toolchanger, watchdog, thermal, motion, and safe-output scenarios.
+- [ ] **INTAKE-03**: Maintainer can supply final live-service evidence packets for Connect, PrusaLink/WUI, TLS, telemetry, proxy, transfer, negative-protocol, long-transfer, and crash-dump flows.
+- [ ] **INTAKE-04**: Release manager can supply final release/signing/provenance evidence from real release-environment outputs without exposing private keys, tokens, certificates, service payloads, raw crash dumps, or other secret-bearing data.
 
 ### Evidence Triage
 
-- [x] **TRIAGE-01**: Maintainer can aggregate all consumed simulator, hardware/media/safety, live-service, release/signing, upstream-result, retained-code, and readiness rows into a single blocker register.
-- [x] **TRIAGE-02**: Maintainer can classify each failed, missing, stale, malformed, redaction-failed, or exceptioned row with owner, severity, affected gate, required next action, and decision impact.
+- [ ] **TRIAGE-01**: Maintainer can aggregate all consumed simulator, hardware/media/safety, live-service, release/signing, upstream-result, retained-code, and readiness rows into a single blocker register.
+- [ ] **TRIAGE-02**: Maintainer can classify each failed, missing, stale, malformed, redaction-failed, or exceptioned row with owner, severity, affected gate, required next action, and decision impact.
 - [x] **TRIAGE-03**: Maintainer can prove quick/default placeholder outputs, smoke fixtures, and local-only dry-run rows are rejected as final cutover proof.
 
 ### Maintainer Decisions
 
-- [x] **DECIDE-01**: Maintainer can record retained-code acceptance, rejection, or approved exception decisions with residual-risk rationale and owner signoff.
-- [x] **DECIDE-02**: Maintainer can record final-readiness approval or block decisions using machine-readable inputs that consume the triaged evidence rows and approved exceptions.
+- [ ] **DECIDE-01**: Maintainer can record retained-code acceptance, rejection, or approved exception decisions with residual-risk rationale and owner signoff.
+- [ ] **DECIDE-02**: Maintainer can record final-readiness approval or block decisions using machine-readable inputs that consume the triaged evidence rows and approved exceptions.
 - [x] **DECIDE-03**: Maintainer can record reference-demotion approval or rejection as a separate explicit decision that cannot be inferred from green evidence alone.
 
 ### Readiness and Demotion Trial
 
-- [x] **READY-01**: Maintainer can generate a final readiness packet from real consumed evidence rows, retained-code decisions, approved exceptions, residual risks, blockers, and artifact references.
-- [x] **READY-02**: Final readiness remains blocked when required evidence is absent, failed, stale, malformed, redaction-failed, underclassified, or not covered by an explicit approved exception.
-- [x] **READY-03**: Reference-demotion dry run proves demotion remains blocked without a valid explicit demotion approval and opens only when readiness is otherwise unblocked and the approval input is valid.
+- [ ] **READY-01**: Maintainer can generate a final readiness packet from real consumed evidence rows, retained-code decisions, approved exceptions, residual risks, blockers, and artifact references.
+- [ ] **READY-02**: Final readiness remains blocked when required evidence is absent, failed, stale, malformed, redaction-failed, underclassified, or not covered by an explicit approved exception.
+- [ ] **READY-03**: Reference-demotion dry run proves demotion remains blocked without a valid explicit demotion approval and opens only when readiness is otherwise unblocked and the approval input is valid.
 
 ### Cutover Decision
 
-- [x] **CUTOVER-01**: Maintainer can produce a cutover decision artifact with one explicit verdict: approved, blocked, or approved with explicit exceptions.
+- [ ] **CUTOVER-01**: Maintainer can produce a cutover decision artifact with one explicit verdict: approved, blocked, or approved with explicit exceptions.
 - [x] **CUTOVER-02**: Cutover decision artifact links every blocker, exception, residual risk, evidence packet, retained-code decision, readiness result, and demotion decision needed to audit the verdict.
-- [x] **CUTOVER-03**: Cutover decision artifact routes the next milestone to production cutover when approved, or to targeted blocker repair when blocked or approved with exceptions that require follow-up.
+- [ ] **CUTOVER-03**: Cutover decision artifact routes the next milestone to production cutover when approved, or to targeted blocker repair when blocked or approved with exceptions that require follow-up.
 
 ## Future Requirements
 
@@ -68,33 +68,33 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INTAKE-01 | Phase 31 | Complete |
-| INTAKE-02 | Phase 31 | Complete |
-| INTAKE-03 | Phase 31 | Complete |
-| INTAKE-04 | Phase 31 | Complete |
-| TRIAGE-01 | Phase 32 | Complete |
-| TRIAGE-02 | Phase 32 | Complete |
+| INTAKE-01 | Phase 39 | Pending |
+| INTAKE-02 | Phase 39 | Pending |
+| INTAKE-03 | Phase 39 | Pending |
+| INTAKE-04 | Phase 36 | Pending |
+| TRIAGE-01 | Phase 36 | Pending |
+| TRIAGE-02 | Phase 36 | Pending |
 | TRIAGE-03 | Phase 32 | Complete |
-| DECIDE-01 | Phase 33 | Complete |
-| DECIDE-02 | Phase 33 | Complete |
+| DECIDE-01 | Phase 37 | Pending |
+| DECIDE-02 | Phase 37 | Pending |
 | DECIDE-03 | Phase 33 | Complete |
-| READY-01 | Phase 34 | Complete |
-| READY-02 | Phase 34 | Complete |
-| READY-03 | Phase 34 | Complete |
-| CUTOVER-01 | Phase 35 | Complete |
+| READY-01 | Phase 37 | Pending |
+| READY-02 | Phase 38 | Pending |
+| READY-03 | Phase 38 | Pending |
+| CUTOVER-01 | Phase 38 | Pending |
 | CUTOVER-02 | Phase 35 | Complete |
-| CUTOVER-03 | Phase 35 | Complete |
+| CUTOVER-03 | Phase 38 | Pending |
 
 **Coverage:**
 
 - v1.3 requirements: 16 total
 - Mapped to phases: 16
-- Complete: 16
-- Pending: 0
+- Complete: 3
+- Pending: 13
 - Unmapped: 0
 - Duplicate mappings: 0
 
 ______________________________________________________________________
 
 *Requirements defined: 2026-07-02*
-*Last updated: 2026-07-26 after Phase 35 verification passed*
+*Last updated: 2026-07-25 after gap-closure Phases 36-39 were added*

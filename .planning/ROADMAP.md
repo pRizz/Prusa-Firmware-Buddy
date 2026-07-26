@@ -78,6 +78,10 @@ Full phase details are archived in `.planning/milestones/v1.2-ROADMAP.md`.
 - [x] **Phase 33: Maintainer Decision Inputs** - Maintainers can record retained-code, residual-risk, exception, final-readiness, and demotion decisions as explicit machine-readable inputs. (completed 2026-07-04)
 - [x] **Phase 34: Final Readiness and Demotion Dry Run** - Maintainers can generate readiness from real consumed rows and prove demotion stays blocked without valid explicit approval. (completed 2026-07-25)
 - [x] **Phase 35: Cutover Decision Artifact** - Maintainers can publish an auditable approved, blocked, or approved-with-exceptions verdict that routes the next milestone. (completed 2026-07-26)
+- [ ] **Phase 36: Normalize Evidence and Blocker Rows** - Normalize release row tables and decision-domain blocker identities so downstream readiness consumes the real producer shapes.
+- [ ] **Phase 37: Reconcile Decisions Into Readiness** - Join retained-code, residual-risk, exception, and readiness decisions into resolvable Phase 34 ledger rows.
+- [ ] **Phase 38: Fail-Closed Cutover Workflow** - Make upstream failures replace stale authority and prove blocked, approved, and targeted-repair paths end to end.
+- [ ] **Phase 39: Milestone Metadata Reconciliation** - Restore requirement-completion metadata and reconcile roadmap plan details before re-audit.
 
 ## Phase Details
 
@@ -145,33 +149,82 @@ Plans:
 - [x] 35-01-PLAN.md - Contract-first auditable cutover verdict, canonical audit-link index, next-milestone routing, demotion-state separation, and verification wiring.
 - [x] 35-02-PLAN.md - Durable fail-closed replacement of stale cutover approvals when source validation fails.
 
+### Phase 36: Normalize Evidence and Blocker Rows
+**Goal**: Phase 32 consumes the actual Phase 26 release row-table shape and emits canonical resolvable identities for Phase 27/28 decision-domain rows.
+**Depends on**: Phase 35
+**Requirements**: INTAKE-04, TRIAGE-01, TRIAGE-02
+**Gap Closure**: Closes audit gap B2 and provides the canonical row foundation required by B1.
+**Success Criteria** (what must be TRUE):
+  1. An accepted all-passed Phase 26 release row table remains eligible when it flows through Phase 31 into Phase 32.
+  2. Phase 32 preserves stable source-domain and decision-resolution identities for retained-code, residual-risk, exception, readiness, and demotion rows.
+  3. Unknown or malformed table and row shapes still fail closed without collapsing valid row tables into `unknown_unclassified`.
+  4. Focused regressions exercise actual Phase 26, Phase 27, and Phase 28 producer output shapes.
+**Plans**: TBD
+
+### Phase 37: Reconcile Decisions Into Readiness
+**Goal**: Phase 34 resolves the real Phase 27/28 blocker population with explicit Phase 33 decisions and can produce unblocked readiness from complete valid inputs.
+**Depends on**: Phase 36
+**Requirements**: DECIDE-01, DECIDE-02, READY-01
+**Gap Closure**: Closes audit gap B1 and the readiness portion of the broken complete-approved flow.
+**Success Criteria** (what must be TRUE):
+  1. Phase 34 includes canonical evidence and decision-domain rows without treating valid Phase 27/28 rows as unconditional dangling blockers.
+  2. Phase 33 retained-code, residual-risk, exception, and readiness decisions resolve only their exact matching rows.
+  3. Uncovered, mismatched, stale, or invalid decisions remain blocking.
+  4. A regression using actual Phase 31–33 producer outputs reaches unblocked readiness only when all evidence and decisions are valid.
+**Plans**: TBD
+
+### Phase 38: Fail-Closed Cutover Workflow
+**Goal**: The full Phase 31–35 workflow replaces stale authority for every upstream failure and reaches the correct blocked, approved, or targeted-repair route.
+**Depends on**: Phase 37
+**Requirements**: READY-02, READY-03, CUTOVER-01, CUTOVER-03
+**Gap Closure**: Closes audit gap B3, completes the approved flow, and closes the partial stale-approval replacement flow.
+**Success Criteria** (what must be TRUE):
+  1. Every invalid Phase 31/33 source causes Phase 34 to publish a durable blocked replacement before returning failure.
+  2. Workflow orchestration cannot exit while leaving prior Phase 34 or Phase 35 approval authoritative.
+  3. End-to-end regressions cover default blocked, complete approved, targeted-repair, and upstream-source failure paths using real producer output shapes.
+  4. Production-cutover planning is reachable only from a valid approved verdict, while demotion authority remains a separate explicit predicate.
+  5. Failed staged installation restores a safe prior bundle or a validated blocked replacement without weakening fail-closed authority.
+**Plans**: TBD
+
+### Phase 39: Milestone Metadata Reconciliation
+**Goal**: Requirement completion and roadmap metadata agree with the executed and gap-closure evidence before the milestone is re-audited.
+**Depends on**: Phase 38
+**Requirements**: INTAKE-01, INTAKE-02, INTAKE-03
+**Gap Closure**: Closes the Phase 31 summary completion gaps and stale roadmap plan metadata identified by the v1.3 audit.
+**Success Criteria** (what must be TRUE):
+  1. Phase 31 summary frontmatter exposes INTAKE-01 through INTAKE-04 through the supported `requirements-completed` extraction path.
+  2. Phase 31, Phase 32, and Phase 34 roadmap plan counts and plan lists match their on-disk artifacts.
+  3. Requirement traceability, roadmap phase status, summary extraction, and phase verification metadata contain no contradictions.
+  4. A fresh milestone audit can evaluate all sixteen requirements from all three required sources.
+**Plans**: TBD
+
 ## Requirement Coverage
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INTAKE-01 | Phase 31 | Complete |
-| INTAKE-02 | Phase 31 | Complete |
-| INTAKE-03 | Phase 31 | Complete |
-| INTAKE-04 | Phase 31 | Complete |
-| TRIAGE-01 | Phase 32 | Complete |
-| TRIAGE-02 | Phase 32 | Complete |
+| INTAKE-01 | Phase 39 | Pending |
+| INTAKE-02 | Phase 39 | Pending |
+| INTAKE-03 | Phase 39 | Pending |
+| INTAKE-04 | Phase 36 | Pending |
+| TRIAGE-01 | Phase 36 | Pending |
+| TRIAGE-02 | Phase 36 | Pending |
 | TRIAGE-03 | Phase 32 | Complete |
-| DECIDE-01 | Phase 33 | Complete |
-| DECIDE-02 | Phase 33 | Complete |
+| DECIDE-01 | Phase 37 | Pending |
+| DECIDE-02 | Phase 37 | Pending |
 | DECIDE-03 | Phase 33 | Complete |
-| READY-01 | Phase 34 | Complete |
-| READY-02 | Phase 34 | Complete |
-| READY-03 | Phase 34 | Complete |
-| CUTOVER-01 | Phase 35 | Complete |
+| READY-01 | Phase 37 | Pending |
+| READY-02 | Phase 38 | Pending |
+| READY-03 | Phase 38 | Pending |
+| CUTOVER-01 | Phase 38 | Pending |
 | CUTOVER-02 | Phase 35 | Complete |
-| CUTOVER-03 | Phase 35 | Complete |
+| CUTOVER-03 | Phase 38 | Pending |
 
-**Coverage:** 16/16 v1.3 requirements mapped and complete. No orphaned requirements. No duplicate requirement mappings.
+**Coverage:** 16/16 v1.3 requirements mapped; 3 complete and 13 pending gap closure. No orphaned requirements. No duplicate requirement mappings.
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order across archived milestones. v1.3 continues after Phase 30: 31 -> 32 -> 33 -> 34 -> 35.
+Phases execute in numeric order across archived milestones. v1.3 continues after Phase 30: 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -190,3 +243,7 @@ Phases execute in numeric order across archived milestones. v1.3 continues after
 | 33. Maintainer Decision Inputs | v1.3 | 1/1 | Complete    | 2026-07-04 |
 | 34. Final Readiness and Demotion Dry Run | v1.3 | 2/2 | Complete    | 2026-07-25 |
 | 35. Cutover Decision Artifact | v1.3 | 2/2 | Complete    | 2026-07-26 |
+| 36. Normalize Evidence and Blocker Rows | v1.3 | 0/TBD | Pending | — |
+| 37. Reconcile Decisions Into Readiness | v1.3 | 0/TBD | Pending | — |
+| 38. Fail-Closed Cutover Workflow | v1.3 | 0/TBD | Pending | — |
+| 39. Milestone Metadata Reconciliation | v1.3 | 0/TBD | Pending | — |
