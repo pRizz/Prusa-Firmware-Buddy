@@ -1200,11 +1200,12 @@ def missing_optional_row(path: Path, source_stream: str,
 def load_phase27_28_container(
     root: Path,
     artifact_path: Path,
+    adapter_path: Path,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    mapping = PHASE27_28_CONTAINER_ADAPTERS.get(artifact_path)
+    mapping = PHASE27_28_CONTAINER_ADAPTERS.get(adapter_path)
     if mapping is None:
         raise VerificationError(
-            f"no Phase 27/28 container adapter for {artifact_path.as_posix()}")
+            f"no Phase 27/28 container adapter for {adapter_path.as_posix()}")
     try:
         container = json.loads(read_text(root, artifact_path))
     except json.JSONDecodeError as error:
@@ -1273,7 +1274,10 @@ def phase27_rows(root: Path, phase27_output_dir: Path) -> list[dict[str, Any]]:
                                  "residual_risk_decision_required"))
     else:
         residual_items, residual_problem_rows = load_phase27_28_container(
-            root, residual_path)
+            root,
+            residual_path,
+            DEFAULT_PHASE27_OUTPUT_DIR / "residual-risk-register.json",
+        )
         rows.extend(residual_problem_rows)
         for item_index, item in enumerate(residual_items):
             row_type = str(item.get("row_type") or "")
@@ -1335,7 +1339,10 @@ def phase27_rows(root: Path, phase27_output_dir: Path) -> list[dict[str, Any]]:
                                  "exception_decision_required"))
     else:
         exception_items, exception_problem_rows = load_phase27_28_container(
-            root, exception_path)
+            root,
+            exception_path,
+            DEFAULT_PHASE27_OUTPUT_DIR / "exception-decision-register.json",
+        )
         rows.extend(exception_problem_rows)
         for item_index, item in enumerate(exception_items):
             row_type = str(item.get("row_type") or "")
@@ -1447,7 +1454,10 @@ def phase28_rows(root: Path, phase28_output_dir: Path) -> list[dict[str, Any]]:
                                  "final_readiness_blocked"))
     else:
         blocker_items, blocker_problem_rows = load_phase27_28_container(
-            root, blocker_path)
+            root,
+            blocker_path,
+            DEFAULT_PHASE28_OUTPUT_DIR / "blocker-summary.json",
+        )
         rows.extend(blocker_problem_rows)
         for item_index, item in enumerate(blocker_items):
             criterion_id = str(
@@ -1495,7 +1505,11 @@ def phase28_rows(root: Path, phase28_output_dir: Path) -> list[dict[str, Any]]:
                                  "residual_risk_decision_required"))
     else:
         residual_items, residual_problem_rows = load_phase27_28_container(
-            root, residual_path)
+            root,
+            residual_path,
+            DEFAULT_PHASE28_OUTPUT_DIR /
+            "exception-residual-risk-summary.json",
+        )
         rows.extend(residual_problem_rows)
         for item_index, item in enumerate(residual_items):
             criterion_id = str(

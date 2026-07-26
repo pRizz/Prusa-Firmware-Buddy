@@ -1146,7 +1146,12 @@ class Phase32ProducerShapeTest(unittest.TestCase):
         )
         return temp_dir, root
 
-    def run_phase32(self, root: Path) -> subprocess.CompletedProcess[str]:
+    def run_phase32(
+        self,
+        root: Path,
+        phase27_output_dir: str = "build/ci-evidence/phase27",
+        phase28_output_dir: str = "build/ci-evidence/phase28",
+    ) -> subprocess.CompletedProcess[str]:
         verifier = root / "tools/bazel/phase32_blocker_register_triage.py"
         return subprocess.run(
             [
@@ -1156,9 +1161,9 @@ class Phase32ProducerShapeTest(unittest.TestCase):
                 "--phase31-output-dir",
                 "build/ci-evidence/phase31",
                 "--phase27-output-dir",
-                "build/ci-evidence/phase27",
+                phase27_output_dir,
                 "--phase28-output-dir",
-                "build/ci-evidence/phase28",
+                phase28_output_dir,
                 "--output-dir",
                 "build/ci-evidence/phase32",
             ],
@@ -1168,6 +1173,29 @@ class Phase32ProducerShapeTest(unittest.TestCase):
             text=True,
             check=False,
             shell=False,
+        )
+
+    def nest_output_dir(self, root: Path, output_dir: str) -> str:
+        source_dir = root / output_dir
+        source_entries = list(source_dir.iterdir())
+        nested_dir = source_dir / "nested"
+        nested_dir.mkdir()
+        for source_entry in source_entries:
+            shutil.move(source_entry, nested_dir / source_entry.name)
+        return nested_dir.relative_to(root).as_posix()
+
+    def canonical_phase_semantics(
+        self,
+        rows: list[dict[str, object]],
+        producer_phase: str,
+    ) -> list[dict[str, object]]:
+        return sorted(
+            [{
+                key: value
+                for key, value in row.items()
+                if key not in {"source_ref", "evidence_refs"}
+            } for row in rows if row["producer_phase"] == producer_phase],
+            key=lambda row: str(row["row_id"]),
         )
 
     def expected_container_row_id(self, artifact_path: str) -> str:
@@ -1479,6 +1507,58 @@ class Phase32ProducerShapeTest(unittest.TestCase):
         # Assert
         self.assertEqual(result.returncode, 0, result.stdout)
         self.assert_empty_collection_publication(root, artifact_path)
+
+    def test_nested_phase27_bundle_preserves_canonical_semantics(self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+        baseline_result = self.run_phase32(root)
+        self.assertEqual(baseline_result.returncode, 0, baseline_result.stdout)
+        baseline_rows = self.assert_phase32_bundle(root)
+        baseline_semantics = self.canonical_phase_semantics(
+            baseline_rows, "phase27")
+        nested_output_dir = self.nest_output_dir(root,
+                                                 "build/ci-evidence/phase27")
+
+        # Act
+        result = self.run_phase32(root, phase27_output_dir=nested_output_dir)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        nested_rows = self.assert_phase32_bundle(root)
+        self.assertEqual(
+            self.canonical_phase_semantics(nested_rows, "phase27"),
+            baseline_semantics,
+        )
+        self.assertTrue(
+            all(row["source_ref"].startswith(f"{nested_output_dir}/")
+                for row in nested_rows if row["producer_phase"] == "phase27"))
+
+    def test_nested_phase28_bundle_preserves_canonical_semantics(self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+        baseline_result = self.run_phase32(root)
+        self.assertEqual(baseline_result.returncode, 0, baseline_result.stdout)
+        baseline_rows = self.assert_phase32_bundle(root)
+        baseline_semantics = self.canonical_phase_semantics(
+            baseline_rows, "phase28")
+        nested_output_dir = self.nest_output_dir(root,
+                                                 "build/ci-evidence/phase28")
+
+        # Act
+        result = self.run_phase32(root, phase28_output_dir=nested_output_dir)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        nested_rows = self.assert_phase32_bundle(root)
+        self.assertEqual(
+            self.canonical_phase_semantics(nested_rows, "phase28"),
+            baseline_semantics,
+        )
+        self.assertTrue(
+            all(row["source_ref"].startswith(f"{nested_output_dir}/")
+                for row in nested_rows if row["producer_phase"] == "phase28"))
 
     def test_all_passed_phase26_table_crosses_phase31_without_release_blocker(
             self) -> None:
