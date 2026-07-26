@@ -10,6 +10,11 @@ import unittest
 from pathlib import Path
 from types import ModuleType
 
+from phase32_blocker_normalization import (
+    canonical_row_id,
+    canonical_source_identity,
+)
+
 ROOT = Path(__file__).resolve().parents[2]
 VERIFIER = ROOT / "tools/bazel/phase32_blocker_register_triage.py"
 NORMALIZATION = ROOT / "tools/bazel/phase32_blocker_normalization.py"
@@ -60,6 +65,64 @@ REQUIRED_ROW_FIELDS = {
     "decision_impact",
     "proof_eligibility",
     "evidence_refs",
+}
+PHASE32_OUTPUT_BUNDLE = [
+    "blocker-register.json",
+    "decision-impact-index.json",
+    "exception-request-register.json",
+    "residual-risk-request-register.json",
+    "downstream-handoff-manifest.json",
+    "redacted-blocker-register-report.md",
+]
+PRODUCER_CONTAINER_MAPPINGS = {
+    "build/ci-evidence/phase27/residual-risk-register.json": {
+        "source_domain": "retained_code",
+        "producer_phase": "phase27",
+        "producer_artifact_kind": "phase27_residual_risk_register",
+        "source_row_kind": "residual_risk",
+        "source_subject_id": "phase27-residual-risk-register-container",
+        "decision_axis": "residual_risk",
+        "decision_subject_id": "phase27-residual-risk-register-container",
+        "source_stream": "retained-code",
+        "affected_gate": "final-retained-code-acceptance",
+    },
+    "build/ci-evidence/phase27/exception-decision-register.json": {
+        "source_domain": "retained_code",
+        "producer_phase": "phase27",
+        "producer_artifact_kind": "phase27_exception_decision_register",
+        "source_row_kind": "exception_request",
+        "source_subject_id": "phase27-exception-decision-register-container",
+        "decision_axis": "exception",
+        "decision_subject_id":
+        "phase27-exception-decision-register-container",
+        "source_stream": "retained-code",
+        "affected_gate": "final-retained-code-acceptance",
+    },
+    "build/ci-evidence/phase28/blocker-summary.json": {
+        "source_domain": "readiness",
+        "producer_phase": "phase28",
+        "producer_artifact_kind": "phase28_blocker_summary",
+        "source_row_kind": "readiness_blocker",
+        "source_subject_id": "phase28-blocker-summary-container",
+        "decision_axis": "readiness",
+        "decision_subject_id": "phase28-blocker-summary-container",
+        "source_stream": "readiness",
+        "affected_gate": "final-readiness",
+    },
+    "build/ci-evidence/phase28/exception-residual-risk-summary.json": {
+        "source_domain": "readiness",
+        "producer_phase": "phase28",
+        "producer_artifact_kind":
+        "phase28_exception_residual_risk_summary",
+        "source_row_kind": "residual_risk",
+        "source_subject_id":
+        "phase28-exception-residual-risk-summary-container",
+        "decision_axis": "residual_risk",
+        "decision_subject_id":
+        "phase28-exception-residual-risk-summary-container",
+        "source_stream": "readiness",
+        "affected_gate": "final-readiness",
+    },
 }
 
 
@@ -859,8 +922,7 @@ class Phase32ProducerShapeTest(unittest.TestCase):
     def read_json(self, root: Path, path: str) -> dict[str, object]:
         return json.loads((root / path).read_text(encoding="utf-8"))
 
-    def write_json(self, root: Path, path: str, data: dict[str,
-                                                           object]) -> None:
+    def write_json(self, root: Path, path: str, data: object) -> None:
         full_path = root / path
         full_path.parent.mkdir(parents=True, exist_ok=True)
         full_path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n",
@@ -1109,6 +1171,319 @@ class Phase32ProducerShapeTest(unittest.TestCase):
             check=False,
             shell=False,
         )
+
+    def expected_container_row_id(self, artifact_path: str) -> str:
+        mapping = PRODUCER_CONTAINER_MAPPINGS[artifact_path]
+        return canonical_row_id(
+            canonical_source_identity(
+                source_domain=mapping["source_domain"],
+                producer_phase=mapping["producer_phase"],
+                producer_artifact_kind=mapping["producer_artifact_kind"],
+                source_row_kind=mapping["source_row_kind"],
+                source_subject_id=mapping["source_subject_id"],
+            ))
+
+    def assert_phase32_bundle(
+        self,
+        root: Path,
+        *,
+        included_row_id: str | None = None,
+        excluded_row_id: str | None = None,
+    ) -> list[dict[str, object]]:
+        output_dir = root / "build/ci-evidence/phase32"
+        for filename in PHASE32_OUTPUT_BUNDLE:
+            self.assertTrue((output_dir / filename).exists(), filename)
+        rows = self.read_json(
+            root, "build/ci-evidence/phase32/blocker-register.json")["rows"]
+        handoff = self.read_json(
+            root,
+            "build/ci-evidence/phase32/downstream-handoff-manifest.json")
+        handoff_row_ids = {
+            identity["row_id"] for identity in handoff["row_identities"]
+        }
+        self.assertEqual(handoff["row_count"], len(rows))
+        if included_row_id is not None:
+            self.assertIn(included_row_id, handoff_row_ids)
+        if excluded_row_id is not None:
+            self.assertNotIn(excluded_row_id, handoff_row_ids)
+        return rows
+
+    def assert_container_problem(
+        self,
+        root: Path,
+        artifact_path: str,
+        expected_problem_kind: str,
+    ) -> dict[str, object]:
+        mapping = PRODUCER_CONTAINER_MAPPINGS[artifact_path]
+        expected_row_id = self.expected_container_row_id(artifact_path)
+        rows = self.assert_phase32_bundle(root,
+                                          included_row_id=expected_row_id)
+        container_rows = [
+            row for row in rows
+            if row["producer_artifact_kind"]
+            == mapping["producer_artifact_kind"]
+            and row["source_subject_id"] == mapping["source_subject_id"]
+        ]
+        self.assertEqual(len(container_rows), 1)
+        row = container_rows[0]
+        expected_source_ref = f"{artifact_path}#container"
+        expected_decision_impact = (
+            "repair_required_before_cutover"
+            if expected_problem_kind == "malformed" else
+            "cutover_verdict_blocked")
+        for field in [
+                "source_domain",
+                "producer_phase",
+                "producer_artifact_kind",
+                "source_row_kind",
+                "source_subject_id",
+                "decision_axis",
+                "decision_subject_id",
+                "source_stream",
+                "affected_gate",
+        ]:
+            self.assertEqual(row[field], mapping[field], field)
+        self.assertEqual(row["row_id"], expected_row_id)
+        self.assertEqual(row["row_problem_kind"], expected_problem_kind)
+        self.assertEqual(row["severity"], "critical")
+        self.assertEqual(row["proof_eligibility"], "ineligible")
+        self.assertTrue(row["owner_ref"])
+        self.assertTrue(row["required_next_action"])
+        self.assertEqual(row["decision_impact"], expected_decision_impact)
+        self.assertEqual(row["source_ref"], expected_source_ref)
+        self.assertIn(artifact_path, row["evidence_refs"])
+        self.assertIn(expected_source_ref, row["evidence_refs"])
+        return row
+
+    def assert_empty_collection_publication(self, root: Path,
+                                            artifact_path: str) -> None:
+        mapping = PRODUCER_CONTAINER_MAPPINGS[artifact_path]
+        expected_row_id = self.expected_container_row_id(artifact_path)
+        rows = self.assert_phase32_bundle(root,
+                                          excluded_row_id=expected_row_id)
+        self.assertFalse([
+            row for row in rows
+            if row["source_subject_id"] == mapping["source_subject_id"]
+        ])
+        self.assertFalse([
+            row for row in rows if row["producer_artifact_kind"]
+            == mapping["producer_artifact_kind"]
+        ])
+
+    def test_phase27_residual_missing_rows_is_malformed(self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+        artifact_path = (
+            "build/ci-evidence/phase27/residual-risk-register.json")
+        residual = self.read_json(root, artifact_path)
+        del residual["rows"]
+        self.write_json(root, artifact_path, residual)
+
+        # Act
+        result = self.run_phase32(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assert_container_problem(root, artifact_path, "malformed")
+
+    def test_phase27_residual_non_object_envelope_is_unknown(self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+        artifact_path = (
+            "build/ci-evidence/phase27/residual-risk-register.json")
+        self.write_json(root, artifact_path, [])
+
+        # Act
+        result = self.run_phase32(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assert_container_problem(root, artifact_path,
+                                      "unknown_unclassified")
+
+    def test_phase27_exception_mistyped_rows_is_malformed(self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+        artifact_path = (
+            "build/ci-evidence/phase27/exception-decision-register.json")
+        exceptions = self.read_json(root, artifact_path)
+        exceptions["rows"] = {}
+        self.write_json(root, artifact_path, exceptions)
+
+        # Act
+        result = self.run_phase32(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assert_container_problem(root, artifact_path, "malformed")
+
+    def test_phase27_exception_incompatible_discriminator_is_unknown(
+            self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+        artifact_path = (
+            "build/ci-evidence/phase27/exception-decision-register.json")
+        exceptions = self.read_json(root, artifact_path)
+        exceptions[
+            "producer_artifact_kind"] = "phase27_residual_risk_register"
+        self.write_json(root, artifact_path, exceptions)
+
+        # Act
+        result = self.run_phase32(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assert_container_problem(root, artifact_path,
+                                      "unknown_unclassified")
+
+    def test_phase28_blocker_missing_blockers_is_malformed(self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+        artifact_path = "build/ci-evidence/phase28/blocker-summary.json"
+        blocker_summary = self.read_json(root, artifact_path)
+        del blocker_summary["blockers"]
+        self.write_json(root, artifact_path, blocker_summary)
+
+        # Act
+        result = self.run_phase32(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assert_container_problem(root, artifact_path, "malformed")
+
+    def test_phase28_blocker_non_object_envelope_is_unknown(self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+        artifact_path = "build/ci-evidence/phase28/blocker-summary.json"
+        self.write_json(root, artifact_path, [])
+
+        # Act
+        result = self.run_phase32(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assert_container_problem(root, artifact_path,
+                                      "unknown_unclassified")
+
+    def test_phase28_residual_non_object_member_is_atomic_malformed(
+            self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+        artifact_path = (
+            "build/ci-evidence/phase28/exception-residual-risk-summary.json")
+        residual = self.read_json(root, artifact_path)
+        self.assertTrue(residual["rows"])
+        residual["rows"].append("not-an-object")
+        self.write_json(root, artifact_path, residual)
+
+        # Act
+        result = self.run_phase32(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        container_row = self.assert_container_problem(root, artifact_path,
+                                                      "malformed")
+        rows = self.read_json(
+            root, "build/ci-evidence/phase32/blocker-register.json")["rows"]
+        ordinary_rows = [
+            row for row in rows if row["producer_artifact_kind"]
+            == "phase28_exception_residual_risk_summary"
+            and row["row_id"] != container_row["row_id"]
+        ]
+        self.assertFalse(ordinary_rows)
+
+    def test_phase28_residual_incompatible_discriminator_is_unknown(
+            self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+        artifact_path = (
+            "build/ci-evidence/phase28/exception-residual-risk-summary.json")
+        residual = self.read_json(root, artifact_path)
+        residual["producer_artifact_kind"] = "phase28_blocker_summary"
+        self.write_json(root, artifact_path, residual)
+
+        # Act
+        result = self.run_phase32(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assert_container_problem(root, artifact_path,
+                                      "unknown_unclassified")
+
+    def test_phase27_residual_empty_rows_remain_valid(self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+        artifact_path = (
+            "build/ci-evidence/phase27/residual-risk-register.json")
+        residual = self.read_json(root, artifact_path)
+        residual["rows"] = []
+        self.write_json(root, artifact_path, residual)
+
+        # Act
+        result = self.run_phase32(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assert_empty_collection_publication(root, artifact_path)
+
+    def test_phase27_exception_empty_rows_remain_valid(self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+        artifact_path = (
+            "build/ci-evidence/phase27/exception-decision-register.json")
+        exceptions = self.read_json(root, artifact_path)
+        exceptions["rows"] = []
+        self.write_json(root, artifact_path, exceptions)
+
+        # Act
+        result = self.run_phase32(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assert_empty_collection_publication(root, artifact_path)
+
+    def test_phase28_blocker_empty_blockers_remain_valid(self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+        artifact_path = "build/ci-evidence/phase28/blocker-summary.json"
+        blocker_summary = self.read_json(root, artifact_path)
+        blocker_summary["blockers"] = []
+        self.write_json(root, artifact_path, blocker_summary)
+
+        # Act
+        result = self.run_phase32(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assert_empty_collection_publication(root, artifact_path)
+
+    def test_phase28_residual_empty_rows_remain_valid(self) -> None:
+        # Arrange
+        temp_dir, root = self.generate_producer_fixture()
+        self.addCleanup(temp_dir.cleanup)
+        artifact_path = (
+            "build/ci-evidence/phase28/exception-residual-risk-summary.json")
+        residual = self.read_json(root, artifact_path)
+        residual["rows"] = []
+        self.write_json(root, artifact_path, residual)
+
+        # Act
+        result = self.run_phase32(root)
+
+        # Assert
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assert_empty_collection_publication(root, artifact_path)
 
     def test_all_passed_phase26_table_crosses_phase31_without_release_blocker(
             self) -> None:
