@@ -2,15 +2,18 @@
 from __future__ import annotations
 
 import json
+import os
+import shutil
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import phase38_cutover_workflow as workflow
-
-
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, (ROOT / "tools/bazel").as_posix())
+
+import phase38_cutover_workflow as workflow
 
 
 def approved_authority(
@@ -518,6 +521,242 @@ class CoordinatorTests(unittest.TestCase):
             "phase35-authority-guard-blocking",
         )
         self.assertFalse(result.final_authority_available)
+
+
+class WorkflowAttemptMarkerSecurityTests(unittest.TestCase):
+
+    ATTEMPT_ID = "b" * 32
+
+    def setUp(self) -> None:
+        self.temporary_directory = tempfile.TemporaryDirectory()
+        self.root = Path(self.temporary_directory.name)
+        self.output = self.root / workflow.PHASE35_OUTPUT
+        self.output.mkdir(parents=True)
+        self.write_json(
+            self.output / "cutover-decision-run-manifest.json",
+            {"generation_state": "complete"},
+        )
+        self.write_json(
+            self.output / "cutover-decision.json",
+            {
+                "phase_lifecycle_id": workflow.phase35.PHASE_LIFECYCLE_ID,
+                "cutover_verdict": "approved",
+                "readiness_state": "unblocked",
+                "demotion_decision_validation_state": "missing",
+                "demotion_decision_state": "missing",
+                "demotion_gate_state": "blocked",
+            },
+        )
+        self.write_json(
+            self.output / "next-milestone-route.json",
+            {
+                "phase_lifecycle_id": workflow.phase35.PHASE_LIFECYCLE_ID,
+                "source_verdict": "approved",
+                "route": "production-cutover-planning",
+                "requires_fresh_cutover_decision": False,
+            },
+        )
+
+    def tearDown(self) -> None:
+        self.temporary_directory.cleanup()
+
+    @staticmethod
+    def write_json(path: Path, payload: object) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(payload, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
+    def publish(self) -> None:
+        workflow.publish_workflow_attempt_marker(
+            self.root,
+            self.ATTEMPT_ID,
+        )
+
+    def assert_seeded_authority_blocked(self) -> None:
+        authority = workflow.load_final_authority(self.root)
+        self.assertFalse(authority.available)
+        self.assertEqual(
+            authority.reason_category,
+            "workflow-attempt-blocking",
+        )
+        shell = self.root / workflow.WORKFLOW_ATTEMPT_SHELL
+        self.assertTrue(
+            shell.exists()
+            or shell.is_symlink()
+            or shell.parent.exists()
+            or shell.parent.is_symlink()
+        )
+        self.assertNotIn(self.root.as_posix(), authority.reason_category)
+
+    def test_payload_precreation_failure_leaves_blocking_shell(self) -> None:
+        # Arrange
+        with patch.object(
+            workflow,
+            "write_workflow_attempt_payload",
+            side_effect=OSError("attacker-controlled-payload"),
+        ):
+            # Act
+            with self.assertRaises(workflow.WorkflowError):
+                self.publish()
+
+        # Assert
+        self.assert_seeded_authority_blocked()
+
+    def test_atomic_replacement_failure_leaves_blocking_shell(self) -> None:
+        # Arrange
+        with patch.object(
+            workflow,
+            "replace_workflow_attempt_payload",
+            side_effect=OSError("attacker-controlled-path"),
+        ):
+            # Act
+            with self.assertRaises(workflow.WorkflowError):
+                self.publish()
+
+        # Assert
+        self.assert_seeded_authority_blocked()
+
+    def test_each_missing_required_field_is_blocking(self) -> None:
+        for missing_field in workflow.WORKFLOW_ATTEMPT_FIELDS:
+            with self.subTest(missing_field=missing_field):
+                # Arrange
+                shell = self.root / workflow.WORKFLOW_ATTEMPT_SHELL
+                payload = workflow.workflow_attempt_payload(self.ATTEMPT_ID)
+                payload.pop(missing_field)
+                self.write_json(
+                    shell / workflow.WORKFLOW_ATTEMPT_PAYLOAD_NAME,
+                    payload,
+                )
+
+                # Act / Assert
+                self.assert_seeded_authority_blocked()
+                shutil.rmtree(shell)
+
+    def test_malformed_json_is_blocking(self) -> None:
+        # Arrange
+        payload = (
+            self.root
+            / workflow.WORKFLOW_ATTEMPT_SHELL
+            / workflow.WORKFLOW_ATTEMPT_PAYLOAD_NAME
+        )
+        payload.parent.mkdir(parents=True)
+        payload.write_text("{", encoding="utf-8")
+
+        # Act / Assert
+        self.assert_seeded_authority_blocked()
+
+    def test_unreadable_payload_is_blocking(self) -> None:
+        # Arrange
+        self.publish()
+        payload = (
+            self.root
+            / workflow.WORKFLOW_ATTEMPT_SHELL
+            / workflow.WORKFLOW_ATTEMPT_PAYLOAD_NAME
+        )
+        original_read_text = Path.read_text
+
+        def fail_payload_read(candidate: Path, *args, **kwargs):
+            if candidate == payload:
+                raise PermissionError("attacker-controlled-permission")
+            return original_read_text(candidate, *args, **kwargs)
+
+        # Act / Assert
+        with patch.object(Path, "read_text", fail_payload_read):
+            self.assert_seeded_authority_blocked()
+
+    def test_absolute_marker_ref_is_rejected(self) -> None:
+        # Arrange
+        marker_ref = Path("/tmp/phase38-workflow-attempt")
+
+        # Act / Assert
+        with self.assertRaises(workflow.WorkflowError):
+            workflow.validate_workflow_attempt_path(self.root, marker_ref)
+
+    def test_traversal_marker_ref_is_rejected(self) -> None:
+        # Arrange
+        marker_ref = Path("build/ci-evidence/../phase38-attempt")
+
+        # Act / Assert
+        with self.assertRaises(workflow.WorkflowError):
+            workflow.validate_workflow_attempt_path(self.root, marker_ref)
+
+    def test_wrong_root_marker_ref_is_rejected(self) -> None:
+        # Arrange
+        marker_ref = Path("build/other/.phase38-workflow-attempt")
+
+        # Act / Assert
+        with self.assertRaises(workflow.WorkflowError):
+            workflow.validate_workflow_attempt_path(self.root, marker_ref)
+
+    def test_symlinked_marker_is_blocking(self) -> None:
+        # Arrange
+        outside = self.root / "outside-state"
+        outside.mkdir()
+        shell = self.root / workflow.WORKFLOW_ATTEMPT_SHELL
+        shell.parent.mkdir(parents=True, exist_ok=True)
+        shell.symlink_to(outside, target_is_directory=True)
+
+        # Act / Assert
+        self.assert_seeded_authority_blocked()
+
+    def test_symlinked_parent_is_blocking(self) -> None:
+        # Arrange
+        outside = self.root / "outside-parent"
+        build = self.root / "build"
+        build.rename(outside)
+        build.symlink_to(outside, target_is_directory=True)
+
+        # Act / Assert
+        self.assert_seeded_authority_blocked()
+
+    def test_regular_file_shell_is_blocking(self) -> None:
+        # Arrange
+        shell = self.root / workflow.WORKFLOW_ATTEMPT_SHELL
+        shell.parent.mkdir(parents=True, exist_ok=True)
+        shell.write_text("not-a-directory", encoding="utf-8")
+
+        # Act / Assert
+        self.assert_seeded_authority_blocked()
+
+    def test_fifo_shell_is_blocking(self) -> None:
+        # Arrange
+        shell = self.root / workflow.WORKFLOW_ATTEMPT_SHELL
+        shell.parent.mkdir(parents=True, exist_ok=True)
+        os.mkfifo(shell)
+
+        # Act / Assert
+        self.assert_seeded_authority_blocked()
+
+    def test_non_directory_parent_is_blocking(self) -> None:
+        # Arrange
+        parent = self.root / workflow.WORKFLOW_ATTEMPT_SHELL.parent
+        shutil.rmtree(parent)
+        parent.parent.mkdir(parents=True, exist_ok=True)
+        parent.write_text("not-a-directory", encoding="utf-8")
+
+        # Act / Assert
+        self.assert_seeded_authority_blocked()
+
+    def test_cleanup_failure_keeps_workflow_marker_blocking(self) -> None:
+        # Arrange
+        self.publish()
+
+        # Act
+        with patch.object(
+            workflow,
+            "remove_workflow_attempt_shell",
+            side_effect=OSError("attacker-controlled-cleanup"),
+        ):
+            with self.assertRaises(workflow.WorkflowError):
+                workflow.clear_workflow_attempt_marker(
+                    self.root,
+                    self.ATTEMPT_ID,
+                )
+
+        # Assert
+        self.assert_seeded_authority_blocked()
 
 
 class WiringTests(unittest.TestCase):

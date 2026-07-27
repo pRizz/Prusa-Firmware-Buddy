@@ -3,6 +3,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
+import shutil
+import stat
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -20,6 +23,19 @@ PHASE34_OUTPUT = Path("build/ci-evidence/phase34")
 PHASE35_OUTPUT = Path("build/ci-evidence/phase35")
 PHASE35_DECISION = PHASE35_OUTPUT / "cutover-decision.json"
 PHASE35_ROUTE = PHASE35_OUTPUT / "next-milestone-route.json"
+WORKFLOW_ATTEMPT_SHELL = Path(
+    "build/ci-evidence/.phase38-workflow-attempt"
+)
+WORKFLOW_ATTEMPT_PAYLOAD_NAME = "attempt.json"
+WORKFLOW_ATTEMPT_FIELDS = [
+    "phase",
+    "phase_lifecycle_id",
+    "attempt_id",
+    "authority_state",
+    "reason_category",
+    "canonical_output_ref",
+]
+WORKFLOW_ATTEMPT_REASON = "workflow-in-progress"
 SAFE_REASON_CATEGORIES = {
     "none",
     "phase31-input-invalid",
@@ -36,6 +52,7 @@ SAFE_REASON_CATEGORIES = {
     "phase35-authority-invalid",
     "phase35-authority-contradictory",
     "phase35-authority-guard-blocking",
+    "workflow-attempt-blocking",
     *phase35.SAFE_SOURCE_FAILURE_REASONS,
 }
 
@@ -108,6 +125,160 @@ class WorkflowResult:
 
 def authority_guard_payload() -> dict[str, object]:
     return phase35.authority_guard_payload()
+
+
+def workflow_attempt_payload(attempt_id: str) -> dict[str, str]:
+    if not re.fullmatch(r"[0-9a-f]{32}", attempt_id):
+        raise WorkflowError("workflow-attempt-blocking")
+    return {
+        "phase": PHASE,
+        "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
+        "attempt_id": attempt_id,
+        "authority_state": "blocked",
+        "reason_category": WORKFLOW_ATTEMPT_REASON,
+        "canonical_output_ref": PHASE35_OUTPUT.as_posix(),
+    }
+
+
+def _maybe_lstat(candidate: Path) -> Any | None:
+    try:
+        return candidate.lstat()
+    except FileNotFoundError:
+        return None
+    except OSError as error:
+        raise WorkflowError("workflow-attempt-blocking") from error
+
+
+def validate_workflow_attempt_path(
+    root: Path,
+    marker_ref: Path = WORKFLOW_ATTEMPT_SHELL,
+) -> Path:
+    if (
+        marker_ref.is_absolute()
+        or ".." in marker_ref.parts
+        or marker_ref != WORKFLOW_ATTEMPT_SHELL
+    ):
+        raise WorkflowError("workflow-attempt-blocking")
+    root_resolved = root.resolve(strict=False)
+    current = root
+    for index, part in enumerate(marker_ref.parts):
+        current /= part
+        maybe_status = _maybe_lstat(current)
+        if maybe_status is None:
+            continue
+        if stat.S_ISLNK(maybe_status.st_mode):
+            raise WorkflowError("workflow-attempt-blocking")
+        if (
+            index < len(marker_ref.parts) - 1
+            and not stat.S_ISDIR(maybe_status.st_mode)
+        ):
+            raise WorkflowError("workflow-attempt-blocking")
+    shell = root / marker_ref
+    shell_resolved = shell.resolve(strict=False)
+    if (
+        shell_resolved != root_resolved
+        and root_resolved not in shell_resolved.parents
+    ):
+        raise WorkflowError("workflow-attempt-blocking")
+    maybe_shell_status = _maybe_lstat(shell)
+    if (
+        maybe_shell_status is not None
+        and not stat.S_ISDIR(maybe_shell_status.st_mode)
+    ):
+        raise WorkflowError("workflow-attempt-blocking")
+    return shell
+
+
+def write_workflow_attempt_payload(
+    path: Path,
+    payload: dict[str, str],
+) -> None:
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def replace_workflow_attempt_payload(source: Path, target: Path) -> None:
+    source.replace(target)
+
+
+def remove_workflow_attempt_shell(path: Path) -> None:
+    shutil.rmtree(path)
+
+
+def load_workflow_attempt_marker(root: Path) -> dict[str, str] | None:
+    shell = validate_workflow_attempt_path(root)
+    if _maybe_lstat(shell) is None:
+        return None
+    payload_path = shell / WORKFLOW_ATTEMPT_PAYLOAD_NAME
+    maybe_payload_status = _maybe_lstat(payload_path)
+    if (
+        maybe_payload_status is None
+        or stat.S_ISLNK(maybe_payload_status.st_mode)
+        or not stat.S_ISREG(maybe_payload_status.st_mode)
+    ):
+        raise WorkflowError("workflow-attempt-blocking")
+    try:
+        payload = json.loads(payload_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError, UnicodeError) as error:
+        raise WorkflowError("workflow-attempt-blocking") from error
+    if (
+        not isinstance(payload, dict)
+        or set(payload) != set(WORKFLOW_ATTEMPT_FIELDS)
+    ):
+        raise WorkflowError("workflow-attempt-blocking")
+    expected = workflow_attempt_payload(
+        str(payload.get("attempt_id") or "")
+    )
+    if payload != expected:
+        raise WorkflowError("workflow-attempt-blocking")
+    return expected
+
+
+def require_clear_workflow_attempt_marker(root: Path) -> None:
+    if load_workflow_attempt_marker(root) is not None:
+        raise WorkflowError("workflow-attempt-blocking")
+
+
+def publish_workflow_attempt_marker(root: Path, attempt_id: str) -> None:
+    payload = workflow_attempt_payload(attempt_id)
+    shell = validate_workflow_attempt_path(root)
+    try:
+        shell.parent.mkdir(parents=True, exist_ok=True)
+        shell.mkdir(exist_ok=True)
+        validate_workflow_attempt_path(root)
+        temporary_payload = shell / f".{WORKFLOW_ATTEMPT_PAYLOAD_NAME}.tmp"
+        canonical_payload = shell / WORKFLOW_ATTEMPT_PAYLOAD_NAME
+        for candidate in (temporary_payload, canonical_payload):
+            maybe_status = _maybe_lstat(candidate)
+            if maybe_status is not None and (
+                stat.S_ISLNK(maybe_status.st_mode)
+                or not stat.S_ISREG(maybe_status.st_mode)
+            ):
+                raise WorkflowError("workflow-attempt-blocking")
+        write_workflow_attempt_payload(temporary_payload, payload)
+        replace_workflow_attempt_payload(
+            temporary_payload,
+            canonical_payload,
+        )
+        if load_workflow_attempt_marker(root) != payload:
+            raise WorkflowError("workflow-attempt-blocking")
+    except (OSError, WorkflowError) as error:
+        raise WorkflowError("workflow-attempt-blocking") from error
+
+
+def clear_workflow_attempt_marker(root: Path, attempt_id: str) -> None:
+    payload = load_workflow_attempt_marker(root)
+    if payload is None or payload["attempt_id"] != attempt_id:
+        raise WorkflowError("workflow-attempt-blocking")
+    shell = validate_workflow_attempt_path(root)
+    try:
+        remove_workflow_attempt_shell(shell)
+    except OSError as error:
+        raise WorkflowError("workflow-attempt-blocking") from error
+    if _maybe_lstat(shell) is not None:
+        raise WorkflowError("workflow-attempt-blocking")
 
 
 def _safe_reason(reason_category: str, fallback: str) -> str:
@@ -256,6 +427,10 @@ def _load_json_object(path: Path) -> dict[str, Any]:
 
 
 def load_final_authority(root: Path) -> FinalAuthority:
+    try:
+        require_clear_workflow_attempt_marker(root)
+    except WorkflowError:
+        return FinalAuthority.unavailable("workflow-attempt-blocking")
     require_clear_authority_guard(root)
     output = root / PHASE35_OUTPUT
     if not output.exists():

@@ -7,6 +7,7 @@ import html
 import json
 import re
 import shutil
+import stat
 import sys
 import tempfile
 from collections.abc import Callable
@@ -29,6 +30,9 @@ DEFAULT_PHASE34_OUTPUT = Path("build/ci-evidence/phase34")
 DEFAULT_OUTPUT = Path("build/ci-evidence/phase35")
 AUTHORITY_GUARD = Path("build/ci-evidence/.phase35-authority-guard.json")
 PREVIOUS_OUTPUT = Path("build/ci-evidence/.phase35-previous")
+WORKFLOW_ATTEMPT_SHELL = Path(
+    "build/ci-evidence/.phase38-workflow-attempt"
+)
 AUTHORITY_GUARD_FIELDS = [
     "phase",
     "phase_lifecycle_id",
@@ -1701,6 +1705,7 @@ def validate_authority_guard(root: Path) -> None:
 
 
 def ensure_canonical_authority(root: Path, relative_output: Path) -> None:
+    ensure_no_workflow_attempt_marker(root)
     validate_mutation_target(
         root,
         relative_output,
@@ -1715,6 +1720,48 @@ def ensure_canonical_authority(root: Path, relative_output: Path) -> None:
     validate_authority_guard(root)
     raise VerificationError("Phase 35 canonical authority is blocked",
                             "unsafe-ref")
+
+
+def ensure_no_workflow_attempt_marker(root: Path) -> None:
+    current = root
+    for index, part in enumerate(WORKFLOW_ATTEMPT_SHELL.parts):
+        current /= part
+        try:
+            status = current.lstat()
+        except FileNotFoundError:
+            continue
+        except OSError as error:
+            raise VerificationError(
+                "Phase 38 workflow attempt is blocking",
+                "unsafe-ref",
+            ) from error
+        if stat.S_ISLNK(status.st_mode):
+            raise VerificationError(
+                "Phase 38 workflow attempt is blocking",
+                "unsafe-ref",
+            )
+        if (
+            index < len(WORKFLOW_ATTEMPT_SHELL.parts) - 1
+            and not stat.S_ISDIR(status.st_mode)
+        ):
+            raise VerificationError(
+                "Phase 38 workflow attempt is blocking",
+                "unsafe-ref",
+            )
+    shell = root / WORKFLOW_ATTEMPT_SHELL
+    try:
+        shell.lstat()
+    except FileNotFoundError:
+        return
+    except OSError as error:
+        raise VerificationError(
+            "Phase 38 workflow attempt is blocking",
+            "unsafe-ref",
+        ) from error
+    raise VerificationError(
+        "Phase 38 workflow attempt is blocking",
+        "unsafe-ref",
+    )
 
 
 def publish_authority_guard(root: Path) -> None:
