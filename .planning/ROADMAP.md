@@ -82,6 +82,7 @@ Full phase details are archived in `.planning/milestones/v1.2-ROADMAP.md`.
 - [x] **Phase 37: Reconcile Decisions Into Readiness** - Join retained-code, residual-risk, exception, and readiness decisions into resolvable Phase 34 ledger rows. (completed 2026-07-26)
 - [x] **Phase 38: Fail-Closed Cutover Workflow** - Make upstream failures replace stale authority and prove blocked, approved, and targeted-repair paths end to end. (completed 2026-07-27)
 - [ ] **Phase 39: Milestone Metadata Reconciliation** - Restore requirement-completion metadata and reconcile roadmap plan details before re-audit.
+- [ ] **Phase 40: File Length Refactoring** - Eliminate all temporary repo-owned file-length exceptions through ordered, behavior-preserving refactors while retaining only the exact approved permanent set. Independent of pending Phase 39 metadata reconciliation.
 
 ## Phase Details
 
@@ -205,6 +206,35 @@ Plans:
   4. A fresh milestone audit can evaluate all sixteen requirements from all three required sources.
 **Plans**: TBD
 
+### Phase 40: File Length Refactoring
+**Goal**: The managed file-length checker reports zero findings with exactly 841 authorized permanent paths, while all 92 refactored repo-owned files and every new source/test file are below 629 physical lines and all external interfaces, firmware behavior, persistence, and release artifacts remain compatible.
+**Depends on**: Phase 38. Phase 40 is explicitly independent of pending Phase 39 metadata reconciliation and may execute before Phase 39 completes.
+**Requirements**: D-01 through D-15 from `40-CONTEXT.md` (decision-driven phase; no new v1.3 milestone requirement IDs)
+**Success Criteria** (what must be TRUE):
+  1. The initial ledger classifies all 933 findings as exactly 838 frozen provenance/declarative permanent paths plus 95 shrink-only temporary owned paths without modifying the managed checker or CI workflow.
+  2. All 92 refactor-owned originals and all newly created source/test files have fewer than 629 physical lines behind stable, concept-oriented façades; Rust/Python/C++ APIs, Bazel/just labels, persistence, firmware behavior, and release artifacts remain compatible.
+  3. Exactly `src/guiapi/include/Rect16.h`, `src/connect/planner.cpp`, and `src/gui/screen_tools_mapping.cpp` convert to permanent-owned deletion-test reasons; no other owned path is reclassified.
+  4. Firmware characterization tests split before production firmware work, print/safety work runs last, and `src/common/marlin_server.cpp` is the final production file refactored.
+  5. Terminal reconciliation from a clean checkout reports exactly 841 permanent exceptions, zero temporary reasons, and `SUMMARY file-lengths ... findings=0`, with risk-tiered automated evidence and hardware-aware review complete.
+**Plans**: 15 plans
+
+Plans:
+- [ ] 40-01-PLAN.md — Seed the exact 933-row ledger and Wave 0 policy/verification gate.
+- [ ] 40-02-PLAN.md — Refactor the four Rust domain modules behind stable façades.
+- [ ] 40-03-PLAN.md — Refactor build and phase-stepping developer utilities.
+- [ ] 40-04-PLAN.md — Refactor Phase 5-11 Python verifiers and tests.
+- [ ] 40-05-PLAN.md — Refactor Phase 13-17 evidence producers and tests.
+- [ ] 40-06-PLAN.md — Refactor Phase 18-28 cutover, release, decision, and readiness tools.
+- [ ] 40-07-PLAN.md — Refactor Phase 31-38 finality and cutover tooling.
+- [ ] 40-08-PLAN.md — Split seven firmware characterization test sources in existing Catch targets.
+- [ ] 40-09-PLAN.md — Refactor parser/UI/protocol/WUI sources and convert two locked exceptions.
+- [ ] 40-10-PLAN.md — Refactor network/media sources and convert the locked planner exception.
+- [ ] 40-11-PLAN.md — Refactor journal and config-store persistence implementation.
+- [ ] 40-12-PLAN.md — Refactor hardware, display, and auxiliary-controller adapters.
+- [ ] 40-13-PLAN.md — Refactor non-server print and safety lifecycle sources.
+- [ ] 40-14-PLAN.md — Refactor `marlin_server.cpp` last and remove the final temporary row.
+- [ ] 40-15-PLAN.md — Perform exact terminal reconciliation and hardware-aware approval.
+
 ## Requirement Coverage
 
 | Requirement | Phase | Status |
@@ -231,7 +261,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order across archived milestones. v1.3 continues after Phase 30: 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39.
+Phases 31 through 38 execute in numeric order after Phase 30. Phase 39 remains the pending metadata-reconciliation branch. Phase 40 is explicitly authorized to proceed from completed Phase 38 independently of Phase 39: `38 -> 39` and `38 -> 40`.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -254,13 +284,4 @@ Phases execute in numeric order across archived milestones. v1.3 continues after
 | 37. Reconcile Decisions Into Readiness | v1.3 | 2/2 | Complete    | 2026-07-26 |
 | 38. Fail-Closed Cutover Workflow | v1.3 | 3/3 | Complete    | 2026-07-27 |
 | 39. Milestone Metadata Reconciliation | v1.3 | 0/TBD | Pending | — |
-
-### Phase 40: File Length Refactoring
-
-**Goal:** [To be planned]
-**Requirements**: TBD
-**Depends on:** Phase 39
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (run /gsd-plan-phase 40 to break down)
+| 40. File Length Refactoring | v1.3 | 0/15 | Planned | — |

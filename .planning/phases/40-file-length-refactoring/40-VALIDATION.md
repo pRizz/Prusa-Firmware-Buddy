@@ -39,15 +39,37 @@ created: "2026-07-27"
 | Phases 13–17 | Evidence producer contracts | T-40-04 | Security and evidence schemas remain stable | contract | `just phase13-verify` through `just phase17-verify` as affected | ⬜ pending |
 | Phases 18–28 | Readiness evidence contracts | T-40-04 | Fail-closed outputs and schemas remain stable | contract | affected Phase 18–28 `just` gates | ⬜ pending |
 | Phases 31–38 | Finality and cutover contracts | T-40-04 | Authority, provenance, and failure publication remain stable | integration | affected Phase 31–38 `just` gates | ⬜ pending |
-| Firmware tests | Characterization coverage | T-40-05 | Splitting tests does not drop or combine behavior | unit | owning Catch/CTest targets and `just test` underlying command | ⬜ pending |
-| Parser/UI/WUI | Public rendering and protocol behavior | T-40-06 | Public headers, resources, HTTP behavior, and state mapping remain stable | host/build | focused host tests plus representative build | ⬜ pending |
-| Network/media | Network and transfer behavior | T-40-07 | Protocols, filenames, recovery, and statuses remain stable | host/simulator | focused tests, representative build, simulator parity | ⬜ pending |
-| Persistent storage | Stored schema and migration behavior | T-40-08 | Layout, hashes, defaults, and migration remain stable | unit/generated | storage tests, generated check, build, simulator parity | ⬜ pending |
+| Firmware tests | Characterization coverage | T-40-05 | Splitting tests does not drop or combine behavior | unit | `BUDDY_BAZEL_EXECUTE_REFERENCE=1 just test`, then guarded `--list-tests` and direct execution of the seven owning Catch binaries under `build-tests/tests/unit/` | ⬜ pending |
+| Parser/UI/WUI | Public rendering and protocol behavior | T-40-06 | Public headers, resources, HTTP behavior, and state mapping remain stable | host/build | canonical executed host setup, guarded `--list-tests` and direct execution of each named owning Catch binary, representative build | ⬜ pending |
+| Network/media | Network and transfer behavior | T-40-07 | Protocols, filenames, recovery, and statuses remain stable | host/simulator | canonical executed host setup; guarded `--list-tests` plus full direct execution of `build-tests/tests/unit/media_prefetch/media_prefetch_tests`, `build-tests/tests/unit/connect/connect_tests`, `build-tests/tests/unit/connect/connect_planner_tests`, `build-tests/tests/unit/connect/connect_registration_tests`, and `build-tests/tests/unit/transfers/transfers_tests`; representative build; simulator parity | ⬜ pending |
+| Persistent storage | Stored schema and migration behavior | T-40-08 | Layout, hashes, defaults, and migration remain stable | unit/generated | canonical executed host setup, guarded `--list-tests` and direct execution of `build-tests/tests/unit/persistent_stores/eeprom_unit_tests`, generated check, build, simulator parity | ⬜ pending |
 | Hardware/auxiliary | HAL and wire behavior | T-40-09 | Register, protocol, and hardware adapter behavior remain stable | unit/build/simulator | focused tests, board builds, simulator where supported | ⬜ pending |
 | Print/safety | Lifecycle and safety behavior | T-40-10 | Queue ordering, state transitions, fatal paths, and recovery remain stable | characterization/integration | host tests, supported build matrix, simulator integration | ⬜ pending |
 | Terminal reconciliation | Exact final ledger and zero findings | T-40-01 | No temporary or unauthorized permanent exceptions survive | policy/full | `just phase40-verify --terminal` or equivalent terminal mode | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+
+## Plan and Task Mapping
+
+| Campaign | Plan / Tasks | Owned paths | Dependency gate |
+| --- | --- | ---: | --- |
+| Baseline | 40-01 T1-T2 | 95 classified | Wave 0; creates the only ledger/policy/test/doc/just gate |
+| Rust domain | 40-02 T1-T2 | 4 refactors | after 40-01 |
+| Utilities | 40-03 T1-T2 | 2 refactors | after 40-02 |
+| Python Phase 5-11 | 40-04 T1-T3 | 12 refactors | after 40-03 |
+| Python Phase 13-17 | 40-05 T1-T2 | 8 refactors | after 40-04 |
+| Python Phase 18-28 | 40-06 T1-T3 | 16 refactors | after 40-05 |
+| Python Phase 31-38 | 40-07 T1-T3 | 12 refactors | after 40-06 |
+| Firmware characterization tests | 40-08 T1-T3 | 7 refactors | after every Python campaign and before production C++ |
+| Parser/UI/protocol/WUI | 40-09 T1-T3 | 11 refactors + 2 conversions | after 40-08 |
+| Network/media | 40-10 T1-T3 | 5 refactors + 1 conversion | after 40-09 |
+| Persistent storage | 40-11 T1-T2 | 2 refactors | after 40-10 |
+| Hardware/auxiliary | 40-12 T1-T2 | 7 refactors | after 40-11 |
+| Print/safety except server | 40-13 T1-T2 | 5 refactors | after 40-12 |
+| Marlin server last | 40-14 T1-T2 | 1 refactor | after every other production path |
+| Terminal reconciliation | 40-15 T1-T2 | exact 95-path audit | after 40-14; blocking hardware-aware approval |
+
+**Owned-path total:** 92 refactors + 3 locked conversions = 95 paths exactly.
 
 ## Wave 0 Requirements
 

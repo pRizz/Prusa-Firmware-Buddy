@@ -2,16 +2,16 @@
 gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
-status: planning
+status: executing
 stopped_at: Phase 40 context gathered
-last_updated: "2026-07-27T16:51:24.615Z"
-last_activity: 2026-07-27 -- Phase 38 verification passed 9/9 and phase completed
+last_updated: "2026-07-27T18:07:04.040Z"
+last_activity: 2026-07-27 -- Phase 40 planning complete
 progress:
   total_phases: 10
   completed_phases: 8
-  total_plans: 14
+  total_plans: 29
   completed_plans: 14
-  percent: 100
+  percent: 48
 ---
 
 # Project State
@@ -21,24 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-27)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Phase 39 — Milestone Metadata Reconciliation
+**Current focus:** Phase 40 — File Length Refactoring (authorized from completed Phase 38; independent of pending Phase 39)
 
 ## Current Position
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
-Phase: 39
-Plan: Not started
-Status: Ready to plan Phase 39
-Last activity: 2026-07-27 -- Phase 38 verification passed 9/9 and phase completed
+Phase: 40 (File Length Refactoring)
+Plan: 1 of 15
+Status: Ready to execute
+Last activity: 2026-07-27 -- Phase 40 planning complete
 
-Progress: [#########-] 89% (8/9 v1.3 phases complete)
+Progress: [########--] 80% (8/10 v1.3 phases complete; Phases 39 and 40 pending independently)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- v1.3 plans completed: 14/14 currently planned
-- v1.3 phases completed: 8/9
+- v1.3 plans completed: 14/29 currently planned
+- v1.3 phases completed: 8/10
 - Previous milestone baseline: v1.2 completed 9 plans across 8 phases
 - Earlier milestone baseline: v1.1 completed 13 plans across 10 phases
 
@@ -54,6 +54,7 @@ Progress: [#########-] 89% (8/9 v1.3 phases complete)
 | 36. Normalize Evidence and Blocker Rows | 2/2 | 39min | 19m30s |
 | 37 | 2 | - | - |
 | 38. Fail-Closed Cutover Workflow | 3/3 | 59min | 19m40s |
+| 40. File Length Refactoring | 0/15 | - | - |
 
 **Recent Trend:**
 
