@@ -3,15 +3,15 @@ gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
 status: executing
-stopped_at: Completed 40-01-PLAN.md
-last_updated: "2026-07-27T18:23:18.996Z"
+stopped_at: Completed 40-02-PLAN.md
+last_updated: "2026-07-27T18:41:39.194Z"
 last_activity: "2026-07-27"
 progress:
   total_phases: 10
   completed_phases: 8
   total_plans: 29
-  completed_plans: 15
-  percent: 52
+  completed_plans: 16
+  percent: 55
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-07-27)
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
 Phase: 40 (File Length Refactoring) — EXECUTING
-Plan: 2 of 15
+Plan: 3 of 15
 Status: Ready to execute
 Last activity: 2026-07-27
 
@@ -37,7 +37,7 @@ Progress: [########--] 80% (8/10 v1.3 phases complete; Phases 39 and 40 pending 
 
 **Velocity:**
 
-- v1.3 plans completed: 15/29 currently planned
+- v1.3 plans completed: 16/29 currently planned
 - v1.3 phases completed: 8/10
 - Previous milestone baseline: v1.2 completed 9 plans across 8 phases
 - Earlier milestone baseline: v1.1 completed 13 plans across 10 phases
@@ -54,12 +54,12 @@ Progress: [########--] 80% (8/10 v1.3 phases complete; Phases 39 and 40 pending 
 | 36. Normalize Evidence and Blocker Rows | 2/2 | 39min | 19m30s |
 | 37 | 2 | - | - |
 | 38. Fail-Closed Cutover Workflow | 3/3 | 59min | 19m40s |
-| 40. File Length Refactoring | 1/15 | 11m | 11m |
+| 40. File Length Refactoring | 2/15 | 24m | 12m |
 
 **Recent Trend:**
 
-- Last 5 completed plans: Phase 37 P02, Phase 38 P01, Phase 38 P02, Phase 38 P03, Phase 40 P01
-- Trend: Phase 40 execution began with the exact file-length baseline and fail-closed policy gate; Phase 39 remains pending independently.
+- Last 5 completed plans: Phase 38 P01, Phase 38 P02, Phase 38 P03, Phase 40 P01, Phase 40 P02
+- Trend: Phase 40 retired its first four temporary paths through stable Rust-domain façades and private test extraction; Phase 39 remains pending independently.
 
 **Recent Completed Plan Detail:**
 
@@ -77,6 +77,7 @@ Progress: [########--] 80% (8/10 v1.3 phases complete; Phases 39 and 40 pending 
 | Phase 38 P02 | 19min | 3 tasks | 7 files |
 | Phase 38 P03 | 19min | 2 tasks | 7 files |
 | Phase 40 P01 | 11m | 2 tasks | 7 files |
+| Phase 40 P02 | 13m | 2 tasks | 18 files |
 
 ## Accumulated Context
 
@@ -120,6 +121,9 @@ Recent decisions affecting current work:
 - [Phase 40]: The checker-consumed TSV is the sole active exception authority; embedded sets define immutable policy boundaries only.
 - [Phase 40]: Temporary membership may only shrink, while owned permanence is restricted to the three locked deletion-test conversions.
 - [Phase 40]: Terminal mode requires exactly the frozen 838 paths plus all three locked owned paths and no temporary reasons.
+- [Phase 40]: Network and auxiliary preserve their public module paths through explicit facades over private concept modules.
+- [Phase 40]: Feature and GUI retain cohesive production modules and move only cfg(test) suites into private children.
+- [Phase 40]: Historical API verifiers follow declared private Rust children instead of requiring dead facade shims.
 
 ### Pending Todos
 
@@ -136,6 +140,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-27T18:23:18.993Z
-Stopped at: Completed 40-01-PLAN.md
+Last session: 2026-07-27T18:41:39.191Z
+Stopped at: Completed 40-02-PLAN.md
 Resume file: None
