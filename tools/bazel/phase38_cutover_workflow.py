@@ -7,6 +7,7 @@ import re
 import shutil
 import stat
 import sys
+import uuid
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -426,19 +427,27 @@ def _load_json_object(path: Path) -> dict[str, Any]:
     return value
 
 
-def load_final_authority(root: Path) -> FinalAuthority:
+def _load_candidate_final_authority(root: Path) -> FinalAuthority:
     try:
-        require_clear_workflow_attempt_marker(root)
+        require_clear_authority_guard(root)
     except WorkflowError:
-        return FinalAuthority.unavailable("workflow-attempt-blocking")
-    require_clear_authority_guard(root)
+        return FinalAuthority.unavailable(
+            "phase35-authority-guard-blocking"
+        )
     output = root / PHASE35_OUTPUT
     if not output.exists():
         return FinalAuthority.unavailable("phase35-authority-missing")
     if output.is_symlink() or not output.is_dir():
         return FinalAuthority.unavailable("phase35-authority-invalid")
     try:
-        phase35.ensure_canonical_authority(root, PHASE35_OUTPUT)
+        phase35.validate_mutation_target(
+            root,
+            PHASE35_OUTPUT,
+            PHASE35_OUTPUT,
+            "canonical output",
+            expect_directory=True,
+            allow_missing=False,
+        )
         manifest = _load_json_object(
             output / "cutover-decision-run-manifest.json"
         )
@@ -481,22 +490,64 @@ def load_final_authority(root: Path) -> FinalAuthority:
     )
 
 
-def _run_phase34(root: Path) -> CommandOutcome:
+def load_final_authority(root: Path) -> FinalAuthority:
+    try:
+        require_clear_workflow_attempt_marker(root)
+    except WorkflowError:
+        return FinalAuthority.unavailable("workflow-attempt-blocking")
+    return _load_candidate_final_authority(root)
+
+
+def _run_phase34(root: Path, attempt_id: str) -> CommandOutcome:
     try:
         maybe_reason = phase34.run_quick(
             root,
             phase34.DEFAULT_PHASE31_OUTPUT_DIR.as_posix(),
             phase34.DEFAULT_PHASE33_HANDOFF.as_posix(),
             PHASE34_OUTPUT.as_posix(),
+            attempt_id,
         )
     except phase34.VerificationError:
+        try:
+            maybe_state = phase34.load_publication_state(root)
+        except phase34.VerificationError:
+            maybe_state = None
+        if (
+            maybe_state is not None
+            and maybe_state.get("attempt_id") == attempt_id
+        ):
+            return CommandOutcome(
+                1,
+                _safe_reason(
+                    maybe_state["reason_category"],
+                    "phase34-operation-failed",
+                ),
+            )
         return CommandOutcome(1, "phase34-operation-failed")
     if maybe_reason is None:
         return CommandOutcome(0, "none")
     return CommandOutcome(1, _safe_reason(maybe_reason, "phase34-operation-failed"))
 
 
-def _phase34_authority_is_valid(root: Path) -> bool:
+def _phase34_effective_authority_is_valid(
+    root: Path,
+    attempt_id: str,
+    outcome: CommandOutcome,
+) -> bool:
+    try:
+        maybe_state = phase34.load_publication_state(root)
+    except phase34.VerificationError:
+        return False
+    if outcome.status != 0 and maybe_state is not None:
+        return (
+            maybe_state.get("attempt_id") == attempt_id
+            and maybe_state.get("authority_state") == "blocked"
+            and maybe_state.get("reason_category")
+            == outcome.reason_category
+        )
+    if maybe_state is not None:
+        return False
+
     output = root / PHASE34_OUTPUT
     if output.is_symlink() or not output.is_dir():
         return False
@@ -506,22 +557,44 @@ def _phase34_authority_is_valid(root: Path) -> bool:
         packet = _load_json_object(
             output / "final-readiness-packet.json"
         )
+        manifest = _load_json_object(
+            output / "final-readiness-run-manifest.json"
+        )
     except (phase34.VerificationError, WorkflowError):
         return False
-    return (
+    normal_authority_valid = (
         packet.get("phase_lifecycle_id") == phase34.PHASE_LIFECYCLE_ID
         and packet.get("readiness_state") in {"blocked", "unblocked"}
     )
+    if outcome.status == 0:
+        return normal_authority_valid
+    return (
+        normal_authority_valid
+        and packet.get("readiness_state") == "blocked"
+        and manifest.get("run_state") == "blocked-source-failure"
+        and manifest.get("attempt_id") == attempt_id
+        and manifest.get("source_failure_reason_code")
+        == outcome.reason_category
+    )
 
 
-def _run_phase35(root: Path) -> CommandOutcome:
+def _run_phase35(
+    root: Path,
+    phase34_outcome: CommandOutcome,
+) -> CommandOutcome:
     try:
-        phase35.run_quick(
-            root,
-            PHASE34_OUTPUT.as_posix(),
-            PHASE35_OUTPUT.as_posix(),
-        )
+        if phase34_outcome.status != 0:
+            phase35.publish_failed_phase34_bundle(root)
+        else:
+            phase35.run_quick(
+                root,
+                PHASE34_OUTPUT.as_posix(),
+                PHASE35_OUTPUT.as_posix(),
+            )
     except phase35.VerificationError as error:
+        candidate = _load_candidate_final_authority(root)
+        if candidate.available and candidate.reason_category == "none":
+            return CommandOutcome(0, "none")
         return CommandOutcome(
             1,
             _safe_reason(error.reason_code, "phase35-operation-failed"),
@@ -530,9 +603,11 @@ def _run_phase35(root: Path) -> CommandOutcome:
 
 
 def coordinate_workflow(root: Path = ROOT) -> WorkflowResult:
+    attempt_id = uuid.uuid4().hex
     try:
+        publish_workflow_attempt_marker(root, attempt_id)
         phase35.publish_authority_guard(root)
-    except phase35.VerificationError:
+    except (phase35.VerificationError, WorkflowError):
         guard_failure = CommandOutcome(
             1,
             "phase35-authority-guard-blocking",
@@ -545,8 +620,12 @@ def coordinate_workflow(root: Path = ROOT) -> WorkflowResult:
             ),
         )
 
-    phase34_outcome = _run_phase34(root)
-    if not _phase34_authority_is_valid(root):
+    phase34_outcome = _run_phase34(root, attempt_id)
+    if not _phase34_effective_authority_is_valid(
+        root,
+        attempt_id,
+        phase34_outcome,
+    ):
         invalid_phase34 = CommandOutcome(
             phase34_outcome.status or 1,
             "phase34-authority-invalid",
@@ -557,7 +636,16 @@ def coordinate_workflow(root: Path = ROOT) -> WorkflowResult:
             FinalAuthority.unavailable("phase34-authority-invalid"),
         )
 
-    phase35_outcome = _run_phase35(root)
+    phase35_outcome = _run_phase35(root, phase34_outcome)
+    candidate = _load_candidate_final_authority(root)
+    if phase35_outcome.status == 0 and candidate.available:
+        try:
+            clear_workflow_attempt_marker(root, attempt_id)
+        except WorkflowError:
+            phase35_outcome = CommandOutcome(
+                1,
+                "workflow-attempt-blocking",
+            )
     try:
         authority = load_final_authority(root)
     except WorkflowError as error:

@@ -9,6 +9,7 @@ import re
 import shutil
 import stat
 import sys
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -1976,6 +1977,7 @@ def write_source_failure_bundle(
     staging_output: Path,
     reason_code: str,
     approval_validation_state: str,
+    attempt_id: str,
 ) -> None:
     reset_output_root(staging_output)
     snapshot_refs = write_safe_source_failure_snapshots(
@@ -2016,6 +2018,7 @@ def write_source_failure_bundle(
         "generated_at_utc": utc_now(),
         "output_root": relative_output.as_posix(),
         "run_state": "blocked-source-failure",
+        "attempt_id": attempt_id,
         "source_failure_reason_code": reason_code,
         "readiness_state": "blocked",
         "cutover_verdict_state": "blocked",
@@ -2103,7 +2106,14 @@ def publish_source_failure_bundle(
     full_output: Path,
     reason_code: str,
     approval_validation_state: str = "invalid",
+    attempt_id: str | None = None,
 ) -> None:
+    effective_attempt_id = attempt_id or uuid.uuid4().hex
+    publish_publication_state(
+        root,
+        effective_attempt_id,
+        reason_code,
+    )
     staging_output = full_output.with_name(
         f".{full_output.name}.source-failure-staging"
     )
@@ -2113,10 +2123,15 @@ def publish_source_failure_bundle(
         staging_output,
         reason_code,
         approval_validation_state,
+        effective_attempt_id,
     )
     replace_output_with_staging(full_output, staging_output)
     validate_generated_outputs(full_output)
-    validate_output_security(full_output, relative_output.as_posix())
+    validate_output_security(
+        full_output,
+        relative_output.as_posix(),
+    )
+    clear_publication_state(root, effective_attempt_id)
 
 
 def copy_snapshots(
@@ -2285,6 +2300,7 @@ def run_quick(
     phase31_output: str,
     phase33_handoff: str,
     output_arg: str,
+    attempt_id: str | None = None,
 ) -> str | None:
     load_contract(root)
     relative_output, full_output = output_paths(root, output_arg)
@@ -2380,6 +2396,7 @@ def run_quick(
             full_output,
             reason_code,
             approval_validation_state,
+            attempt_id,
         )
         return reason_code
     ledger = evaluate_coverage(receipts, blocker_rows, decisions, required_streams)

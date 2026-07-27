@@ -411,23 +411,44 @@ class CoordinatorTests(unittest.TestCase):
         # Arrange
         calls: list[str] = []
 
+        def publish_attempt(_root: Path, _attempt_id: str) -> None:
+            calls.append("publish-workflow-attempt")
+
         def publish_guard(_root: Path) -> None:
             calls.append("publish-phase35-guard")
 
-        def run_phase34(_root: Path) -> workflow.CommandOutcome:
+        def run_phase34(
+            _root: Path,
+            _attempt_id: str,
+        ) -> workflow.CommandOutcome:
             calls.append("phase34")
             return workflow.CommandOutcome(4, "phase31-input-invalid")
 
-        def validate_phase34(_root: Path) -> bool:
+        def validate_phase34(
+            _root: Path,
+            _attempt_id: str,
+            _outcome: workflow.CommandOutcome,
+        ) -> bool:
             calls.append("validate-phase34")
             return True
 
-        def run_phase35(_root: Path) -> workflow.CommandOutcome:
+        def run_phase35(
+            _root: Path,
+            _outcome: workflow.CommandOutcome,
+        ) -> workflow.CommandOutcome:
             calls.append("phase35")
             return workflow.CommandOutcome(0, "none")
 
+        def clear_attempt(_root: Path, _attempt_id: str) -> None:
+            calls.append("clear-workflow-attempt")
+
         # Act
         with (
+            patch.object(
+                workflow,
+                "publish_workflow_attempt_marker",
+                side_effect=publish_attempt,
+            ),
             patch.object(
                 workflow.phase35,
                 "publish_authority_guard",
@@ -436,10 +457,20 @@ class CoordinatorTests(unittest.TestCase):
             patch.object(workflow, "_run_phase34", side_effect=run_phase34),
             patch.object(
                 workflow,
-                "_phase34_authority_is_valid",
+                "_phase34_effective_authority_is_valid",
                 side_effect=validate_phase34,
             ),
             patch.object(workflow, "_run_phase35", side_effect=run_phase35),
+            patch.object(
+                workflow,
+                "_load_candidate_final_authority",
+                return_value=blocked_authority(),
+            ),
+            patch.object(
+                workflow,
+                "clear_workflow_attempt_marker",
+                side_effect=clear_attempt,
+            ),
             patch.object(
                 workflow,
                 "load_final_authority",
@@ -452,10 +483,12 @@ class CoordinatorTests(unittest.TestCase):
         self.assertEqual(
             calls,
             [
+                "publish-workflow-attempt",
                 "publish-phase35-guard",
                 "phase34",
                 "validate-phase34",
                 "phase35",
+                "clear-workflow-attempt",
             ],
         )
         self.assertEqual(result.status, 4)
@@ -476,7 +509,7 @@ class CoordinatorTests(unittest.TestCase):
             ),
             patch.object(
                 workflow,
-                "_phase34_authority_is_valid",
+                "_phase34_effective_authority_is_valid",
                 return_value=False,
             ),
             patch.object(workflow, "_run_phase35", phase35),
@@ -521,6 +554,53 @@ class CoordinatorTests(unittest.TestCase):
             "phase35-authority-guard-blocking",
         )
         self.assertFalse(result.final_authority_available)
+
+    def test_guard_precreation_failure_keeps_seeded_prior_authority_persistently_blocked(
+        self,
+    ) -> None:
+        # Arrange
+        output = self.root / workflow.PHASE35_OUTPUT
+        output.mkdir(parents=True)
+        WorkflowAttemptMarkerSecurityTests.write_json(
+            output / "cutover-decision-run-manifest.json",
+            {"generation_state": "complete"},
+        )
+        WorkflowAttemptMarkerSecurityTests.write_json(
+            output / "cutover-decision.json",
+            {
+                "phase_lifecycle_id": workflow.phase35.PHASE_LIFECYCLE_ID,
+                "cutover_verdict": "approved",
+            },
+        )
+        WorkflowAttemptMarkerSecurityTests.write_json(
+            output / "next-milestone-route.json",
+            {
+                "phase_lifecycle_id": workflow.phase35.PHASE_LIFECYCLE_ID,
+                "source_verdict": "approved",
+                "route": "production-cutover-planning",
+            },
+        )
+
+        # Act
+        with patch.object(
+            workflow.phase35,
+            "touch_guard",
+            side_effect=OSError("injected pre-create failure"),
+        ):
+            result = workflow.coordinate_workflow(self.root)
+
+        # Assert
+        self.assertNotEqual(result.status, 0)
+        self.assertFalse((self.root / workflow.AUTHORITY_GUARD).exists())
+        marker = workflow.load_workflow_attempt_marker(self.root)
+        self.assertIsNotNone(marker)
+        self.assertEqual(marker["authority_state"], "blocked")
+        authority = workflow.load_final_authority(self.root)
+        self.assertFalse(authority.available)
+        self.assertEqual(
+            authority.reason_category,
+            "workflow-attempt-blocking",
+        )
 
 
 class WorkflowAttemptMarkerSecurityTests(unittest.TestCase):

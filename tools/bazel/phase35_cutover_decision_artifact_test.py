@@ -6,6 +6,7 @@ import hashlib
 import io
 import json
 import shutil
+import sys
 import tempfile
 import unittest
 from collections.abc import Callable
@@ -13,9 +14,12 @@ from contextlib import redirect_stderr
 from pathlib import Path
 from unittest import mock
 
-import phase35_cutover_decision_artifact as phase35
-
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, (ROOT / "tools/bazel").as_posix())
+
+import phase35_cutover_decision_artifact as phase35
+import phase38_cutover_workflow as workflow
+
 CONTRACT = ROOT / "tools/bazel/manifests/phase35_cutover_decision_artifact_contract.json"
 PHASE32_REGISTER = "build/ci-evidence/phase32/blocker-register.json"
 PHASE33_NORMALIZED_REGISTER = "build/ci-evidence/phase33/normalized-decision-records.json"
@@ -1653,6 +1657,49 @@ class Phase35GuardedPublicationTest(unittest.TestCase):
                                               lambda _: None)
         self.assertTrue(canonical.exists())
         self.assert_guard_blocks(root)
+
+    def test_guard_precreation_failure_blocks_seeded_prior_authority_for_all_readers(
+        self,
+    ) -> None:
+        # Arrange
+        temp_dir, root, canonical, stage = self.make_install_fixture()
+        self.addCleanup(temp_dir.cleanup)
+        attempt_id = "c" * 32
+        workflow.publish_workflow_attempt_marker(root, attempt_id)
+
+        # Act
+        with mock.patch.object(
+            phase35,
+            "touch_guard",
+            side_effect=OSError("injected pre-create failure"),
+        ):
+            with self.assertRaises(phase35.VerificationError):
+                phase35.install_staged_bundle(
+                    root,
+                    stage,
+                    canonical,
+                    lambda _: None,
+                )
+
+        # Assert
+        self.assertFalse((root / phase35.AUTHORITY_GUARD).exists())
+        self.assertEqual(
+            workflow.load_workflow_attempt_marker(root)["attempt_id"],
+            attempt_id,
+        )
+        with self.assertRaises(phase35.VerificationError):
+            phase35.ensure_canonical_authority(
+                root,
+                phase35.DEFAULT_OUTPUT,
+            )
+        with self.assertRaises(phase35.VerificationError):
+            phase35.run_security_scan(root)
+        authority = workflow.load_final_authority(root)
+        self.assertFalse(authority.available)
+        self.assertEqual(
+            authority.reason_category,
+            "workflow-attempt-blocking",
+        )
 
     def test_prior_to_backup_rename_failure_retains_guard_and_prior(
             self) -> None:

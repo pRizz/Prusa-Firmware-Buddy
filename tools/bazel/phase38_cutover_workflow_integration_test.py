@@ -8,8 +8,10 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import phase34_decision_reconciliation_integration_test as phase34_integration
+import phase38_cutover_workflow as workflow
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -421,6 +423,102 @@ class Phase38ActualProducerWorkflowTest(unittest.TestCase):
             authority_check.returncode,
             0,
             authority_check.stdout,
+        )
+
+    def test_phase35_guard_precreation_failure_blocks_seeded_approval_for_every_reader(
+        self,
+    ) -> None:
+        # Arrange
+        root = self.clone_baseline()
+        self.seed_prior_approval(root)
+
+        # Act
+        with mock.patch.object(
+            workflow.phase35,
+            "touch_guard",
+            side_effect=OSError("injected pre-create failure"),
+        ):
+            result = workflow.coordinate_workflow(root)
+
+        # Assert
+        self.assertNotEqual(result.status, 0)
+        self.assertFalse(result.production_cutover_planning)
+        self.assertFalse(result.reference_demotion_authorized)
+        self.assertFalse((root / workflow.AUTHORITY_GUARD).exists())
+        marker = workflow.load_workflow_attempt_marker(root)
+        self.assertIsNotNone(marker)
+        self.assertEqual(marker["authority_state"], "blocked")
+        with self.assertRaises(workflow.phase35.VerificationError):
+            workflow.phase35.ensure_canonical_authority(
+                root,
+                workflow.PHASE35_OUTPUT,
+            )
+        with self.assertRaises(workflow.phase35.VerificationError):
+            workflow.phase35.run_security_scan(root)
+        authority = workflow.load_final_authority(root)
+        self.assertFalse(authority.available)
+        self.assertEqual(
+            authority.reason_category,
+            "workflow-attempt-blocking",
+        )
+
+    def test_phase34_blocked_install_failure_never_republishes_seeded_approval(
+        self,
+    ) -> None:
+        # Arrange
+        root = self.clone_baseline()
+        self.seed_prior_approval(root)
+        manifest = self.read_json(root, PHASE31_MANIFEST)
+        manifest["phase_lifecycle_id"] = "31-stale"
+        self.write_json(root, PHASE31_MANIFEST, manifest)
+        attempt_id = "d" * 32
+
+        def fail_after_prior_move(
+            full_output: Path,
+            staging_output: Path,
+        ) -> None:
+            backup = full_output.with_name(
+                f".{full_output.name}.source-failure-backup"
+            )
+            full_output.rename(backup)
+            try:
+                raise workflow.phase34.VerificationError(
+                    "injected blocked stage rename failure"
+                )
+            finally:
+                backup.rename(full_output)
+
+        # Act
+        with (
+            mock.patch.object(
+                workflow.uuid,
+                "uuid4",
+                return_value=mock.Mock(hex=attempt_id),
+            ),
+            mock.patch.object(
+                workflow.phase34,
+                "replace_output_with_staging",
+                side_effect=fail_after_prior_move,
+            ),
+        ):
+            result = workflow.coordinate_workflow(root)
+
+        # Assert
+        self.assertNotEqual(result.status, 0)
+        self.assertFalse(result.production_cutover_planning)
+        self.assertFalse(result.reference_demotion_authorized)
+        state = workflow.phase34.load_publication_state(root)
+        self.assertIsNotNone(state)
+        self.assertEqual(state["attempt_id"], attempt_id)
+        self.assertEqual(state["authority_state"], "blocked")
+        self.assertIsNone(workflow.load_workflow_attempt_marker(root))
+        authority = workflow.load_final_authority(root)
+        self.assertTrue(authority.available)
+        self.assertEqual(authority.verdict, "blocked")
+        self.assertEqual(authority.readiness_state, "blocked")
+        self.assertNotEqual(
+            authority.route,
+            "production-cutover-planning",
         )
 
     def test_approved_cutover_with_missing_demotion_stays_closed(self) -> None:

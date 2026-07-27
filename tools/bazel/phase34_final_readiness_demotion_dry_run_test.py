@@ -1711,6 +1711,59 @@ class Phase34FinalReadinessDemotionDryRunTest(unittest.TestCase):
             (full_output / "final-readiness-run-manifest.json").is_file()
         )
 
+    def test_source_failure_stage_rename_failure_keeps_seeded_prior_authority_guarded(
+        self,
+    ) -> None:
+        # Arrange
+        module = self.load_module()
+        temp_dir, root = self.make_temp_root()
+        self.addCleanup(temp_dir.cleanup)
+        self.write_fixture(root, self.required_stream_receipts(), [])
+        self.seed_prior_phase34_authority(root)
+        (root / PHASE31_MANIFEST).unlink()
+        canonical = root / OUTPUT_DIR
+
+        def fail_after_prior_move(
+            full_output: Path,
+            staging_output: Path,
+        ) -> None:
+            backup = full_output.with_name(
+                f".{full_output.name}.source-failure-backup"
+            )
+            full_output.rename(backup)
+            try:
+                raise module.VerificationError(
+                    "injected blocked stage rename failure"
+                )
+            finally:
+                backup.rename(full_output)
+
+        # Act
+        with mock.patch.object(
+            module,
+            "replace_output_with_staging",
+            side_effect=fail_after_prior_move,
+        ):
+            with self.assertRaises(module.VerificationError):
+                module.run_quick(
+                    root,
+                    "build/ci-evidence/phase31",
+                    PHASE33_HANDOFF,
+                    OUTPUT_DIR,
+                )
+
+        # Assert
+        self.assertTrue((canonical / "stale-prior-authority.json").is_file())
+        state = module.load_publication_state(root)
+        self.assertIsNotNone(state)
+        self.assertEqual(state["authority_state"], "blocked")
+        self.assertEqual(
+            state["reason_category"],
+            "phase31-input-invalid",
+        )
+        with self.assertRaises(module.VerificationError):
+            module.run_security_scan(root, OUTPUT_DIR)
+
     def test_absolute_path_is_rejected(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()

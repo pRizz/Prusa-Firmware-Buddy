@@ -2108,6 +2108,28 @@ def validate_source_failure_bundle(output: Path) -> None:
         scan_security(payload, artifact)
 
 
+def publish_failed_phase34_bundle(root: Path) -> None:
+    output = validate_output_path(root, DEFAULT_OUTPUT.as_posix())
+    canonical_output = root / output
+    failure_stage = create_staging_directory(root, output)
+    try:
+        write_source_failure_bundle(
+            output,
+            failure_stage,
+            "source-artifact-malformed",
+        )
+        install_staged_bundle(
+            root,
+            failure_stage,
+            canonical_output,
+            validate_source_failure_bundle,
+        )
+    except VerificationError:
+        if failure_stage.exists():
+            discard_staging_directory(root, failure_stage)
+        raise
+
+
 def validate_generated_outputs(output: Path) -> None:
     actual = sorted(
         path.relative_to(output).as_posix() for path in output.rglob("*")
