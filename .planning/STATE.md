@@ -3,15 +3,15 @@ gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
 status: executing
-stopped_at: Completed 40-03-PLAN.md
-last_updated: "2026-07-27T19:05:49.302Z"
+stopped_at: Completed 40-04-PLAN.md
+last_updated: "2026-07-27T19:32:40.660Z"
 last_activity: "2026-07-27"
 progress:
   total_phases: 10
   completed_phases: 8
   total_plans: 29
-  completed_plans: 17
-  percent: 59
+  completed_plans: 18
+  percent: 62
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-07-27)
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
 Phase: 40 (File Length Refactoring) — EXECUTING
-Plan: 4 of 15
+Plan: 5 of 15
 Status: Ready to execute
 Last activity: 2026-07-27
 
@@ -79,6 +79,7 @@ Progress: [########--] 80% (8/10 v1.3 phases complete; Phases 39 and 40 pending 
 | Phase 40 P01 | 11m | 2 tasks | 7 files |
 | Phase 40 P02 | 13m | 2 tasks | 18 files |
 | Phase 40 P03 | 20m | 2 tasks | 10 files |
+| Phase 40 P04 | 23m | 3 tasks | 27 files |
 
 ## Accumulated Context
 
@@ -128,6 +129,9 @@ Recent decisions affecting current work:
 - [Phase 40]: Build configuration, preset generation, and artifact publication live behind a stable utils/build.py CLI and import facade.
 - [Phase 40]: Phase-stepping numerical transforms remain pure; direct Serial and Plotly imports are confined to adapters while phase_stepping.py preserves every original public definition.
 - [Phase 40]: Temporary utility exceptions are retired only after byte-for-byte CLI/generated-output comparisons and an executed representative build.
+- [Phase 40]: Keep each Phase 5-11 verifier and Bazel label as the stable public facade over phase-local policy modules.
+- [Phase 40]: Load phase-local failure suites through existing test entrypoints so public Bazel test labels remain unchanged.
+- [Phase 40]: Copy extracted policy modules into isolated verifier test roots to preserve direct-script and runfiles behavior.
 
 ### Pending Todos
 
@@ -144,6 +148,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-27T19:05:49.299Z
-Stopped at: Completed 40-03-PLAN.md
+Last session: 2026-07-27T19:32:40.656Z
+Stopped at: Completed 40-04-PLAN.md
 Resume file: None
