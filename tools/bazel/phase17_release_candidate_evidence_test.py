@@ -8,7 +8,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 VERIFIER = ROOT / "tools/bazel/phase17_release_candidate_evidence.py"
 CONTRACT = "tools/bazel/manifests/phase17_release_candidate_evidence_contract.json"
@@ -71,7 +70,8 @@ RELEASE_WORKFLOW_OUTPUTS = [
 ]
 
 
-class Phase17ReleaseCandidateEvidenceTest(unittest.TestCase):
+class Phase17ReleaseCandidateEvidenceFixture:
+
     def run_verifier(
         self,
         args: list[str],
@@ -94,7 +94,21 @@ class Phase17ReleaseCandidateEvidenceTest(unittest.TestCase):
         root = Path(temp_dir.name)
         (root / "tools/bazel/manifests").mkdir(parents=True)
         if VERIFIER.exists():
-            shutil.copy2(VERIFIER, root / "tools/bazel/phase17_release_candidate_evidence.py")
+            shutil.copy2(
+                VERIFIER,
+                root / "tools/bazel/phase17_release_candidate_evidence.py")
+        shutil.copy2(
+            ROOT / "tools/bazel/phase17_evidence_policy.py",
+            root / "tools/bazel/phase17_evidence_policy.py",
+        )
+        shutil.copy2(
+            ROOT / "tools/bazel/phase17_release_evidence_policy.py",
+            root / "tools/bazel/phase17_release_evidence_policy.py",
+        )
+        shutil.copy2(
+            ROOT / "tools/bazel/phase17_evidence_artifacts.py",
+            root / "tools/bazel/phase17_evidence_artifacts.py",
+        )
         return temp_dir, root
 
     def write_file(self, root: Path, path: str, text: str = "") -> None:
@@ -119,7 +133,8 @@ class Phase17ReleaseCandidateEvidenceTest(unittest.TestCase):
         return json.loads((root / CONTRACT).read_text(encoding="utf-8"))
 
     def write_contract(self, root: Path, contract: dict[str, object]) -> None:
-        self.write_file(root, CONTRACT, json.dumps(contract, indent=2, sort_keys=True) + "\n")
+        self.write_file(root, CONTRACT,
+                        json.dumps(contract, indent=2, sort_keys=True) + "\n")
 
     def write_release_evidence(
         self,
@@ -127,7 +142,10 @@ class Phase17ReleaseCandidateEvidenceTest(unittest.TestCase):
         rows: list[dict[str, object]],
         path: str = "release-evidence.json",
     ) -> str:
-        self.write_file(root, path, json.dumps({"evidence_rows": rows}, indent=2, sort_keys=True) + "\n")
+        self.write_file(
+            root, path,
+            json.dumps({"evidence_rows": rows}, indent=2, sort_keys=True) +
+            "\n")
         return path
 
     def complete_release_row(
@@ -147,22 +165,29 @@ class Phase17ReleaseCandidateEvidenceTest(unittest.TestCase):
             "artifact_outputs": RELEASE_WORKFLOW_OUTPUTS,
             "artifact_refs": artifact_refs,
             "artifact_surface": ".bin",
-            "bazel_label": maybe_bazel_label or "//tools/bazel:phase17_release_candidate_artifacts",
+            "bazel_label": maybe_bazel_label
+            or "//tools/bazel:phase17_release_candidate_artifacts",
             "build_input_identity": "git:phase17-test-build",
-            "comparison_refs": ["external://phase17/comparisons/product-artifacts"],
+            "comparison_refs":
+            ["external://phase17/comparisons/product-artifacts"],
             "evidence_type": evidence_type,
             "key_identity_ref": "release-key-fingerprint:sha256:phase17-test",
             "mismatch_class": "pass",
-            "mismatch_reason": "Approved release comparison metadata matched the named reference surface.",
+            "mismatch_reason":
+            "Approved release comparison metadata matched the named reference surface.",
             "operator": "phase17-test-operator",
             "owner_phase": "17-release-candidate-artifact-and-signing-gates",
             "product_profile": "all-supported-release-products",
-            "provenance_refs": ["external://phase17/provenance/product-artifacts"],
-            "redaction_summary": "Only names, digests, and external refs are retained.",
-            "release_command": "bazel build //tools/bazel:phase17_release_candidate_artifacts",
+            "provenance_refs":
+            ["external://phase17/provenance/product-artifacts"],
+            "redaction_summary":
+            "Only names, digests, and external refs are retained.",
+            "release_command":
+            "bazel build //tools/bazel:phase17_release_candidate_artifacts",
             "release_run_id": "phase17-approved-run-001",
             "release_run_required": True,
-            "residual_risk": "Limited to supplied approved release-run metadata.",
+            "residual_risk":
+            "Limited to supplied approved release-run metadata.",
             "result": result,
             "retention_path": "external://phase17/retention/product-artifacts",
             "signing_mode": "external-release-key",
@@ -180,8 +205,7 @@ class Phase17ReleaseCandidateEvidenceTest(unittest.TestCase):
     ) -> None:
         manifest_srcs = "\n".join(
             f'        "{Path(path).relative_to("tools/bazel").as_posix()}",'
-            for path in SOURCE_REF_FILES
-        )
+            for path in SOURCE_REF_FILES)
         tools_build = maybe_tools_build or f"""filegroup(
     name = "phase20_release_environment_input_manifest",
     srcs = ["manifests/phase20_release_environment_inputs.template.json"],
@@ -278,6 +302,10 @@ phase17-release-artifacts-smoke:
         self.write_file(root, "tools/bazel/rust_workflow.sh", workflow)
         self.write_file(root, "justfile", justfile)
 
+
+class Phase17ReleaseCandidateEvidenceTest(
+        Phase17ReleaseCandidateEvidenceFixture, unittest.TestCase):
+
     def test_contract_accepts_complete_contract(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -298,11 +326,14 @@ phase17-release-artifacts-smoke:
                 with temp_dir:
                     self.copy_complete_surface(root)
                     contract = self.read_contract(root)
-                    contract["rows"] = [row for row in contract["rows"] if row["id"] != row_id]
+                    contract["rows"] = [
+                        row for row in contract["rows"] if row["id"] != row_id
+                    ]
                     self.write_contract(root, contract)
 
                     # Act
-                    result = self.run_verifier(["--contract-only"], maybe_root=root)
+                    result = self.run_verifier(["--contract-only"],
+                                               maybe_root=root)
 
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
@@ -318,18 +349,21 @@ phase17-release-artifacts-smoke:
                     contract = self.read_contract(root)
                     for row in contract["rows"]:
                         row["requirement_ids"] = [
-                            existing for existing in row["requirement_ids"] if existing != requirement_id
+                            existing for existing in row["requirement_ids"]
+                            if existing != requirement_id
                         ]
                     self.write_contract(root, contract)
 
                     # Act
-                    result = self.run_verifier(["--contract-only"], maybe_root=root)
+                    result = self.run_verifier(["--contract-only"],
+                                               maybe_root=root)
 
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(requirement_id, result.stdout)
 
-    def test_contract_rejects_source_refs_outside_approved_manifests(self) -> None:
+    def test_contract_rejects_source_refs_outside_approved_manifests(
+            self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
@@ -337,7 +371,11 @@ phase17-release-artifacts-smoke:
             self.write_file(
                 root,
                 "tools/bazel/manifests/unapproved.json",
-                json.dumps({"entries": [{"id": "mini_boot"}]}, indent=2, sort_keys=True) + "\n",
+                json.dumps({"entries": [{
+                    "id": "mini_boot"
+                }]},
+                           indent=2,
+                           sort_keys=True) + "\n",
             )
             contract = self.read_contract(root)
             contract["rows"][0]["source_contract_refs"] = [
@@ -350,17 +388,22 @@ phase17-release-artifacts-smoke:
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("not an approved Phase 17 source manifest", result.stdout)
+        self.assertIn("not an approved Phase 17 source manifest",
+                      result.stdout)
 
-    def test_contract_rejects_nested_source_ref_ids_outside_row_collections(self) -> None:
+    def test_contract_rejects_nested_source_ref_ids_outside_row_collections(
+            self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             self.copy_complete_surface(root)
             representative_manifest = root / "tools/bazel/manifests/representative_products.json"
-            data = json.loads(representative_manifest.read_text(encoding="utf-8"))
+            data = json.loads(
+                representative_manifest.read_text(encoding="utf-8"))
             data["metadata"] = {"id": "nested-only"}
-            representative_manifest.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            representative_manifest.write_text(
+                json.dumps(data, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8")
             contract = self.read_contract(root)
             contract["rows"][0]["source_contract_refs"] = [
                 "tools/bazel/manifests/representative_products.json#nested-only",
@@ -372,39 +415,18 @@ phase17-release-artifacts-smoke:
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("row not found in approved row collections", result.stdout)
+        self.assertIn("row not found in approved row collections",
+                      result.stdout)
 
-    def test_contract_rejects_invalid_mismatch_class_and_passed_defaults(self) -> None:
-        cases = [
-            ("mismatch_class", "unclassified"),
-            ("default_status", "passed"),
-            ("default_status", "unsupported-status"),
-            ("default_status", "source-contract-passed"),
-        ]
-        for field, value in cases:
-            with self.subTest(field=field):
-                # Arrange
-                temp_dir, root = self.make_temp_root()
-                with temp_dir:
-                    self.copy_complete_surface(root)
-                    contract = self.read_contract(root)
-                    contract["rows"][0][field] = value
-                    self.write_contract(root, contract)
-
-                    # Act
-                    result = self.run_verifier(["--contract-only"], maybe_root=root)
-
-                # Assert
-                self.assertNotEqual(result.returncode, 0)
-                self.assertIn(value, result.stdout)
-
-    def test_contract_requires_release_workflow_fields_and_identity(self) -> None:
+    def test_contract_requires_release_workflow_fields_and_identity(
+            self) -> None:
         cases = [
             ("bazel_label", None, "bazel_label"),
             ("release_command", None, "release_command"),
             ("artifact_outputs", None, "artifact_outputs"),
             ("release_run_required", None, "release_run_required"),
-            ("bazel_label", "//tools/bazel:representative_release_artifacts", "representative_release_artifacts"),
+            ("bazel_label", "//tools/bazel:representative_release_artifacts",
+             "representative_release_artifacts"),
         ]
         for field, value, expected in cases:
             with self.subTest(field=field, value=value):
@@ -420,7 +442,8 @@ phase17-release-artifacts-smoke:
                     self.write_contract(root, contract)
 
                     # Act
-                    result = self.run_verifier(["--contract-only"], maybe_root=root)
+                    result = self.run_verifier(["--contract-only"],
+                                               maybe_root=root)
 
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
@@ -441,11 +464,15 @@ phase17-release-artifacts-smoke:
                 with temp_dir:
                     self.copy_complete_surface(root)
                     contract = self.read_contract(root)
-                    contract[field] = [existing for existing in contract[field] if existing != value]
+                    contract[field] = [
+                        existing for existing in contract[field]
+                        if existing != value
+                    ]
                     self.write_contract(root, contract)
 
                     # Act
-                    result = self.run_verifier(["--contract-only"], maybe_root=root)
+                    result = self.run_verifier(["--contract-only"],
+                                               maybe_root=root)
 
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
@@ -459,19 +486,24 @@ phase17-release-artifacts-smoke:
 
             # Act
             result = self.run_verifier(["--quick"], maybe_root=root)
-            manifest = json.loads((root / "build/ci-evidence/phase17/run-manifest.json").read_text())
-            normalized = json.loads((root / "build/ci-evidence/phase17/normalized-release-results.json").read_text())
+            manifest = json.loads(
+                (root /
+                 "build/ci-evidence/phase17/run-manifest.json").read_text())
+            normalized = json.loads(
+                (root /
+                 "build/ci-evidence/phase17/normalized-release-results.json"
+                 ).read_text())
 
             # Assert
             self.assertEqual(result.returncode, 0, result.stdout)
             for path in [
-                "build/ci-evidence/phase17/run-manifest.json",
-                "build/ci-evidence/phase17/normalized-release-results.json",
-                "build/ci-evidence/phase17/redacted-signing-provenance-summary.json",
-                "build/ci-evidence/phase17/comparison-classification-report.json",
-                "build/ci-evidence/phase17/source-contract-snapshots/phase17_release_candidate_evidence_contract.json",
-                "build/ci-evidence/phase17/release-operator-evidence-input.json",
-                "build/ci-evidence/phase17/logs/rel-bin-firmware-image.log",
+                    "build/ci-evidence/phase17/run-manifest.json",
+                    "build/ci-evidence/phase17/normalized-release-results.json",
+                    "build/ci-evidence/phase17/redacted-signing-provenance-summary.json",
+                    "build/ci-evidence/phase17/comparison-classification-report.json",
+                    "build/ci-evidence/phase17/source-contract-snapshots/phase17_release_candidate_evidence_contract.json",
+                    "build/ci-evidence/phase17/release-operator-evidence-input.json",
+                    "build/ci-evidence/phase17/logs/rel-bin-firmware-image.log",
             ]:
                 self.assertTrue((root / path).exists(), path)
             self.assertFalse(manifest["release_inputs_supplied"])
@@ -485,19 +517,27 @@ phase17-release-artifacts-smoke:
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             self.copy_complete_surface(root)
-            evidence_path = self.write_release_evidence(root, [self.complete_release_row()])
+            evidence_path = self.write_release_evidence(
+                root, [self.complete_release_row()])
 
             # Act
-            result = self.run_verifier(["--quick", "--release-evidence", evidence_path], maybe_root=root)
-            normalized = json.loads((root / "build/ci-evidence/phase17/normalized-release-results.json").read_text())
+            result = self.run_verifier(
+                ["--quick", "--release-evidence", evidence_path],
+                maybe_root=root)
+            normalized = json.loads(
+                (root /
+                 "build/ci-evidence/phase17/normalized-release-results.json"
+                 ).read_text())
 
         # Assert
         self.assertEqual(result.returncode, 0, result.stdout)
         rows = {row["id"]: row for row in normalized["results"]}
         self.assertEqual(rows["rel-bin-firmware-image"]["status"], "passed")
-        self.assertEqual(rows["rel-bin-firmware-image"]["key_identity_ref"], "release-key-fingerprint:sha256:phase17-test")
+        self.assertEqual(rows["rel-bin-firmware-image"]["key_identity_ref"],
+                         "release-key-fingerprint:sha256:phase17-test")
 
-    def test_release_evidence_rejects_results_outside_contract_statuses(self) -> None:
+    def test_release_evidence_rejects_results_outside_contract_statuses(
+            self) -> None:
         cases = [
             ("source-contract-passed", "is not allowed"),
             ("almost-passed", "unsupported result"),
@@ -514,18 +554,30 @@ phase17-release-artifacts-smoke:
                     )
 
                     # Act
-                    result = self.run_verifier(["--quick", "--release-evidence", evidence_path], maybe_root=root)
+                    result = self.run_verifier(
+                        ["--quick", "--release-evidence", evidence_path],
+                        maybe_root=root)
 
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(expected, result.stdout)
 
-    def test_release_evidence_rejects_bad_paths_workflow_and_local_smoke_pass(self) -> None:
+    def test_release_evidence_rejects_bad_paths_workflow_and_local_smoke_pass(
+            self) -> None:
         cases = [
-            ({"maybe_artifact_refs": ["../escape.log"]}, "cannot traverse"),
-            ({"maybe_artifact_refs": ["artifact://phase17/not-explicit"]}, "external://phase17"),
-            ({"maybe_bazel_label": "//tools/bazel:representative_release_artifacts"}, "representative_release_artifacts"),
-            ({"evidence_type": "local-smoke"}, "approved-release"),
+            ({
+                "maybe_artifact_refs": ["../escape.log"]
+            }, "cannot traverse"),
+            ({
+                "maybe_artifact_refs": ["artifact://phase17/not-explicit"]
+            }, "external://phase17"),
+            ({
+                "maybe_bazel_label":
+                "//tools/bazel:representative_release_artifacts"
+            }, "representative_release_artifacts"),
+            ({
+                "evidence_type": "local-smoke"
+            }, "approved-release"),
         ]
         for kwargs, expected in cases:
             with self.subTest(expected=expected):
@@ -533,256 +585,27 @@ phase17-release-artifacts-smoke:
                 temp_dir, root = self.make_temp_root()
                 with temp_dir:
                     self.copy_complete_surface(root)
-                    evidence_path = self.write_release_evidence(root, [self.complete_release_row(**kwargs)])
+                    evidence_path = self.write_release_evidence(
+                        root, [self.complete_release_row(**kwargs)])
 
                     # Act
-                    result = self.run_verifier(["--quick", "--release-evidence", evidence_path], maybe_root=root)
+                    result = self.run_verifier(
+                        ["--quick", "--release-evidence", evidence_path],
+                        maybe_root=root)
 
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(expected, result.stdout)
 
-    def test_quick_rejects_symlinked_output_root_before_deleting_target(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.copy_complete_surface(root)
-            victim_dir = root / "build/ci-evidence/phase17-victim"
-            victim_dir.mkdir(parents=True)
-            marker_path = victim_dir / "do-not-delete.txt"
-            marker_path.write_text("victim target must survive\n", encoding="utf-8")
-            output_root = root / DEFAULT_OUTPUT_DIR
-            output_root.parent.mkdir(parents=True, exist_ok=True)
-            output_root.symlink_to(victim_dir, target_is_directory=True)
-
-            # Act
-            result = self.run_verifier(["--quick"], maybe_root=root)
-
-            # Assert
-            self.assertNotEqual(result.returncode, 0)
-            self.assertIn("--output-dir resolves outside", result.stdout)
-            self.assertTrue(output_root.is_symlink())
-            self.assertTrue(victim_dir.is_dir())
-            self.assertEqual(marker_path.read_text(encoding="utf-8"), "victim target must survive\n")
-            self.assertFalse((victim_dir / "run-manifest.json").exists())
-
-    def test_security_rejects_forbidden_markers_without_leaking_values(self) -> None:
-        cases = [
-            ("-----BEGIN PRIVATE KEY-----", "private-key-block"),
-            ("signing_key_value = super-secret-value", "signing-key-value"),
-            ("firmware_payload", "payload-marker"),
-            ("password: super-secret-value", "credential-assignment"),
-            ("release-candidate passed locally", "release-candidate passed locally"),
-            ("reference demotion approved", "reference demotion approved"),
-        ]
-        for marker, expected in cases:
-            with self.subTest(expected=expected):
-                # Arrange
-                temp_dir, root = self.make_temp_root()
-                with temp_dir:
-                    self.copy_complete_surface(root)
-                    self.write_file(root, "build/ci-evidence/phase17/leak.json", marker + "\n")
-
-                    # Act
-                    result = self.run_verifier(["--security-only"], maybe_root=root)
-
-                # Assert
-                self.assertNotEqual(result.returncode, 0)
-                self.assertIn(expected, result.stdout.lower())
-                self.assertNotIn("super-secret-value", result.stdout)
-
-    def test_verifier_does_not_embed_forbidden_subprocess_invocations(self) -> None:
-        # Arrange
-        source = VERIFIER.read_text(encoding="utf-8") if VERIFIER.exists() else ""
-
-        # Act
-        forbidden = [needle for needle in ["shell=True", "bash -c", "python -c", "node -e"] if needle in source]
-
-        # Assert
-        self.assertEqual(forbidden, [])
-
-    def test_wiring_accepts_and_rejects_phase17_surface(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.copy_complete_surface(root)
-            self.write_wiring(root)
-
-            # Act
-            accepted = self.run_verifier(["--wiring-only"], maybe_root=root)
-            bad_justfile = """phase17-verify:
-    bazel run //tools/bazel:phase17_verify
-    bazel run //tools/bazel:phase17_verify_tests
-"""
-            self.write_wiring(root, maybe_justfile=bad_justfile)
-            rejected = self.run_verifier(["--wiring-only"], maybe_root=root)
-
-        # Assert
-        self.assertEqual(accepted.returncode, 0, accepted.stdout)
-        self.assertNotEqual(rejected.returncode, 0)
-        self.assertIn("tests before verifier", rejected.stdout)
-
-    def test_wiring_rejects_missing_release_label(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.copy_complete_surface(root)
-            self.write_wiring(root)
-            tools_build = (root / "tools/bazel/BUILD.bazel").read_text(encoding="utf-8").replace(
-                'name = "phase17_release_candidate_artifacts"',
-                'name = "phase17_missing_release_candidate_artifacts"',
-                1,
-            )
-            tools_build = '# name = "phase17_release_candidate_artifacts"\n' + tools_build
-            self.write_wiring(root, maybe_tools_build=tools_build)
-
-            # Act
-            result = self.run_verifier(["--wiring-only"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("phase17_release_candidate_artifacts", result.stdout)
-
-    def test_wiring_rejects_workflow_commands_outside_phase17_case_arms(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.copy_complete_surface(root)
-            bad_workflow = """case "$command_name" in
-  phase17_verify)
-    python3 tools/bazel/phase17_release_candidate_evidence.py --quick
-    ;;
-  unrelated_verify)
-    python3 tools/bazel/phase17_release_candidate_evidence.py --wiring-only
-    python3 tools/bazel/phase17_release_candidate_evidence_test.py
-    ;;
-  phase17_verify_tests)
-    # python3 tools/bazel/phase17_release_candidate_evidence_test.py
-    ;;
-esac
-"""
-            self.write_wiring(root, maybe_workflow=bad_workflow)
-
-            # Act
-            result = self.run_verifier(["--wiring-only"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("phase17_verify case arm missing required wiring item", result.stdout)
-        self.assertIn("phase17_verify_tests case arm missing required wiring item", result.stdout)
-
-    def test_wiring_rejects_just_commands_outside_phase17_recipes(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.copy_complete_surface(root)
-            bad_justfile = """unrelated:
-    bazel run //tools/bazel:phase17_verify_tests
-    bazel run //tools/bazel:phase17_verify
-    bazel build //tools/bazel:phase17_representative_release_smoke
-
-phase17-verify:
-    # bazel run //tools/bazel:phase17_verify_tests
-    bazel run //tools/bazel:phase17_verify
-
-phase17-release-artifacts-smoke:
-    # bazel build //tools/bazel:phase17_representative_release_smoke
-"""
-            self.write_wiring(root, maybe_justfile=bad_justfile)
-
-            # Act
-            result = self.run_verifier(["--wiring-only"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("phase17-verify recipe missing required wiring item", result.stdout)
-        self.assertIn("phase17-release-artifacts-smoke recipe missing required wiring item", result.stdout)
-
-    def test_wiring_rejects_release_candidate_target_wrapping_smoke_artifacts(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.copy_complete_surface(root)
-            bad_tools_build = """filegroup(
-    name = "phase17_release_candidate_artifacts",
-    srcs = [":representative_release_artifacts"],
-)
-
-filegroup(
-    name = "phase17_representative_release_smoke",
-    srcs = [":representative_release_artifacts"],
-)
-"""
-            self.write_wiring(root, maybe_tools_build=bad_tools_build)
-
-            # Act
-            result = self.run_verifier(["--wiring-only"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("cannot wrap local smoke dependencies", result.stdout)
-
-    def test_release_candidate_target_rejects_empty_filegroup(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.copy_complete_surface(root)
-            self.write_wiring(root)
-            tools_build = (root / "tools/bazel/BUILD.bazel").read_text(encoding="utf-8").replace(
-                'srcs = [":phase20_release_environment_input_manifest"]',
-                "srcs = []",
-                1,
-            )
-            self.write_wiring(root, maybe_tools_build=tools_build)
-
-            # Act
-            result = self.run_verifier(["--wiring-only"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("phase20_release_environment_input_manifest", result.stdout)
-
-    def test_release_candidate_target_accepts_phase20_release_input_manifest(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.copy_complete_surface(root)
-            self.write_wiring(root)
-
-            # Act
-            result = self.run_verifier(["--wiring-only"], maybe_root=root)
-
-        # Assert
-        self.assertEqual(result.returncode, 0, result.stdout)
-
-    def test_release_candidate_target_rejects_representative_smoke_wrapping(self) -> None:
-        for bad_label in [
-            ":phase17_representative_release_smoke",
-            ":representative_release_artifacts",
-            "//tools/bazel:phase17_representative_release_smoke",
-            "//tools/bazel:representative_release_artifacts",
-            "//tools/bazel:phase3_verify",
-        ]:
-            with self.subTest(bad_label=bad_label):
-                # Arrange
-                temp_dir, root = self.make_temp_root()
-                with temp_dir:
-                    self.copy_complete_surface(root)
-                    self.write_wiring(root)
-                    tools_build = (root / "tools/bazel/BUILD.bazel").read_text(encoding="utf-8").replace(
-                        'srcs = [":phase20_release_environment_input_manifest"]',
-                        f'srcs = ["{bad_label}"]',
-                        1,
-                    )
-                    self.write_wiring(root, maybe_tools_build=tools_build)
-
-                    # Act
-                    result = self.run_verifier(["--wiring-only"], maybe_root=root)
-
-                # Assert
-                self.assertNotEqual(result.returncode, 0)
-                self.assertIn(bad_label, result.stdout)
-
 
 if __name__ == "__main__":
-    unittest.main()
+    import phase17_release_candidate_evidence_failure_test
+
+    loader = unittest.TestLoader()
+    suite = loader.loadTestsFromTestCase(Phase17ReleaseCandidateEvidenceTest)
+    suite.addTests(
+        loader.loadTestsFromTestCase(
+            phase17_release_candidate_evidence_failure_test.
+            Phase17ReleaseCandidateEvidenceFailureTest))
+    result = unittest.TextTestRunner().run(suite)
+    raise SystemExit(not result.wasSuccessful())

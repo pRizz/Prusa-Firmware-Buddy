@@ -395,6 +395,7 @@ shell_binary(
     name = "phase16_verify",
     src = "rust_workflow.sh",
     data = [
+        "phase16_evidence_policy.py",
         "phase16_live_network_evidence.py",
         "manifests/phase16_live_network_evidence_contract.json",
         ":phase16_source_ref_manifests",
@@ -407,7 +408,9 @@ shell_binary(
     name = "phase16_verify_tests",
     src = "rust_workflow.sh",
     data = [
+        "phase16_evidence_policy.py",
         "phase16_live_network_evidence.py",
+        "phase16_live_network_evidence_failure_test.py",
         "phase16_live_network_evidence_test.py",
         "manifests/phase16_live_network_evidence_contract.json",
         ":phase16_source_ref_manifests",
@@ -453,6 +456,9 @@ shell_binary(
     name = "phase17_verify",
     src = "rust_workflow.sh",
     data = [
+        "phase17_evidence_artifacts.py",
+        "phase17_evidence_policy.py",
+        "phase17_release_evidence_policy.py",
         "phase17_release_candidate_evidence.py",
         "manifests/phase17_release_candidate_evidence_contract.json",
         ":phase17_release_candidate_artifacts",
@@ -467,7 +473,11 @@ shell_binary(
     name = "phase17_verify_tests",
     src = "rust_workflow.sh",
     data = [
+        "phase17_evidence_artifacts.py",
+        "phase17_evidence_policy.py",
+        "phase17_release_evidence_policy.py",
         "phase17_release_candidate_evidence.py",
+        "phase17_release_candidate_evidence_failure_test.py",
         "phase17_release_candidate_evidence_test.py",
         "manifests/phase17_release_candidate_evidence_contract.json",
         ":phase17_release_candidate_artifacts",

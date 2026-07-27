@@ -877,10 +877,6 @@ file-lengths	tests/unit/lib/Marlin/MMU2/mmu2_protocol_logic_test.cpp	temporary: 
 file-lengths	tests/unit/lib/WUI/nhttp/server_tests.cpp	temporary: campaign=firmware-tests; remove when file is below 629 lines and campaign gates pass
 file-lengths	tests/unit/media_prefetch/media_prefetch_tests.cpp	temporary: campaign=firmware-tests; remove when file is below 629 lines and campaign gates pass
 file-lengths	tests/unit/persistent_stores/EEPROM_journal_test.cpp	temporary: campaign=firmware-tests; remove when file is below 629 lines and campaign gates pass
-file-lengths	tools/bazel/phase16_live_network_evidence.py	temporary: campaign=phase13-17-python; remove when file is below 629 lines and campaign gates pass
-file-lengths	tools/bazel/phase16_live_network_evidence_test.py	temporary: campaign=phase13-17-python; remove when file is below 629 lines and campaign gates pass
-file-lengths	tools/bazel/phase17_release_candidate_evidence.py	temporary: campaign=phase13-17-python; remove when file is below 629 lines and campaign gates pass
-file-lengths	tools/bazel/phase17_release_candidate_evidence_test.py	temporary: campaign=phase13-17-python; remove when file is below 629 lines and campaign gates pass
 file-lengths	tools/bazel/phase18_cutover_review.py	temporary: campaign=phase18-28-python; remove when file is below 629 lines and campaign gates pass
 file-lengths	tools/bazel/phase18_cutover_review_test.py	temporary: campaign=phase18-28-python; remove when file is below 629 lines and campaign gates pass
 file-lengths	tools/bazel/phase19_aggregate_ci_evidence.py	temporary: campaign=phase18-28-python; remove when file is below 629 lines and campaign gates pass
