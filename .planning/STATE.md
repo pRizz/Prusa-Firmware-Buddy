@@ -3,15 +3,15 @@ gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
 status: executing
-stopped_at: Phase 40 context gathered
-last_updated: "2026-07-27T18:07:04.040Z"
-last_activity: 2026-07-27 -- Phase 40 planning complete
+stopped_at: Completed 40-01-PLAN.md
+last_updated: "2026-07-27T18:23:18.996Z"
+last_activity: "2026-07-27"
 progress:
   total_phases: 10
   completed_phases: 8
   total_plans: 29
-  completed_plans: 14
-  percent: 48
+  completed_plans: 15
+  percent: 52
 ---
 
 # Project State
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-27)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Phase 40 — File Length Refactoring (authorized from completed Phase 38; independent of pending Phase 39)
+**Current focus:** Phase 40 — File Length Refactoring
 
 ## Current Position
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
-Phase: 40 (File Length Refactoring)
-Plan: 1 of 15
+Phase: 40 (File Length Refactoring) — EXECUTING
+Plan: 2 of 15
 Status: Ready to execute
-Last activity: 2026-07-27 -- Phase 40 planning complete
+Last activity: 2026-07-27
 
 Progress: [########--] 80% (8/10 v1.3 phases complete; Phases 39 and 40 pending independently)
 
@@ -37,7 +37,7 @@ Progress: [########--] 80% (8/10 v1.3 phases complete; Phases 39 and 40 pending 
 
 **Velocity:**
 
-- v1.3 plans completed: 14/29 currently planned
+- v1.3 plans completed: 15/29 currently planned
 - v1.3 phases completed: 8/10
 - Previous milestone baseline: v1.2 completed 9 plans across 8 phases
 - Earlier milestone baseline: v1.1 completed 13 plans across 10 phases
@@ -54,12 +54,12 @@ Progress: [########--] 80% (8/10 v1.3 phases complete; Phases 39 and 40 pending 
 | 36. Normalize Evidence and Blocker Rows | 2/2 | 39min | 19m30s |
 | 37 | 2 | - | - |
 | 38. Fail-Closed Cutover Workflow | 3/3 | 59min | 19m40s |
-| 40. File Length Refactoring | 0/15 | - | - |
+| 40. File Length Refactoring | 1/15 | 11m | 11m |
 
 **Recent Trend:**
 
-- Last 5 completed plans: Phase 37 P01, Phase 37 P02, Phase 38 P01, Phase 38 P02, Phase 38 P03
-- Trend: eight of nine v1.3 phases are complete; Phase 38 verification passed 9/9 must-haves after closing both stale-authority gaps.
+- Last 5 completed plans: Phase 37 P02, Phase 38 P01, Phase 38 P02, Phase 38 P03, Phase 40 P01
+- Trend: Phase 40 execution began with the exact file-length baseline and fail-closed policy gate; Phase 39 remains pending independently.
 
 **Recent Completed Plan Detail:**
 
@@ -76,6 +76,7 @@ Progress: [########--] 80% (8/10 v1.3 phases complete; Phases 39 and 40 pending 
 | Phase 38 P01 | 21min | 2 tasks | 6 files |
 | Phase 38 P02 | 19min | 3 tasks | 7 files |
 | Phase 38 P03 | 19min | 2 tasks | 7 files |
+| Phase 40 P01 | 11m | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -116,6 +117,9 @@ Recent decisions affecting current work:
 - [Phase 38]: Accept a nonzero Phase 34 result only when persisted blocked authority matches the coordinator's exact attempt and safe reason.
 - [Phase 38]: Treat a safe blocked fallback as authority state, not operational success; Phase 35 validation and source failures remain nonzero.
 - [Phase 40]: Phase 40 added: File Length Refactoring — Execute the approved ratcheting program after Phase 39 without changing Phase 39 scope.
+- [Phase 40]: The checker-consumed TSV is the sole active exception authority; embedded sets define immutable policy boundaries only.
+- [Phase 40]: Temporary membership may only shrink, while owned permanence is restricted to the three locked deletion-test conversions.
+- [Phase 40]: Terminal mode requires exactly the frozen 838 paths plus all three locked owned paths and no temporary reasons.
 
 ### Pending Todos
 
@@ -132,6 +136,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-27T16:51:24.609Z
-Stopped at: Phase 40 context gathered
-Resume file: .planning/phases/40-file-length-refactoring/40-CONTEXT.md
+Last session: 2026-07-27T18:23:18.993Z
+Stopped at: Completed 40-01-PLAN.md
+Resume file: None
