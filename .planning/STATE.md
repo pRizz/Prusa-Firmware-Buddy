@@ -3,15 +3,15 @@ gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
 status: executing
-stopped_at: Completed 40-09-PLAN.md
-last_updated: "2026-07-27T23:02:48.558Z"
+stopped_at: Completed 40-10-PLAN.md
+last_updated: "2026-07-27T23:30:58.071Z"
 last_activity: "2026-07-27"
 progress:
   total_phases: 10
   completed_phases: 8
   total_plans: 29
-  completed_plans: 23
-  percent: 79
+  completed_plans: 24
+  percent: 83
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-07-27)
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
 Phase: 40 (File Length Refactoring) — EXECUTING
-Plan: 10 of 15
+Plan: 11 of 15
 Status: Ready to execute
 Last activity: 2026-07-27
 
@@ -85,6 +85,7 @@ Progress: [########--] 80% (8/10 v1.3 phases complete; Phases 39 and 40 pending 
 | Phase 40-file-length-refactoring P07 | 40m | 3 tasks | 64 files |
 | Phase 40-file-length-refactoring P08 | 27m | 3 tasks | 22 files |
 | Phase 40 P09 | 66m | 3 tasks | 36 files |
+| Phase 40 P10 | 24m | 3 tasks | 18 files |
 
 ## Accumulated Context
 
@@ -152,6 +153,9 @@ Recent decisions affecting current work:
 - [Phase 40]: Keep public firmware surfaces stable and place extracted behavior in named private implementation modules owned by existing targets.
 - [Phase 40]: Retain MItem_tools.hpp as the complete tools-menu API while composing a cohesive information-declaration subheader.
 - [Phase 40]: Convert only Rect16.h and screen_tools_mapping.cpp to approved owned deep modules with byte-identical source content.
+- [Phase 40]: Keep filesystem, prefetch, Connect, Marlin, and transfer effects in stable adapters while extracting cohesive policy modules.
+- [Phase 40]: Place transfer download-order decisions in the existing recovery translation unit and complete its focused PartialFile test interface.
+- [Phase 40]: Retain planner.cpp byte-for-byte as the final authorized owned deep module and record its path-specific deletion test.
 
 ### Pending Todos
 
@@ -168,6 +172,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-27T23:02:48.555Z
-Stopped at: Completed 40-09-PLAN.md
+Last session: 2026-07-27T23:30:58.069Z
+Stopped at: Completed 40-10-PLAN.md
 Resume file: None
