@@ -37,6 +37,7 @@ WORKFLOW_ATTEMPT_FIELDS = [
     "canonical_output_ref",
 ]
 WORKFLOW_ATTEMPT_REASON = "workflow-in-progress"
+EXPECTED_PHASE35_READER_BLOCK = "Phase 38 workflow attempt is blocking"
 SAFE_REASON_CATEGORIES = {
     "none",
     "phase31-input-invalid",
@@ -592,8 +593,10 @@ def _run_phase35(
                 PHASE35_OUTPUT.as_posix(),
             )
     except phase35.VerificationError as error:
-        candidate = _load_candidate_final_authority(root)
-        if candidate.available and candidate.reason_category == "none":
+        if (
+            error.reason_code == "unsafe-ref"
+            and str(error) == EXPECTED_PHASE35_READER_BLOCK
+        ):
             return CommandOutcome(0, "none")
         return CommandOutcome(
             1,

@@ -493,6 +493,56 @@ class CoordinatorTests(unittest.TestCase):
         )
         self.assertEqual(result.status, 4)
 
+    def test_phase35_source_failure_preserves_nonzero_status_and_blocked_authority(
+        self,
+    ) -> None:
+        # Arrange
+        def publish_blocked_source_error(
+            root: Path,
+            _phase34_output: str,
+            _phase35_output: str,
+        ) -> None:
+            workflow.phase35.publish_failed_phase34_bundle(root)
+            raise workflow.phase35.VerificationError(
+                "Phase 35 source validation failed",
+                "source-artifact-malformed",
+            )
+
+        # Act
+        with (
+            patch.object(
+                workflow,
+                "_run_phase34",
+                return_value=workflow.CommandOutcome(0, "none"),
+            ),
+            patch.object(
+                workflow,
+                "_phase34_effective_authority_is_valid",
+                return_value=True,
+            ),
+            patch.object(
+                workflow.phase35,
+                "run_quick",
+                side_effect=publish_blocked_source_error,
+            ),
+        ):
+            result = workflow.coordinate_workflow(self.root)
+
+        # Assert
+        candidate = workflow._load_candidate_final_authority(self.root)
+        self.assertTrue(candidate.available)
+        self.assertEqual(candidate.verdict, "blocked")
+        self.assertEqual(candidate.readiness_state, "blocked")
+        self.assertEqual(result.phase35_status, 1)
+        self.assertEqual(result.status, 1)
+        self.assertEqual(
+            result.reason_category,
+            "source-artifact-malformed",
+        )
+        self.assertFalse(result.final_authority_available)
+        self.assertFalse(result.production_cutover_planning)
+        self.assertFalse(result.reference_demotion_authorized)
+
     def test_phase35_does_not_run_when_phase34_bundle_is_invalid(self) -> None:
         # Arrange
         phase35 = unittest.mock.Mock()
