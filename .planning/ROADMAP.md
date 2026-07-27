@@ -80,7 +80,7 @@ Full phase details are archived in `.planning/milestones/v1.2-ROADMAP.md`.
 - [x] **Phase 35: Cutover Decision Artifact** - Maintainers can publish an auditable approved, blocked, or approved-with-exceptions verdict that routes the next milestone. (completed 2026-07-26)
 - [x] **Phase 36: Normalize Evidence and Blocker Rows** - Normalize release row tables and decision-domain blocker identities so downstream readiness consumes the real producer shapes. (completed 2026-07-26)
 - [x] **Phase 37: Reconcile Decisions Into Readiness** - Join retained-code, residual-risk, exception, and readiness decisions into resolvable Phase 34 ledger rows. (completed 2026-07-26)
-- [ ] **Phase 38: Fail-Closed Cutover Workflow** - Make upstream failures replace stale authority and prove blocked, approved, and targeted-repair paths end to end.
+- [x] **Phase 38: Fail-Closed Cutover Workflow** - Make upstream failures replace stale authority and prove blocked, approved, and targeted-repair paths end to end. (completed 2026-07-27)
 - [ ] **Phase 39: Milestone Metadata Reconciliation** - Restore requirement-completion metadata and reconcile roadmap plan details before re-audit.
 
 ## Phase Details
@@ -187,7 +187,11 @@ Plans:
   3. End-to-end regressions cover default blocked, complete approved, targeted-repair, and upstream-source failure paths using real producer output shapes.
   4. Production-cutover planning is reachable only from a valid approved verdict, while demotion authority remains a separate explicit predicate.
   5. Failed staged installation restores a safe prior bundle or a validated blocked replacement without weakening fail-closed authority.
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [x] 38-01-PLAN.md - Complete fail-closed Phase 34 source-failure publication and guarded recoverable Phase 35 installation.
+- [x] 38-02-PLAN.md - Add the status-preserving production coordinator, actual-producer route matrix, and authoritative Phase 38 gate.
+- [x] 38-03-PLAN.md - Close stale-authority gaps with durable attempt-correlated workflow and publication markers.
 
 ### Phase 39: Milestone Metadata Reconciliation
 **Goal**: Requirement completion and roadmap metadata agree with the executed and gap-closure evidence before the milestone is re-audited.
@@ -248,5 +252,5 @@ Phases execute in numeric order across archived milestones. v1.3 continues after
 | 35. Cutover Decision Artifact | v1.3 | 2/2 | Complete    | 2026-07-26 |
 | 36. Normalize Evidence and Blocker Rows | v1.3 | 2/2 | Complete    | 2026-07-26 |
 | 37. Reconcile Decisions Into Readiness | v1.3 | 2/2 | Complete    | 2026-07-26 |
-| 38. Fail-Closed Cutover Workflow | v1.3 | 0/TBD | Pending | — |
+| 38. Fail-Closed Cutover Workflow | v1.3 | 3/3 | Complete    | 2026-07-27 |
 | 39. Milestone Metadata Reconciliation | v1.3 | 0/TBD | Pending | — |

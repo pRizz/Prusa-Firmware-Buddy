@@ -1,6 +1,6 @@
 ---
 phase: 38-fail-closed-cutover-workflow
-reviewed: 2026-07-26T18:37:17Z
+reviewed: 2026-07-27T15:27:49Z
 depth: standard
 files_reviewed: 13
 files_reviewed_list:
@@ -27,7 +27,7 @@ status: clean
 
 # Phase 38: Code Review Report
 
-**Reviewed:** 2026-07-26T18:37:17Z
+**Reviewed:** 2026-07-27T15:27:49Z
 **Depth:** standard
 **Files Reviewed:** 13
 **Status:** clean
@@ -36,30 +36,30 @@ status: clean
 
 All reviewed files meet quality standards. No issues found.
 
-The review followed the repository guidance in `AGENTS.md` and `AGENTS.bright-builds.md`, with no active exception in `standards-overrides.md`. The Bright Builds architecture, code-shape, verification, and testing standards materially informed the review.
+WR-01 is resolved by limiting the Phase 35 success conversion to the exact expected canonical-reader rejection caused by the active Phase 38 workflow marker. Other Phase 35 validation errors retain their safe reason code and a nonzero operation status. The focused regression proves that a valid blocked candidate can coexist with `phase35_status: 1`, overall `status: 1`, and `reason_category: source-artifact-malformed`; final authority remains unavailable and neither cutover planning nor reference demotion is authorized.
 
-The three critical findings from the previous review are resolved:
+The prior marker and authority concerns remain closed:
 
-- Phase 34 converts invalid UTF-8 and filesystem read failures into its controlled source-failure path and replaces seeded prior authority with the exact blocked bundle.
-- Phase 38 requires both producer operations to succeed before exposing final authority availability, production cutover planning, or reference demotion authorization.
-- Phase 38 publishes the durable Phase 35 authority guard before Phase 34 starts, so invalid Phase 34 publication leaves seeded prior Phase 35 approval blocked.
+- Workflow-attempt and Phase 34 publication shells remain blocking when payload creation, atomic replacement, parsing, path/type validation, or cleanup fails.
+- Phase 35 canonical readers reject every present or unsafe workflow-attempt marker, while private candidate validation cannot become final public authority.
+- The coordinator generates attempt identity internally, correlates nonzero Phase 34 authority to that exact attempt and reason, and never exposes the identity as an authority-bearing CLI input or diagnostic.
+- A nonzero Phase 34 result reaches Phase 35 only through a validated blocked bundle or retained exact-attempt blocking publication state; seeded unblocked authority cannot be restored as effective authority.
+- Approved, blocked, targeted-repair, and independent demotion behavior remain unchanged.
+
+The corrected `38-03-PLAN.md` key-link pattern, `publish_workflow_attempt_marker|ensure_no_workflow_attempt_marker`, accurately names the two runtime endpoints and matches the implemented wiring. The earlier key-link failure was metadata imprecision, not a code defect.
 
 Verification performed:
 
-- Python bytecode compilation passed for all seven reviewed Python modules and tests.
-- `phase34_final_readiness_demotion_dry_run_test.py`: 53 tests passed.
-- `phase35_cutover_decision_artifact_test.py`: 74 tests passed.
-- `phase38_cutover_workflow_test.py`: 30 tests passed.
-- `phase38_cutover_workflow_integration_test.py`: 9 tests passed.
-- `bash -n tools/bazel/rust_workflow.sh` passed.
-- `just phase38-verify` passed, including the Bazel Phase 38 test target and the actual producer workflow.
-- The actual producer workflow ended with `status: 0`, `verdict: blocked`, `route: targeted-blocker-repair`, `production_cutover_planning: false`, and `reference_demotion_authorized: false`.
-- Scoped security and anti-pattern scanning found no actionable issue.
-- Scoped `git diff --check` passed, and no reviewed source file was modified during re-review.
-- `38-REVIEW.iter2.md` and `38-REVIEW-FIX.iter2.md` were confirmed byte-for-byte identical to the pre-overwrite reports.
+- Focused WR-01 regression passed.
+- Focused Phase 34 marker, Phase 38 marker/coordinator, and complete Phase 35 unit coverage: 108 tests passed.
+- Phase 38 actual-producer integration coverage: 11 tests passed.
+- `just phase38-verify` passed, including 267 unit/integration tests and the authoritative producer workflow.
+- The authoritative workflow completed with blocked targeted-repair authority, no production cutover planning, and no reference demotion authorization.
+- `git diff --check` passed.
+- Bazel's incidental `MODULE.bazel.lock` format-only rewrite was restored; no source file or git history was modified during review.
 
 ***
 
-_Reviewed: 2026-07-26T18:37:17Z_
+_Reviewed: 2026-07-27T15:27:49Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_

@@ -1,161 +1,156 @@
 ---
 phase: 38-fail-closed-cutover-workflow
-verified: 2026-07-26T18:49:11Z
-status: gaps_found
-score: "5/8 must-haves verified"
+verified: 2026-07-27T15:30:58Z
+status: passed
+score: "9/9 must-haves verified"
 generated_by: gsd-verifier
 lifecycle_mode: yolo
 phase_lifecycle_id: 38-2026-07-26T16-29-23
-generated_at: 2026-07-26T18:49:11Z
+generated_at: 2026-07-27T15:30:58Z
 lifecycle_validated: true
 overrides_applied: 0
-gaps:
-  - truth: "Every invalid Phase 31 or Phase 33 source causes Phase 34 to publish a durable blocked replacement before returning failure."
-    status: failed
-    reason: "A Phase 34 blocked-bundle staging rename failure restores the prior unblocked bundle. The coordinator then accepts that restored bundle as valid, Phase 35 republishes approved production-cutover authority, clears the guard, and returns nonzero with stale canonical approval still readable."
-    artifacts:
-      - path: "tools/bazel/phase34_final_readiness_demotion_dry_run.py"
-        issue: "replace_output_with_staging restores the prior canonical bundle when the staged rename fails, without a durable Phase 34 blocking guard."
-      - path: "tools/bazel/phase38_cutover_workflow.py"
-        issue: "_phase34_authority_is_valid accepts the restored prior unblocked bundle after _run_phase34 reports failure, so Phase 35 runs against stale authority and can clear the Phase 35 guard."
-      - path: "tools/bazel/phase38_cutover_workflow_integration_test.py"
-        issue: "The matrix covers invalid sources and an invalid Phase 34 output path, but not a failure while installing the blocked Phase 34 replacement."
-    missing:
-      - "Make Phase 34 fallback publication authority-monotonic across staging rename, validation, rollback, and cleanup failures."
-      - "After a nonzero Phase 34 result, require the persisted Phase 34 authority itself to be blocked before Phase 35 may finalize or clear its guard."
-      - "Add a seeded approved real-producer regression that injects Phase 34 blocked-bundle installation failure and proves both canonical authorities remain blocked."
-  - truth: "Workflow orchestration cannot exit while leaving prior Phase 34 or Phase 35 approval authoritative."
-    status: failed
-    reason: "If Phase 35 guard creation fails before the guard file exists, the coordinator returns nonzero but no durable blocking marker exists; ensure_canonical_authority accepts the untouched prior canonical bundle."
-    artifacts:
-      - path: "tools/bazel/phase35_cutover_decision_artifact.py"
-        issue: "publish_authority_guard catches a pre-create touch failure, but cannot make absent guard state blocking for canonical readers."
-      - path: "tools/bazel/phase35_cutover_decision_artifact_test.py"
-        issue: "The guard-creation interruption test creates the guard before raising and therefore does not cover failure before guard-file creation."
-      - path: "tools/bazel/phase38_cutover_workflow_test.py"
-        issue: "The coordinator guard-publication-failure test asserts only returned status and skipped producers; it does not seed prior approval or prove canonical readers are blocked."
-    missing:
-      - "Give Phase 35 readers a durable fail-closed state that also covers guard publication failure before file creation."
-      - "Seed prior approved Phase 35 authority and inject a pre-create guard failure; prove every canonical reader rejects the prior bundle."
-      - "Do not report finalization complete solely through the transient coordinator result when persisted authority remains readable."
+re_verification:
+  previous_status: "gaps_found"
+  previous_score: "5/8"
+  gaps_closed:
+    - "Phase 34 blocked-replacement installation failure after prior authority moved no longer restores effective unblocked authority or permits Phase 35 approval."
+    - "Phase 35 guard pre-creation failure leaves a durable workflow-attempt marker that blocks every canonical reader."
+  gaps_remaining: []
+  regressions: []
 ---
 
 # Phase 38: Fail-Closed Cutover Workflow Verification Report
 
 **Phase Goal:** The full Phase 31–35 workflow replaces stale authority for every upstream failure and reaches the correct blocked, approved, or targeted-repair route.
-**Verified:** 2026-07-26T18:49:11Z
-**Status:** gaps_found
-**Re-verification:** No — initial verification
+**Verified:** 2026-07-27T15:30:58Z
+**Status:** passed
+**Re-verification:** Yes — after Plan 38-03 gap closure and WR-01 review repair
 
 ## Goal Achievement
 
-The normal-path implementation and authoritative gate are substantial, wired, and well tested. Default blocked, complete approved, targeted-repair, invalid Phase 31, and invalid Phase 33 cases all pass. However, adversarial publication-failure checks show that the durable authority invariant is not complete: stale approval can become readable after the workflow returns nonzero.
+Phase 38 achieves its goal. The two prior stale-authority reproductions now remain durably blocked for the exact workflow attempt, all canonical readers reject stale approval, and the normal blocked, approved, targeted-repair, and independent-demotion routes remain green. WR-01 also preserves a nonzero Phase 35 and workflow status when a malformed source produces a valid blocked fallback.
+
+The verification applied the repository guidance in `AGENTS.md`, `AGENTS.bright-builds.md`, `standards-overrides.md` (no active exception), and the Bright Builds architecture, code-shape, testing, verification, and Rust standards.
 
 ### Observable Truths
 
 | # | Truth | Status | Evidence |
 | --- | --- | --- | --- |
-| 1 | Every invalid Phase 31/33 source publishes a durable blocked Phase 34 replacement before failure returns. | ✗ FAILED | Normal invalid-source regressions pass, but injected failure of the Phase 34 blocked-bundle staging rename returned status 1 while restoring `readiness_state: unblocked`. |
-| 2 | Workflow orchestration cannot exit while prior Phase 34 or Phase 35 approval remains authoritative. | ✗ FAILED | After the Phase 34 install fault, Phase 35 was `approved`, route was `production-cutover-planning`, the guard was absent, and `load_final_authority` returned `available: true`. A separate pre-create guard failure left `guard_exists: false` and the canonical reader unblocked. |
-| 3 | Real-producer end-to-end regressions cover default blocked, complete approved, targeted repair, and upstream-source failure paths. | ✓ VERIFIED | `phase38_cutover_workflow_integration_test.py` ran 9 tests through actual Phase 31–35 producers; required route cases passed. |
-| 4 | Production-cutover planning requires a valid approved verdict, while demotion authority remains a separate explicit predicate. | ✓ VERIFIED | `evaluate_final_status` gates both positive projections on successful producers and consistent authority; focused route/demotion tests and real-producer cases passed. |
-| 5 | Failed Phase 35 staged installation restores a prior bundle or retains a validated replacement without weakening authority. | ✓ VERIFIED | Focused stage-rename, validation, restore, backup-cleanup, and guard-cleanup tests passed; all post-guard faults retain a blocking guard. |
-| 6 | Phase 35 finalization runs after a validated blocked Phase 34 publication even when Phase 34 returns nonzero, preserving the original status. | ✓ VERIFIED | Coordinator call-order test passed and `evaluate_final_status` preserved the Phase 34 status after blocked Phase 35 finalization. |
-| 7 | A durable Phase 35 guard is blocking before canonical mutation and through publication/recovery faults. | ✗ FAILED | It is blocking once created, but injected failure before `touch_guard` creates the file leaves no durable guard and canonical readers accept prior authority. |
-| 8 | The authoritative Phase 38 gate runs focused and integration regressions before default publication. | ✓ VERIFIED | `justfile` orders `phase38_verify_tests` before `phase38_verify`; the authoritative command passed and then published default blocked targeted-repair output. |
+| 1 | Every invalid Phase 31/33 source publishes a durable blocked Phase 34 replacement or retains attempt-correlated blocking state before failure returns. | ✓ VERIFIED | `publish_publication_state` establishes a fixed-path blocking shell before fallback installation; `_phase34_effective_authority_is_valid` accepts a nonzero run only when the blocked state or installed blocked bundle matches the exact attempt and safe reason. The focused stage-rename regression and actual-producer blocked-install regression passed. |
+| 2 | Workflow orchestration cannot exit while prior Phase 34 or Phase 35 approval remains authoritative. | ✓ VERIFIED | `coordinate_workflow` publishes the workflow-attempt marker before the Phase 35 guard. Phase 35 readers reject any present or unsafe marker. Both prior-gap reproductions seed approval and prove no production route or demotion authorization survives. |
+| 3 | Real-producer end-to-end regressions cover default blocked, complete approved, targeted repair, and upstream-source failure paths. | ✓ VERIFIED | The 11-test Phase 38 integration suite executes actual Phase 31–35 producers and covers default blocked, complete approved, named targeted repair, invalid Phase 31, invalid Phase 33, invalid Phase 34 publication, both prior publication faults, and demotion separation. |
+| 4 | Production-cutover planning requires a valid approved verdict, while demotion authority remains a separate explicit predicate. | ✓ VERIFIED | `evaluate_final_status` requires both producers to succeed and authority to be internally consistent before enabling production planning. Demotion additionally requires unblocked readiness, valid explicit approval, and an open gate. Unit and real-producer truth tables passed. |
+| 5 | Failed staged installation restores a safe prior bundle or a validated blocked replacement without weakening fail-closed authority. | ✓ VERIFIED | Phase 35 publishes its guard before canonical mutation and retains it across rename, validation, restore, backup-cleanup, and guard-cleanup failures. Phase 34 retains its publication-state blocker across failed blocked-stage installation. |
+| 6 | Phase 35 finalization runs after validated blocked Phase 34 publication even when Phase 34 returns nonzero, preserving the original status. | ✓ VERIFIED | Coordinator sequencing tests passed; exact-attempt Phase 34 validation gates Phase 35 consumption and the earliest nonzero status remains authoritative. |
+| 7 | A durable blocking marker exists before Phase 35 guard creation and remains blocking through marker creation, replacement, parsing, path/type, and cleanup failures. | ✓ VERIFIED | Workflow-attempt marker security tests cover pre-create, atomic replace, missing fields, malformed/unreadable payloads, absolute/traversal/wrong-root refs, symlinks, wrong types, non-directory parents, and cleanup failure. The true guard pre-create reproduction passed with the Phase 35 guard absent and the workflow marker still blocking all readers. |
+| 8 | The authoritative Phase 38 gate runs focused and integration regressions before default publication. | ✓ VERIFIED | `justfile` invokes `phase38_verify_tests` before `phase38_verify`; `just phase38-verify` passed 267 tests before publishing default blocked targeted-repair authority. |
+| 9 | WR-01: `source-artifact-malformed` with a valid blocked fallback retains blocked authority while Phase 35 and overall workflow status stay nonzero. | ✓ VERIFIED | `test_phase35_source_failure_preserves_nonzero_status_and_blocked_authority` passed: the candidate is blocked, `phase35_status == 1`, overall `status == 1`, the reason remains `source-artifact-malformed`, and all positive authority booleans are false. |
 
-**Score:** 5/8 truths verified
+**Score:** 9/9 truths verified
 
-## Required Artifacts
+### Required Artifacts
 
-| Artifact | Expected | Status | Details |
-| --- | --- | --- | --- |
-| `tools/bazel/phase34_final_readiness_demotion_dry_run.py` | Complete Phase 31/33 source-failure publication boundary | ⚠ PARTIAL | Exists, substantive, and wired. Normal source failures publish exact blocked bundles, but fallback-install failure can restore stale unblocked authority. |
-| `tools/bazel/phase34_final_readiness_demotion_dry_run_test.py` | Seeded stale-approval regressions for every source boundary | ⚠ PARTIAL | 53 tests pass, including invalid UTF-8 and read errors. No blocked-bundle rename/rollback fault regression exists. |
-| `tools/bazel/phase35_cutover_decision_artifact.py` | Guarded staged installation and compensating restore | ⚠ PARTIAL | Guarded mutation/recovery works after guard creation. A failure before guard creation leaves absent guard state non-blocking. |
-| `tools/bazel/phase35_cutover_decision_artifact_test.py` | Guard, rename, validation, restore, cleanup, and path-substitution fault tests | ⚠ PARTIAL | 74 tests pass. The “creation interruption” fixture touches the guard before raising, so it does not cover a true pre-create failure. |
-| `tools/bazel/phase38_cutover_workflow.py` | Production coordinator and final authority truth table | ⚠ PARTIAL | Pure status logic and normal orchestration are substantive. It can finalize Phase 35 from a restored stale Phase 34 bundle after a Phase 34 publication failure. |
-| `tools/bazel/phase38_cutover_workflow_test.py` | Coordinator status, authority, route, and demotion regressions | ⚠ PARTIAL | 30 tests pass. Guard-publication failure is not checked against seeded canonical approval. |
-| `tools/bazel/phase38_cutover_workflow_integration_test.py` | Actual-producer Phase 31–35 route matrix | ⚠ PARTIAL | Required 9-case matrix passes, but no fallback-publication fault case proves authority monotonicity. |
-| `tools/bazel/rust_workflow.sh` | Thin coordinator dispatch with explicit status propagation | ✓ VERIFIED | `phase35_verify` and `phase38_verify` call one status-preserving coordinator. |
-| `justfile` | Authoritative `phase38-verify` facade | ✓ VERIFIED | Tests run before publication. |
+| Artifact | Expected | Level 1–2 | Wiring / Data | Status |
+| --- | --- | --- | --- | --- |
+| `tools/bazel/phase34_final_readiness_demotion_dry_run.py` | Complete source-failure publication and attempt-correlated blocker | Exists; substantive | Called by the coordinator; writes and validates canonical Phase 34 output or retained blocking state | ✓ VERIFIED |
+| `tools/bazel/phase34_final_readiness_demotion_dry_run_test.py` | Source-family and blocked-install fault regressions | Exists; substantive | Included in Phase 38 Bazel test gate | ✓ VERIFIED |
+| `tools/bazel/phase35_cutover_decision_artifact.py` | Guarded publication, reader enforcement, and recovery | Exists; substantive | Called by the coordinator; canonical readers enforce both workflow marker and Phase 35 guard | ✓ VERIFIED |
+| `tools/bazel/phase35_cutover_decision_artifact_test.py` | Guard, install, recovery, path, and true pre-create fault tests | Exists; substantive | Included in Phase 38 Bazel test gate | ✓ VERIFIED |
+| `tools/bazel/phase38_cutover_workflow.py` | Single production coordinator and final authority reducer | Exists; substantive | Invokes actual Phase 34/35 entrypoints and is dispatched by `rust_workflow.sh` | ✓ VERIFIED |
+| `tools/bazel/phase38_cutover_workflow_test.py` | Status, authority, marker, route, demotion, WR-01, and wiring tests | Exists; substantive | Included in `phase38_verify_tests`; checks Bazel, shell, root alias, and just wiring | ✓ VERIFIED |
+| `tools/bazel/phase38_cutover_workflow_integration_test.py` | Actual-producer Phase 31–35 matrix | Exists; substantive | Uses actual producer callables, canonical paths, and retained artifacts | ✓ VERIFIED |
+| `tools/bazel/rust_workflow.sh` | Thin coordinator dispatch with explicit status propagation | Exists; substantive | Calls `phase38_cutover_workflow.py --quick`; shell syntax passed | ✓ VERIFIED |
+| `justfile` | Authoritative `phase38-verify` facade | Exists; substantive | Tests target runs before publication target | ✓ VERIFIED |
 
-## Key Link Verification
+`gsd-tools verify artifacts` passed all 16 declared artifact entries across Plans 38-01, 38-02, and 38-03.
+
+### Key Link Verification
 
 | From | To | Via | Status | Details |
 | --- | --- | --- | --- | --- |
-| Phase 34 source validation | `build/ci-evidence/phase34` | Staged blocked source-failure bundle before nonzero return | ⚠ PARTIAL | Normal-path source failures are validated before return; staged rename failure restores stale authority. |
-| Phase 35 publication | Adjacent authority guard and canonical Phase 35 output | Guard before rename, validation before guard clear | ⚠ PARTIAL | The link is sound after guard creation; a pre-create I/O failure leaves no blocking state. |
-| `tools/bazel/rust_workflow.sh` | `tools/bazel/phase38_cutover_workflow.py` | Single coordinator invocation and explicit return status | ✓ WIRED | Shell dispatcher is thin and status-preserving. |
-| Phase 38 integration suite | Actual Phase 31, 32, 33, 34, and 35 producers | Real retained artifacts and canonical publication paths | ✓ WIRED | Real-producer baseline and one-concern mutations execute actual producer entrypoints. |
+| Phase 34 source validation | `build/ci-evidence/phase34` | Blocked staged replacement or retained publication-state blocker before nonzero return | ✓ WIRED | Exact-attempt state is created before mutation and checked by coordinator/security readers. |
+| Phase 35 publication | `build/ci-evidence/phase35` | Guarded staged installation and canonical-reader enforcement | ✓ WIRED | Guard precedes mutation; installed output is validated before protection clears. |
+| `tools/bazel/phase38_cutover_workflow.py` | Phase 35 canonical readers | Workflow-attempt marker publication and marker rejection | ✓ WIRED | `publish_workflow_attempt_marker` precedes guard creation; `ensure_no_workflow_attempt_marker` protects Phase 35 readers. |
+| Phase 34 failed run | Phase 38 coordinator | Exact attempt, blocked state, and safe-reason correlation | ✓ WIRED | `_phase34_effective_authority_is_valid` rejects stale attempts, reason mismatch, and unguarded restored authority. |
+| Phase 38 coordinator | Phase 35 failed-run finalization | Validated persisted blocked Phase 34 authority | ✓ WIRED | Phase 35 cannot consume a nonzero Phase 34 run until effective authority is blocked for that attempt. |
+| `tools/bazel/rust_workflow.sh` | Phase 38 coordinator | One explicit coordinator invocation with captured status | ✓ WIRED | Shell wiring assertions and `bash -n` passed. |
+| Phase 38 integration suite | Actual Phase 31–35 producers | Real producer outputs and canonical publication paths | ✓ WIRED | Default, approved, targeted-repair, upstream-failure, publication-fault, and demotion cases passed. |
 
-## Data-Flow Trace
+`gsd-tools verify key-links` passed all 7 declared links across the three plans.
+
+### Data-Flow Trace
 
 | Artifact | Data | Source | Produces Real Data | Status |
 | --- | --- | --- | --- | --- |
-| Phase 34 readiness packet | Evidence/decision ledger and demotion projection | Actual Phase 31/32/33 outputs | Yes | ✓ FLOWING on normal/default/invalid-source paths |
-| Phase 35 cutover decision and route | Phase 34 canonical packet, ledger, blockers, and decision refs | Actual Phase 34 output | Yes | ✓ FLOWING on normal paths; ⚠ stale restored data can flow after Phase 34 publication failure |
-| Phase 38 workflow result | Phase 34/35 statuses plus canonical Phase 35 authority | Actual producer calls and canonical bundles | Yes | ⚠ Result booleans fail closed, but persisted stale canonical approval can remain readable |
-| Phase 35 authority guard | Contract-defined blocking payload | Coordinator/Phase 35 publication boundary | Yes after file creation | ✗ DISCONNECTED when file creation fails before the guard exists |
+| Phase 34 readiness authority | Evidence rows, decisions, blocker register, demotion handoff, attempt correlation | Actual Phase 31–33 producer outputs | Yes | ✓ FLOWING |
+| Phase 34 failure authority | Blocked state, safe reason, lifecycle, canonical ref, opaque attempt ID | Source-validation boundary before canonical replacement | Yes; private revocation metadata only | ✓ FLOWING |
+| Phase 35 cutover decision and route | Validated canonical Phase 34 packet/ledger/demotion state | Actual Phase 34 output or correlated failed-run finalization | Yes | ✓ FLOWING |
+| Workflow-attempt blocker | Blocked lifecycle-bound attempt state | Coordinator before Phase 35 guard creation | Yes; enforced by all canonical readers | ✓ FLOWING |
+| Phase 38 workflow result | Producer statuses plus validated Phase 35 authority | Actual producer calls and canonical bundles | Yes | ✓ FLOWING |
 
-## Behavioral Spot-Checks
+### Behavioral Spot-Checks
 
 | Behavior | Command | Result | Status |
 | --- | --- | --- | --- |
-| Authoritative Phase 38 gate | `just phase38-verify` | 233 focused/integration tests passed; default output was blocked, targeted repair, no production planning, no demotion authority | ✓ PASS |
-| Prior CR-01: invalid UTF-8/read errors publish blocked Phase 34 authority | Four focused Phase 34 tests | 4 passed | ✓ PASS |
-| Prior CR-02: nonzero producer results revoke positive coordinator authority | Two focused final-status tests | 2 passed | ✓ PASS |
-| Prior CR-03: invalid Phase 34 authority is covered by a Phase 35 guard | Focused real-producer integration test | 1 passed | ✓ PASS |
-| Phase 35 guarded recovery and path substitution | Eight focused guard/restore/cleanup/path tests | 8 passed | ✓ PASS |
-| Pre-create Phase 35 guard failure | Inject `touch_guard` failure before file creation in a temp root | `publication_failed=True guard_exists=False canonical_reader_blocked=False` | ✗ FAIL |
-| Phase 34 blocked-bundle install failure from seeded approved real producers | Inject staging rename failure during invalid Phase 31 handling | `status=1 phase34_readiness=unblocked phase35_verdict=approved route=production-cutover-planning guard_exists=False reader_available=True` | ✗ FAIL |
-| Rust verification | `cargo fmt --all -- --check`, clippy, build, test | All passed; 136 unit tests and doc tests passed | ✓ PASS |
+| Two prior gaps plus WR-01 | Six exact `python3 -m unittest ...` cases | 6 passed in 1.130s | ✓ PASS |
+| Authoritative Phase 38 gate | `just phase38-verify` | 267 tests passed; default published blocked/targeted repair, production planning false, demotion false | ✓ PASS |
+| Python module validity | `python3 -m py_compile` on all seven Phase 38 Python implementation/test files | Exit 0 | ✓ PASS |
+| Shell dispatch syntax | `bash -n tools/bazel/rust_workflow.sh` | Exit 0 | ✓ PASS |
+| Rust formatting | `cargo fmt --all` | Exit 0; no source changes | ✓ PASS |
+| Rust lint | `cargo clippy --all-targets --all-features -- -D warnings` | Exit 0 | ✓ PASS |
+| Rust build | `cargo build --all-targets --all-features` | Exit 0 | ✓ PASS |
+| Rust tests | `cargo test --all-features` | 136 unit tests and 4 doc-test suites passed | ✓ PASS |
+| Diff integrity | `git diff --check` | Exit 0 | ✓ PASS |
 
-## Requirements Coverage
+Bazel rewrote `MODULE.bazel.lock` from format 26 to 28 and added `factsVersions`; only that incidental generated change was restored. Its SHA-256 returned to `21587df8a47a42952e5301f59f4809b23eba5f336780847d0c3bc02422275a03`.
+
+### Requirements Coverage
 
 | Requirement | Source Plans | Description | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| READY-02 | 38-01, 38-02 | Readiness remains blocked for absent, failed, stale, malformed, redaction-failed, underclassified, or uncovered evidence. | ✗ BLOCKED | Normal cases pass, but invalid Phase 31 plus Phase 34 fallback-install failure leaves prior unblocked readiness canonical. |
-| READY-03 | 38-01, 38-02 | Demotion stays blocked without valid explicit approval and opens only with otherwise unblocked readiness. | ✓ SATISFIED | Focused truth table and real-producer missing/rejected/blocked-readiness cases pass. |
-| CUTOVER-01 | 38-01, 38-02 | Produce one explicit approved, blocked, or approved-with-exceptions verdict. | ✓ SATISFIED | Phase 35 contract and decision evaluator enforce the explicit verdict vocabulary. |
-| CUTOVER-03 | 38-01, 38-02 | Approved routes to production planning; blocked/follow-up exceptions route to targeted repair. | ✗ BLOCKED | Normal routing is correct, but the Phase 34 publication fault leaves an approved production route readable after an invalid upstream source. |
+| READY-02 | 38-01, 38-02, 38-03 | Readiness stays blocked for absent, failed, stale, malformed, redaction-failed, underclassified, or uncovered evidence. | ✓ SATISFIED | Source families and malformed/read-error cases publish blocked authority; failed blocked installation retains exact-attempt blocking state and cannot revive unblocked readiness. |
+| READY-03 | 38-01, 38-02, 38-03 | Demotion remains blocked without valid explicit approval and opens only with otherwise unblocked readiness. | ✓ SATISFIED | Unit and real-producer cases cover missing/rejected demotion, valid demotion with blocked readiness, and the sole valid open predicate. |
+| CUTOVER-01 | 38-01, 38-02, 38-03 | Produce one explicit approved, blocked, or approved-with-exceptions verdict. | ✓ SATISFIED | Phase 35 contract and reducer enforce the closed verdict vocabulary; WR-01 proves malformed source failure remains nonzero while retaining blocked candidate authority. |
+| CUTOVER-03 | 38-01, 38-02, 38-03 | Approved routes to production planning; blocked/follow-up exceptions route to targeted repair. | ✓ SATISFIED | Actual-producer approved, default blocked, and named targeted-repair cases pass; both stale-authority fault reproductions deny production planning. |
 
-No Phase 38 requirement is orphaned: both PLAN files claim READY-02, READY-03, CUTOVER-01, and CUTOVER-03, and REQUIREMENTS.md maps exactly those IDs to Phase 38.
+No requirement is orphaned. All three plans claim all four Phase 38 requirements, and REQUIREMENTS.md maps exactly these IDs to Phase 38. Their checklist fields remain pending by design because Phase 39 owns milestone metadata reconciliation; this is not an implementation gap.
 
-## Threat Mitigation Assessment
+### Threat Mitigation Assessment
 
 | Threat | Status | Evidence |
 | --- | --- | --- |
-| T-38-01 stale approval replay | ✗ UNRESOLVED | Phase 34 fallback-install failure can restore and republish stale approved authority. |
-| T-38-02 guard bypass | ✗ UNRESOLVED | Guard creation failure before the file exists leaves canonical readers unblocked. |
-| T-38-03 path/symlink substitution | ✓ MITIGATED | Absolute, traversal, symlink, wrong-root, and non-directory substitutions pass for guard, stage, backup, and canonical targets. |
-| T-38-04 partial publication/rollback failure | ✗ UNRESOLVED | Phase 35 guarded recovery is covered, but Phase 34 blocked-publication rollback is not authority-monotonic. |
-| T-38-05 diagnostic leakage | ✓ MITIGATED | Safe reason vocabularies, security scans, and blocked-bundle payload checks pass. |
+| T-38-01 stale approval replay | ✓ MITIGATED | Both seeded-approval publication-fault reproductions pass through focused and actual-producer paths. |
+| T-38-02 guard bypass | ✓ MITIGATED | A true Phase 35 guard pre-create failure leaves the earlier workflow marker blocking every reader. |
+| T-38-03 path/symlink substitution | ✓ MITIGATED | Both private marker surfaces have absolute, traversal, wrong-root, symlink, wrong-type, unreadable, malformed, and non-directory coverage. |
+| T-38-04 partial publication/rollback failure | ✓ MITIGATED | Blocking shells precede payloads; Phase 34 state persists through failed staged installation; Phase 35 guard persists through recovery faults. |
+| T-38-05 diagnostic leakage | ✓ MITIGATED | Marker payloads are limited to lifecycle, opaque attempt ID, blocked state, fixed ref, and safe reason; focused tests reject malformed/unsafe values. |
 
-The PLAN contract requires no unresolved high-severity threat. T-38-01, T-38-02, and T-38-04 therefore block goal achievement.
+### Anti-Patterns Found
 
-## Anti-Patterns Found
-
-| File | Line/Pattern | Severity | Impact |
+| File | Pattern | Severity | Impact |
 | --- | --- | --- | --- |
-| Phase 34/35 implementation files | Files exceed the 628-line Bright Builds refactor trigger | ℹ INFO | Pre-existing large verifier surfaces remain difficult to audit; the phase explicitly deferred broad cleanup. This is not the goal blocker. |
-| Phase-owned files | TODO/FIXME/stub scan | ✓ NONE | `non_final_placeholder` is a domain classification, and the single `return []` is a validated empty-result error path, not a stub. |
+| Phase 34/35 implementation and test modules | Several files exceed the Bright Builds 628-line refactor trigger | ℹ INFO | These are pre-existing large verification surfaces. Phase 38 kept changes scoped and used focused helpers/tests; no goal-blocking defect was found. |
+| Phase-owned files | TODO/FIXME/stub scan | ✓ NONE | `non_final_placeholder` is a domain classification. `return []` is a validated malformed-reference error path that records `route-scope-incomplete`, not a stub. |
 
-## Human Verification Required
+### Disconfirmation Pass
 
-None. All Phase 38 behaviors are deterministic CLI, filesystem, JSON, and Markdown flows and were programmatically testable.
+- **Potential partial requirement:** CUTOVER-01 could have been only vocabulary-complete while malformed Phase 35 source handling incorrectly returned success. WR-01 directly disproves that failure mode: blocked authority remains while both statuses are nonzero.
+- **Previously misleading test:** The earlier Phase 35 “creation interruption” test created the guard before raising. The replacement true pre-create tests assert the guard is absent and the earlier workflow marker blocks `ensure_canonical_authority`, `run_security_scan`, and `load_final_authority`.
+- **Previously uncovered error path:** Phase 34 blocked-stage rename failure after moving prior authority is now covered in focused and actual-producer tests and retains exact-attempt blocked publication state.
 
-## Deferred-Item Check
+### Human Verification Required
 
-The only later milestone phase is Phase 39, whose goal is metadata reconciliation. It does not address publication atomicity, authority guards, staged rollback, or stale approval. Neither gap is deferred.
+None. Phase 38 consists of deterministic CLI, filesystem, JSON, Markdown, Bazel, shell, and Rust behavior that was verified programmatically.
 
-## Gaps Summary
+### Deferred-Item Check
 
-The normal-path work is strong and the three prior critical review findings are closed for their covered cases. The remaining root problem is broader: publication failure itself is not represented as durable blocked authority.
+Phase 39 only reconciles milestone requirement and roadmap metadata. It does not own any remaining Phase 38 authority, publication, routing, or guard behavior. No implementation gap was deferred.
 
-Phase 34 has no guard around blocked-replacement installation, so rollback can restore stale unblocked data. Phase 38 then mistakes that restored bundle for a valid outcome and lets Phase 35 republish approved authority. Separately, Phase 35 assumes guard presence can encode the failure state, but a failure before guard creation leaves absent-guard readers trusting prior canonical data. Both paths return nonzero while persisted stale authority remains readable, contradicting the phase goal.
+### Gaps Summary
+
+No gaps remain. The previous two root gaps are closed without overrides, no regressions were detected in the five previously passing truths, and WR-01 is verified.
 
 ***
 
-_Verified: 2026-07-26T18:49:11Z_
+_Verified: 2026-07-27T15:30:58Z_
 _Verifier: the agent (gsd-verifier)_

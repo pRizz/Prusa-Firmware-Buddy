@@ -3,42 +3,42 @@ gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
 status: executing
-stopped_at: Phase 38 context gathered
-last_updated: "2026-07-27T01:46:30.396Z"
-last_activity: 2026-07-27 -- Phase 38 planning complete
+stopped_at: Phase 38 complete; Phase 39 ready for planning
+last_updated: "2026-07-27T15:33:36.536Z"
+last_activity: 2026-07-27 -- Phase 38 verification passed 9/9 and phase completed
 progress:
   total_phases: 9
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 14
-  completed_plans: 13
-  percent: 93
+  completed_plans: 14
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-26)
+See: .planning/PROJECT.md (updated 2026-07-27)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Phase 38 — Fail-Closed Cutover Workflow
+**Current focus:** Phase 39 — Milestone Metadata Reconciliation
 
 ## Current Position
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
-Phase: 38
+Phase: 39
 Plan: Not started
-Status: Ready to execute
-Last activity: 2026-07-27 -- Phase 38 planning complete
+Status: Ready to plan Phase 39
+Last activity: 2026-07-27 -- Phase 38 verification passed 9/9 and phase completed
 
-Progress: [########--] 78% (7/9 v1.3 phases complete)
+Progress: [#########-] 89% (8/9 v1.3 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- v1.3 plans completed: 9/9 currently planned
-- v1.3 phases completed: 7/9
+- v1.3 plans completed: 14/14 currently planned
+- v1.3 phases completed: 8/9
 - Previous milestone baseline: v1.2 completed 9 plans across 8 phases
 - Earlier milestone baseline: v1.1 completed 13 plans across 10 phases
 
@@ -53,11 +53,12 @@ Progress: [########--] 78% (7/9 v1.3 phases complete)
 | 35. Cutover Decision Artifact | 2/2 | 34m42s | 17m21s |
 | 36. Normalize Evidence and Blocker Rows | 2/2 | 39min | 19m30s |
 | 37 | 2 | - | - |
+| 38. Fail-Closed Cutover Workflow | 3/3 | 59min | 19m40s |
 
 **Recent Trend:**
 
-- Last 5 completed plans: Phase 35 P02, Phase 36 P01, Phase 36 P02, Phase 37 P01, Phase 37 P02
-- Trend: seven of nine v1.3 phases are complete; Phase 37 verification passed 9/9 must-haves after decision-readiness reconciliation.
+- Last 5 completed plans: Phase 37 P01, Phase 37 P02, Phase 38 P01, Phase 38 P02, Phase 38 P03
+- Trend: eight of nine v1.3 phases are complete; Phase 38 verification passed 9/9 must-haves after closing both stale-authority gaps.
 
 **Recent Completed Plan Detail:**
 
@@ -71,6 +72,9 @@ Progress: [########--] 78% (7/9 v1.3 phases complete)
 | Phase 36 P02 | 11min | 2 tasks | 2 files |
 | Phase 37 P01 | 12min | 2 tasks | 5 files |
 | Phase 37 P02 | 22min | 3 tasks | 6 files |
+| Phase 38 P01 | 21min | 2 tasks | 6 files |
+| Phase 38 P02 | 19min | 3 tasks | 7 files |
+| Phase 38 P03 | 19min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -107,6 +111,9 @@ Recent decisions affecting current work:
 - [Phase 37]: Keep Phase 31 accepted-final receipts as the sole evidence completeness authority while Phase 32 contributes distinct canonical decision-domain rows.
 - [Phase 37]: Derive retained Phase 34 views from one typed ledger while keeping demotion-only diagnostics independent from readiness.
 - [Phase 37]: Run all Phase 33/34 reconciliation suites through the existing just phase34-verify facade before publication.
+- [Phase 38]: Publish fixed-path private blocking shells before structured workflow-attempt or Phase 34 publication-state payloads so incomplete publication cannot revive stale authority.
+- [Phase 38]: Accept a nonzero Phase 34 result only when persisted blocked authority matches the coordinator's exact attempt and safe reason.
+- [Phase 38]: Treat a safe blocked fallback as authority state, not operational success; Phase 35 validation and source failures remain nonzero.
 
 ### Pending Todos
 
@@ -123,6 +130,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-26T16:37:16.332Z
-Stopped at: Phase 38 context gathered
-Resume file: .planning/phases/38-fail-closed-cutover-workflow/38-CONTEXT.md
+Last session: 2026-07-27T15:33:36.536Z
+Stopped at: Phase 38 complete; Phase 39 ready for planning
+Resume file: None — Phase 39 is not yet planned
