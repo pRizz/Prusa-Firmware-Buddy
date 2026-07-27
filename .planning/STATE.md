@@ -3,15 +3,15 @@ gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
 status: executing
-stopped_at: Completed 40-05-PLAN.md
-last_updated: "2026-07-27T20:03:10.602Z"
+stopped_at: Completed 40-06-PLAN.md
+last_updated: "2026-07-27T20:43:32.636Z"
 last_activity: "2026-07-27"
 progress:
   total_phases: 10
   completed_phases: 8
   total_plans: 29
-  completed_plans: 19
-  percent: 66
+  completed_plans: 20
+  percent: 69
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-07-27)
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
 Phase: 40 (File Length Refactoring) — EXECUTING
-Plan: 6 of 15
+Plan: 7 of 15
 Status: Ready to execute
 Last activity: 2026-07-27
 
@@ -81,6 +81,7 @@ Progress: [########--] 80% (8/10 v1.3 phases complete; Phases 39 and 40 pending 
 | Phase 40 P03 | 20m | 2 tasks | 10 files |
 | Phase 40 P04 | 23m | 3 tasks | 27 files |
 | Phase 40 P05 | 27m | 2 tasks | 22 files |
+| Phase 40 P06 | 40m | 3 tasks | 60 files |
 
 ## Accumulated Context
 
@@ -136,6 +137,9 @@ Recent decisions affecting current work:
 - [Phase 40]: Each Phase 13-17 evidence script keeps its original filename and Bazel label as the public CLI and artifact façade.
 - [Phase 40]: Security, signing, provenance, and release-input rules remain phase-local; no shared cross-phase evidence framework was introduced.
 - [Phase 40]: Phase 17 separates core contract policy, release-input policy, and artifact publication so each trust-boundary module stays below 629 lines.
+- [Phase 40]: Each Phase 18-28 public script and Bazel label remains the stable CLI or test façade over phase-prefixed modules.
+- [Phase 40]: Contract, policy, security, normalization, publication, and test-support seams stay phase-local; no cross-phase evidence framework was introduced.
+- [Phase 40]: Final readiness and explicit reference-demotion authorization remain separate fail-closed predicates.
 
 ### Pending Todos
 
@@ -152,6 +156,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-27T20:03:10.599Z
-Stopped at: Completed 40-05-PLAN.md
+Last session: 2026-07-27T20:43:32.632Z
+Stopped at: Completed 40-06-PLAN.md
 Resume file: None
