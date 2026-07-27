@@ -8,7 +8,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 VERIFIER = ROOT / "tools/bazel/phase10_verify.py"
 
@@ -17,11 +16,16 @@ PHASE_LIFECYCLE_ID = "10-2026-06-14T15-08-30"
 PHASE_DIR = ".planning/phases/10-auxiliary-controllers-and-expansion-ecosystem"
 
 MANIFESTS = {
-    "tools/bazel/manifests/phase10_auxiliary_controllers.json": "auxiliary_controller_contracts",
-    "tools/bazel/manifests/phase10_mmu_transport.json": "mmu_transport_contracts",
-    "tools/bazel/manifests/phase10_modbus_rs485.json": "modbus_rs485_contracts",
-    "tools/bazel/manifests/phase10_toolchanger_dock_offsets.json": "toolchanger_dock_offset_contracts",
-    "tools/bazel/manifests/phase10_auxiliary_build_update.json": "auxiliary_build_update_contracts",
+    "tools/bazel/manifests/phase10_auxiliary_controllers.json":
+    "auxiliary_controller_contracts",
+    "tools/bazel/manifests/phase10_mmu_transport.json":
+    "mmu_transport_contracts",
+    "tools/bazel/manifests/phase10_modbus_rs485.json":
+    "modbus_rs485_contracts",
+    "tools/bazel/manifests/phase10_toolchanger_dock_offsets.json":
+    "toolchanger_dock_offset_contracts",
+    "tools/bazel/manifests/phase10_auxiliary_build_update.json":
+    "auxiliary_build_update_contracts",
     "tools/bazel/manifests/phase10_concern_dispositions.json": "concerns",
 }
 
@@ -146,6 +150,7 @@ OVERCLAIM_STRINGS = [
 
 
 class Phase10VerifierTest(unittest.TestCase):
+
     def run_verifier(
         self,
         args: list[str],
@@ -210,35 +215,42 @@ class Phase10VerifierTest(unittest.TestCase):
             for row in rows:
                 reference_sources = row.get("reference_sources")
                 if isinstance(reference_sources, list):
-                    self.write_source_paths(root, [str(item) for item in reference_sources])
+                    self.write_source_paths(
+                        root, [str(item) for item in reference_sources])
 
         self.copy_file(root, "rust/crates/domain/src/auxiliary.rs")
+        for child_path in sorted(
+            (ROOT / "rust/crates/domain/src/auxiliary").glob("*.rs")):
+            self.copy_file(
+                root,
+                child_path.relative_to(ROOT).as_posix(),
+            )
         self.copy_file(root, "rust/crates/domain/src/lib.rs")
         self.copy_file(root, f"{PHASE_DIR}/10-VALIDATION.md")
 
-    def write_validation_contract(self, root: Path, extra_text: str = "") -> None:
+    def write_validation_contract(self,
+                                  root: Path,
+                                  extra_text: str = "") -> None:
         self.write_file(
             root,
             f"{PHASE_DIR}/10-VALIDATION.md",
-            "\n".join(
-                [
-                    "---",
-                    "phase: 10",
-                    f"phase_lifecycle_id: {PHASE_LIFECYCLE_ID}",
-                    "---",
-                    "Wave 0 Requirements",
-                    "python3 tools/bazel/phase10_verify.py --quick",
-                    "python3 tools/bazel/phase10_verify.py --manifests-only",
-                    "python3 tools/bazel/phase10_verify.py --package-update-only",
-                    "python3 tools/bazel/phase10_verify.py --evidence-only",
-                    "just phase10-verify",
-                    "manual-hardware-required hardware-smoke simulator-flow remain non-local",
-                    "RS485/Modbus timing manual-only exclusion",
-                    "Toolchanger dock/tool offset manual-only exclusion",
-                    "MMU behavior over live transport manual-only exclusion",
-                    extra_text,
-                ]
-            ),
+            "\n".join([
+                "---",
+                "phase: 10",
+                f"phase_lifecycle_id: {PHASE_LIFECYCLE_ID}",
+                "---",
+                "Wave 0 Requirements",
+                "python3 tools/bazel/phase10_verify.py --quick",
+                "python3 tools/bazel/phase10_verify.py --manifests-only",
+                "python3 tools/bazel/phase10_verify.py --package-update-only",
+                "python3 tools/bazel/phase10_verify.py --evidence-only",
+                "just phase10-verify",
+                "manual-hardware-required hardware-smoke simulator-flow remain non-local",
+                "RS485/Modbus timing manual-only exclusion",
+                "Toolchanger dock/tool offset manual-only exclusion",
+                "MMU behavior over live transport manual-only exclusion",
+                extra_text,
+            ]),
         )
 
     def write_rust_api_surface(
@@ -250,61 +262,51 @@ class Phase10VerifierTest(unittest.TestCase):
         self.write_file(
             root,
             "rust/crates/domain/src/auxiliary.rs",
-            auxiliary_text
-            or "\n".join(f"pub struct {api_string};" for api_string in RUST_API_STRINGS),
+            auxiliary_text or "\n".join(f"pub struct {api_string};"
+                                        for api_string in RUST_API_STRINGS),
         )
         self.write_file(
             root,
             "rust/crates/domain/src/lib.rs",
             lib_text
-            or (
-                "#![forbid(unsafe_code)]\n"
+            or ("#![forbid(unsafe_code)]\n"
                 "pub mod auxiliary;\n"
-                "pub use auxiliary::{"
-                + ", ".join(RUST_API_STRINGS)
-                + "};\n"
-            ),
+                "pub use auxiliary::{" + ", ".join(RUST_API_STRINGS) + "};\n"),
         )
 
     def write_good_wiring_fixture(self, root: Path) -> None:
         self.write_file(
             root,
             "BUILD.bazel",
-            "\n".join(
-                [
-                    'alias(name = "phase10_verify", actual = "//tools/bazel:phase10_verify")',
-                    'alias(name = "phase10_verify_tests", actual = "//tools/bazel:phase10_verify_tests")',
-                    'filegroup(name = "phase10_auxiliary_controller_docs", srcs = [])',
-                ]
-            ),
+            "\n".join([
+                'alias(name = "phase10_verify", actual = "//tools/bazel:phase10_verify")',
+                'alias(name = "phase10_verify_tests", actual = "//tools/bazel:phase10_verify_tests")',
+                'filegroup(name = "phase10_auxiliary_controller_docs", srcs = [])',
+            ]),
         )
         self.write_file(
             root,
             "tools/bazel/BUILD.bazel",
-            "\n".join(
-                [
-                    'sh_binary(name = "phase10_verify", srcs = ["rust_workflow.sh"], data = ["phase10_verify.py", "manifests/phase10_auxiliary_build_update.json"])',
-                    'sh_binary(name = "phase10_verify_tests", srcs = ["rust_workflow.sh"], data = ["phase10_verify.py", "phase10_verify_test.py"])',
-                    'filegroup(name = "phase10_auxiliary_build_update_manifest", srcs = ["manifests/phase10_auxiliary_build_update.json"])',
-                    'filegroup(name = "phase10_auxiliary_controller_docs", srcs = [])',
-                ]
-            ),
+            "\n".join([
+                'sh_binary(name = "phase10_verify", srcs = ["rust_workflow.sh"], data = ["phase10_verify.py", "manifests/phase10_auxiliary_build_update.json"])',
+                'sh_binary(name = "phase10_verify_tests", srcs = ["rust_workflow.sh"], data = ["phase10_verify.py", "phase10_verify_test.py"])',
+                'filegroup(name = "phase10_auxiliary_build_update_manifest", srcs = ["manifests/phase10_auxiliary_build_update.json"])',
+                'filegroup(name = "phase10_auxiliary_controller_docs", srcs = [])',
+            ]),
         )
         self.write_file(
             root,
             "tools/bazel/rust_workflow.sh",
-            "\n".join(
-                [
-                    'case "$command_name" in',
-                    "  phase10_verify)",
-                    "    python3 tools/bazel/phase10_verify.py --all",
-                    "    ;;",
-                    "  phase10_verify_tests)",
-                    "    python3 tools/bazel/phase10_verify_test.py",
-                    "    ;;",
-                    "esac",
-                ]
-            ),
+            "\n".join([
+                'case "$command_name" in',
+                "  phase10_verify)",
+                "    python3 tools/bazel/phase10_verify.py --all",
+                "    ;;",
+                "  phase10_verify_tests)",
+                "    python3 tools/bazel/phase10_verify_test.py",
+                "    ;;",
+                "esac",
+            ]),
         )
         self.write_file(
             root,
@@ -317,7 +319,8 @@ class Phase10VerifierTest(unittest.TestCase):
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             self.copy_phase10_surface(root)
-            (root / "tools/bazel/manifests/phase10_mmu_transport.json").unlink()
+            (root /
+             "tools/bazel/manifests/phase10_mmu_transport.json").unlink()
 
             # Act
             result = self.run_verifier(["--manifests-only"], maybe_root=root)
@@ -332,12 +335,10 @@ class Phase10VerifierTest(unittest.TestCase):
         with temp_dir:
             self.copy_phase10_surface(root)
             rows = [
-                row
-                for row in self.manifest_rows(
+                row for row in self.manifest_rows(
                     root,
                     "tools/bazel/manifests/phase10_auxiliary_controllers.json",
-                )
-                if row["id"] not in {
+                ) if row["id"] not in {
                     "aux-controller-family-dwarf",
                     "aux-controller-family-modular-bed",
                     "aux-controller-family-xbuddy-extension",
@@ -367,8 +368,8 @@ class Phase10VerifierTest(unittest.TestCase):
         with temp_dir:
             self.copy_phase10_surface(root)
             mmu_rows = [
-                row
-                for row in self.manifest_rows(root, "tools/bazel/manifests/phase10_mmu_transport.json")
+                row for row in self.manifest_rows(
+                    root, "tools/bazel/manifests/phase10_mmu_transport.json")
                 if row["id"] not in {
                     "mmu2-availability-reporting-stub",
                     "mmu2-usemmu-config-runtime-state",
@@ -379,14 +380,14 @@ class Phase10VerifierTest(unittest.TestCase):
                 }
             ]
             concern_rows = [
-                row
-                for row in self.manifest_rows(
+                row for row in self.manifest_rows(
                     root,
                     "tools/bazel/manifests/phase10_concern_dispositions.json",
-                )
-                if row["id"] not in REQUIRED_CONCERN_ROW_IDS
+                ) if row["id"] not in REQUIRED_CONCERN_ROW_IDS
             ]
-            self.write_manifest_rows(root, "tools/bazel/manifests/phase10_mmu_transport.json", mmu_rows)
+            self.write_manifest_rows(
+                root, "tools/bazel/manifests/phase10_mmu_transport.json",
+                mmu_rows)
             self.write_manifest_rows(
                 root,
                 "tools/bazel/manifests/phase10_concern_dispositions.json",
@@ -401,14 +402,16 @@ class Phase10VerifierTest(unittest.TestCase):
         for row_id in [*REQUIRED_MMU_ROW_IDS, *REQUIRED_CONCERN_ROW_IDS]:
             self.assertIn(row_id, result.stdout)
 
-    def test_rejects_mmu_manifest_state_not_accepted_by_rust_parser(self) -> None:
+    def test_rejects_mmu_manifest_state_not_accepted_by_rust_parser(
+            self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             self.copy_phase10_surface(root)
-            auxiliary_path = root / "rust/crates/domain/src/auxiliary.rs"
+            auxiliary_path = root / "rust/crates/domain/src/auxiliary/transport.rs"
             auxiliary_text = auxiliary_path.read_text(encoding="utf-8")
-            auxiliary_text = auxiliary_text.replace('            "active" => Ok(Self::Active),\n', "")
+            auxiliary_text = auxiliary_text.replace(
+                '            "active" => Ok(Self::Active),\n', "")
             auxiliary_path.write_text(auxiliary_text, encoding="utf-8")
 
             # Act
@@ -424,7 +427,7 @@ class Phase10VerifierTest(unittest.TestCase):
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             self.copy_phase10_surface(root)
-            auxiliary_path = root / "rust/crates/domain/src/auxiliary.rs"
+            auxiliary_path = root / "rust/crates/domain/src/auxiliary/transport.rs"
             auxiliary_text = auxiliary_path.read_text(encoding="utf-8")
             auxiliary_text = auxiliary_text.replace(
                 '            "active" => Ok(Self::Active),\n',
@@ -446,17 +449,15 @@ class Phase10VerifierTest(unittest.TestCase):
         with temp_dir:
             self.copy_phase10_surface(root)
             modbus_rows = [
-                row
-                for row in self.manifest_rows(root, "tools/bazel/manifests/phase10_modbus_rs485.json")
+                row for row in self.manifest_rows(
+                    root, "tools/bazel/manifests/phase10_modbus_rs485.json")
                 if row["id"] not in REQUIRED_MODBUS_ROW_IDS
             ]
             toolchanger_rows = [
-                row
-                for row in self.manifest_rows(
+                row for row in self.manifest_rows(
                     root,
                     "tools/bazel/manifests/phase10_toolchanger_dock_offsets.json",
-                )
-                if row["id"] not in REQUIRED_TOOLCHANGER_ROW_IDS
+                ) if row["id"] not in REQUIRED_TOOLCHANGER_ROW_IDS
             ]
             self.write_manifest_rows(
                 root,
@@ -474,7 +475,9 @@ class Phase10VerifierTest(unittest.TestCase):
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
-        for row_id in [*REQUIRED_MODBUS_ROW_IDS, *REQUIRED_TOOLCHANGER_ROW_IDS]:
+        for row_id in [
+                *REQUIRED_MODBUS_ROW_IDS, *REQUIRED_TOOLCHANGER_ROW_IDS
+        ]:
             self.assertIn(row_id, result.stdout)
 
     def test_requires_build_update_rows(self) -> None:
@@ -483,12 +486,10 @@ class Phase10VerifierTest(unittest.TestCase):
         with temp_dir:
             self.copy_phase10_surface(root)
             rows = [
-                row
-                for row in self.manifest_rows(
+                row for row in self.manifest_rows(
                     root,
                     "tools/bazel/manifests/phase10_auxiliary_build_update.json",
-                )
-                if row["id"] not in REQUIRED_BUILD_UPDATE_ROW_IDS
+                ) if row["id"] not in REQUIRED_BUILD_UPDATE_ROW_IDS
             ]
             self.write_manifest_rows(
                 root,
@@ -497,7 +498,8 @@ class Phase10VerifierTest(unittest.TestCase):
             )
 
             # Act
-            result = self.run_verifier(["--package-update-only"], maybe_root=root)
+            result = self.run_verifier(["--package-update-only"],
+                                       maybe_root=root)
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
@@ -509,7 +511,8 @@ class Phase10VerifierTest(unittest.TestCase):
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             self.copy_phase10_surface(root)
-            self.write_validation_contract(root, extra_text=" ".join(FORBIDDEN_MARKERS))
+            self.write_validation_contract(
+                root, extra_text=" ".join(FORBIDDEN_MARKERS))
 
             # Act
             result = self.run_verifier(["--security-only"], maybe_root=root)
@@ -525,7 +528,8 @@ class Phase10VerifierTest(unittest.TestCase):
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             self.copy_phase10_surface(root)
-            rows = self.manifest_rows(root, "tools/bazel/manifests/phase10_modbus_rs485.json")
+            rows = self.manifest_rows(
+                root, "tools/bazel/manifests/phase10_modbus_rs485.json")
             for row in rows:
                 if row["id"] == "puppy-rs485-flow-control":
                     row["proof_scope"] = "local"
@@ -535,7 +539,8 @@ class Phase10VerifierTest(unittest.TestCase):
                 "tools/bazel/manifests/phase10_modbus_rs485.json",
                 rows,
             )
-            self.write_validation_contract(root, extra_text=" ".join(OVERCLAIM_STRINGS))
+            self.write_validation_contract(
+                root, extra_text=" ".join(OVERCLAIM_STRINGS))
 
             # Act
             result = self.run_verifier(["--evidence-only"], maybe_root=root)
@@ -555,7 +560,8 @@ class Phase10VerifierTest(unittest.TestCase):
             self.write_rust_api_surface(
                 root,
                 auxiliary_text="pub enum AuxiliaryControllerKind {}\n",
-                lib_text="#![forbid(unsafe_code)]\npub mod auxiliary;\npub use auxiliary::AuxiliaryControllerKind;\n",
+                lib_text=
+                "#![forbid(unsafe_code)]\npub mod auxiliary;\npub use auxiliary::AuxiliaryControllerKind;\n",
             )
 
             # Act
@@ -564,14 +570,31 @@ class Phase10VerifierTest(unittest.TestCase):
         # Assert
         self.assertNotEqual(result.returncode, 0)
         for needle in [
-            "AuxiliaryRuntimeState",
-            "FirmwareImageSource",
-            "MmuTransportState",
-            "MmuTransportSurface",
-            "AuxiliaryParityContract",
-            "AuxiliaryControllerContract",
+                "AuxiliaryRuntimeState",
+                "FirmwareImageSource",
+                "MmuTransportState",
+                "MmuTransportSurface",
+                "AuxiliaryParityContract",
+                "AuxiliaryControllerContract",
         ]:
             self.assertIn(needle, result.stdout)
+
+    def test_resolves_auxiliary_api_from_declared_private_children(
+            self) -> None:
+        # Arrange
+        temp_dir, root = self.make_temp_root()
+        with temp_dir:
+            self.copy_phase10_surface(root)
+            facade_text = (root /
+                           "rust/crates/domain/src/auxiliary.rs").read_text(
+                               encoding="utf-8")
+
+            # Act
+            result = self.run_verifier(["--quick"], maybe_root=root)
+
+        # Assert
+        self.assertNotIn("impl MmuTransportState", facade_text)
+        self.assertEqual(result.returncode, 0, result.stdout)
 
     def test_requires_package_update_mode(self) -> None:
         # Arrange
@@ -595,7 +618,8 @@ class Phase10VerifierTest(unittest.TestCase):
             )
 
             # Act
-            result = self.run_verifier(["--package-update-only"], maybe_root=root)
+            result = self.run_verifier(["--package-update-only"],
+                                       maybe_root=root)
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
@@ -610,30 +634,40 @@ class Phase10VerifierTest(unittest.TestCase):
 
             # Act
             passing_result = self.run_verifier(
-                ["--wiring-only", "--repo-root", root.as_posix()],
+                ["--wiring-only", "--repo-root",
+                 root.as_posix()],
                 maybe_root=root,
             )
 
             # Assert
-            self.assertEqual(passing_result.returncode, 0, passing_result.stdout)
+            self.assertEqual(passing_result.returncode, 0,
+                             passing_result.stdout)
 
             # Arrange
-            self.write_file(root, "BUILD.bazel", 'alias(name = "phase10_verify")\n')
-            self.write_file(root, "tools/bazel/BUILD.bazel", 'sh_binary(name = "phase10_verify")\n')
-            self.write_file(root, "tools/bazel/rust_workflow.sh", 'case "$command_name" in esac\n')
-            self.write_file(root, "justfile", "phase10:\n    bazel run //tools/bazel:phase10_verify\n")
+            self.write_file(root, "BUILD.bazel",
+                            'alias(name = "phase10_verify")\n')
+            self.write_file(root, "tools/bazel/BUILD.bazel",
+                            'sh_binary(name = "phase10_verify")\n')
+            self.write_file(root, "tools/bazel/rust_workflow.sh",
+                            'case "$command_name" in esac\n')
+            self.write_file(
+                root, "justfile",
+                "phase10:\n    bazel run //tools/bazel:phase10_verify\n")
 
             # Act
             failing_result = self.run_verifier(
-                ["--wiring-only", "--repo-root", root.as_posix()],
+                ["--wiring-only", "--repo-root",
+                 root.as_posix()],
                 maybe_root=root,
             )
 
         # Assert
         self.assertNotEqual(failing_result.returncode, 0)
         self.assertIn("phase10_verify_tests", failing_result.stdout)
-        self.assertIn("phase10_auxiliary_controller_docs", failing_result.stdout)
-        self.assertIn("phase10_auxiliary_build_update_manifest", failing_result.stdout)
+        self.assertIn("phase10_auxiliary_controller_docs",
+                      failing_result.stdout)
+        self.assertIn("phase10_auxiliary_build_update_manifest",
+                      failing_result.stdout)
         self.assertIn("phase10-verify:", failing_result.stdout)
 
     def test_requires_validation_lifecycle_contract(self) -> None:
@@ -644,14 +678,12 @@ class Phase10VerifierTest(unittest.TestCase):
             self.write_file(
                 root,
                 f"{PHASE_DIR}/10-VALIDATION.md",
-                "\n".join(
-                    [
-                        "---",
-                        "phase: 10",
-                        "---",
-                        "python3 tools/bazel/phase10_verify.py --quick",
-                    ]
-                ),
+                "\n".join([
+                    "---",
+                    "phase: 10",
+                    "---",
+                    "python3 tools/bazel/phase10_verify.py --quick",
+                ]),
             )
 
             # Act

@@ -9,7 +9,6 @@ import sys
 from pathlib import Path
 from typing import Any, Callable
 
-
 ROOT = Path(__file__).resolve().parents[2]
 PHASE = "10-auxiliary-controllers-and-expansion-ecosystem"
 PHASE_LIFECYCLE_ID = "10-2026-06-14T15-08-30"
@@ -18,18 +17,20 @@ VALIDATION_CONTRACT = Path(
     ".planning/phases/10-auxiliary-controllers-and-expansion-ecosystem/10-VALIDATION.md"
 )
 AUXILIARY_RUST = Path("rust/crates/domain/src/auxiliary.rs")
+AUXILIARY_MODULE_DIR = Path("rust/crates/domain/src/auxiliary")
 RUST_DOMAIN_LIB = Path("rust/crates/domain/src/lib.rs")
 
-AUXILIARY_CONTROLLERS_MANIFEST = Path("tools/bazel/manifests/phase10_auxiliary_controllers.json")
-MMU_TRANSPORT_MANIFEST = Path("tools/bazel/manifests/phase10_mmu_transport.json")
+AUXILIARY_CONTROLLERS_MANIFEST = Path(
+    "tools/bazel/manifests/phase10_auxiliary_controllers.json")
+MMU_TRANSPORT_MANIFEST = Path(
+    "tools/bazel/manifests/phase10_mmu_transport.json")
 MODBUS_RS485_MANIFEST = Path("tools/bazel/manifests/phase10_modbus_rs485.json")
 TOOLCHANGER_DOCK_OFFSETS_MANIFEST = Path(
-    "tools/bazel/manifests/phase10_toolchanger_dock_offsets.json"
-)
+    "tools/bazel/manifests/phase10_toolchanger_dock_offsets.json")
 AUXILIARY_BUILD_UPDATE_MANIFEST = Path(
-    "tools/bazel/manifests/phase10_auxiliary_build_update.json"
-)
-CONCERN_DISPOSITIONS_MANIFEST = Path("tools/bazel/manifests/phase10_concern_dispositions.json")
+    "tools/bazel/manifests/phase10_auxiliary_build_update.json")
+CONCERN_DISPOSITIONS_MANIFEST = Path(
+    "tools/bazel/manifests/phase10_concern_dispositions.json")
 
 MANIFESTS: dict[Path, str] = {
     AUXILIARY_CONTROLLERS_MANIFEST: "auxiliary_controller_contracts",
@@ -262,7 +263,8 @@ def read_text(root: Path, path: str | Path) -> str:
     relative_path = Path(path)
     full_path = root / relative_path
     if not full_path.exists():
-        raise VerificationError(f"missing required file: {relative_path.as_posix()}")
+        raise VerificationError(
+            f"missing required file: {relative_path.as_posix()}")
     return full_path.read_text(encoding="utf-8")
 
 
@@ -270,10 +272,12 @@ def read_json(root: Path, path: Path) -> dict[str, Any]:
     try:
         data = json.loads(read_text(root, path))
     except json.JSONDecodeError as error:
-        raise VerificationError(f"{path.as_posix()} is not valid JSON: {error}") from error
+        raise VerificationError(
+            f"{path.as_posix()} is not valid JSON: {error}") from error
 
     if not isinstance(data, dict):
-        raise VerificationError(f"{path.as_posix()} must contain a top-level JSON object")
+        raise VerificationError(
+            f"{path.as_posix()} must contain a top-level JSON object")
     return data
 
 
@@ -288,21 +292,30 @@ def row_blob(row: dict[str, Any]) -> str:
 def require_string(row: dict[str, Any], field: str, row_name: str) -> str:
     value = row.get(field)
     if not isinstance(value, str) or not value:
-        raise VerificationError(f"{row_name} {field} must be a non-empty string")
+        raise VerificationError(
+            f"{row_name} {field} must be a non-empty string")
     return value
 
 
-def require_list_of_strings(row: dict[str, Any], field: str, row_name: str) -> list[str]:
+def require_list_of_strings(row: dict[str, Any], field: str,
+                            row_name: str) -> list[str]:
     value = row.get(field)
-    if not isinstance(value, list) or not value or not all(isinstance(item, str) and item for item in value):
-        raise VerificationError(f"{row_name} {field} must be a non-empty list of strings")
+    if not isinstance(value, list) or not value or not all(
+            isinstance(item, str) and item for item in value):
+        raise VerificationError(
+            f"{row_name} {field} must be a non-empty list of strings")
     return value
 
 
-def require_fields(row: dict[str, Any], fields: list[str], row_name: str) -> None:
+def require_fields(row: dict[str, Any], fields: list[str],
+                   row_name: str) -> None:
     missing = [field for field in fields if field not in row]
-    empty = [field for field in fields if field in row and is_empty(row[field])]
-    legacy = [field for field in ["requirement", "source_paths"] if field in row]
+    empty = [
+        field for field in fields if field in row and is_empty(row[field])
+    ]
+    legacy = [
+        field for field in ["requirement", "source_paths"] if field in row
+    ]
     details = []
     if missing:
         details.append(f"missing required fields: {', '.join(missing)}")
@@ -311,16 +324,17 @@ def require_fields(row: dict[str, Any], fields: list[str], row_name: str) -> Non
     if legacy:
         details.append(
             "uses legacy manifest schema fields instead of canonical requirement_id/reference_sources: "
-            + ", ".join(legacy)
-        )
+            + ", ".join(legacy))
     if details:
         raise VerificationError(f"{row_name} " + "; ".join(details))
 
 
-def require_top_level(root: Path, path: Path, collection_name: str) -> list[dict[str, Any]]:
+def require_top_level(root: Path, path: Path,
+                      collection_name: str) -> list[dict[str, Any]]:
     data = read_json(root, path)
     if data.get("schema_version") != 1:
-        raise VerificationError(f"{path.as_posix()} must set schema_version to 1")
+        raise VerificationError(
+            f"{path.as_posix()} must set schema_version to 1")
     if data.get("phase") != PHASE:
         raise VerificationError(f"{path.as_posix()} must set phase to {PHASE}")
     if data.get("phase_lifecycle_id") != PHASE_LIFECYCLE_ID:
@@ -330,12 +344,15 @@ def require_top_level(root: Path, path: Path, collection_name: str) -> list[dict
 
     rows = data.get(collection_name)
     if not isinstance(rows, list):
-        raise VerificationError(f"{path.as_posix()} must contain a {collection_name} list")
+        raise VerificationError(
+            f"{path.as_posix()} must contain a {collection_name} list")
 
     parsed_rows: list[dict[str, Any]] = []
     for index, row in enumerate(rows):
         if not isinstance(row, dict):
-            raise VerificationError(f"{path.as_posix()} {collection_name}[{index}] must be an object")
+            raise VerificationError(
+                f"{path.as_posix()} {collection_name}[{index}] must be an object"
+            )
         parsed_rows.append(row)
     return parsed_rows
 
@@ -346,7 +363,8 @@ def require_unique_ids(rows: list[dict[str, Any]], path: Path) -> set[str]:
     for row in rows:
         value = row.get("id")
         if not isinstance(value, str):
-            raise VerificationError(f"{path.as_posix()} row has non-string id: {value!r}")
+            raise VerificationError(
+                f"{path.as_posix()} row has non-string id: {value!r}")
         if value in values:
             duplicates.add(value)
         values.add(value)
@@ -361,25 +379,35 @@ def require_row_ids(rows: list[dict[str, Any]], path: Path) -> None:
     actual_ids = require_unique_ids(rows, path)
     missing = sorted(set(REQUIRED_ROW_IDS_BY_MANIFEST[path]) - actual_ids)
     if missing:
-        raise VerificationError(f"{path.as_posix()} missing required row IDs: {', '.join(missing)}")
+        raise VerificationError(
+            f"{path.as_posix()} missing required row IDs: {', '.join(missing)}"
+        )
 
 
-def require_reference_sources(root: Path, row: dict[str, Any], row_name: str) -> None:
-    reference_sources = require_list_of_strings(row, "reference_sources", row_name)
+def require_reference_sources(root: Path, row: dict[str, Any],
+                              row_name: str) -> None:
+    reference_sources = require_list_of_strings(row, "reference_sources",
+                                                row_name)
     resolved_root = root.resolve()
     for reference_source in reference_sources:
         relative_path = Path(reference_source)
         if relative_path.is_absolute() or ".." in relative_path.parts:
-            raise VerificationError(f"{row_name} reference source must be repo-relative: {reference_source}")
+            raise VerificationError(
+                f"{row_name} reference source must be repo-relative: {reference_source}"
+            )
 
         full_path = (resolved_root / relative_path).resolve()
         try:
             full_path.relative_to(resolved_root)
         except ValueError as error:
-            raise VerificationError(f"{row_name} reference source escapes repo: {reference_source}") from error
+            raise VerificationError(
+                f"{row_name} reference source escapes repo: {reference_source}"
+            ) from error
 
         if not full_path.exists():
-            raise VerificationError(f"{row_name} references missing source path: {reference_source}")
+            raise VerificationError(
+                f"{row_name} references missing source path: {reference_source}"
+            )
 
 
 def extract_parse_strings(rust_source: str, type_name: str) -> set[str]:
@@ -387,81 +415,113 @@ def extract_parse_strings(rust_source: str, type_name: str) -> set[str]:
     impl_marker = f"impl {type_name}"
     impl_start = sanitized_source.find(impl_marker)
     if impl_start == -1:
-        raise VerificationError(f"{AUXILIARY_RUST.as_posix()} missing impl {type_name}")
+        raise VerificationError(
+            f"{AUXILIARY_RUST.as_posix()} missing impl {type_name}")
 
     next_impl = sanitized_source.find("\nimpl ", impl_start + len(impl_marker))
-    impl_body = sanitized_source[impl_start:] if next_impl == -1 else sanitized_source[impl_start:next_impl]
+    impl_body = sanitized_source[
+        impl_start:] if next_impl == -1 else sanitized_source[
+            impl_start:next_impl]
     parse_marker = "pub fn parse"
     parse_start = impl_body.find(parse_marker)
     if parse_start == -1:
-        raise VerificationError(f"{AUXILIARY_RUST.as_posix()} missing {type_name}::parse")
+        raise VerificationError(
+            f"{AUXILIARY_RUST.as_posix()} missing {type_name}::parse")
 
     parse_body = impl_body[parse_start:]
     return set(re.findall(r'"([^"]+)"\s*=>\s*Ok\(Self::', parse_body))
 
 
-def require_mmu_transport_contracts(root: Path, rows: list[dict[str, Any]]) -> None:
-    auxiliary_text = read_text(root, AUXILIARY_RUST)
-    accepted_states = extract_parse_strings(auxiliary_text, "MmuTransportState")
-    accepted_surfaces = extract_parse_strings(auxiliary_text, "MmuTransportSurface")
+def read_auxiliary_module_surface(root: Path) -> str:
+    facade_text = read_text(root, AUXILIARY_RUST)
+    module_names = re.findall(
+        r"(?m)^\s*mod\s+([a-z_][a-z0-9_]*)\s*;\s*$",
+        strip_rust_comments_and_strings(facade_text),
+    )
+    module_texts = [facade_text]
+    for module_name in module_names:
+        if module_name == "tests":
+            continue
+        module_texts.append(
+            read_text(root, AUXILIARY_MODULE_DIR / f"{module_name}.rs"))
+    return "\n".join(module_texts)
+
+
+def require_mmu_transport_contracts(root: Path, rows: list[dict[str,
+                                                                Any]]) -> None:
+    auxiliary_text = read_auxiliary_module_surface(root)
+    accepted_states = extract_parse_strings(auxiliary_text,
+                                            "MmuTransportState")
+    accepted_surfaces = extract_parse_strings(auxiliary_text,
+                                              "MmuTransportSurface")
     errors: list[str] = []
 
-    missing_required_states = sorted(REQUIRED_MMU_TRANSPORT_STATES - accepted_states)
+    missing_required_states = sorted(REQUIRED_MMU_TRANSPORT_STATES -
+                                     accepted_states)
     if missing_required_states:
         errors.append(
             f"{AUXILIARY_RUST.as_posix()} MmuTransportState::parse missing manifest states: "
-            + ", ".join(missing_required_states)
-        )
+            + ", ".join(missing_required_states))
 
-    missing_required_surfaces = sorted(set(REQUIRED_MMU_TRANSPORT_SURFACES) - accepted_surfaces)
+    missing_required_surfaces = sorted(
+        set(REQUIRED_MMU_TRANSPORT_SURFACES) - accepted_surfaces)
     if missing_required_surfaces:
         errors.append(
             f"{AUXILIARY_RUST.as_posix()} MmuTransportSurface::parse missing manifest surfaces: "
-            + ", ".join(missing_required_surfaces)
-        )
+            + ", ".join(missing_required_surfaces))
 
     for row in rows:
         row_name = f"{MMU_TRANSPORT_MANIFEST.as_posix()} row {row.get('id', '<unknown>')}"
         state_values = row.get("mmu_transport_state")
         if not isinstance(state_values, list) or not state_values:
-            errors.append(f"{row_name} mmu_transport_state must be a non-empty list")
+            errors.append(
+                f"{row_name} mmu_transport_state must be a non-empty list")
             continue
         for state in state_values:
             if not isinstance(state, str):
-                errors.append(f"{row_name} mmu_transport_state contains non-string value: {state!r}")
+                errors.append(
+                    f"{row_name} mmu_transport_state contains non-string value: {state!r}"
+                )
             elif state not in accepted_states:
-                errors.append(f"{row_name} mmu_transport_state {state!r} is not accepted by MmuTransportState::parse")
+                errors.append(
+                    f"{row_name} mmu_transport_state {state!r} is not accepted by MmuTransportState::parse"
+                )
 
         rust_surface = row.get("rust_surface")
         transport_surface = row.get("transport_surface")
-        expected_surface = REQUIRED_MMU_TRANSPORT_SURFACES.get(str(transport_surface))
+        expected_surface = REQUIRED_MMU_TRANSPORT_SURFACES.get(
+            str(transport_surface))
         if expected_surface is not None and rust_surface != f"buddy-domain::auxiliary::{expected_surface}":
             errors.append(
                 f"{row_name} transport_surface {transport_surface!r} must use rust_surface "
-                f"buddy-domain::auxiliary::{expected_surface}"
-            )
+                f"buddy-domain::auxiliary::{expected_surface}")
 
     if errors:
         raise VerificationError("\n".join(errors))
 
 
-def require_requirement_lifecycle_evidence(row: dict[str, Any], row_name: str) -> None:
+def require_requirement_lifecycle_evidence(row: dict[str, Any],
+                                           row_name: str) -> None:
     requirement_id = require_string(row, "requirement_id", row_name)
     if requirement_id != "IFCE-06":
         raise VerificationError(f"{row_name} requirement_id must be IFCE-06")
 
     phase_lifecycle_id = require_string(row, "phase_lifecycle_id", row_name)
     if phase_lifecycle_id != PHASE_LIFECYCLE_ID:
-        raise VerificationError(f"{row_name} phase_lifecycle_id must be {PHASE_LIFECYCLE_ID}")
+        raise VerificationError(
+            f"{row_name} phase_lifecycle_id must be {PHASE_LIFECYCLE_ID}")
 
     evidence_class = require_string(row, "evidence_class", row_name)
     if evidence_class not in ALLOWED_EVIDENCE_CLASSES:
         allowed = ", ".join(sorted(ALLOWED_EVIDENCE_CLASSES))
-        raise VerificationError(f"{row_name} evidence_class {evidence_class!r} must be one of: {allowed}")
+        raise VerificationError(
+            f"{row_name} evidence_class {evidence_class!r} must be one of: {allowed}"
+        )
 
     proof_scope = require_string(row, "proof_scope", row_name)
     if proof_scope not in {"local", "non-local"}:
-        raise VerificationError(f"{row_name} proof_scope must be local or non-local")
+        raise VerificationError(
+            f"{row_name} proof_scope must be local or non-local")
     if evidence_class in NON_LOCAL_EVIDENCE_CLASSES and proof_scope != "non-local":
         raise VerificationError(
             f"{row_name} proof_scope must be non-local for {evidence_class} evidence"
@@ -469,7 +529,8 @@ def require_requirement_lifecycle_evidence(row: dict[str, Any], row_name: str) -
 
     intentional_delta = require_string(row, "intentional_delta", row_name)
     if intentional_delta not in {"none", "approved", "blocked"}:
-        raise VerificationError(f"{row_name} intentional_delta must be none, approved, or blocked")
+        raise VerificationError(
+            f"{row_name} intentional_delta must be none, approved, or blocked")
 
 
 def validate_manifest(root: Path, path: Path) -> list[dict[str, Any]]:
@@ -492,9 +553,12 @@ def validate_manifest(root: Path, path: Path) -> list[dict[str, Any]]:
                 require_string(row, "update_build_surface", row_name)
                 require_string(row, "rust_surface", row_name)
             if path == CONCERN_DISPOSITIONS_MANIFEST:
-                secret_handling = require_string(row, "secret_handling", row_name)
+                secret_handling = require_string(row, "secret_handling",
+                                                 row_name)
                 if secret_handling not in {"none", "named-only-redacted"}:
-                    raise VerificationError(f"{row_name} secret_handling must be none or named-only-redacted")
+                    raise VerificationError(
+                        f"{row_name} secret_handling must be none or named-only-redacted"
+                    )
         except VerificationError as error:
             errors.append(str(error))
 
@@ -510,7 +574,9 @@ def validate_manifest(root: Path, path: Path) -> list[dict[str, Any]]:
 
 
 def check_manifests(root: Path) -> None:
-    collect_errors([lambda path=path: validate_manifest(root, path) for path in MANIFESTS])
+    collect_errors([
+        lambda path=path: validate_manifest(root, path) for path in MANIFESTS
+    ])
 
 
 def all_manifest_rows(root: Path) -> list[tuple[Path, dict[str, Any]]]:
@@ -540,11 +606,11 @@ def strip_rust_comments_and_strings(source: str) -> str:
             index += 2
             depth = 1
             while index < length and depth > 0:
-                if source[index : index + 2] == "/*":
+                if source[index:index + 2] == "/*":
                     depth += 1
                     index += 2
                     continue
-                if source[index : index + 2] == "*/":
+                if source[index:index + 2] == "*/":
                     depth -= 1
                     index += 2
                     continue
@@ -607,11 +673,11 @@ def strip_rust_comments(source: str) -> str:
             index += 2
             depth = 1
             while index < length and depth > 0:
-                if source[index : index + 2] == "/*":
+                if source[index:index + 2] == "/*":
                     depth += 1
                     index += 2
                     continue
-                if source[index : index + 2] == "*/":
+                if source[index:index + 2] == "*/":
                     depth -= 1
                     index += 2
                     continue
@@ -656,29 +722,39 @@ def strip_rust_comments(source: str) -> str:
 
 
 def check_rust_api_surface(root: Path) -> None:
-    auxiliary_text = read_text(root, AUXILIARY_RUST)
+    auxiliary_text = read_auxiliary_module_surface(root)
     lib_text = read_text(root, RUST_DOMAIN_LIB)
     sanitized_auxiliary = strip_rust_comments_and_strings(auxiliary_text)
     errors: list[str] = []
 
     if "pub mod auxiliary;" not in lib_text:
-        errors.append(f"{RUST_DOMAIN_LIB.as_posix()} must export pub mod auxiliary;")
+        errors.append(
+            f"{RUST_DOMAIN_LIB.as_posix()} must export pub mod auxiliary;")
     if "#![forbid(unsafe_code)]" not in lib_text:
-        errors.append(f"{RUST_DOMAIN_LIB.as_posix()} must retain #![forbid(unsafe_code)]")
+        errors.append(
+            f"{RUST_DOMAIN_LIB.as_posix()} must retain #![forbid(unsafe_code)]"
+        )
 
     for api_string in RUST_API_STRINGS:
         if api_string not in auxiliary_text:
-            errors.append(f"{AUXILIARY_RUST.as_posix()} missing Rust API surface: {api_string}")
+            errors.append(
+                f"{AUXILIARY_RUST.as_posix()} missing Rust API surface: {api_string}"
+            )
         if api_string not in lib_text:
-            errors.append(f"{RUST_DOMAIN_LIB.as_posix()} missing Rust API export: {api_string}")
+            errors.append(
+                f"{RUST_DOMAIN_LIB.as_posix()} missing Rust API export: {api_string}"
+            )
 
     for invariant_error in INVARIANT_ERROR_STRINGS:
         if invariant_error not in lib_text:
-            errors.append(f"{RUST_DOMAIN_LIB.as_posix()} missing Phase 10 invariant error: {invariant_error}")
+            errors.append(
+                f"{RUST_DOMAIN_LIB.as_posix()} missing Phase 10 invariant error: {invariant_error}"
+            )
 
     for label, pattern in UNSAFE_RUST_PATTERNS:
         if pattern in sanitized_auxiliary:
-            errors.append(f"{AUXILIARY_RUST.as_posix()} contains {label}: {pattern}")
+            errors.append(
+                f"{AUXILIARY_RUST.as_posix()} contains {label}: {pattern}")
 
     if errors:
         raise VerificationError("\n".join(errors))
@@ -687,7 +763,9 @@ def check_rust_api_surface(root: Path) -> None:
 def check_package_update(root: Path) -> None:
     rows = validate_manifest(root, AUXILIARY_BUILD_UPDATE_MANIFEST)
     blob = json.dumps(rows, sort_keys=True)
-    errors = [needle for needle in PACKAGE_UPDATE_STRINGS if needle not in blob]
+    errors = [
+        needle for needle in PACKAGE_UPDATE_STRINGS if needle not in blob
+    ]
 
     runtime_paths = set()
     prebuilt_path_variables = set()
@@ -695,10 +773,12 @@ def check_package_update(root: Path) -> None:
     descriptor_commands = set()
     skip_flash_options = set()
     for row in rows:
-        runtime_paths.update(str(item) for item in row.get("runtime_paths", []) if isinstance(item, str))
+        runtime_paths.update(
+            str(item) for item in row.get("runtime_paths", [])
+            if isinstance(item, str))
         prebuilt_path_variables.update(
-            str(item) for item in row.get("prebuilt_path_variables", []) if isinstance(item, str)
-        )
+            str(item) for item in row.get("prebuilt_path_variables", [])
+            if isinstance(item, str))
         update_build_surface = row.get("update_build_surface")
         if isinstance(update_build_surface, str):
             update_build_surfaces.add(update_build_surface)
@@ -732,7 +812,8 @@ def check_package_update(root: Path) -> None:
     errors.extend(sorted(required_runtime_paths - runtime_paths))
     errors.extend(sorted(required_prebuilt_paths - prebuilt_path_variables))
     errors.extend(sorted(required_surfaces - update_build_surfaces))
-    if not any("utils/gen_puppies_descriptor.py" in command for command in descriptor_commands):
+    if not any("utils/gen_puppies_descriptor.py" in command
+               for command in descriptor_commands):
         errors.append("utils/gen_puppies_descriptor.py")
     if "PUPPY_SKIP_FLASH_FW" not in skip_flash_options:
         errors.append("PUPPY_SKIP_FLASH_FW")
@@ -740,8 +821,7 @@ def check_package_update(root: Path) -> None:
     if errors:
         raise VerificationError(
             f"{AUXILIARY_BUILD_UPDATE_MANIFEST.as_posix()} missing package/update coverage: "
-            + ", ".join(errors)
-        )
+            + ", ".join(errors))
 
 
 def artifact_texts(root: Path) -> list[tuple[Path, str]]:
@@ -754,7 +834,9 @@ def check_secret_markers(root: Path) -> None:
     for path, text in artifact_texts(root):
         for marker in FORBIDDEN_MARKERS:
             if marker in text:
-                errors.append(f"{path.as_posix()} contains forbidden payload or secret marker: {marker}")
+                errors.append(
+                    f"{path.as_posix()} contains forbidden payload or secret marker: {marker}"
+                )
     if errors:
         raise VerificationError("\n".join(errors))
 
@@ -765,7 +847,9 @@ def check_overclaims(root: Path) -> None:
         lowered = text.lower()
         for phrase in OVERCLAIM_STRINGS:
             if phrase.lower() in lowered:
-                errors.append(f"{path.as_posix()} contains non-local evidence overclaim: {phrase}")
+                errors.append(
+                    f"{path.as_posix()} contains non-local evidence overclaim: {phrase}"
+                )
     if errors:
         raise VerificationError("\n".join(errors))
 
@@ -806,7 +890,8 @@ def check_validation_contract(root: Path) -> None:
     ]
     missing = [needle for needle in required_text if needle not in text]
     grouped_requirements = {
-        "manual-hardware-required": ["manual-hardware-required", "Manual-Only Verifications"],
+        "manual-hardware-required":
+        ["manual-hardware-required", "Manual-Only Verifications"],
         "simulator-flow": ["simulator-flow", "simulator"],
     }
     for label, options in grouped_requirements.items():
@@ -815,13 +900,16 @@ def check_validation_contract(root: Path) -> None:
     if missing:
         raise VerificationError(
             f"{VALIDATION_CONTRACT.as_posix()} missing validation lifecycle contract text: "
-            + ", ".join(missing)
-        )
+            + ", ".join(missing))
 
 
-def require_file_contains(root: Path, path: Path, needles: list[str]) -> list[str]:
+def require_file_contains(root: Path, path: Path,
+                          needles: list[str]) -> list[str]:
     text = read_text(root, path)
-    return [f"{path.as_posix()} missing required wiring text: {needle}" for needle in needles if needle not in text]
+    return [
+        f"{path.as_posix()} missing required wiring text: {needle}"
+        for needle in needles if needle not in text
+    ]
 
 
 def check_wiring(root: Path) -> None:
@@ -841,13 +929,14 @@ def check_wiring(root: Path) -> None:
     if errors:
         raise VerificationError("\n".join(errors))
 
-    aggregate_text = "\n".join(read_text(root, path) for path in required_files)
+    aggregate_text = "\n".join(
+        read_text(root, path) for path in required_files)
     for needle in [
-        "phase10_verify",
-        "phase10_verify_tests",
-        "phase10_auxiliary_controller_docs",
-        "phase10_auxiliary_build_update_manifest",
-        "phase10-verify:",
+            "phase10_verify",
+            "phase10_verify_tests",
+            "phase10_auxiliary_controller_docs",
+            "phase10_auxiliary_build_update_manifest",
+            "phase10-verify:",
     ]:
         if needle not in aggregate_text:
             errors.append(f"Phase 10 wiring missing required text: {needle}")
@@ -861,27 +950,25 @@ def check_wiring(root: Path) -> None:
                 "bazel run //tools/bazel:phase10_verify_tests",
                 "bazel run //tools/bazel:phase10_verify",
             ],
-        )
-    )
+        ))
     if errors:
         raise VerificationError("\n".join(errors))
 
 
 def check_security(root: Path) -> None:
-    collect_errors([lambda: check_secret_markers(root), lambda: check_overclaims(root)])
+    collect_errors(
+        [lambda: check_secret_markers(root), lambda: check_overclaims(root)])
 
 
 def check_quick(root: Path) -> None:
-    collect_errors(
-        [
-            lambda: check_manifests(root),
-            lambda: check_rust_api_surface(root),
-            lambda: check_package_update(root),
-            lambda: check_evidence_scope(root),
-            lambda: check_security(root),
-            lambda: check_validation_contract(root),
-        ]
-    )
+    collect_errors([
+        lambda: check_manifests(root),
+        lambda: check_rust_api_surface(root),
+        lambda: check_package_update(root),
+        lambda: check_evidence_scope(root),
+        lambda: check_security(root),
+        lambda: check_validation_contract(root),
+    ])
 
 
 def run_command(root: Path, command: list[str]) -> None:
@@ -902,7 +989,10 @@ def run_command(root: Path, command: list[str]) -> None:
 def check_all(root: Path) -> None:
     check_quick(root)
     run_command(root, ["cargo", "fmt", "--all", "--", "--check"])
-    run_command(root, ["cargo", "clippy", "--all-targets", "--all-features", "--", "-D", "warnings"])
+    run_command(root, [
+        "cargo", "clippy", "--all-targets", "--all-features", "--", "-D",
+        "warnings"
+    ])
     run_command(root, ["cargo", "build", "--all-targets", "--all-features"])
     run_command(root, ["cargo", "test", "--all-features"])
 
@@ -919,28 +1009,43 @@ def collect_errors(checks: list[Callable[[], object]]) -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Verify Phase 10 auxiliary-controller parity artifacts.")
+    parser = argparse.ArgumentParser(
+        description="Verify Phase 10 auxiliary-controller parity artifacts.")
     parser.add_argument(
         "--repo-root",
         default=None,
-        help="Repository root to inspect; useful for Plan 10-04 wiring fixtures.",
+        help=
+        "Repository root to inspect; useful for Plan 10-04 wiring fixtures.",
     )
     modes = parser.add_mutually_exclusive_group()
-    modes.add_argument("--quick", action="store_true", help="run local static Phase 10 verification")
-    modes.add_argument("--all", action="store_true", help="run static verification plus Rust checks")
-    modes.add_argument("--manifests-only", action="store_true", help="verify only Phase 10 manifests")
-    modes.add_argument("--rust-only", action="store_true", help="verify only Rust auxiliary API surface")
+    modes.add_argument("--quick",
+                       action="store_true",
+                       help="run local static Phase 10 verification")
+    modes.add_argument("--all",
+                       action="store_true",
+                       help="run static verification plus Rust checks")
+    modes.add_argument("--manifests-only",
+                       action="store_true",
+                       help="verify only Phase 10 manifests")
+    modes.add_argument("--rust-only",
+                       action="store_true",
+                       help="verify only Rust auxiliary API surface")
     modes.add_argument(
         "--package-update-only",
         action="store_true",
         help="verify only auxiliary build/package/update coverage",
     )
-    modes.add_argument("--evidence-only", action="store_true", help="verify only proof-scope evidence guards")
-    modes.add_argument("--security-only", action="store_true", help="verify only payload and overclaim guards")
+    modes.add_argument("--evidence-only",
+                       action="store_true",
+                       help="verify only proof-scope evidence guards")
+    modes.add_argument("--security-only",
+                       action="store_true",
+                       help="verify only payload and overclaim guards")
     modes.add_argument(
         "--wiring-only",
         action="store_true",
-        help="verify only Phase 10 Bazel/just wiring strings against --repo-root",
+        help=
+        "verify only Phase 10 Bazel/just wiring strings against --repo-root",
     )
     return parser.parse_args()
 
@@ -969,7 +1074,8 @@ def main() -> int:
     try:
         check()
     except VerificationError as error:
-        print(f"Phase 10 auxiliary-controller verification failed:\n{error}", file=sys.stderr)
+        print(f"Phase 10 auxiliary-controller verification failed:\n{error}",
+              file=sys.stderr)
         return 1
 
     print("Phase 10 auxiliary-controller verification passed")

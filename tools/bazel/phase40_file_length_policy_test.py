@@ -37,7 +37,7 @@ def render_entries(entries: tuple[policy.LedgerEntry, ...]) -> str:
 
 class LedgerParsingTests(unittest.TestCase):
 
-    def test_accepts_exact_baseline(self) -> None:
+    def test_accepts_active_shrink_only_ledger(self) -> None:
         # Arrange
         contents = BASELINE_PATH.read_text(encoding="utf-8")
 
@@ -46,9 +46,17 @@ class LedgerParsingTests(unittest.TestCase):
         summary = policy.validate_policy(entries)
 
         # Assert
-        self.assertEqual(summary.permanent_count, 838)
-        self.assertEqual(summary.temporary_count, 95)
-        self.assertEqual(summary.owned_permanent_count, 0)
+        active_temporary_paths = {
+            entry.path
+            for entry in entries if entry.reason.startswith("temporary:")
+        }
+        self.assertEqual(
+            summary.permanent_count,
+            len(policy.FROZEN_PERMANENT_PATHS) + summary.owned_permanent_count,
+        )
+        self.assertEqual(summary.temporary_count, len(active_temporary_paths))
+        self.assertLessEqual(active_temporary_paths,
+                             policy.ORIGINAL_TEMPORARY_PATHS)
 
     def test_rejects_row_with_extra_field(self) -> None:
         # Arrange
@@ -162,8 +170,13 @@ class ShrinkOnlyPolicyTests(unittest.TestCase):
     def test_accepts_temporary_set_shrinkage(self) -> None:
         # Arrange
         entries = baseline_entries()
-        removed_path = min(policy.ORIGINAL_TEMPORARY_PATHS -
-                           policy.LOCKED_OWNED_PATHS)
+        active_temporary_entries = tuple(
+            entry for entry in entries
+            if entry.reason.startswith("temporary:"))
+        active_owned_count = sum(
+            entry.reason.startswith(policy.OWNED_REASON_PREFIX)
+            for entry in entries)
+        removed_path = active_temporary_entries[0].path
         changed = tuple(entry for entry in entries
                         if entry.path != removed_path)
 
@@ -171,13 +184,41 @@ class ShrinkOnlyPolicyTests(unittest.TestCase):
         summary = policy.validate_policy(changed)
 
         # Assert
-        self.assertEqual(summary.temporary_count, 94)
-        self.assertEqual(summary.permanent_count, 838)
+        self.assertEqual(summary.temporary_count,
+                         len(active_temporary_entries) - 1)
+        self.assertEqual(
+            summary.permanent_count,
+            len(policy.FROZEN_PERMANENT_PATHS) + active_owned_count,
+        )
+
+    def test_accepts_arbitrary_valid_temporary_subset(self) -> None:
+        # Arrange
+        entries = baseline_entries()
+        permanent_entries = tuple(entry for entry in entries
+                                  if not entry.reason.startswith("temporary:"))
+        temporary_subset = tuple(
+            entry for index, entry in enumerate(entries)
+            if entry.reason.startswith("temporary:") and index % 3 == 0)
+
+        # Act
+        summary = policy.validate_policy(permanent_entries + temporary_subset)
+
+        # Assert
+        self.assertEqual(summary.temporary_count, len(temporary_subset))
+        self.assertEqual(summary.total_count,
+                         len(permanent_entries) + len(temporary_subset))
 
     def test_accepts_locked_owned_conversion(self) -> None:
         # Arrange
         entries = baseline_entries()
         locked_path = min(policy.LOCKED_OWNED_PATHS)
+        locked_entry = next(entry for entry in entries
+                            if entry.path == locked_path)
+        active_temporary_count = sum(
+            entry.reason.startswith("temporary:") for entry in entries)
+        active_owned_count = sum(
+            entry.reason.startswith(policy.OWNED_REASON_PREFIX)
+            for entry in entries)
         changed = tuple(
             replace(entry, reason=OWNED_REASON) if entry.path ==
             locked_path else entry for entry in entries)
@@ -187,8 +228,11 @@ class ShrinkOnlyPolicyTests(unittest.TestCase):
         summary = policy.validate_policy(parsed)
 
         # Assert
-        self.assertEqual(summary.owned_permanent_count, 1)
-        self.assertEqual(summary.temporary_count, 94)
+        was_temporary = locked_entry.reason.startswith("temporary:")
+        self.assertEqual(summary.owned_permanent_count,
+                         active_owned_count + int(was_temporary))
+        self.assertEqual(summary.temporary_count,
+                         active_temporary_count - int(was_temporary))
 
 
 class TerminalPolicyTests(unittest.TestCase):
@@ -203,9 +247,12 @@ class TerminalPolicyTests(unittest.TestCase):
                 terminal_entries.append(replace(entry, reason=OWNED_REASON))
         return tuple(terminal_entries)
 
-    def test_rejects_initial_baseline_in_terminal_mode(self) -> None:
+    def test_rejects_temporary_owned_path_in_terminal_mode(self) -> None:
         # Arrange
-        entries = baseline_entries()
+        locked_path = min(policy.LOCKED_OWNED_PATHS)
+        entries = tuple(
+            replace(entry, reason=TEMPORARY_REASON) if entry.path ==
+            locked_path else entry for entry in self.terminal_entries())
 
         # Act
         with self.assertRaisesRegex(policy.PolicyError, "terminal"):
