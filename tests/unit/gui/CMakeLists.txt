@@ -3,8 +3,9 @@ link_libraries(buddy_utils)
 
 # define the test executable
 add_executable(
-  rectangle_tests ${CMAKE_SOURCE_DIR}/src/guiapi/src/Rect16.cpp
-                  ${CMAKE_SOURCE_DIR}/tests/unit/test_main.cpp rectangle_tests.cpp
+  rectangle_tests
+  ${CMAKE_SOURCE_DIR}/src/guiapi/src/Rect16.cpp ${CMAKE_SOURCE_DIR}/tests/unit/test_main.cpp
+  rectangle_tests.cpp rectangle_geometry_tests.cpp
   )
 
 add_executable(

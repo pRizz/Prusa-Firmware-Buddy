@@ -10,6 +10,7 @@ add_executable(
   ${CMAKE_SOURCE_DIR}/src/common/filename_type.cpp
   ${CMAKE_SOURCE_DIR}/lib/heatshrink/heatshrink_decoder.c
   gcode_reader.cpp
+  gcode_reader_binary_tests.cpp
   missing_functions.c
   )
 target_include_directories(

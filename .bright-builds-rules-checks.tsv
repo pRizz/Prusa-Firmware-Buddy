@@ -870,9 +870,6 @@ file-lengths	tests/stubs/FreeRTOS/Source/stream_buffer.c	permanent: imported/ups
 file-lengths	tests/stubs/FreeRTOS/Source/tasks.c	permanent: imported/upstream; provenance=FreeRTOS and compatibility test stubs
 file-lengths	tests/stubs/FreeRTOS/Source/timers.c	permanent: imported/upstream; provenance=FreeRTOS and compatibility test stubs
 file-lengths	tests/stubs/inc/macros.h	permanent: imported/upstream; provenance=FreeRTOS and compatibility test stubs
-file-lengths	tests/unit/common/gcode/reader/gcode_reader.cpp	temporary: campaign=firmware-tests; remove when file is below 629 lines and campaign gates pass
-file-lengths	tests/unit/gui/rectangle_tests.cpp	temporary: campaign=firmware-tests; remove when file is below 629 lines and campaign gates pass
-file-lengths	tests/unit/gui/window/tests_layout.cpp	temporary: campaign=firmware-tests; remove when file is below 629 lines and campaign gates pass
 file-lengths	tests/unit/lib/Marlin/MMU2/mmu2_protocol_logic_test.cpp	temporary: campaign=firmware-tests; remove when file is below 629 lines and campaign gates pass
 file-lengths	tests/unit/lib/WUI/nhttp/server_tests.cpp	temporary: campaign=firmware-tests; remove when file is below 629 lines and campaign gates pass
 file-lengths	tests/unit/media_prefetch/media_prefetch_tests.cpp	temporary: campaign=firmware-tests; remove when file is below 629 lines and campaign gates pass
