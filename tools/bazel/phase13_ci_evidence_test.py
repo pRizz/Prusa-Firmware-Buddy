@@ -8,9 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
-VERIFIER = ROOT / "tools/bazel/phase13_ci_evidence.py"
 
 CONTRACT = "tools/bazel/manifests/phase13_ci_evidence_contract.json"
 WORKFLOW = ".github/workflows/ci-evidence.yml"
@@ -25,6 +23,7 @@ PHASE11_COMPARISONS = "tools/bazel/manifests/phase11_reference_comparisons.json"
 
 
 class Phase13CiEvidenceTest(unittest.TestCase):
+
     def run_verifier(
         self,
         args: list[str],
@@ -45,7 +44,8 @@ class Phase13CiEvidenceTest(unittest.TestCase):
         temp_dir = tempfile.TemporaryDirectory()
         root = Path(temp_dir.name)
         (root / "tools/bazel/manifests").mkdir(parents=True)
-        shutil.copy2(VERIFIER, root / "tools/bazel/phase13_ci_evidence.py")
+        self.copy_file(root, "tools/bazel/phase13_ci_evidence.py")
+        self.copy_file(root, "tools/bazel/phase13_evidence_policy.py")
         return temp_dir, root
 
     def write_file(self, root: Path, path: str, text: str = "") -> None:
@@ -64,7 +64,9 @@ class Phase13CiEvidenceTest(unittest.TestCase):
     def write_contract(self, root: Path, contract: dict[str, object]) -> None:
         self.write_file(root, CONTRACT, json.dumps(contract, indent=2) + "\n")
 
-    def write_workflow(self, root: Path, maybe_text: str | None = None) -> None:
+    def write_workflow(self,
+                       root: Path,
+                       maybe_text: str | None = None) -> None:
         workflow = maybe_text or """name: CI Evidence
 
 on:
@@ -121,7 +123,10 @@ jobs:
 """
         self.write_file(root, WORKFLOW, workflow)
 
-    def write_wiring(self, root: Path, maybe_justfile: str | None = None, maybe_workflow: str | None = None) -> None:
+    def write_wiring(self,
+                     root: Path,
+                     maybe_justfile: str | None = None,
+                     maybe_workflow: str | None = None) -> None:
         self.write_file(
             root,
             "tools/bazel/BUILD.bazel",
@@ -149,8 +154,7 @@ shell_binary(
         self.write_file(
             root,
             "tools/bazel/rust_workflow.sh",
-            maybe_workflow
-            or """case "$command_name" in
+            maybe_workflow or """case "$command_name" in
   phase13_verify)
     python3 tools/bazel/phase13_ci_evidence.py --wiring-only
     python3 tools/bazel/phase13_ci_evidence.py --quick
@@ -189,8 +193,7 @@ alias(
         self.write_file(
             root,
             "justfile",
-            maybe_justfile
-            or """phase13-verify:
+            maybe_justfile or """phase13-verify:
     bazel run //tools/bazel:phase13_verify_tests
     bazel run //tools/bazel:phase13_verify
 """,
@@ -209,16 +212,19 @@ sys.exit({returncode})
         )
 
     def copy_required_phase11_inputs(self, root: Path) -> None:
-        self.write_file(root, PHASE11_VERIFICATION, "phase 11 verification fixture\n")
+        self.write_file(root, PHASE11_VERIFICATION,
+                        "phase 11 verification fixture\n")
         for path in [
-            PHASE11_REQUIREMENTS,
-            PHASE11_CUTOVER,
-            PHASE11_RETAINED,
-            PHASE11_COMPARISONS,
+                PHASE11_REQUIREMENTS,
+                PHASE11_CUTOVER,
+                PHASE11_RETAINED,
+                PHASE11_COMPARISONS,
         ]:
             self.copy_file(root, path)
 
-    def copy_complete_surface(self, root: Path, phase11_returncode: int = 0) -> None:
+    def copy_complete_surface(self,
+                              root: Path,
+                              phase11_returncode: int = 0) -> None:
         self.copy_file(root, CONTRACT)
         self.copy_required_phase11_inputs(root)
         self.write_file(root, VALIDATION, "local validation fixture\n")
@@ -231,7 +237,6 @@ sys.exit({returncode})
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             self.copy_complete_surface(root)
-
             # Act
             result = self.run_verifier(["--contract-only"], maybe_root=root)
 
@@ -245,12 +250,10 @@ sys.exit({returncode})
             self.copy_complete_surface(root)
             contract = self.read_contract(root)
             contract["gates"] = [
-                gate
-                for gate in contract["gates"]
+                gate for gate in contract["gates"]
                 if gate["id"] != "ciev-03-redacted-summary"
             ]
             self.write_contract(root, contract)
-
             # Act
             result = self.run_verifier(["--contract-only"], maybe_root=root)
 
@@ -264,9 +267,9 @@ sys.exit({returncode})
         with temp_dir:
             self.copy_complete_surface(root)
             contract = self.read_contract(root)
-            contract["gates"][0]["expected_artifact_path"] = "../phase13-workflow.log"
+            contract["gates"][0][
+                "expected_artifact_path"] = "../phase13-workflow.log"
             self.write_contract(root, contract)
-
             # Act
             result = self.run_verifier(["--contract-only"], maybe_root=root)
 
@@ -352,8 +355,7 @@ sys.exit({returncode})
         with temp_dir:
             self.copy_complete_surface(root)
             workflow = (root / WORKFLOW).read_text(encoding="utf-8").replace(
-                "actions/upload-artifact@v7", "actions/cache@v4"
-            )
+                "actions/upload-artifact@v7", "actions/cache@v4")
             self.write_workflow(root, workflow)
 
             # Act
@@ -369,8 +371,7 @@ sys.exit({returncode})
         with temp_dir:
             self.copy_complete_surface(root)
             workflow = (root / WORKFLOW).read_text(encoding="utf-8").replace(
-                "contents: read", "contents: write"
-            )
+                "contents: read", "contents: write")
             self.write_workflow(root, workflow)
 
             # Act
@@ -386,8 +387,7 @@ sys.exit({returncode})
         with temp_dir:
             self.copy_complete_surface(root)
             workflow = (root / WORKFLOW).read_text(encoding="utf-8").replace(
-                "path: build/ci-evidence/phase13/", "path: .planning/"
-            )
+                "path: build/ci-evidence/phase13/", "path: .planning/")
             self.write_workflow(root, workflow)
 
             # Act
@@ -402,7 +402,8 @@ sys.exit({returncode})
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             self.copy_complete_surface(root)
-            workflow = (root / WORKFLOW).read_text(encoding="utf-8") + "\n      - run: |\n          echo bad\n"
+            workflow = (root / WORKFLOW).read_text(
+                encoding="utf-8") + "\n      - run: |\n          echo bad\n"
             self.write_workflow(root, workflow)
 
             # Act
@@ -412,7 +413,8 @@ sys.exit({returncode})
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("run: |", result.stdout)
 
-    def test_ci_writes_manifest_logs_snapshots_and_redacted_summary(self) -> None:
+    def test_ci_writes_manifest_logs_snapshots_and_redacted_summary(
+            self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
@@ -420,21 +422,27 @@ sys.exit({returncode})
             output_dir = "build/ci-evidence/phase13"
 
             # Act
-            result = self.run_verifier(["--ci", "--output-dir", output_dir], maybe_root=root)
+            result = self.run_verifier(["--ci", "--output-dir", output_dir],
+                                       maybe_root=root)
 
             # Assert
             self.assertEqual(result.returncode, 0, result.stdout)
             self.assertTrue((root / output_dir / "run-manifest.json").exists())
-            self.assertTrue((root / output_dir / "redacted-summary.json").exists())
-            self.assertTrue((root / output_dir / "logs/phase11-quick.log").exists())
             self.assertTrue(
-                (root / output_dir / "manifest-snapshots/phase13_ci_evidence_contract.json").exists()
-            )
+                (root / output_dir / "redacted-summary.json").exists())
             self.assertTrue(
-                (root / output_dir / "normalized-comparisons/phase11_reference_comparisons.json").exists()
-            )
+                (root / output_dir / "logs/phase11-quick.log").exists())
+            self.assertTrue(
+                (root / output_dir /
+                 "manifest-snapshots/phase13_ci_evidence_contract.json"
+                 ).exists())
+            self.assertTrue(
+                (root / output_dir /
+                 "normalized-comparisons/phase11_reference_comparisons.json"
+                 ).exists())
 
-    def test_ci_manifest_records_failed_gate_after_logs_are_written(self) -> None:
+    def test_ci_manifest_records_failed_gate_after_logs_are_written(
+            self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
@@ -442,14 +450,16 @@ sys.exit({returncode})
             output_dir = "build/ci-evidence/phase13"
 
             # Act
-            result = self.run_verifier(["--ci", "--output-dir", output_dir], maybe_root=root)
-            manifest = json.loads((root / output_dir / "run-manifest.json").read_text(encoding="utf-8"))
+            result = self.run_verifier(["--ci", "--output-dir", output_dir],
+                                       maybe_root=root)
+            manifest = json.loads(
+                (root / output_dir /
+                 "run-manifest.json").read_text(encoding="utf-8"))
             aggregate_gate = next(
-                gate
-                for gate in manifest["gates"]
-                if gate["id"] == "ciev-01-aggregate-cutover-verifier"
-            )
-            log_exists = (root / output_dir / "logs/phase11-quick.log").exists()
+                gate for gate in manifest["gates"]
+                if gate["id"] == "ciev-01-aggregate-cutover-verifier")
+            log_exists = (root / output_dir /
+                          "logs/phase11-quick.log").exists()
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
@@ -457,31 +467,36 @@ sys.exit({returncode})
         self.assertEqual(aggregate_gate["status"], "failed")
         self.assertIn("exit code 7", aggregate_gate["failure_reason"])
 
-    def test_ci_manifest_records_missing_contract_gate_after_logs_are_written(self) -> None:
+    def test_ci_manifest_records_missing_contract_gate_after_logs_are_written(
+            self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             self.copy_complete_surface(root)
             contract = self.read_contract(root)
             contract["gates"] = [
-                gate
-                for gate in contract["gates"]
+                gate for gate in contract["gates"]
                 if gate["id"] != "ciev-02-run-manifest"
             ]
             self.write_contract(root, contract)
             output_dir = "build/ci-evidence/phase13"
 
             # Act
-            result = self.run_verifier(["--ci", "--output-dir", output_dir], maybe_root=root)
-            manifest = json.loads((root / output_dir / "run-manifest.json").read_text(encoding="utf-8"))
-            contract_gate = next(gate for gate in manifest["gates"] if gate["id"] == "ciev-02-run-manifest")
+            result = self.run_verifier(["--ci", "--output-dir", output_dir],
+                                       maybe_root=root)
+            manifest = json.loads(
+                (root / output_dir /
+                 "run-manifest.json").read_text(encoding="utf-8"))
+            contract_gate = next(gate for gate in manifest["gates"]
+                                 if gate["id"] == "ciev-02-run-manifest")
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(contract_gate["status"], "failed")
         self.assertIn("exit code", contract_gate["failure_reason"])
 
-    def test_ci_redacts_forbidden_snapshot_before_writing_artifacts(self) -> None:
+    def test_ci_redacts_forbidden_snapshot_before_writing_artifacts(
+            self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
@@ -490,21 +505,24 @@ sys.exit({returncode})
             output_dir = "build/ci-evidence/phase13"
 
             # Act
-            result = self.run_verifier(["--ci", "--output-dir", output_dir], maybe_root=root)
+            result = self.run_verifier(["--ci", "--output-dir", output_dir],
+                                       maybe_root=root)
             retained_text = "\n".join(
                 path.read_text(encoding="utf-8")
-                for path in (root / output_dir).rglob("*")
-                if path.is_file()
-            )
-            manifest = json.loads((root / output_dir / "run-manifest.json").read_text(encoding="utf-8"))
-            redacted_gate = next(gate for gate in manifest["gates"] if gate["id"] == "ciev-03-redacted-summary")
+                for path in (root / output_dir).rglob("*") if path.is_file())
+            manifest = json.loads(
+                (root / output_dir /
+                 "run-manifest.json").read_text(encoding="utf-8"))
+            redacted_gate = next(gate for gate in manifest["gates"]
+                                 if gate["id"] == "ciev-03-redacted-summary")
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertNotIn("token_value", retained_text)
         self.assertEqual(redacted_gate["status"], "failed")
 
-    def test_ci_uses_safe_gate_metadata_when_contract_field_contains_secret(self) -> None:
+    def test_ci_uses_safe_gate_metadata_when_contract_field_contains_secret(
+            self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
@@ -515,14 +533,16 @@ sys.exit({returncode})
             output_dir = "build/ci-evidence/phase13"
 
             # Act
-            result = self.run_verifier(["--ci", "--output-dir", output_dir], maybe_root=root)
+            result = self.run_verifier(["--ci", "--output-dir", output_dir],
+                                       maybe_root=root)
             retained_text = "\n".join(
                 path.read_text(encoding="utf-8")
-                for path in (root / output_dir).rglob("*")
-                if path.is_file()
-            )
-            manifest = json.loads((root / output_dir / "run-manifest.json").read_text(encoding="utf-8"))
-            workflow_gate = next(gate for gate in manifest["gates"] if gate["id"] == "ciev-01-pr-path-trigger")
+                for path in (root / output_dir).rglob("*") if path.is_file())
+            manifest = json.loads(
+                (root / output_dir /
+                 "run-manifest.json").read_text(encoding="utf-8"))
+            workflow_gate = next(gate for gate in manifest["gates"]
+                                 if gate["id"] == "ciev-01-pr-path-trigger")
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
@@ -540,8 +560,11 @@ sys.exit({returncode})
             output_dir = "build/ci-evidence/phase13"
 
             # Act
-            result = self.run_verifier(["--ci", "--output-dir", output_dir], maybe_root=root)
-            summary = json.loads((root / output_dir / "redacted-summary.json").read_text(encoding="utf-8"))
+            result = self.run_verifier(["--ci", "--output-dir", output_dir],
+                                       maybe_root=root)
+            summary = json.loads(
+                (root / output_dir /
+                 "redacted-summary.json").read_text(encoding="utf-8"))
 
         # Assert
         self.assertEqual(result.returncode, 0, result.stdout)
@@ -573,7 +596,8 @@ sys.exit({returncode})
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             self.copy_complete_surface(root)
-            self.write_wiring(root, maybe_justfile="phase12-verify:\n    true\n")
+            self.write_wiring(root,
+                              maybe_justfile="phase12-verify:\n    true\n")
 
             # Act
             result = self.run_verifier(["--wiring-only"], maybe_root=root)
@@ -587,7 +611,10 @@ sys.exit({returncode})
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             self.copy_complete_surface(root)
-            self.write_wiring(root, maybe_workflow="case \"$command_name\" in\n  phase12_verify) true ;;\nesac\n")
+            self.write_wiring(
+                root,
+                maybe_workflow=
+                "case \"$command_name\" in\n  phase12_verify) true ;;\nesac\n")
 
             # Act
             result = self.run_verifier(["--wiring-only"], maybe_root=root)

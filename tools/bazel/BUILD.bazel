@@ -272,6 +272,7 @@ shell_binary(
     src = "rust_workflow.sh",
     data = [
         "phase13_ci_evidence.py",
+        "phase13_evidence_policy.py",
         "manifests/phase13_ci_evidence_contract.json",
         "//:phase13_ci_evidence_docs",
     ],
@@ -283,6 +284,7 @@ shell_binary(
     data = [
         "phase13_ci_evidence.py",
         "phase13_ci_evidence_test.py",
+        "phase13_evidence_policy.py",
         "manifests/phase13_ci_evidence_contract.json",
     ],
 )
@@ -301,6 +303,7 @@ shell_binary(
     name = "phase14_verify",
     src = "rust_workflow.sh",
     data = [
+        "phase14_evidence_policy.py",
         "phase14_simulator_evidence.py",
         "manifests/phase14_simulator_evidence_contract.json",
         ":phase14_phase11_source_ref_manifests",
@@ -313,6 +316,7 @@ shell_binary(
     name = "phase14_verify_tests",
     src = "rust_workflow.sh",
     data = [
+        "phase14_evidence_policy.py",
         "phase14_simulator_evidence.py",
         "phase14_simulator_evidence_test.py",
         "manifests/phase14_simulator_evidence_contract.json",
@@ -346,6 +350,7 @@ shell_binary(
     name = "phase15_verify",
     src = "rust_workflow.sh",
     data = [
+        "phase15_evidence_policy.py",
         "phase15_hardware_evidence.py",
         "manifests/phase15_hardware_evidence_contract.json",
         ":phase15_source_ref_manifests",
@@ -358,7 +363,9 @@ shell_binary(
     name = "phase15_verify_tests",
     src = "rust_workflow.sh",
     data = [
+        "phase15_evidence_policy.py",
         "phase15_hardware_evidence.py",
+        "phase15_hardware_evidence_failure_test.py",
         "phase15_hardware_evidence_test.py",
         "manifests/phase15_hardware_evidence_contract.json",
         ":phase15_source_ref_manifests",

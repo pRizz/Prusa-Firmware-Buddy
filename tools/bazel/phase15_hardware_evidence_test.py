@@ -8,7 +8,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 VERIFIER = ROOT / "tools/bazel/phase15_hardware_evidence.py"
 CONTRACT = "tools/bazel/manifests/phase15_hardware_evidence_contract.json"
@@ -32,7 +31,8 @@ SOURCE_REF_FILES = [
 ]
 
 
-class Phase15HardwareEvidenceTest(unittest.TestCase):
+class Phase15HardwareEvidenceFixture:
+
     def run_verifier(
         self,
         args: list[str],
@@ -53,7 +53,12 @@ class Phase15HardwareEvidenceTest(unittest.TestCase):
         temp_dir = tempfile.TemporaryDirectory()
         root = Path(temp_dir.name)
         (root / "tools/bazel/manifests").mkdir(parents=True)
-        shutil.copy2(VERIFIER, root / "tools/bazel/phase15_hardware_evidence.py")
+        shutil.copy2(VERIFIER,
+                     root / "tools/bazel/phase15_hardware_evidence.py")
+        shutil.copy2(
+            ROOT / "tools/bazel/phase15_evidence_policy.py",
+            root / "tools/bazel/phase15_evidence_policy.py",
+        )
         return temp_dir, root
 
     def write_file(self, root: Path, path: str, text: str = "") -> None:
@@ -70,7 +75,8 @@ class Phase15HardwareEvidenceTest(unittest.TestCase):
         return json.loads((root / CONTRACT).read_text(encoding="utf-8"))
 
     def write_contract(self, root: Path, contract: dict[str, object]) -> None:
-        self.write_file(root, CONTRACT, json.dumps(contract, indent=2, sort_keys=True) + "\n")
+        self.write_file(root, CONTRACT,
+                        json.dumps(contract, indent=2, sort_keys=True) + "\n")
 
     def copy_source_ref_inputs(self, root: Path) -> None:
         for path in SOURCE_REF_FILES:
@@ -86,7 +92,10 @@ class Phase15HardwareEvidenceTest(unittest.TestCase):
         rows: list[dict[str, str]],
         path: str = "operator-evidence.json",
     ) -> str:
-        self.write_file(root, path, json.dumps({"evidence_rows": rows}, indent=2, sort_keys=True) + "\n")
+        self.write_file(
+            root, path,
+            json.dumps({"evidence_rows": rows}, indent=2, sort_keys=True) +
+            "\n")
         return path
 
     def complete_operator_row(
@@ -97,16 +106,26 @@ class Phase15HardwareEvidenceTest(unittest.TestCase):
     ) -> dict[str, str]:
         artifact_ref = artifact_ref or f"build/ci-evidence/phase15/logs/{scenario_id}.log"
         return {
-            "device": "bench-printer-01",
-            "printer_family": "MINI",
-            "board": "BUDDY",
-            "firmware_build": "phase15-test-build",
-            "operator": "phase15-test-operator",
-            "timestamp": "2026-06-17T23:30:00Z",
-            "scenario_id": scenario_id,
-            "result": result,
-            "artifact_ref": artifact_ref,
-            "residual_risk": "Physical coverage is limited to the named bench setup.",
+            "device":
+            "bench-printer-01",
+            "printer_family":
+            "MINI",
+            "board":
+            "BUDDY",
+            "firmware_build":
+            "phase15-test-build",
+            "operator":
+            "phase15-test-operator",
+            "timestamp":
+            "2026-06-17T23:30:00Z",
+            "scenario_id":
+            scenario_id,
+            "result":
+            result,
+            "artifact_ref":
+            artifact_ref,
+            "residual_risk":
+            "Physical coverage is limited to the named bench setup.",
         }
 
     def write_wiring(
@@ -119,8 +138,7 @@ class Phase15HardwareEvidenceTest(unittest.TestCase):
     ) -> None:
         manifest_srcs = "\n".join(
             f'        "{Path(path).relative_to("tools/bazel").as_posix()}",'
-            for path in SOURCE_REF_FILES
-        )
+            for path in SOURCE_REF_FILES)
         tools_build = maybe_tools_build or f"""filegroup(
     name = "phase15_source_ref_manifests",
     srcs = [
@@ -190,6 +208,10 @@ esac
         self.write_file(root, "tools/bazel/rust_workflow.sh", workflow)
         self.write_file(root, "justfile", justfile)
 
+
+class Phase15HardwareEvidenceTest(Phase15HardwareEvidenceFixture,
+                                  unittest.TestCase):
+
     def test_contract_accepts_complete_contract(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -209,8 +231,7 @@ esac
             self.copy_complete_surface(root)
             contract = self.read_contract(root)
             contract["scenarios"] = [
-                scenario
-                for scenario in contract["scenarios"]
+                scenario for scenario in contract["scenarios"]
                 if scenario["id"] != "hard-safety-watchdog-crash-recovery"
             ]
             self.write_contract(root, contract)
@@ -236,14 +257,14 @@ esac
                     self.copy_complete_surface(root)
                     contract = self.read_contract(root)
                     contract["scenarios"] = [
-                        scenario
-                        for scenario in contract["scenarios"]
+                        scenario for scenario in contract["scenarios"]
                         if scenario.get(field) not in removed_values
                     ]
                     self.write_contract(root, contract)
 
                     # Act
-                    result = self.run_verifier(["--contract-only"], maybe_root=root)
+                    result = self.run_verifier(["--contract-only"],
+                                               maybe_root=root)
 
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
@@ -276,7 +297,8 @@ esac
         with temp_dir:
             self.copy_complete_surface(root)
             contract = self.read_contract(root)
-            contract["scenarios"][0]["source_contract_refs"][0] = "../escape.json#missing-row"
+            contract["scenarios"][0]["source_contract_refs"][
+                0] = "../escape.json#missing-row"
             self.write_contract(root, contract)
 
             # Act
@@ -287,7 +309,8 @@ esac
         self.assertIn("source ref", result.stdout)
         self.assertIn("escape", result.stdout)
 
-    def test_contract_rejects_invalid_pass_status_without_operator_metadata(self) -> None:
+    def test_contract_rejects_invalid_pass_status_without_operator_metadata(
+            self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
@@ -295,9 +318,8 @@ esac
             contract = self.read_contract(root)
             contract["scenarios"][0]["default_status"] = "passed"
             contract["scenarios"][0]["operator_metadata_required"] = [
-                field
-                for field in contract["scenarios"][0]["operator_metadata_required"]
-                if field != "operator"
+                field for field in contract["scenarios"][0]
+                ["operator_metadata_required"] if field != "operator"
             ]
             self.write_contract(root, contract)
 
@@ -337,15 +359,16 @@ esac
             # Assert
             self.assertEqual(result.returncode, 0, result.stdout)
             for path in [
-                "build/ci-evidence/phase15/run-manifest.json",
-                "build/ci-evidence/phase15/normalized-scenario-results.json",
-                "build/ci-evidence/phase15/redacted-hardware-summary.json",
-                "build/ci-evidence/phase15/source-contract-snapshots/phase15_hardware_evidence_contract.json",
-                "build/ci-evidence/phase15/logs/hard-storage-usb-fatfs-removable-media.log",
+                    "build/ci-evidence/phase15/run-manifest.json",
+                    "build/ci-evidence/phase15/normalized-scenario-results.json",
+                    "build/ci-evidence/phase15/redacted-hardware-summary.json",
+                    "build/ci-evidence/phase15/source-contract-snapshots/phase15_hardware_evidence_contract.json",
+                    "build/ci-evidence/phase15/logs/hard-storage-usb-fatfs-removable-media.log",
             ]:
                 self.assertTrue((root / path).exists(), path)
 
-    def test_quick_keeps_physical_rows_pending_without_operator_evidence(self) -> None:
+    def test_quick_keeps_physical_rows_pending_without_operator_evidence(
+            self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
@@ -354,17 +377,19 @@ esac
             # Act
             result = self.run_verifier(["--quick"], maybe_root=root)
             normalized = json.loads(
-                (root / "build/ci-evidence/phase15/normalized-scenario-results.json").read_text(
-                    encoding="utf-8"
-                )
-            )
+                (root /
+                 "build/ci-evidence/phase15/normalized-scenario-results.json"
+                 ).read_text(encoding="utf-8"))
 
         # Assert
         self.assertEqual(result.returncode, 0, result.stdout)
         rows = {row["id"]: row for row in normalized["scenarios"]}
-        self.assertEqual(rows["hard-storage-usb-fatfs-removable-media"]["status"], "pending-hardware-input")
         self.assertEqual(
-            rows["hard-contract-traceability-and-redaction-boundary"]["status"],
+            rows["hard-storage-usb-fatfs-removable-media"]["status"],
+            "pending-hardware-input")
+        self.assertEqual(
+            rows["hard-contract-traceability-and-redaction-boundary"]
+            ["status"],
             "source-contract-passed",
         )
 
@@ -373,15 +398,17 @@ esac
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             self.copy_complete_surface(root)
-            operator_path = self.write_operator_evidence(root, [self.complete_operator_row()])
+            operator_path = self.write_operator_evidence(
+                root, [self.complete_operator_row()])
 
             # Act
-            result = self.run_verifier(["--quick", "--operator-evidence", operator_path], maybe_root=root)
+            result = self.run_verifier(
+                ["--quick", "--operator-evidence", operator_path],
+                maybe_root=root)
             normalized = json.loads(
-                (root / "build/ci-evidence/phase15/normalized-scenario-results.json").read_text(
-                    encoding="utf-8"
-                )
-            )
+                (root /
+                 "build/ci-evidence/phase15/normalized-scenario-results.json"
+                 ).read_text(encoding="utf-8"))
 
         # Assert
         self.assertEqual(result.returncode, 0, result.stdout)
@@ -389,7 +416,10 @@ esac
         scenario = rows["hard-storage-usb-fatfs-removable-media"]
         self.assertEqual(scenario["status"], "passed")
         self.assertEqual(scenario["operator"], "phase15-test-operator")
-        self.assertEqual(scenario["artifact_ref"], "build/ci-evidence/phase15/logs/hard-storage-usb-fatfs-removable-media.log")
+        self.assertEqual(
+            scenario["artifact_ref"],
+            "build/ci-evidence/phase15/logs/hard-storage-usb-fatfs-removable-media.log"
+        )
 
     def test_operator_evidence_accepts_top_level_list(self) -> None:
         # Arrange
@@ -400,21 +430,25 @@ esac
             self.write_file(
                 root,
                 operator_path,
-                json.dumps([self.complete_operator_row()], indent=2, sort_keys=True) + "\n",
+                json.dumps(
+                    [self.complete_operator_row()], indent=2, sort_keys=True) +
+                "\n",
             )
 
             # Act
-            result = self.run_verifier(["--quick", "--operator-evidence", operator_path], maybe_root=root)
+            result = self.run_verifier(
+                ["--quick", "--operator-evidence", operator_path],
+                maybe_root=root)
             normalized = json.loads(
-                (root / "build/ci-evidence/phase15/normalized-scenario-results.json").read_text(
-                    encoding="utf-8"
-                )
-            )
+                (root /
+                 "build/ci-evidence/phase15/normalized-scenario-results.json"
+                 ).read_text(encoding="utf-8"))
 
         # Assert
         self.assertEqual(result.returncode, 0, result.stdout)
         rows = {row["id"]: row for row in normalized["scenarios"]}
-        self.assertEqual(rows["hard-storage-usb-fatfs-removable-media"]["status"], "passed")
+        self.assertEqual(
+            rows["hard-storage-usb-fatfs-removable-media"]["status"], "passed")
 
     def test_operator_evidence_rejects_missing_metadata(self) -> None:
         # Arrange
@@ -426,15 +460,19 @@ esac
             operator_path = self.write_operator_evidence(root, [row])
 
             # Act
-            result = self.run_verifier(["--quick", "--operator-evidence", operator_path], maybe_root=root)
+            result = self.run_verifier(
+                ["--quick", "--operator-evidence", operator_path],
+                maybe_root=root)
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("operator", result.stdout)
 
-    def test_operator_evidence_rejects_unknown_scenario_and_status(self) -> None:
+    def test_operator_evidence_rejects_unknown_scenario_and_status(
+            self) -> None:
         cases = [
-            (self.complete_operator_row(scenario_id="missing-scenario"), "missing-scenario"),
+            (self.complete_operator_row(scenario_id="missing-scenario"),
+             "missing-scenario"),
             (self.complete_operator_row(result="waived"), "waived"),
         ]
         for row, expected in cases:
@@ -446,126 +484,13 @@ esac
                     operator_path = self.write_operator_evidence(root, [row])
 
                     # Act
-                    result = self.run_verifier(["--quick", "--operator-evidence", operator_path], maybe_root=root)
+                    result = self.run_verifier(
+                        ["--quick", "--operator-evidence", operator_path],
+                        maybe_root=root)
 
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(expected, result.stdout)
-
-    def test_operator_evidence_rejects_forbidden_full_document_markers(self) -> None:
-        cases = [
-            (
-                {
-                    "evidence_rows": [self.complete_operator_row()],
-                    "raw_crash_dump": "redacted test value",
-                },
-                "raw_crash_dump",
-            ),
-            (
-                {
-                    "evidence_rows": [self.complete_operator_row()],
-                    "metadata": {"note": "local hardware proof"},
-                },
-                "local hardware proof",
-            ),
-        ]
-        for payload, expected in cases:
-            with self.subTest(expected=expected):
-                # Arrange
-                temp_dir, root = self.make_temp_root()
-                with temp_dir:
-                    self.copy_complete_surface(root)
-                    operator_path = "operator-evidence-extra.json"
-                    self.write_file(root, operator_path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
-
-                    # Act
-                    result = self.run_verifier(["--quick", "--operator-evidence", operator_path], maybe_root=root)
-
-                # Assert
-                self.assertNotEqual(result.returncode, 0)
-                self.assertIn(expected, result.stdout)
-
-    def test_security_rejects_secret_markers(self) -> None:
-        cases = [
-            "-----BEGIN PRIVATE KEY-----",
-            "-----BEGIN CERTIFICATE-----",
-            "token_value",
-            "password_value",
-            "wifi_password",
-            "Wi-Fi credential",
-            "Connect token",
-            "certificate_bytes",
-            "private_key",
-            "signing_key",
-            "raw_crash_dump",
-            "raw_ram_dump",
-            "memory_dump",
-            "firmware_payload",
-            "bbf_payload",
-            "dfu_payload",
-            ".bin payload",
-            ".bbf payload",
-            ".dfu payload",
-        ]
-        for marker in cases:
-            with self.subTest(marker=marker):
-                # Arrange
-                temp_dir, root = self.make_temp_root()
-                with temp_dir:
-                    self.copy_complete_surface(root)
-                    self.write_file(root, "build/ci-evidence/phase15/leak.json", marker + "\n")
-
-                    # Act
-                    result = self.run_verifier(["--security-only"], maybe_root=root)
-
-                # Assert
-                self.assertNotEqual(result.returncode, 0)
-                self.assertIn(marker, result.stdout)
-
-    def test_security_rejects_overclaim_wording(self) -> None:
-        cases = [
-            "hardware verified locally",
-            "local hardware proof",
-            "hardware qualification passed locally",
-            "final cutover complete",
-            "cutover complete",
-            "release readiness proven",
-            "release-candidate passed locally",
-            "signing proof complete",
-            "signing verified locally",
-            "retained-code accepted by maintainer",
-            "reference demotion approved",
-            "reference removal complete",
-        ]
-        for phrase in cases:
-            with self.subTest(phrase=phrase):
-                # Arrange
-                temp_dir, root = self.make_temp_root()
-                with temp_dir:
-                    self.copy_complete_surface(root)
-                    self.write_file(root, "build/ci-evidence/phase15/overclaim.json", phrase + "\n")
-
-                    # Act
-                    result = self.run_verifier(["--security-only"], maybe_root=root)
-
-                # Assert
-                self.assertNotEqual(result.returncode, 0)
-                self.assertIn(phrase, result.stdout)
-
-    def test_operator_evidence_rejects_artifact_path_traversal(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.copy_complete_surface(root)
-            row = self.complete_operator_row(artifact_ref="../leak.log")
-            operator_path = self.write_operator_evidence(root, [row])
-
-            # Act
-            result = self.run_verifier(["--quick", "--operator-evidence", operator_path], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("cannot traverse", result.stdout)
 
     def test_wiring_accepts_phase15_surface(self) -> None:
         # Arrange
@@ -586,10 +511,11 @@ esac
         with temp_dir:
             self.copy_complete_surface(root)
             self.write_wiring(root)
-            tools_build = (root / "tools/bazel/BUILD.bazel").read_text(encoding="utf-8").replace(
-                'name = "phase15_verify_tests"',
-                'name = "phase15_missing_tests"',
-            )
+            tools_build = (root / "tools/bazel/BUILD.bazel").read_text(
+                encoding="utf-8").replace(
+                    'name = "phase15_verify_tests"',
+                    'name = "phase15_missing_tests"',
+                )
             self.write_wiring(root, maybe_tools_build=tools_build)
 
             # Act
@@ -605,10 +531,11 @@ esac
         with temp_dir:
             self.copy_complete_surface(root)
             self.write_wiring(root)
-            tools_build = (root / "tools/bazel/BUILD.bazel").read_text(encoding="utf-8").replace(
-                '"manifests/phase10_toolchanger_dock_offsets.json",\n',
-                "",
-            )
+            tools_build = (root / "tools/bazel/BUILD.bazel").read_text(
+                encoding="utf-8").replace(
+                    '"manifests/phase10_toolchanger_dock_offsets.json",\n',
+                    "",
+                )
             self.write_wiring(root, maybe_tools_build=tools_build)
 
             # Act
@@ -640,4 +567,12 @@ esac
 
 
 if __name__ == "__main__":
-    unittest.main()
+    import phase15_hardware_evidence_failure_test
+
+    loader = unittest.TestLoader()
+    suite = loader.loadTestsFromTestCase(Phase15HardwareEvidenceTest)
+    suite.addTests(
+        loader.loadTestsFromTestCase(phase15_hardware_evidence_failure_test.
+                                     Phase15HardwareEvidenceFailureTest))
+    result = unittest.TextTestRunner().run(suite)
+    raise SystemExit(not result.wasSuccessful())
