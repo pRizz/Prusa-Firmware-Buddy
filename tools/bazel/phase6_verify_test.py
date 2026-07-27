@@ -10,7 +10,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 VERIFIER = ROOT / "tools/bazel/phase6_verify.py"
 
@@ -126,6 +125,7 @@ PHASE_DIR = ".planning/phases/06-printing-core-safety-and-feature-gates"
 
 
 class Phase6VerifierTest(unittest.TestCase):
+
     def run_verifier(
         self,
         args: list[str],
@@ -149,6 +149,8 @@ class Phase6VerifierTest(unittest.TestCase):
         root = Path(temp_dir.name)
         (root / "tools/bazel").mkdir(parents=True)
         shutil.copy2(VERIFIER, root / "tools/bazel/phase6_verify.py")
+        shutil.copy2(ROOT / "tools/bazel/phase6_contract_policy.py",
+                     root / "tools/bazel/phase6_contract_policy.py")
         return temp_dir, root
 
     def write_file(self, root: Path, path: str, text: str = "") -> None:
@@ -171,19 +173,16 @@ class Phase6VerifierTest(unittest.TestCase):
     ) -> None:
         self.write_source_paths(root, REQUIRED_PRINTING_SOURCE_PATHS)
 
-        rows = [
-            {
-                "id": row_id,
-                "requirement": "CORE-03",
-                "source_paths": REQUIRED_PRINTING_SOURCE_PATHS,
-                "reference_behavior": f"reference behavior for {row_id}",
-                "print_surface": f"print surface for {row_id}",
-                "evidence_class": evidence_class,
-                "rust_surface": f"buddy-domain::{row_id}",
-                "intentional_delta": intentional_delta,
-            }
-            for row_id in REQUIRED_PRINTING_ROW_IDS
-        ]
+        rows = [{
+            "id": row_id,
+            "requirement": "CORE-03",
+            "source_paths": REQUIRED_PRINTING_SOURCE_PATHS,
+            "reference_behavior": f"reference behavior for {row_id}",
+            "print_surface": f"print surface for {row_id}",
+            "evidence_class": evidence_class,
+            "rust_surface": f"buddy-domain::{row_id}",
+            "intentional_delta": intentional_delta,
+        } for row_id in REQUIRED_PRINTING_ROW_IDS]
         manifest = {
             "schema_version": 1,
             "phase": "06-printing-core-safety-and-feature-gates",
@@ -199,19 +198,24 @@ class Phase6VerifierTest(unittest.TestCase):
     def write_safety_manifest(self, root: Path) -> None:
         self.write_source_paths(root, REQUIRED_SAFETY_SOURCE_PATHS)
 
-        rows = [
-            {
-                "id": row_id,
-                "requirement": "CORE-04",
-                "source_paths": REQUIRED_SAFETY_SOURCE_PATHS,
-                "safety_flow": f"safety flow for {row_id}",
-                "preserved_behavior": f"preserved behavior for {row_id}",
-                "evidence_class": "manual-hardware-required" if index == 1 else "source-audit",
-                "rust_surface": f"rust/crates/domain/src/safety.rs::{row_id}",
-                "non_local_evidence": "manual-hardware-required evidence remains required",
-            }
-            for index, row_id in enumerate(REQUIRED_SAFETY_ROW_IDS)
-        ]
+        rows = [{
+            "id":
+            row_id,
+            "requirement":
+            "CORE-04",
+            "source_paths":
+            REQUIRED_SAFETY_SOURCE_PATHS,
+            "safety_flow":
+            f"safety flow for {row_id}",
+            "preserved_behavior":
+            f"preserved behavior for {row_id}",
+            "evidence_class":
+            "manual-hardware-required" if index == 1 else "source-audit",
+            "rust_surface":
+            f"rust/crates/domain/src/safety.rs::{row_id}",
+            "non_local_evidence":
+            "manual-hardware-required evidence remains required",
+        } for index, row_id in enumerate(REQUIRED_SAFETY_ROW_IDS)]
         manifest = {
             "schema_version": 1,
             "phase": "06-printing-core-safety-and-feature-gates",
@@ -246,19 +250,16 @@ class Phase6VerifierTest(unittest.TestCase):
         ]
         self.write_source_paths(root, source_paths)
 
-        rows = [
-            {
-                "id": row_id,
-                "requirement": "CORE-05",
-                "source_paths": source_paths,
-                "gate": f"gate for {row_id}",
-                "profile_keys": REQUIRED_FEATURE_GATE_STRINGS,
-                "expected_state": f"expected state for {row_id}",
-                "evidence_class": "manifest-check",
-                "rust_surface": f"rust/crates/domain/src/feature.rs::{row_id}",
-            }
-            for row_id in REQUIRED_FEATURE_ROW_IDS
-        ]
+        rows = [{
+            "id": row_id,
+            "requirement": "CORE-05",
+            "source_paths": source_paths,
+            "gate": f"gate for {row_id}",
+            "profile_keys": REQUIRED_FEATURE_GATE_STRINGS,
+            "expected_state": f"expected state for {row_id}",
+            "evidence_class": "manifest-check",
+            "rust_surface": f"rust/crates/domain/src/feature.rs::{row_id}",
+        } for row_id in REQUIRED_FEATURE_ROW_IDS]
         manifest = {
             "schema_version": 1,
             "phase": "06-printing-core-safety-and-feature-gates",
@@ -285,23 +286,24 @@ class Phase6VerifierTest(unittest.TestCase):
         self.write_source_paths(root, source_paths)
 
         if len(REQUIRED_CONCERN_ROW_IDS) != len(REQUIRED_CONCERN_IDS):
-            raise AssertionError("concern row IDs and concern IDs must stay aligned")
+            raise AssertionError(
+                "concern row IDs and concern IDs must stay aligned")
 
         rows = []
-        for row_id, concern_id in zip(REQUIRED_CONCERN_ROW_IDS, REQUIRED_CONCERN_IDS):
-            rows.append(
-                {
-                    "id": row_id,
-                    "concern_id": concern_id,
-                    "requirement": "CORE-04"
-                    if concern_id not in {"CL-002", "phase6-tmc-motion-driver-retention"} else "CORE-05",
-                    "source_paths": source_paths,
-                    "disposition": "preserve-temporarily",
-                    "phase6_handling": "preserve-temporarily source handling",
-                    "evidence_class": "source-audit",
-                    "intentional_delta": "none",
-                }
-            )
+        for row_id, concern_id in zip(REQUIRED_CONCERN_ROW_IDS,
+                                      REQUIRED_CONCERN_IDS):
+            rows.append({
+                "id": row_id,
+                "concern_id": concern_id,
+                "requirement": "CORE-04" if concern_id not in {
+                    "CL-002", "phase6-tmc-motion-driver-retention"
+                } else "CORE-05",
+                "source_paths": source_paths,
+                "disposition": "preserve-temporarily",
+                "phase6_handling": "preserve-temporarily source handling",
+                "evidence_class": "source-audit",
+                "intentional_delta": "none",
+            })
         manifest = {
             "schema_version": 1,
             "phase": "06-printing-core-safety-and-feature-gates",
@@ -323,36 +325,33 @@ class Phase6VerifierTest(unittest.TestCase):
         self.write_file(
             root,
             "tools/bazel/BUILD.bazel",
-            "\n".join(
-                [
-                    "phase6_verify",
-                    "phase6_verify_tests",
-                    "phase6_verify.py",
-                    "phase6_verify_test.py",
-                    "phase6_printing_core.json",
-                    "phase6_safety_gates.json",
-                    "phase6_feature_gates.json",
-                    "phase6_concern_dispositions.json",
-                    "//:phase6_printing_safety_docs",
-                ]
-            ),
+            "\n".join([
+                "phase6_verify",
+                "phase6_verify_tests",
+                "phase6_verify.py",
+                "phase6_contract_policy.py",
+                "phase6_verify_test.py",
+                "phase6_printing_core.json",
+                "phase6_safety_gates.json",
+                "phase6_feature_gates.json",
+                "phase6_concern_dispositions.json",
+                "//:phase6_printing_safety_docs",
+            ]),
         )
         self.write_file(
             root,
             "tools/bazel/rust_workflow.sh",
-            "\n".join(
-                [
-                    'case "$command_name" in',
-                    "  phase6_verify)",
-                    "    python3 tools/bazel/phase6_verify.py --all",
-                    "    ;;",
-                    "  phase6_verify_tests)",
-                    "    python3 tools/bazel/phase6_verify_test.py",
-                    "    ;;",
-                    "esac",
-                    "",
-                ]
-            ),
+            "\n".join([
+                'case "$command_name" in',
+                "  phase6_verify)",
+                "    python3 tools/bazel/phase6_verify.py --all",
+                "    ;;",
+                "  phase6_verify_tests)",
+                "    python3 tools/bazel/phase6_verify_test.py",
+                "    ;;",
+                "esac",
+                "",
+            ]),
         )
         self.write_file(
             root,
@@ -360,14 +359,17 @@ class Phase6VerifierTest(unittest.TestCase):
             "phase6-verify:\n    bazel run //tools/bazel:phase6_verify_tests\n    bazel run //tools/bazel:phase6_verify\n",
         )
 
-    def write_validation_contract(self, root: Path, include_full_suite: bool = True) -> None:
+    def write_validation_contract(self,
+                                  root: Path,
+                                  include_full_suite: bool = True) -> None:
         lines = [
             "Quick run command",
             "python3 tools/bazel/phase6_verify.py --quick",
         ]
         if include_full_suite:
             lines.extend(["Full suite command", "just phase6-verify"])
-        self.write_file(root, f"{PHASE_DIR}/06-VALIDATION.md", "\n".join(lines))
+        self.write_file(root, f"{PHASE_DIR}/06-VALIDATION.md",
+                        "\n".join(lines))
 
     def write_rust_api_surface(
         self,
@@ -376,57 +378,49 @@ class Phase6VerifierTest(unittest.TestCase):
         safety_text: str | None = None,
         feature_text: str | None = None,
     ) -> None:
-        self.write_file(root, "rust/crates/domain/src/lib.rs", "#![forbid(unsafe_code)]\n")
+        self.write_file(root, "rust/crates/domain/src/lib.rs",
+                        "#![forbid(unsafe_code)]\n")
         self.write_file(
             root,
             "rust/crates/domain/src/print.rs",
-            print_text
-            or "\n".join(
-                [
-                    "pub struct FixtureId;",
-                    "pub enum PrintJobState {}",
-                    "pub enum PrintSource {}",
-                    "pub enum PrintCommand {}",
-                    "pub enum PlannerFlowState {}",
-                    "pub enum CommandRoute {}",
-                    "pub fn route_gcode_mnemonic() {}",
-                    "pub fn transition_print_state() {}",
-                    'const COMMENT_ONLY: &str = "unsafe { unsafe fn";',
-                    "// unsafe extern should be ignored in comments",
-                ]
-            ),
+            print_text or "\n".join([
+                "pub struct FixtureId;",
+                "pub enum PrintJobState {}",
+                "pub enum PrintSource {}",
+                "pub enum PrintCommand {}",
+                "pub enum PlannerFlowState {}",
+                "pub enum CommandRoute {}",
+                "pub fn route_gcode_mnemonic() {}",
+                "pub fn transition_print_state() {}",
+                'const COMMENT_ONLY: &str = "unsafe { unsafe fn";',
+                "// unsafe extern should be ignored in comments",
+            ]),
         )
         self.write_file(
             root,
             "rust/crates/domain/src/safety.rs",
-            safety_text
-            or "\n".join(
-                [
-                    "pub enum SafetyFlow {}",
-                    "pub enum SafetyAction {}",
-                    "pub enum EvidenceClass {}",
-                    "pub struct FatalPathPolicy;",
-                    "pub struct SafetyPolicySurface;",
-                    "pub fn classify_safety_flow() {}",
-                ]
-            ),
+            safety_text or "\n".join([
+                "pub enum SafetyFlow {}",
+                "pub enum SafetyAction {}",
+                "pub enum EvidenceClass {}",
+                "pub struct FatalPathPolicy;",
+                "pub struct SafetyPolicySurface;",
+                "pub fn classify_safety_flow() {}",
+            ]),
         )
         self.write_file(
             root,
             "rust/crates/domain/src/feature.rs",
-            feature_text
-            or "\n".join(
-                [
-                    "pub enum Phase6FeatureGate {}",
-                    "pub struct Phase6FeatureGates;",
-                    "pub enum BurstSteppingMode {}",
-                    "pub enum GateState { OutOfScopePhase10 }",
-                    "pub fn HasAdcSideFilamentSensor() {}",
-                    "pub fn HasChamberFiltrationApi() {}",
-                    "pub fn HasLoadcellHx717() {}",
-                    "pub fn HasMmu2OverUart() {}",
-                ]
-            ),
+            feature_text or "\n".join([
+                "pub enum Phase6FeatureGate {}",
+                "pub struct Phase6FeatureGates;",
+                "pub enum BurstSteppingMode {}",
+                "pub enum GateState { OutOfScopePhase10 }",
+                "pub fn HasAdcSideFilamentSensor() {}",
+                "pub fn HasChamberFiltrationApi() {}",
+                "pub fn HasLoadcellHx717() {}",
+                "pub fn HasMmu2OverUart() {}",
+            ]),
         )
 
     def write_phase6_quick_surface(self, root: Path) -> None:
@@ -443,13 +437,13 @@ class Phase6VerifierTest(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, msg=result.stdout)
         for flag in [
-            "--quick",
-            "--all",
-            "--manifests-only",
-            "--printing-only",
-            "--safety-only",
-            "--features-only",
-            "--concerns-only",
+                "--quick",
+                "--all",
+                "--manifests-only",
+                "--printing-only",
+                "--safety-only",
+                "--features-only",
+                "--concerns-only",
         ]:
             self.assertIn(flag, result.stdout)
 
@@ -459,12 +453,15 @@ class Phase6VerifierTest(unittest.TestCase):
             result = self.run_verifier(["--manifests-only"], maybe_root=root)
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("missing required file: tools/bazel/manifests/phase6_printing_core.json", result.stdout)
+        self.assertIn(
+            "missing required file: tools/bazel/manifests/phase6_printing_core.json",
+            result.stdout)
 
     def test_printing_only_rejects_invalid_evidence_class(self) -> None:
         temp_dir, root = self.make_temp_root()
         with temp_dir:
-            self.write_printing_manifest(root, evidence_class="hardware passed")
+            self.write_printing_manifest(root,
+                                         evidence_class="hardware passed")
 
             result = self.run_verifier(["--printing-only"], maybe_root=root)
 
@@ -484,7 +481,8 @@ class Phase6VerifierTest(unittest.TestCase):
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             self.write_phase6_quick_surface(root)
-            self.write_rust_api_surface(root, print_text="pub enum PrintJobState {}\n")
+            self.write_rust_api_surface(
+                root, print_text="pub enum PrintJobState {}\n")
 
             result = self.run_verifier(["--quick"], maybe_root=root)
 
@@ -496,7 +494,8 @@ class Phase6VerifierTest(unittest.TestCase):
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             self.write_phase6_quick_surface(root)
-            self.write_rust_api_surface(root, safety_text="pub enum SafetyFlow {}\n")
+            self.write_rust_api_surface(root,
+                                        safety_text="pub enum SafetyFlow {}\n")
 
             result = self.run_verifier(["--quick"], maybe_root=root)
 
@@ -508,7 +507,8 @@ class Phase6VerifierTest(unittest.TestCase):
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             self.write_phase6_quick_surface(root)
-            self.write_rust_api_surface(root, feature_text="pub struct Phase6FeatureGates;\n")
+            self.write_rust_api_surface(
+                root, feature_text="pub struct Phase6FeatureGates;\n")
 
             result = self.run_verifier(["--quick"], maybe_root=root)
 
@@ -522,18 +522,16 @@ class Phase6VerifierTest(unittest.TestCase):
             self.write_phase6_quick_surface(root)
             self.write_rust_api_surface(
                 root,
-                print_text="\n".join(
-                    [
-                        "pub struct FixtureId;",
-                        "pub enum PrintJobState {}",
-                        "pub enum PrintSource {}",
-                        "pub enum PrintCommand {}",
-                        "pub enum PlannerFlowState {}",
-                        "pub enum CommandRoute {}",
-                        "pub fn route_gcode_mnemonic() {}",
-                        "pub fn transition_print_state() { unsafe { core::arch::asm!(\"nop\"); } }",
-                    ]
-                ),
+                print_text="\n".join([
+                    "pub struct FixtureId;",
+                    "pub enum PrintJobState {}",
+                    "pub enum PrintSource {}",
+                    "pub enum PrintCommand {}",
+                    "pub enum PlannerFlowState {}",
+                    "pub enum CommandRoute {}",
+                    "pub fn route_gcode_mnemonic() {}",
+                    "pub fn transition_print_state() { unsafe { core::arch::asm!(\"nop\"); } }",
+                ]),
             )
 
             result = self.run_verifier(["--quick"], maybe_root=root)
@@ -545,7 +543,8 @@ class Phase6VerifierTest(unittest.TestCase):
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             self.write_phase6_quick_surface(root)
-            self.write_file(root, f"{PHASE_DIR}/06-04-SUMMARY.md", "auth implemented\n")
+            self.write_file(root, f"{PHASE_DIR}/06-04-SUMMARY.md",
+                            "auth implemented\n")
 
             result = self.run_verifier(["--quick"], maybe_root=root)
 
@@ -580,7 +579,9 @@ class Phase6VerifierTest(unittest.TestCase):
             env = os.environ.copy()
             env["PATH"] = f"{bin_dir}{os.pathsep}{env['PATH']}"
 
-            result = self.run_verifier(["--all"], maybe_root=root, maybe_env=env)
+            result = self.run_verifier(["--all"],
+                                       maybe_root=root,
+                                       maybe_env=env)
 
             self.assertEqual(result.returncode, 0, msg=result.stdout)
             self.assertEqual(

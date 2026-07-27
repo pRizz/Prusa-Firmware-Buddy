@@ -10,7 +10,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 VERIFIER = ROOT / "tools/bazel/phase7_verify.py"
 
@@ -18,8 +17,12 @@ PHASE = "07-persistence-storage-and-resource-compatibility"
 PHASE_LIFECYCLE_ID = "7-2026-06-06T04-24-25"
 PHASE_DIR = ".planning/phases/07-persistence-storage-and-resource-compatibility"
 
-OLD_EEPROM_VERSIONS = ["v4", "v6", "v7", "v9", "v10", "v11", "v12", "v22", "v32787", "v32789"]
-MIGRATION_ROW_IDS = [f"old-eeprom-{version}-migration" for version in OLD_EEPROM_VERSIONS]
+OLD_EEPROM_VERSIONS = [
+    "v4", "v6", "v7", "v9", "v10", "v11", "v12", "v22", "v32787", "v32789"
+]
+MIGRATION_ROW_IDS = [
+    f"old-eeprom-{version}-migration" for version in OLD_EEPROM_VERSIONS
+]
 REQUIRED_CATALOG_ROW_IDS = [
     *MIGRATION_ROW_IDS,
     "current-schema-v5",
@@ -105,7 +108,8 @@ REQUIRED_CONCERN_IDS = [
 ]
 
 
-class Phase7VerifierTest(unittest.TestCase):
+class Phase7VerifierFixture:
+
     def run_verifier(
         self,
         args: list[str],
@@ -129,6 +133,8 @@ class Phase7VerifierTest(unittest.TestCase):
         root = Path(temp_dir.name)
         (root / "tools/bazel").mkdir(parents=True)
         shutil.copy2(VERIFIER, root / "tools/bazel/phase7_verify.py")
+        shutil.copy2(ROOT / "tools/bazel/phase7_contract_policy.py",
+                     root / "tools/bazel/phase7_contract_policy.py")
         return temp_dir, root
 
     def write_file(self, root: Path, path: str, text: str = "") -> None:
@@ -178,29 +184,29 @@ class Phase7VerifierTest(unittest.TestCase):
             "CurrentStore::newest_config_version = 5 WIFI AP Password Connect Token "
             "name-only-redacted DeprecatedStore selftest-calibration-state Selftest Result "
             "selftest_result calibration selftest 0x3FFF current v4 v6 v7 v9 v10 v11 v12 "
-            "v22 v32787 v32789"
-        )
+            "v22 v32787 v32789")
         manifest = {
-            "schema_version": 1,
-            "phase": PHASE,
-            "phase_lifecycle_id": lifecycle_id,
-            "config_contracts": [
-                {
-                    "id": row_id,
-                    "requirement": "IFCE-04",
-                    "source_paths": source_paths,
-                    "reference_surface": f"{row_id} {required_text}",
-                    "rust_surface": f"Rust storage surface for {row_id}",
-                    "evidence_class": "source-audit",
-                    "proof_scope": "source-audit",
-                    "credential_policy": "name-only-redacted",
-                    "intentional_delta": "none",
-                    "notes": f"{required_text} {extra_note}",
-                }
-                for row_id in rows
-            ],
+            "schema_version":
+            1,
+            "phase":
+            PHASE,
+            "phase_lifecycle_id":
+            lifecycle_id,
+            "config_contracts": [{
+                "id": row_id,
+                "requirement": "IFCE-04",
+                "source_paths": source_paths,
+                "reference_surface": f"{row_id} {required_text}",
+                "rust_surface": f"Rust storage surface for {row_id}",
+                "evidence_class": "source-audit",
+                "proof_scope": "source-audit",
+                "credential_policy": "name-only-redacted",
+                "intentional_delta": "none",
+                "notes": f"{required_text} {extra_note}",
+            } for row_id in rows],
         }
-        self.write_file(root, "tools/bazel/manifests/phase7_config_store.json", json.dumps(manifest))
+        self.write_file(root, "tools/bazel/manifests/phase7_config_store.json",
+                        json.dumps(manifest))
 
     def write_migration_catalog(
         self,
@@ -219,31 +225,31 @@ class Phase7VerifierTest(unittest.TestCase):
         required_text = (
             "Selftest Result selftest_result calibration selftest "
             "CurrentStore::newest_config_version = 5 journal::hash 0x3FFF duplicate detection "
-            "synthetic-redacted name-only-redacted byte_material_policy"
-        )
+            "synthetic-redacted name-only-redacted byte_material_policy")
         catalog = {
-            "schema_version": 1,
-            "phase": PHASE,
-            "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
-            "catalog_id": "phase7-redacted-storage-migration-catalog",
-            "fixtures": [
-                {
-                    "id": row_id,
-                    "requirement": "IFCE-04",
-                    "source_paths": source_paths,
-                    "fixture_identity": f"synthetic {row_id} fixture identity",
-                    "reference_surface": f"{row_id} {required_text}",
-                    "rust_surface": f"Rust fixture surface for {row_id}",
-                    "evidence_class": "source-audit",
-                    "proof_scope": "source-audit",
-                    "redaction_policy": "synthetic-redacted",
-                    "credential_policy": "name-only-redacted",
-                    "byte_material_policy": "none",
-                    "intentional_delta": "none",
-                    "notes": f"{required_text} {extra_note}",
-                }
-                for row_id in row_ids
-            ],
+            "schema_version":
+            1,
+            "phase":
+            PHASE,
+            "phase_lifecycle_id":
+            PHASE_LIFECYCLE_ID,
+            "catalog_id":
+            "phase7-redacted-storage-migration-catalog",
+            "fixtures": [{
+                "id": row_id,
+                "requirement": "IFCE-04",
+                "source_paths": source_paths,
+                "fixture_identity": f"synthetic {row_id} fixture identity",
+                "reference_surface": f"{row_id} {required_text}",
+                "rust_surface": f"Rust fixture surface for {row_id}",
+                "evidence_class": "source-audit",
+                "proof_scope": "source-audit",
+                "redaction_policy": "synthetic-redacted",
+                "credential_policy": "name-only-redacted",
+                "byte_material_policy": "none",
+                "intentional_delta": "none",
+                "notes": f"{required_text} {extra_note}",
+            } for row_id in row_ids],
         }
         self.write_file(
             root,
@@ -280,31 +286,32 @@ class Phase7VerifierTest(unittest.TestCase):
         ]
         rows = []
         for index, row_id in enumerate(REQUIRED_STORAGE_ROW_IDS):
-            evidence_class = maybe_evidence_class or ("manual-hardware-required" if index in {1, 4} else "source-audit")
-            rows.append(
-                {
-                    "id": row_id,
-                    "requirement": "IFCE-04",
-                    "source_paths": source_paths,
-                    "mount_name": row_id,
-                    "runtime_path": runtime_paths[index],
-                    "reference_surface": f"{row_id} {runtime_paths[index]}",
-                    "rust_surface": f"Rust storage media surface for {row_id}",
-                    "evidence_class": evidence_class,
-                    "proof_scope": "source-audit",
-                    "non_local_evidence": "manual-hardware-required"
-                    if index in {1, 4}
-                    else "not-applicable",
-                    "notes": "storage media row",
-                }
-            )
+            evidence_class = maybe_evidence_class or (
+                "manual-hardware-required"
+                if index in {1, 4} else "source-audit")
+            rows.append({
+                "id": row_id,
+                "requirement": "IFCE-04",
+                "source_paths": source_paths,
+                "mount_name": row_id,
+                "runtime_path": runtime_paths[index],
+                "reference_surface": f"{row_id} {runtime_paths[index]}",
+                "rust_surface": f"Rust storage media surface for {row_id}",
+                "evidence_class": evidence_class,
+                "proof_scope": "source-audit",
+                "non_local_evidence": "manual-hardware-required"
+                if index in {1, 4} else "not-applicable",
+                "notes": "storage media row",
+            })
         manifest = {
             "schema_version": 1,
             "phase": PHASE,
             "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
             "storage_surfaces": rows,
         }
-        self.write_file(root, "tools/bazel/manifests/phase7_storage_media.json", json.dumps(manifest))
+        self.write_file(root,
+                        "tools/bazel/manifests/phase7_storage_media.json",
+                        json.dumps(manifest))
 
     def write_resources_manifest(self, root: Path) -> None:
         source_paths = [
@@ -316,29 +323,37 @@ class Phase7VerifierTest(unittest.TestCase):
             "utils/translations_and_fonts/lang.py",
         ]
         self.write_source_paths(root, source_paths)
-        rows = [
-            {
-                "id": row_id,
-                "requirement": "IFCE-05",
-                "source_paths": source_paths,
-                "declared_inputs": ["declared input"],
-                "runtime_paths": ["/web/index.html", "/esp/uart_wifi.bin", "qoi.data"],
-                "reference_surface": f"reference resource surface {row_id}",
-                "rust_surface": f"ResourceSurface::{row_id}",
-                "evidence_class": "source-audit",
-                "proof_scope": "semantic-resource-contract",
-                "generated_label": "//tools/bazel:generated_resources_check",
-                "notes": "resource manifest row",
-            }
-            for row_id in REQUIRED_RESOURCE_ROW_IDS
-        ]
+        rows = [{
+            "id":
+            row_id,
+            "requirement":
+            "IFCE-05",
+            "source_paths":
+            source_paths,
+            "declared_inputs": ["declared input"],
+            "runtime_paths":
+            ["/web/index.html", "/esp/uart_wifi.bin", "qoi.data"],
+            "reference_surface":
+            f"reference resource surface {row_id}",
+            "rust_surface":
+            f"ResourceSurface::{row_id}",
+            "evidence_class":
+            "source-audit",
+            "proof_scope":
+            "semantic-resource-contract",
+            "generated_label":
+            "//tools/bazel:generated_resources_check",
+            "notes":
+            "resource manifest row",
+        } for row_id in REQUIRED_RESOURCE_ROW_IDS]
         manifest = {
             "schema_version": 1,
             "phase": PHASE,
             "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
             "resource_surfaces": rows,
         }
-        self.write_file(root, "tools/bazel/manifests/phase7_resources.json", json.dumps(manifest))
+        self.write_file(root, "tools/bazel/manifests/phase7_resources.json",
+                        json.dumps(manifest))
 
     def write_generated_outputs_manifest(
         self,
@@ -346,24 +361,23 @@ class Phase7VerifierTest(unittest.TestCase):
         maybe_labels: list[str] | None = None,
     ) -> None:
         labels = maybe_labels or REQUIRED_GENERATED_LABELS
-        source_paths = ["tools/bazel/generated_drift.py", "tools/bazel/BUILD.bazel"]
-        self.write_source_paths(root, source_paths)
-        rows = [
-            {
-                "id": GENERATED_ROW_IDS_BY_LABEL[label],
-                "requirement": "IFCE-05",
-                "ownership": "tracked-reviewed-source",
-                "tracked_outputs": ["tracked-output"],
-                "declared_sources": source_paths,
-                "check_label": f"//tools/bazel:{label}_check",
-                "update_label": f"//tools/bazel:{label}_update",
-                "evidence_class": "manifest-check",
-                "writes_source_tree": True,
-                "proof_scope": "phase3-label-wiring-check",
-                "notes": f"{label} generated output row",
-            }
-            for label in labels
+        source_paths = [
+            "tools/bazel/generated_drift.py", "tools/bazel/BUILD.bazel"
         ]
+        self.write_source_paths(root, source_paths)
+        rows = [{
+            "id": GENERATED_ROW_IDS_BY_LABEL[label],
+            "requirement": "IFCE-05",
+            "ownership": "tracked-reviewed-source",
+            "tracked_outputs": ["tracked-output"],
+            "declared_sources": source_paths,
+            "check_label": f"//tools/bazel:{label}_check",
+            "update_label": f"//tools/bazel:{label}_update",
+            "evidence_class": "manifest-check",
+            "writes_source_tree": True,
+            "proof_scope": "phase3-label-wiring-check",
+            "notes": f"{label} generated output row",
+        } for label in labels]
         manifest = {
             "schema_version": 1,
             "phase": PHASE,
@@ -380,20 +394,29 @@ class Phase7VerifierTest(unittest.TestCase):
         source_paths = [".planning/codebase/CONCERNS.md"]
         self.write_source_paths(root, source_paths)
         rows = []
-        for row_id, concern_id in zip(REQUIRED_CONCERN_ROW_IDS, REQUIRED_CONCERN_IDS):
-            rows.append(
-                {
-                    "id": row_id,
-                    "concern_id": concern_id,
-                    "requirement": "IFCE-05" if "font" in row_id or "generated" in row_id else "IFCE-04",
-                    "source_paths": source_paths,
-                    "disposition": "preserve-with-explicit-risk",
-                    "phase7_handling": f"preserve-with-explicit-risk handling for {concern_id}",
-                    "evidence_class": "source-audit",
-                    "intentional_delta": "none",
-                    "regression_guard": f"regression guard for {concern_id}",
-                }
-            )
+        for row_id, concern_id in zip(REQUIRED_CONCERN_ROW_IDS,
+                                      REQUIRED_CONCERN_IDS):
+            rows.append({
+                "id":
+                row_id,
+                "concern_id":
+                concern_id,
+                "requirement":
+                "IFCE-05"
+                if "font" in row_id or "generated" in row_id else "IFCE-04",
+                "source_paths":
+                source_paths,
+                "disposition":
+                "preserve-with-explicit-risk",
+                "phase7_handling":
+                f"preserve-with-explicit-risk handling for {concern_id}",
+                "evidence_class":
+                "source-audit",
+                "intentional_delta":
+                "none",
+                "regression_guard":
+                f"regression guard for {concern_id}",
+            })
         manifest = {
             "schema_version": 1,
             "phase": PHASE,
@@ -413,76 +436,71 @@ class Phase7VerifierTest(unittest.TestCase):
         resource_text: str | None = None,
         lib_text: str | None = None,
     ) -> None:
-        self.write_file(root, "rust/crates/domain/src/lib.rs", lib_text or "#![forbid(unsafe_code)]\npub mod storage;\npub mod resource;\n")
+        self.write_file(
+            root, "rust/crates/domain/src/lib.rs", lib_text or
+            "#![forbid(unsafe_code)]\npub mod storage;\npub mod resource;\n")
         self.write_file(
             root,
             "rust/crates/domain/src/storage.rs",
-            storage_text
-            or "\n".join(
-                [
-                    "pub struct ReferenceHashName;",
-                    "pub struct JournalHashFact;",
-                    "pub enum CredentialRedactionPolicy {}",
-                    "pub enum EvidenceClass {}",
-                    "pub enum FilesystemSurface {}",
-                    "pub struct StorageCompatibilitySurface;",
-                    "pub struct FixtureIdentity;",
-                    'const COMMENT_ONLY: &str = "unsafe { unsafe fn";',
-                    "// unsafe block should be ignored in comments",
-                ]
-            ),
+            storage_text or "\n".join([
+                "pub struct ReferenceHashName;",
+                "pub struct JournalHashFact;",
+                "pub enum CredentialRedactionPolicy {}",
+                "pub enum EvidenceClass {}",
+                "pub enum FilesystemSurface {}",
+                "pub struct StorageCompatibilitySurface;",
+                "pub struct FixtureIdentity;",
+                'const COMMENT_ONLY: &str = "unsafe { unsafe fn";',
+                "// unsafe block should be ignored in comments",
+            ]),
         )
         self.write_file(
             root,
             "rust/crates/domain/src/resource.rs",
-            resource_text
-            or "\n".join(
-                [
-                    "pub struct ResourceRuntimePath;",
-                    "pub enum ResourceSurface {}",
-                    "pub enum GeneratedOutputOwnership {}",
-                    "pub struct BazelLabel;",
-                    "pub struct GeneratedSurface;",
-                ]
-            ),
+            resource_text or "\n".join([
+                "pub struct ResourceRuntimePath;",
+                "pub enum ResourceSurface {}",
+                "pub enum GeneratedOutputOwnership {}",
+                "pub struct BazelLabel;",
+                "pub struct GeneratedSurface;",
+            ]),
         )
 
     def write_facade_files(self, root: Path) -> None:
-        self.write_file(root, "BUILD.bazel", "phase7_verify\nphase7_verify_tests\n")
+        self.write_file(root, "BUILD.bazel",
+                        "phase7_verify\nphase7_verify_tests\n")
         self.write_file(
             root,
             "tools/bazel/BUILD.bazel",
-            "\n".join(
-                [
-                    "phase7_verify",
-                    "phase7_verify_tests",
-                    "phase7_verify.py",
-                    "phase7_verify_test.py",
-                    "phase7_config_store.json",
-                    "phase7_storage_media.json",
-                    "phase7_resources.json",
-                    "phase7_generated_outputs.json",
-                    "phase7_concern_dispositions.json",
-                    "redacted_migration_catalog.json",
-                ]
-            ),
+            "\n".join([
+                "phase7_verify",
+                "phase7_verify_tests",
+                "phase7_verify.py",
+                "phase7_contract_policy.py",
+                "phase7_verify_test.py",
+                "phase7_verify_failure_test.py",
+                "phase7_config_store.json",
+                "phase7_storage_media.json",
+                "phase7_resources.json",
+                "phase7_generated_outputs.json",
+                "phase7_concern_dispositions.json",
+                "redacted_migration_catalog.json",
+            ]),
         )
         self.write_file(
             root,
             "tools/bazel/rust_workflow.sh",
-            "\n".join(
-                [
-                    'case "$command_name" in',
-                    "  phase7_verify)",
-                    "    python3 tools/bazel/phase7_verify.py --all",
-                    "    ;;",
-                    "  phase7_verify_tests)",
-                    "    python3 tools/bazel/phase7_verify_test.py",
-                    "    ;;",
-                    "esac",
-                    "",
-                ]
-            ),
+            "\n".join([
+                'case "$command_name" in',
+                "  phase7_verify)",
+                "    python3 tools/bazel/phase7_verify.py --all",
+                "    ;;",
+                "  phase7_verify_tests)",
+                "    python3 tools/bazel/phase7_verify_test.py",
+                "    ;;",
+                "esac",
+                "",
+            ]),
         )
         self.write_file(
             root,
@@ -505,6 +523,9 @@ class Phase7VerifierTest(unittest.TestCase):
             "Quick run command\npython3 tools/bazel/phase7_verify.py --quick\nFull suite command\njust phase7-verify\n",
         )
 
+
+class Phase7VerifierTest(Phase7VerifierFixture, unittest.TestCase):
+
     def test_help_lists_phase7_modes(self) -> None:
         # Act
         result = self.run_verifier(["--help"])
@@ -512,199 +533,17 @@ class Phase7VerifierTest(unittest.TestCase):
         # Assert
         self.assertEqual(result.returncode, 0, msg=result.stdout)
         for flag in [
-            "--quick",
-            "--all",
-            "--manifests-only",
-            "--config-only",
-            "--storage-only",
-            "--resources-only",
-            "--generated-only",
-            "--concerns-only",
-            "--rust-only",
+                "--quick",
+                "--all",
+                "--manifests-only",
+                "--config-only",
+                "--storage-only",
+                "--resources-only",
+                "--generated-only",
+                "--concerns-only",
+                "--rust-only",
         ]:
             self.assertIn(flag, result.stdout)
-
-    def test_manifests_only_reports_missing_config_manifest(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            # Act
-            result = self.run_verifier(["--manifests-only"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("missing required file: tools/bazel/manifests/phase7_config_store.json", result.stdout)
-
-    def test_quick_rejects_invalid_phase_lifecycle_id(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.write_phase7_quick_surface(root)
-            self.write_config_manifest(root, lifecycle_id="wrong-lifecycle-id")
-
-            # Act
-            result = self.run_verifier(["--quick"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("phase_lifecycle_id", result.stdout)
-
-    def test_quick_rejects_unredacted_credential_material(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.write_phase7_quick_surface(root)
-            self.write_config_manifest(root, extra_note="password_value BEGIN PRIVATE KEY")
-
-            # Act
-            result = self.run_verifier(["--quick"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("credential", result.stdout)
-        self.assertIn("password_value", result.stdout)
-
-    def test_quick_rejects_migration_catalog_missing_selftest_and_hash_coverage(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.write_phase7_quick_surface(root)
-            missing_rows = [
-                row_id
-                for row_id in REQUIRED_CATALOG_ROW_IDS
-                if row_id not in {"old-eeprom-v4-migration", "selftest-calibration-state", "journal-hash-facts"}
-            ]
-            self.write_migration_catalog(root, maybe_rows=missing_rows)
-
-            # Act
-            result = self.run_verifier(["--quick"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("selftest-calibration-state", result.stdout)
-        self.assertIn("Selftest Result", result.stdout)
-        self.assertIn("old-eeprom-v4-migration", result.stdout)
-        self.assertIn("journal-hash-facts", result.stdout)
-
-    def test_quick_rejects_migration_catalog_byte_material(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.write_phase7_quick_surface(root)
-            self.write_migration_catalog(root, extra_note="raw_eeprom byte_array eeprom_bytes token_value")
-
-            # Act
-            result = self.run_verifier(["--quick"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("raw_eeprom", result.stdout)
-        self.assertIn("byte material", result.stdout)
-
-    def test_quick_rejects_local_hardware_storage_evidence(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.write_phase7_quick_surface(root)
-            self.write_storage_manifest(root, maybe_evidence_class="hardware verified locally")
-
-            # Act
-            result = self.run_verifier(["--quick"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("hardware verified locally", result.stdout)
-
-    def test_quick_rejects_missing_generated_resource_check_label(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.write_phase7_quick_surface(root)
-            labels = [label for label in REQUIRED_GENERATED_LABELS if label != "generated_resources"]
-            self.write_generated_outputs_manifest(root, maybe_labels=labels)
-
-            # Act
-            result = self.run_verifier(["--quick"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("generated_resources_check", result.stdout)
-
-    def test_quick_rejects_missing_storage_rust_api_surface(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.write_phase7_quick_surface(root)
-            self.write_rust_api_surface(root, storage_text="pub struct JournalHashFact;\n")
-
-            # Act
-            result = self.run_verifier(["--quick"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("rust/crates/domain/src/storage.rs", result.stdout)
-        self.assertIn("ReferenceHashName", result.stdout)
-        self.assertIn("CredentialRedactionPolicy", result.stdout)
-
-    def test_quick_rejects_missing_resource_rust_api_surface(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.write_phase7_quick_surface(root)
-            self.write_rust_api_surface(root, resource_text="pub struct ResourceRuntimePath;\n")
-
-            # Act
-            result = self.run_verifier(["--quick"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("rust/crates/domain/src/resource.rs", result.stdout)
-        self.assertIn("ResourceSurface", result.stdout)
-        self.assertIn("GeneratedOutputOwnership", result.stdout)
-
-    def test_quick_rejects_unsafe_in_phase7_domain_modules(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.write_phase7_quick_surface(root)
-            self.write_rust_api_surface(
-                root,
-                storage_text="\n".join(
-                    [
-                        "pub struct ReferenceHashName;",
-                        "pub struct JournalHashFact;",
-                        "pub enum CredentialRedactionPolicy {}",
-                        "pub enum EvidenceClass {}",
-                        "pub enum FilesystemSurface {}",
-                        "pub struct StorageCompatibilitySurface;",
-                        "pub struct FixtureIdentity;",
-                        'const COMMENT_ONLY: &str = "unsafe { unsafe fn";',
-                        "// unsafe trait should be ignored in comments",
-                        "pub fn trigger() { unsafe { core::arch::asm!(\"nop\"); } }",
-                    ]
-                ),
-            )
-
-            # Act
-            result = self.run_verifier(["--quick"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("unsafe block", result.stdout)
-
-    def test_quick_rejects_release_scope_overclaim_in_summary(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.write_phase7_quick_surface(root)
-            self.write_file(root, f"{PHASE_DIR}/07-99-SUMMARY.md", "byte-for-byte firmware parity\n")
-
-            # Act
-            result = self.run_verifier(["--quick"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("byte-for-byte firmware parity", result.stdout)
 
     def test_all_runs_quick_checks_and_cargo_verification(self) -> None:
         # Arrange
@@ -724,7 +563,9 @@ class Phase7VerifierTest(unittest.TestCase):
             env["PATH"] = f"{bin_dir}{os.pathsep}{env['PATH']}"
 
             # Act
-            result = self.run_verifier(["--all"], maybe_root=root, maybe_env=env)
+            result = self.run_verifier(["--all"],
+                                       maybe_root=root,
+                                       maybe_env=env)
 
             # Assert
             self.assertEqual(result.returncode, 0, msg=result.stdout)
@@ -740,4 +581,12 @@ class Phase7VerifierTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    import phase7_verify_failure_test
+
+    loader = unittest.TestLoader()
+    suite = loader.loadTestsFromTestCase(Phase7VerifierTest)
+    suite.addTests(
+        loader.loadTestsFromTestCase(
+            phase7_verify_failure_test.Phase7VerifierFailureTest))
+    result = unittest.TextTestRunner().run(suite)
+    sys.exit(not result.wasSuccessful())

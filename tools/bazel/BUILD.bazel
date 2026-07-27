@@ -82,6 +82,7 @@ shell_binary(
     src = "rust_workflow.sh",
     data = [
         "phase5_verify.py",
+        "phase5_runtime_policy.py",
         "manifests/foreign_code_inventory.json",
         "manifests/unsafe_boundary_audit.json",
         "//:phase5_runtime_boundary_docs",
@@ -94,6 +95,7 @@ shell_binary(
     src = "rust_workflow.sh",
     data = [
         "phase6_verify.py",
+        "phase6_contract_policy.py",
         "manifests/phase6_printing_core.json",
         "manifests/phase6_safety_gates.json",
         "manifests/phase6_feature_gates.json",
@@ -109,6 +111,7 @@ shell_binary(
     data = [
         "phase6_verify.py",
         "phase6_verify_test.py",
+        "phase6_contract_policy.py",
     ],
 )
 
@@ -117,6 +120,7 @@ shell_binary(
     src = "rust_workflow.sh",
     data = [
         "phase7_verify.py",
+        "phase7_contract_policy.py",
         "manifests/phase7_config_store.json",
         "manifests/phase7_storage_media.json",
         "manifests/phase7_resources.json",
@@ -135,6 +139,8 @@ shell_binary(
     data = [
         "phase7_verify.py",
         "phase7_verify_test.py",
+        "phase7_contract_policy.py",
+        "phase7_verify_failure_test.py",
         "fixtures/phase7_storage/redacted_migration_catalog.json",
     ],
 )
