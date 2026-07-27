@@ -925,5 +925,4 @@ file-lengths	tools/bazel/phase8_verify.py	temporary: campaign=phase5-11-python; 
 file-lengths	tools/bazel/phase8_verify_test.py	temporary: campaign=phase5-11-python; remove when file is below 629 lines and campaign gates pass
 file-lengths	tools/bazel/phase9_verify.py	temporary: campaign=phase5-11-python; remove when file is below 629 lines and campaign gates pass
 file-lengths	tools/bazel/phase9_verify_test.py	temporary: campaign=phase5-11-python; remove when file is below 629 lines and campaign gates pass
-file-lengths	utils/build.py	temporary: campaign=developer-utilities; remove when file is below 629 lines and campaign gates pass
 file-lengths	utils/phase_stepping/phase_stepping.py	temporary: campaign=developer-utilities; remove when file is below 629 lines and campaign gates pass
