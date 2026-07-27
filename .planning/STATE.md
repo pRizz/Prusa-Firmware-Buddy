@@ -3,15 +3,15 @@ gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
 status: executing
-stopped_at: Completed 40-04-PLAN.md
-last_updated: "2026-07-27T19:32:40.660Z"
+stopped_at: Completed 40-05-PLAN.md
+last_updated: "2026-07-27T20:03:10.602Z"
 last_activity: "2026-07-27"
 progress:
   total_phases: 10
   completed_phases: 8
   total_plans: 29
-  completed_plans: 18
-  percent: 62
+  completed_plans: 19
+  percent: 66
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-07-27)
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
 Phase: 40 (File Length Refactoring) — EXECUTING
-Plan: 5 of 15
+Plan: 6 of 15
 Status: Ready to execute
 Last activity: 2026-07-27
 
@@ -80,6 +80,7 @@ Progress: [########--] 80% (8/10 v1.3 phases complete; Phases 39 and 40 pending 
 | Phase 40 P02 | 13m | 2 tasks | 18 files |
 | Phase 40 P03 | 20m | 2 tasks | 10 files |
 | Phase 40 P04 | 23m | 3 tasks | 27 files |
+| Phase 40 P05 | 27m | 2 tasks | 22 files |
 
 ## Accumulated Context
 
@@ -132,6 +133,9 @@ Recent decisions affecting current work:
 - [Phase 40]: Keep each Phase 5-11 verifier and Bazel label as the stable public facade over phase-local policy modules.
 - [Phase 40]: Load phase-local failure suites through existing test entrypoints so public Bazel test labels remain unchanged.
 - [Phase 40]: Copy extracted policy modules into isolated verifier test roots to preserve direct-script and runfiles behavior.
+- [Phase 40]: Each Phase 13-17 evidence script keeps its original filename and Bazel label as the public CLI and artifact façade.
+- [Phase 40]: Security, signing, provenance, and release-input rules remain phase-local; no shared cross-phase evidence framework was introduced.
+- [Phase 40]: Phase 17 separates core contract policy, release-input policy, and artifact publication so each trust-boundary module stays below 629 lines.
 
 ### Pending Todos
 
@@ -148,6 +152,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-27T19:32:40.656Z
-Stopped at: Completed 40-04-PLAN.md
+Last session: 2026-07-27T20:03:10.599Z
+Stopped at: Completed 40-05-PLAN.md
 Resume file: None
