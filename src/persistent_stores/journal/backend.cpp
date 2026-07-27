@@ -149,14 +149,6 @@ std::optional<Backend::CRCType> Backend::get_crc(const uint16_t address, const u
     return crc;
 }
 
-std::optional<Backend::CRCType> Backend::get_crc(const std::span<const uint8_t> data) {
-    if (data.size() < CRC_SIZE) {
-        return std::nullopt;
-    }
-    CRCType crc;
-    memcpy(&crc, data.data(), CRC_SIZE);
-    return crc;
-}
 size_t Backend::find_oldest_version_migration_index(std::span<const MigrationFunction> migration_functions) {
     size_t oldest_migration = migration_functions.size();
 
@@ -367,20 +359,6 @@ Backend::MultipleTransactionValidationResult Backend::validate_transactions(cons
     }
 }
 
-std::optional<Backend::BankHeader> Backend::validate_bank_header(const std::span<const uint8_t> &data) {
-    BankHeader header { 0, 0 };
-    memcpy(&header, data.data(), BANK_HEADER_SIZE);
-    auto crc_read = get_crc(data.subspan(BANK_HEADER_SIZE));
-    if (!crc_read.has_value()) {
-        return std::nullopt;
-    }
-    CRCType crc_computed = crc32_calc(reinterpret_cast<const uint8_t *>(&header), BANK_HEADER_SIZE);
-    if (crc_read != crc_computed) {
-        return std::nullopt;
-    }
-    return header;
-}
-
 void Backend::init_bank(const Backend::BankSelector selector, Backend::BankSequenceId id, bool is_next_bank) {
     Address address = get_bank_start_address(selector);
     BankHeader header { .sequence_id = id, .version = CURRENT_VERSION };
@@ -442,13 +420,6 @@ void Backend::store_single_item(uint16_t id, const std::span<const uint8_t> &dat
 
     current_address += write_item(current_address, header, data, crc);
     write_end_item(current_address);
-}
-Backend::Address Backend::get_next_bank_start_address() const {
-    if (current_address > start_address && current_address < start_address + bank_size) {
-        return start_address + bank_size;
-    } else {
-        return start_address;
-    }
 }
 void Backend::migrate_bank() {
 #ifndef UNITTESTS
@@ -519,17 +490,6 @@ void Backend::erase_storage_area() {
     storage.erase_area(start_address, start_address + bank_size * 2);
 }
 
-bool Backend::fits_in_current_bank(uint16_t size) const {
-    return get_free_space_in_current_bank() >= size;
-}
-uint16_t Backend::get_free_space_in_bank(Address address_in_bank) const {
-    uint16_t used_space = current_address - get_bank_start_address(address_in_bank);
-    return bank_size - used_space - 1; // 1 to prevent current_address going into next bank when you fit the item size just right
-}
-uint16_t Backend::get_bank_start_address(Address address_in_bank) const {
-    return start_address + (address_in_bank < start_address + bank_size ? 0 : bank_size);
-}
-
 uint16_t Backend::write_item(Address address, Backend::ItemHeader header, const std::span<const uint8_t> &data, std::optional<CRCType> crc) {
     const uint16_t data_address = address + ITEM_HEADER_SIZE;
     uint16_t written = 0;
@@ -554,11 +514,6 @@ uint16_t Backend::write_item(Address address, Backend::ItemHeader header, const 
     return written + ITEM_HEADER_SIZE;
 }
 
-Backend::CRCType Backend::calculate_crc(const Backend::ItemHeader &header, const std::span<const uint8_t> &data, CRCType crc) {
-    crc = crc32_calc_ex(crc, reinterpret_cast<const uint8_t *>(&header), ITEM_HEADER_SIZE);
-    crc = crc32_calc_ex(crc, data.data(), data.size());
-    return crc;
-}
 void Backend::save(uint16_t id, std::span<const uint8_t> data) {
     if (bank_migration.has_value()) {
         bank_migration->store_item(id, data);
@@ -573,16 +528,6 @@ Backend::Backend(uint16_t offset, uint16_t size, configuration_store::Storage &s
     , bank_size(size / 2)
     , storage(storage) {
     assert(bank_size > BANK_HEADER_SIZE_WITH_CRC + END_ITEM_SIZE_WITH_CRC);
-}
-Backend::BankSelector Backend::get_next_bank() {
-    if (current_address > start_address && current_address < start_address + bank_size) {
-        return BankSelector::Second;
-    } else {
-        return BankSelector::First;
-    }
-}
-Backend::Address Backend::get_bank_start_address(const Backend::BankSelector selector) {
-    return selector == BankSelector::First ? start_address : start_address + bank_size;
 }
 void Backend::bank_migration_start() {
     bank_migration.emplace(Transaction::Type::bank_migration, *this);
@@ -613,12 +558,6 @@ auto Backend::bank_migration_guard() -> BankMigrationGuard {
     return BankMigrationGuard(*this);
 }
 
-Backend::Transaction::Transaction(Transaction::Type type, Backend &backend)
-    : backend(backend)
-    , type(type)
-    , last_item_address(type == Type::version_migration ? backend.current_next_address : backend.current_address) {
-}
-
 Backend::Transaction::~Transaction() {
     if (type == Type::transaction && !backend.fits_in_current_bank(CRC_SIZE + END_ITEM_SIZE_WITH_CRC)) {
         // After bank migration, all items will be stored with new values, we don't have to do anything
@@ -641,17 +580,6 @@ Backend::Transaction::~Transaction() {
     current_address += CRC_SIZE;
 
     backend.write_end_item(current_address);
-}
-
-void Backend::Transaction::calculate_crc(Backend::Id id, const std::span<const uint8_t> &data) {
-    const auto prev_crc = crc;
-
-    ItemHeader header { .last_item = false, .id = id, .len = static_cast<uint16_t>(data.size()) };
-    crc = Backend::calculate_crc(header, data, prev_crc);
-
-    // If this item ends up being the last item, we need to calculate a different CRC for that
-    header.last_item = true;
-    last_item_crc = Backend::calculate_crc(header, data, prev_crc);
 }
 
 void Backend::Transaction::store_item(Backend::Id id, const std::span<const uint8_t> &data) {
