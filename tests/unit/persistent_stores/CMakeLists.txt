@@ -1,6 +1,7 @@
 add_executable(
   eeprom_unit_tests
   ${CMAKE_CURRENT_SOURCE_DIR}/EEPROM_journal_test.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/EEPROM_journal_recovery_test.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/dummy_eeprom_chip.cpp
   ${CMAKE_SOURCE_DIR}/src/common/random_sw.cpp
   ${CMAKE_SOURCE_DIR}/src/persistent_stores/journal/backend.cpp
@@ -46,6 +47,7 @@ create_generate_hashes_target(
   INPUT_FILES
   "${CMAKE_SOURCE_DIR}/src/persistent_stores/store_instances/config_store/store_definition.hpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/EEPROM_journal_test.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/EEPROM_journal_recovery_test.cpp"
   )
 
 add_dependencies(eeprom_unit_tests generate_journal_hashes_tests)
