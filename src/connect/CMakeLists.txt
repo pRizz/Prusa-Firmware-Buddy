@@ -4,11 +4,13 @@ target_sources(
           command.cpp
           command_id.cpp
           connect.cpp
+          connect_commands.cpp
           connection_cache.cpp
           error_printer.cpp
           hostname.cpp
           json_out.cpp
           marlin_printer.cpp
+          marlin_printer_state.cpp
           planner.cpp
           printer.cpp
           printer_common.cpp

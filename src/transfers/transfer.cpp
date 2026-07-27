@@ -32,62 +32,6 @@ using namespace transfers;
 using std::is_same_v;
 using std::optional;
 
-Transfer::PlainGcodeDownloadOrder::PlainGcodeDownloadOrder(const PartialFile &file) {
-    if (file.has_valid_tail(TailSize)) {
-        state = State::DownloadingBody;
-    } else {
-        state = State::DownloadingTail;
-    }
-}
-
-Transfer::Action Transfer::PlainGcodeDownloadOrder::step(const PartialFile &file) {
-    switch (state) {
-    case State::DownloadingTail:
-        if (file.has_valid_tail(TailSize)) {
-            state = State::DownloadingBody;
-            return Action::RangeJump;
-        }
-        return Action::Continue;
-    case State::DownloadingBody:
-        if (file.final_size() == file.get_state().get_valid_size()) {
-            return Action::Finished;
-        } else {
-            return Action::Continue;
-        }
-    default:
-        fatal_error("unhandled state", "download");
-    }
-}
-
-size_t Transfer::PlainGcodeDownloadOrder::get_next_offset(const PartialFile &file) const {
-    switch (state) {
-    case State::DownloadingBody: {
-        auto head = file.get_valid_head();
-        return head.has_value() ? head->end : 0;
-    }
-    case State::DownloadingTail: {
-        auto tail = file.get_valid_tail();
-        log_info(transfers, "returning offset for tail: %i, %u, %u", tail.has_value(), tail->start, tail->end);
-        return tail.has_value() ? tail->end : file.final_size() - TailSize;
-    }
-    default:
-        fatal_error("unhandled state", "download");
-    }
-}
-
-Transfer::Action Transfer::GenericFileDownloadOrder::step(const PartialFile &file) {
-    if (file.final_size() == file.get_state().get_valid_size()) {
-        return Action::Finished;
-    } else {
-        return Action::Continue;
-    }
-}
-
-size_t Transfer::GenericFileDownloadOrder::get_next_offset(const PartialFile &file) const {
-    auto head = file.get_valid_head();
-    return head ? head->end : 0;
-}
-
 Transfer::BeginResult Transfer::begin(const char *destination_path, Download::Request request) {
     log_info(transfers, "Starting transfer of %s", destination_path);
 
