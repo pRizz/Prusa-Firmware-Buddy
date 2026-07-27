@@ -8,25 +8,26 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 VERIFIER = ROOT / "tools/bazel/phase22_metadata_reconciliation.py"
 CONTRACT = "tools/bazel/manifests/phase22_metadata_reconciliation_contract.json"
 
 
 class Phase22MetadataReconciliationTest(unittest.TestCase):
+
     def make_temp_root(self) -> tuple[tempfile.TemporaryDirectory[str], Path]:
         temp_dir = tempfile.TemporaryDirectory()
         root = Path(temp_dir.name)
         (root / "tools/bazel/manifests").mkdir(parents=True)
         for relative_path in [
-            "BUILD.bazel",
-            "justfile",
-            "tools/bazel/BUILD.bazel",
-            "tools/bazel/rust_workflow.sh",
-            "tools/bazel/phase22_metadata_reconciliation.py",
-            "tools/bazel/phase22_metadata_reconciliation_test.py",
-            CONTRACT,
+                "BUILD.bazel",
+                "justfile",
+                "tools/bazel/BUILD.bazel",
+                "tools/bazel/rust_workflow.sh",
+                "tools/bazel/phase22_metadata_reconciliation.py",
+                "tools/bazel/phase22_metadata_policy.py",
+                "tools/bazel/phase22_metadata_reconciliation_test.py",
+                CONTRACT,
         ]:
             source = ROOT / relative_path
             if not source.exists():
@@ -59,7 +60,9 @@ class Phase22MetadataReconciliationTest(unittest.TestCase):
     def write_contract(self, root: Path, contract: dict[str, object]) -> None:
         contract_path = root / CONTRACT
         contract_path.parent.mkdir(parents=True, exist_ok=True)
-        contract_path.write_text(json.dumps(contract, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        contract_path.write_text(
+            json.dumps(contract, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8")
 
     def write_text(self, root: Path, path: str, text: str) -> None:
         target = root / path
@@ -131,7 +134,9 @@ Current position: Phase 22 Plan 3 of 3 completed
             ".planning/phases/18-retained-code-acceptance-and-cutover-review/18-VALIDATION.md",
             ".planning/phases/20-release-candidate-artifact-production/20-VALIDATION.md",
         ]
-        clean_validation = (root / ".planning/phases/14-example/14-VALIDATION.md").read_text(encoding="utf-8")
+        clean_validation = (
+            root / ".planning/phases/14-example/14-VALIDATION.md").read_text(
+                encoding="utf-8")
         for path in validation_paths:
             self.write_text(root, path, clean_validation)
 
@@ -153,12 +158,16 @@ Current position: Phase 22 Plan 3 of 3 completed
         self.assertIn(row_id, result.stdout)
         self.assertIn("source_refs", result.stdout)
 
-    def test_non_blocking_debt_requires_owner_rationale_follow_up_and_source_refs(self) -> None:
+    def test_non_blocking_debt_requires_owner_rationale_follow_up_and_source_refs(
+            self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             contract = self.read_contract(root)
-            contract["non_blocking_debt"] = [{"id": "debt-without-required-fields"}]
+            contract["non_blocking_debt"] = [{
+                "id":
+                "debt-without-required-fields"
+            }]
             self.write_contract(root, contract)
 
             # Act
@@ -167,10 +176,13 @@ Current position: Phase 22 Plan 3 of 3 completed
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("debt-without-required-fields", result.stdout)
-        for field in ["owner", "rationale", "follow_up_or_expiry", "source_refs"]:
+        for field in [
+                "owner", "rationale", "follow_up_or_expiry", "source_refs"
+        ]:
             self.assertIn(field, result.stdout)
 
-    def test_generated_artifacts_must_stay_under_phase22_output_root(self) -> None:
+    def test_generated_artifacts_must_stay_under_phase22_output_root(
+            self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
@@ -188,10 +200,12 @@ Current position: Phase 22 Plan 3 of 3 completed
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("generated_artifacts", result.stdout)
-        self.assertIn("../phase22-escape/audit-rerun-readiness.json", result.stdout)
+        self.assertIn("../phase22-escape/audit-rerun-readiness.json",
+                      result.stdout)
         self.assertIn("/tmp/redacted-summary.md", result.stdout)
 
-    def test_contract_rows_reject_sensitive_and_overclaim_markers(self) -> None:
+    def test_contract_rows_reject_sensitive_and_overclaim_markers(
+            self) -> None:
         markers = [
             "private key",
             "token",
@@ -209,17 +223,20 @@ Current position: Phase 22 Plan 3 of 3 completed
                 temp_dir, root = self.make_temp_root()
                 with temp_dir:
                     contract = self.read_contract(root)
-                    contract["metadata_corrections"][0]["no_overclaim_rationale"] = marker
+                    contract["metadata_corrections"][0][
+                        "no_overclaim_rationale"] = marker
                     self.write_contract(root, contract)
 
                     # Act
-                    result = self.run_verifier(["--security-only"], maybe_root=root)
+                    result = self.run_verifier(["--security-only"],
+                                               maybe_root=root)
 
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(marker, result.stdout)
 
-    def test_requirements_only_rejects_unchecked_and_complete_without_caveat(self) -> None:
+    def test_requirements_only_rejects_unchecked_and_complete_without_caveat(
+            self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
@@ -240,7 +257,8 @@ Current position: Phase 22 Plan 3 of 3 completed
             )
 
             # Act
-            result = self.run_verifier(["--requirements-only"], maybe_root=root)
+            result = self.run_verifier(["--requirements-only"],
+                                       maybe_root=root)
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
@@ -267,14 +285,17 @@ Current position: Phase 22 Plan 3 of 3 completed
             )
 
             # Act
-            result = self.run_verifier(["--requirements-only"], maybe_root=root)
+            result = self.run_verifier(["--requirements-only"],
+                                       maybe_root=root)
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("hardware-only behavior is not simulator-proven", result.stdout)
+        self.assertIn("hardware-only behavior is not simulator-proven",
+                      result.stdout)
         self.assertIn("demotion_allowed remains blocked", result.stdout)
 
-    def test_validation_only_rejects_wave_zero_placeholders_and_pending_rows(self) -> None:
+    def test_validation_only_rejects_wave_zero_placeholders_and_pending_rows(
+            self) -> None:
         cases = {
             "wave_0_complete: false": "wave_0_complete",
             "nyquist_compliant: false": "nyquist_compliant",
@@ -306,13 +327,15 @@ wave_0_complete: true
                     )
 
                     # Act
-                    result = self.run_verifier(["--validation-only"], maybe_root=root)
+                    result = self.run_verifier(["--validation-only"],
+                                               maybe_root=root)
 
                 # Assert
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(expected, result.stdout)
 
-    def test_roadmap_state_only_rejects_stale_phase21_and_state_focus(self) -> None:
+    def test_roadmap_state_only_rejects_stale_phase21_and_state_focus(
+            self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
@@ -335,7 +358,8 @@ Current position: Phase 21 awaiting verification
             )
 
             # Act
-            result = self.run_verifier(["--roadmap-state-only"], maybe_root=root)
+            result = self.run_verifier(["--roadmap-state-only"],
+                                       maybe_root=root)
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
@@ -347,7 +371,9 @@ Current position: Phase 21 awaiting verification
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             # Act
-            result = self.run_verifier(["--security-only", "--output-dir", "../phase22"], maybe_root=root)
+            result = self.run_verifier(
+                ["--security-only", "--output-dir", "../phase22"],
+                maybe_root=root)
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
@@ -361,19 +387,31 @@ Current position: Phase 21 awaiting verification
             output_dir = root / "build/ci-evidence/phase22"
 
             # Act
-            result = self.run_verifier(["--quick", "--output-dir", "build/ci-evidence/phase22"], maybe_root=root)
+            result = self.run_verifier(
+                ["--quick", "--output-dir", "build/ci-evidence/phase22"],
+                maybe_root=root)
 
             # Assert
             self.assertEqual(result.returncode, 0, result.stdout)
-            report = json.loads((output_dir / "metadata-reconciliation-report.json").read_text(encoding="utf-8"))
-            readiness = json.loads((output_dir / "audit-rerun-readiness.json").read_text(encoding="utf-8"))
-            summary = (output_dir / "redacted-summary.md").read_text(encoding="utf-8")
-            self.assertEqual(report["artifact_name"], "phase22-metadata-reconciliation")
-            self.assertEqual(report["phase_lifecycle_id"], "22-2026-06-21T16-59-18")
+            report = json.loads(
+                (output_dir / "metadata-reconciliation-report.json").read_text(
+                    encoding="utf-8"))
+            readiness = json.loads(
+                (output_dir /
+                 "audit-rerun-readiness.json").read_text(encoding="utf-8"))
+            summary = (output_dir /
+                       "redacted-summary.md").read_text(encoding="utf-8")
+            self.assertEqual(report["artifact_name"],
+                             "phase22-metadata-reconciliation")
+            self.assertEqual(report["phase_lifecycle_id"],
+                             "22-2026-06-21T16-59-18")
             self.assertEqual(report["correction_count"], 13)
             self.assertEqual(readiness["status"], "passed")
             self.assertIn("Phase 22 reconciles metadata only", summary)
-            self.assertTrue((output_dir / "sanitized-source-snapshots/.planning/REQUIREMENTS.md").is_file())
+            self.assertTrue(
+                (output_dir /
+                 "sanitized-source-snapshots/.planning/REQUIREMENTS.md"
+                 ).is_file())
 
     def test_audit_readiness_maps_gaps_to_allowed_statuses(self) -> None:
         # Arrange
@@ -382,30 +420,47 @@ Current position: Phase 21 awaiting verification
             self.write_quick_ready_metadata(root)
 
             # Act
-            result = self.run_verifier(["--quick", "--output-dir", "build/ci-evidence/phase22"], maybe_root=root)
+            result = self.run_verifier(
+                ["--quick", "--output-dir", "build/ci-evidence/phase22"],
+                maybe_root=root)
 
             # Assert
             self.assertEqual(result.returncode, 0, result.stdout)
             readiness = json.loads(
-                (root / "build/ci-evidence/phase22/audit-rerun-readiness.json").read_text(encoding="utf-8")
-            )
-            statuses = {row["status"] for row in readiness["audit_gap_mappings"]}
+                (root / "build/ci-evidence/phase22/audit-rerun-readiness.json"
+                 ).read_text(encoding="utf-8"))
+            statuses = {
+                row["status"]
+                for row in readiness["audit_gap_mappings"]
+            }
             self.assertEqual(readiness["status"], "passed")
-            self.assertLessEqual(statuses, {"closed", "still_blocking", "non_blocking_debt"})
-            self.assertIn("requirements-status-gap", {row["id"] for row in readiness["audit_gap_mappings"]})
+            self.assertLessEqual(
+                statuses, {"closed", "still_blocking", "non_blocking_debt"})
+            self.assertIn(
+                "requirements-status-gap",
+                {row["id"]
+                 for row in readiness["audit_gap_mappings"]})
 
-    def test_generated_artifact_secret_or_overclaim_fails_security_scan(self) -> None:
+    def test_generated_artifact_secret_or_overclaim_fails_security_scan(
+            self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             self.write_quick_ready_metadata(root)
             output_dir = root / "build/ci-evidence/phase22"
-            quick_result = self.run_verifier(["--quick", "--output-dir", "build/ci-evidence/phase22"], maybe_root=root)
+            quick_result = self.run_verifier(
+                ["--quick", "--output-dir", "build/ci-evidence/phase22"],
+                maybe_root=root)
             self.assertEqual(quick_result.returncode, 0, quick_result.stdout)
-            self.write_text(root, "build/ci-evidence/phase22/redacted-summary.md", "private key\ncutover complete\n")
+            self.write_text(root,
+                            "build/ci-evidence/phase22/redacted-summary.md",
+                            "private key\ncutover complete\n")
 
             # Act
-            result = self.run_verifier(["--security-only", "--output-dir", "build/ci-evidence/phase22"], maybe_root=root)
+            result = self.run_verifier([
+                "--security-only", "--output-dir", "build/ci-evidence/phase22"
+            ],
+                                       maybe_root=root)
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
@@ -419,11 +474,14 @@ Current position: Phase 21 awaiting verification
             self.write_quick_ready_metadata(root)
             output_dir = root / "build/ci-evidence/phase22"
             output_dir.mkdir(parents=True)
-            self.write_text(root, "build/ci-evidence/phase22/keep.txt", "keep\n")
+            self.write_text(root, "build/ci-evidence/phase22/keep.txt",
+                            "keep\n")
             (output_dir / "linked").symlink_to(root)
 
             # Act
-            result = self.run_verifier(["--quick", "--output-dir", "build/ci-evidence/phase22"], maybe_root=root)
+            result = self.run_verifier(
+                ["--quick", "--output-dir", "build/ci-evidence/phase22"],
+                maybe_root=root)
 
             # Assert
             self.assertNotEqual(result.returncode, 0)

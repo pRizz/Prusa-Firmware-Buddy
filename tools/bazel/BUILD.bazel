@@ -659,6 +659,7 @@ shell_binary(
     src = "rust_workflow.sh",
     data = [
         "phase22_metadata_reconciliation.py",
+        "phase22_metadata_policy.py",
         "manifests/phase22_metadata_reconciliation_contract.json",
         ":phase22_source_ref_manifests",
         "//:phase22_metadata_reconciliation_docs",
@@ -670,6 +671,7 @@ shell_binary(
     src = "rust_workflow.sh",
     data = [
         "phase22_metadata_reconciliation.py",
+        "phase22_metadata_policy.py",
         "phase22_metadata_reconciliation_test.py",
         "manifests/phase22_metadata_reconciliation_contract.json",
         ":phase22_source_ref_manifests",
@@ -691,6 +693,8 @@ shell_binary(
     name = "phase23_verify",
     src = "rust_workflow.sh",
     data = [
+        "phase23_execution_contract.py",
+        "phase23_execution_policy.py",
         "phase23_simulator_evidence_execution.py",
         "manifests/phase23_simulator_evidence_execution_contract.json",
         ":phase23_source_ref_manifests",
@@ -702,6 +706,8 @@ shell_binary(
     name = "phase23_verify_tests",
     src = "rust_workflow.sh",
     data = [
+        "phase23_execution_contract.py",
+        "phase23_execution_policy.py",
         "phase23_simulator_evidence_execution.py",
         "phase23_simulator_evidence_execution_test.py",
         "manifests/phase23_simulator_evidence_execution_contract.json",
@@ -725,6 +731,8 @@ shell_binary(
     name = "phase24_verify",
     src = "rust_workflow.sh",
     data = [
+        "phase24_execution_contract.py",
+        "phase24_execution_policy.py",
         "phase24_hardware_media_safety_evidence_execution.py",
         "manifests/phase24_hardware_media_safety_evidence_execution_contract.json",
         ":phase24_source_ref_manifests",
@@ -736,6 +744,9 @@ shell_binary(
     name = "phase24_verify_tests",
     src = "rust_workflow.sh",
     data = [
+        "phase24_execution_contract.py",
+        "phase24_execution_policy.py",
+        "phase24_execution_test_support.py",
         "phase24_hardware_media_safety_evidence_execution.py",
         "phase24_hardware_media_safety_evidence_execution_test.py",
         "manifests/phase24_hardware_media_safety_evidence_execution_contract.json",
@@ -760,6 +771,8 @@ shell_binary(
     name = "phase25_verify",
     src = "rust_workflow.sh",
     data = [
+        "phase25_execution_contract.py",
+        "phase25_execution_policy.py",
         "phase25_live_service_evidence_execution.py",
         "manifests/phase25_live_service_evidence_execution_contract.json",
         ":phase25_source_ref_manifests",
@@ -771,6 +784,9 @@ shell_binary(
     name = "phase25_verify_tests",
     src = "rust_workflow.sh",
     data = [
+        "phase25_execution_contract.py",
+        "phase25_execution_policy.py",
+        "phase25_execution_test_support.py",
         "phase25_live_service_evidence_execution.py",
         "phase25_live_service_evidence_execution_test.py",
         "manifests/phase25_live_service_evidence_execution_contract.json",

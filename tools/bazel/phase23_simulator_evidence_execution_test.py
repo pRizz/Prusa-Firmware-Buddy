@@ -8,7 +8,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 VERIFIER = ROOT / "tools/bazel/phase23_simulator_evidence_execution.py"
 CONTRACT = "tools/bazel/manifests/phase23_simulator_evidence_execution_contract.json"
@@ -25,12 +24,26 @@ DEFAULT_OUTPUT_DIR = "build/ci-evidence/phase23"
 
 
 class Phase23SimulatorEvidenceExecutionTest(unittest.TestCase):
+
     def make_temp_root(self) -> tuple[tempfile.TemporaryDirectory[str], Path]:
         temp_dir = tempfile.TemporaryDirectory()
         root = Path(temp_dir.name)
         (root / "tools/bazel/manifests").mkdir(parents=True)
-        shutil.copy2(VERIFIER, root / "tools/bazel/phase23_simulator_evidence_execution.py")
-        for path in [CONTRACT, PHASE14_CONTRACT, PHASE19_CONTRACT, PHASE18_CONTRACT, *PHASE11_FILES]:
+        shutil.copy2(
+            VERIFIER,
+            root / "tools/bazel/phase23_simulator_evidence_execution.py")
+        shutil.copy2(
+            ROOT / "tools/bazel/phase23_execution_policy.py",
+            root / "tools/bazel/phase23_execution_policy.py",
+        )
+        shutil.copy2(
+            ROOT / "tools/bazel/phase23_execution_contract.py",
+            root / "tools/bazel/phase23_execution_contract.py",
+        )
+        for path in [
+                CONTRACT, PHASE14_CONTRACT, PHASE19_CONTRACT, PHASE18_CONTRACT,
+                *PHASE11_FILES
+        ]:
             destination = root / path
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(ROOT / path, destination)
@@ -53,7 +66,8 @@ class Phase23SimulatorEvidenceExecutionTest(unittest.TestCase):
         )
 
     def read_phase14_contract(self, root: Path) -> dict[str, object]:
-        return json.loads((root / PHASE14_CONTRACT).read_text(encoding="utf-8"))
+        return json.loads(
+            (root / PHASE14_CONTRACT).read_text(encoding="utf-8"))
 
     def write_file(self, root: Path, path: str, text: str = "") -> None:
         full_path = root / path
@@ -87,23 +101,21 @@ class Phase23SimulatorEvidenceExecutionTest(unittest.TestCase):
         }
         if maybe_packet_updates is not None:
             packet["simulator_evidence_packet"].update(maybe_packet_updates)
-        self.write_file(root, path, json.dumps(packet, indent=2, sort_keys=True) + "\n")
+        self.write_file(root, path,
+                        json.dumps(packet, indent=2, sort_keys=True) + "\n")
         return path
 
     def complete_rows(self, root: Path) -> list[dict[str, object]]:
         contract = self.read_phase14_contract(root)
-        return [
-            {
-                "artifact_refs": [f"external://phase23/{scenario['id']}.log"],
-                "redaction_status": "passed",
-                "scenario_id": scenario["id"],
-                "source_ref_status": "passed",
-                "source_status": "passed",
-                "status": "passed",
-                "status_reason": "real simulator scenario passed",
-            }
-            for scenario in contract["scenarios"]
-        ]
+        return [{
+            "artifact_refs": [f"external://phase23/{scenario['id']}.log"],
+            "redaction_status": "passed",
+            "scenario_id": scenario["id"],
+            "source_ref_status": "passed",
+            "source_status": "passed",
+            "status": "passed",
+            "status_reason": "real simulator scenario passed",
+        } for scenario in contract["scenarios"]]
 
     def write_phase23_wiring(
         self,
@@ -199,8 +211,12 @@ esac
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             # Act
-            result = self.run_verifier(["--quick", "--output-dir", DEFAULT_OUTPUT_DIR], maybe_root=root)
-            manifest = json.loads((root / DEFAULT_OUTPUT_DIR / "simulator-result-manifest.json").read_text())
+            result = self.run_verifier(
+                ["--quick", "--output-dir", DEFAULT_OUTPUT_DIR],
+                maybe_root=root)
+            manifest = json.loads(
+                (root / DEFAULT_OUTPUT_DIR /
+                 "simulator-result-manifest.json").read_text())
 
         # Assert
         self.assertEqual(result.returncode, 0, result.stdout)
@@ -212,11 +228,15 @@ esac
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
-            input_path = self.write_evidence_input(root, self.complete_rows(root))
+            input_path = self.write_evidence_input(root,
+                                                   self.complete_rows(root))
 
             # Act
-            result = self.run_verifier(["--evidence-input", input_path], maybe_root=root)
-            manifest = json.loads((root / DEFAULT_OUTPUT_DIR / "simulator-result-manifest.json").read_text())
+            result = self.run_verifier(["--evidence-input", input_path],
+                                       maybe_root=root)
+            manifest = json.loads(
+                (root / DEFAULT_OUTPUT_DIR /
+                 "simulator-result-manifest.json").read_text())
 
         # Assert
         self.assertEqual(result.returncode, 0, result.stdout)
@@ -232,13 +252,15 @@ esac
             input_path = self.write_evidence_input(root, rows)
 
             # Act
-            result = self.run_verifier(["--evidence-input", input_path], maybe_root=root)
+            result = self.run_verifier(["--evidence-input", input_path],
+                                       maybe_root=root)
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("missing scenario results", result.stdout)
 
-    def test_evidence_input_rejects_pending_source_status_as_passed(self) -> None:
+    def test_evidence_input_rejects_pending_source_status_as_passed(
+            self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
@@ -247,11 +269,13 @@ esac
             input_path = self.write_evidence_input(root, rows)
 
             # Act
-            result = self.run_verifier(["--evidence-input", input_path], maybe_root=root)
+            result = self.run_verifier(["--evidence-input", input_path],
+                                       maybe_root=root)
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("cannot pass with source_status=pending-simulator-input", result.stdout)
+        self.assertIn("cannot pass with source_status=pending-simulator-input",
+                      result.stdout)
 
     def test_exception_requested_requires_exception_metadata(self) -> None:
         # Arrange
@@ -263,7 +287,8 @@ esac
             input_path = self.write_evidence_input(root, rows)
 
             # Act
-            result = self.run_verifier(["--evidence-input", input_path], maybe_root=root)
+            result = self.run_verifier(["--evidence-input", input_path],
+                                       maybe_root=root)
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
@@ -278,13 +303,15 @@ esac
             input_path = self.write_evidence_input(root, rows)
 
             # Act
-            result = self.run_verifier(["--evidence-input", input_path], maybe_root=root)
+            result = self.run_verifier(["--evidence-input", input_path],
+                                       maybe_root=root)
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("forbidden evidence marker", result.stdout)
 
-    def test_evidence_input_rejects_mixed_case_forbidden_secret_fields(self) -> None:
+    def test_evidence_input_rejects_mixed_case_forbidden_secret_fields(
+            self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
@@ -293,11 +320,13 @@ esac
             input_path = self.write_evidence_input(root, rows)
 
             # Act
-            result = self.run_verifier(["--evidence-input", input_path], maybe_root=root)
+            result = self.run_verifier(["--evidence-input", input_path],
+                                       maybe_root=root)
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("contains forbidden evidence fields: Token", result.stdout)
+        self.assertIn("contains forbidden evidence fields: Token",
+                      result.stdout)
 
     def test_evidence_input_rejects_empty_artifact_refs(self) -> None:
         # Arrange
@@ -308,11 +337,13 @@ esac
             input_path = self.write_evidence_input(root, rows)
 
             # Act
-            result = self.run_verifier(["--evidence-input", input_path], maybe_root=root)
+            result = self.run_verifier(["--evidence-input", input_path],
+                                       maybe_root=root)
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("artifact_refs must contain at least one item", result.stdout)
+        self.assertIn("artifact_refs must contain at least one item",
+                      result.stdout)
 
     def test_evidence_input_rejects_malformed_identity_fields(self) -> None:
         # Arrange
@@ -325,7 +356,8 @@ esac
             )
 
             # Act
-            result = self.run_verifier(["--evidence-input", input_path], maybe_root=root)
+            result = self.run_verifier(["--evidence-input", input_path],
+                                       maybe_root=root)
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
@@ -340,7 +372,8 @@ esac
             input_path = self.write_evidence_input(root, rows)
 
             # Act
-            result = self.run_verifier(["--evidence-input", input_path], maybe_root=root)
+            result = self.run_verifier(["--evidence-input", input_path],
+                                       maybe_root=root)
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
