@@ -150,6 +150,7 @@ shell_binary(
     src = "rust_workflow.sh",
     data = [
         "phase8_verify.py",
+        "phase8_contract_policy.py",
         "manifests/phase8_gui_workflows.json",
         "manifests/phase8_display_layouts.json",
         "manifests/phase8_concern_dispositions.json",
@@ -164,6 +165,8 @@ shell_binary(
     data = [
         "phase8_verify.py",
         "phase8_verify_test.py",
+        "phase8_contract_policy.py",
+        "phase8_verify_failure_test.py",
     ],
 )
 
@@ -172,6 +175,7 @@ shell_binary(
     src = "rust_workflow.sh",
     data = [
         "phase9_verify.py",
+        "phase9_contract_policy.py",
         "phase9_negative_fixtures.py",
         "fixtures/phase9_negative_network_cases.json",
         "manifests/phase9_connect_contracts.json",
@@ -190,6 +194,8 @@ shell_binary(
     data = [
         "phase9_verify.py",
         "phase9_verify_test.py",
+        "phase9_contract_policy.py",
+        "phase9_verify_failure_test.py",
         "phase9_negative_fixtures.py",
         "phase9_negative_fixtures_test.py",
         "fixtures/phase9_negative_network_cases.json",

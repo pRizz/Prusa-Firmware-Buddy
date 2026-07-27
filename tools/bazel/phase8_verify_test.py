@@ -10,7 +10,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 VERIFIER = ROOT / "tools/bazel/phase8_verify.py"
 
@@ -98,7 +97,8 @@ OVERCLAIM_STRINGS = [
 ]
 
 
-class Phase8VerifierTest(unittest.TestCase):
+class Phase8VerifierFixture:
+
     def run_verifier(
         self,
         args: list[str],
@@ -123,6 +123,8 @@ class Phase8VerifierTest(unittest.TestCase):
         (root / "tools/bazel").mkdir(parents=True)
         if VERIFIER.exists():
             shutil.copy2(VERIFIER, root / "tools/bazel/phase8_verify.py")
+            shutil.copy2(ROOT / "tools/bazel/phase8_contract_policy.py",
+                         root / "tools/bazel/phase8_contract_policy.py")
         return temp_dir, root
 
     def write_file(self, root: Path, path: str, text: str = "") -> None:
@@ -146,19 +148,27 @@ class Phase8VerifierTest(unittest.TestCase):
         ]
         self.write_source_paths(root, source_paths)
         row: dict[str, object] = {
-            "id": row_id,
-            "requirement_id": "IFCE-01",
-            "reference_sources": source_paths,
-            "reference_behavior": f"{row_id} source-backed GUI workflow behavior",
-            "rust_surface": f"buddy-domain::gui::{row_id}",
+            "id":
+            row_id,
+            "requirement_id":
+            "IFCE-01",
+            "reference_sources":
+            source_paths,
+            "reference_behavior":
+            f"{row_id} source-backed GUI workflow behavior",
+            "rust_surface":
+            f"buddy-domain::gui::{row_id}",
             "display_classes": ["240x320", "480x320"],
-            "evidence_class": "source-audit",
-            "proof_scope": "local",
+            "evidence_class":
+            "source-audit",
+            "proof_scope":
+            "local",
             "non_local_evidence": [
                 "physical LCD refresh proof",
                 "touch and encoder timing proof",
             ],
-            "intentional_delta": "none",
+            "intentional_delta":
+            "none",
         }
         maybe_action = SEMANTIC_ACTION_BY_WORKFLOW_ROW.get(row_id)
         if maybe_action is not None:
@@ -170,14 +180,19 @@ class Phase8VerifierTest(unittest.TestCase):
         root: Path,
         maybe_rows: list[dict[str, object]] | None = None,
     ) -> None:
-        rows = maybe_rows or [self.workflow_row(root, row_id) for row_id in REQUIRED_WORKFLOW_ROW_IDS]
+        rows = maybe_rows or [
+            self.workflow_row(root, row_id)
+            for row_id in REQUIRED_WORKFLOW_ROW_IDS
+        ]
         manifest = {
             "schema_version": 1,
             "phase": PHASE,
             "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
             "workflow_contracts": rows,
         }
-        self.write_file(root, "tools/bazel/manifests/phase8_gui_workflows.json", json.dumps(manifest))
+        self.write_file(root,
+                        "tools/bazel/manifests/phase8_gui_workflows.json",
+                        json.dumps(manifest))
 
     def layout_row(self, root: Path, row_id: str) -> dict[str, object]:
         source_paths = [
@@ -195,8 +210,12 @@ class Phase8VerifierTest(unittest.TestCase):
         if row_id == "display-class-selectors":
             display_classes = ["240x320", "480x320", "mock"]
         layout_values: dict[str, object] = {
-            "240x320": {"ScreenSize": "240x320"},
-            "480x320": {"ScreenSize": "480x320"},
+            "240x320": {
+                "ScreenSize": "240x320"
+            },
+            "480x320": {
+                "ScreenSize": "480x320"
+            },
         }
         if row_id == "warning-dialog-layout":
             layout_values = {
@@ -220,20 +239,30 @@ class Phase8VerifierTest(unittest.TestCase):
                 },
             }
         return {
-            "id": row_id,
-            "requirement_id": "IFCE-01",
-            "reference_sources": source_paths,
-            "reference_behavior": f"{row_id} display layout behavior",
-            "rust_surface": f"buddy-domain::gui::{row_id}",
-            "display_classes": display_classes,
-            "layout_values": layout_values,
-            "evidence_class": "source-audit",
-            "proof_scope": "local",
+            "id":
+            row_id,
+            "requirement_id":
+            "IFCE-01",
+            "reference_sources":
+            source_paths,
+            "reference_behavior":
+            f"{row_id} display layout behavior",
+            "rust_surface":
+            f"buddy-domain::gui::{row_id}",
+            "display_classes":
+            display_classes,
+            "layout_values":
+            layout_values,
+            "evidence_class":
+            "source-audit",
+            "proof_scope":
+            "local",
             "non_local_evidence": [
                 "actual LCD rendering",
                 "full translation overflow proof",
             ],
-            "intentional_delta": "none",
+            "intentional_delta":
+            "none",
         }
 
     def write_display_layouts_manifest(
@@ -241,14 +270,18 @@ class Phase8VerifierTest(unittest.TestCase):
         root: Path,
         maybe_rows: list[dict[str, object]] | None = None,
     ) -> None:
-        rows = maybe_rows or [self.layout_row(root, row_id) for row_id in REQUIRED_LAYOUT_ROW_IDS]
+        rows = maybe_rows or [
+            self.layout_row(root, row_id) for row_id in REQUIRED_LAYOUT_ROW_IDS
+        ]
         manifest = {
             "schema_version": 1,
             "phase": PHASE,
             "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
             "layout_contracts": rows,
         }
-        self.write_file(root, "tools/bazel/manifests/phase8_display_layouts.json", json.dumps(manifest))
+        self.write_file(root,
+                        "tools/bazel/manifests/phase8_display_layouts.json",
+                        json.dumps(manifest))
 
     def concern_row(self, root: Path, row_id: str) -> dict[str, object]:
         source_paths = [
@@ -263,9 +296,15 @@ class Phase8VerifierTest(unittest.TestCase):
             "concern-cl-003-generated-gui-resource-drift": "CL-003",
             "concern-cl-019-tracked-font-header-churn": "CL-019",
         }[row_id]
-        required_strings = ["phase7_resources.json", "phase7_generated_outputs.json", "src/gui/res/cc"]
+        required_strings = [
+            "phase7_resources.json", "phase7_generated_outputs.json",
+            "src/gui/res/cc"
+        ]
         if concern_id == "CL-008":
-            required_strings = ["no-op flash action", "event re-enable behavior", "src/gui/screen_home.cpp"]
+            required_strings = [
+                "no-op flash action", "event re-enable behavior",
+                "src/gui/screen_home.cpp"
+            ]
         if concern_id == "CL-011":
             required_strings = [
                 "Crash detected. Save it to USB?",
@@ -277,15 +316,21 @@ class Phase8VerifierTest(unittest.TestCase):
             "concern_id": concern_id,
             "requirement_id": "IFCE-01",
             "reference_sources": source_paths,
-            "disposition": "fix-during-rewrite" if concern_id != "CL-019" else "defer",
-            "phase8_handling": f"{concern_id} handling keeps {' '.join(required_strings)} source-backed",
-            "evidence_class": "source-audit" if concern_id in {"CL-008", "CL-011"} else "manifest-check",
+            "disposition":
+            "fix-during-rewrite" if concern_id != "CL-019" else "defer",
+            "phase8_handling":
+            f"{concern_id} handling keeps {' '.join(required_strings)} source-backed",
+            "evidence_class": "source-audit"
+            if concern_id in {"CL-008", "CL-011"} else "manifest-check",
             "proof_scope": "local",
             "intentional_delta": "none",
             "regression_guard": {
-                "guard_type": "manifest-and-verifier-contract",
-                "required_strings": required_strings,
-                "expected_future_evidence": f"future evidence keeps {' '.join(required_strings)}",
+                "guard_type":
+                "manifest-and-verifier-contract",
+                "required_strings":
+                required_strings,
+                "expected_future_evidence":
+                f"future evidence keeps {' '.join(required_strings)}",
             },
         }
 
@@ -294,14 +339,19 @@ class Phase8VerifierTest(unittest.TestCase):
         root: Path,
         maybe_rows: list[dict[str, object]] | None = None,
     ) -> None:
-        rows = maybe_rows or [self.concern_row(root, row_id) for row_id in REQUIRED_CONCERN_ROW_IDS]
+        rows = maybe_rows or [
+            self.concern_row(root, row_id)
+            for row_id in REQUIRED_CONCERN_ROW_IDS
+        ]
         manifest = {
             "schema_version": 1,
             "phase": PHASE,
             "phase_lifecycle_id": PHASE_LIFECYCLE_ID,
             "concerns": rows,
         }
-        self.write_file(root, "tools/bazel/manifests/phase8_concern_dispositions.json", json.dumps(manifest))
+        self.write_file(
+            root, "tools/bazel/manifests/phase8_concern_dispositions.json",
+            json.dumps(manifest))
 
     def write_rust_api_surface(
         self,
@@ -312,75 +362,64 @@ class Phase8VerifierTest(unittest.TestCase):
         self.write_file(
             root,
             "rust/crates/domain/src/gui.rs",
-            gui_text
-            or "\n".join(
-                [
-                    "pub enum DisplayClass {}",
-                    "pub enum GuiWorkflow {}",
-                    "pub enum GuiSurface {}",
-                    "pub enum GuiEvidenceClass {}",
-                    "pub enum GuiProofScope {}",
-                    "pub struct GuiParityRowId;",
-                    "pub enum LocalizationSurface {}",
-                    "pub enum IntentionalDeltaStatus {}",
-                    "pub enum GuiSemanticAction {}",
-                    "pub struct GuiParityContract;",
-                    'const COMMENT_ONLY: &str = "unsafe { unsafe fn";',
-                    "// unsafe block should be ignored in comments",
-                ]
-            ),
+            gui_text or "\n".join([
+                "pub enum DisplayClass {}",
+                "pub enum GuiWorkflow {}",
+                "pub enum GuiSurface {}",
+                "pub enum GuiEvidenceClass {}",
+                "pub enum GuiProofScope {}",
+                "pub struct GuiParityRowId;",
+                "pub enum LocalizationSurface {}",
+                "pub enum IntentionalDeltaStatus {}",
+                "pub enum GuiSemanticAction {}",
+                "pub struct GuiParityContract;",
+                'const COMMENT_ONLY: &str = "unsafe { unsafe fn";',
+                "// unsafe block should be ignored in comments",
+            ]),
         )
         self.write_file(
             root,
             "rust/crates/domain/src/lib.rs",
-            lib_text
-            or (
-                "#![forbid(unsafe_code)]\n"
-                "pub mod gui;\n"
-                "pub use gui::{DisplayClass, GuiWorkflow, GuiSurface, GuiEvidenceClass, "
-                "GuiProofScope, GuiParityRowId, LocalizationSurface, IntentionalDeltaStatus, "
-                "GuiSemanticAction, GuiParityContract};\n"
-            ),
+            lib_text or
+            ("#![forbid(unsafe_code)]\n"
+             "pub mod gui;\n"
+             "pub use gui::{DisplayClass, GuiWorkflow, GuiSurface, GuiEvidenceClass, "
+             "GuiProofScope, GuiParityRowId, LocalizationSurface, IntentionalDeltaStatus, "
+             "GuiSemanticAction, GuiParityContract};\n"),
         )
 
     def write_facade_files(self, root: Path) -> None:
         self.write_file(
             root,
             "BUILD.bazel",
-            "\n".join(
-                [
-                    'filegroup(name = "phase8_local_interface_docs", srcs = [])',
-                    'alias(name = "phase8_verify", actual = "//tools/bazel:phase8_verify")',
-                    'alias(name = "phase8_verify_tests", actual = "//tools/bazel:phase8_verify_tests")',
-                ]
-            ),
+            "\n".join([
+                'filegroup(name = "phase8_local_interface_docs", srcs = [])',
+                'alias(name = "phase8_verify", actual = "//tools/bazel:phase8_verify")',
+                'alias(name = "phase8_verify_tests", actual = "//tools/bazel:phase8_verify_tests")',
+            ]),
         )
         self.write_file(
             root,
             "tools/bazel/BUILD.bazel",
-            "\n".join(
-                [
-                    'shell_binary(name = "phase8_verify", src = "rust_workflow.sh", data = ["phase8_verify.py", "phase8_gui_workflows.json", "phase8_display_layouts.json", "phase8_concern_dispositions.json", "//:phase8_local_interface_docs", "//:rust_workspace_sources"])',
-                    'shell_binary(name = "phase8_verify_tests", src = "rust_workflow.sh", data = ["phase8_verify.py", "phase8_verify_test.py"])',
-                ]
-            ),
+            "\n".join([
+                'shell_binary(name = "phase8_verify", src = "rust_workflow.sh", data = ["phase8_verify.py", "phase8_gui_workflows.json", "phase8_display_layouts.json", "phase8_concern_dispositions.json", "//:phase8_local_interface_docs", "//:rust_workspace_sources"])',
+                'shell_binary(name = "phase8_verify_tests", src = "rust_workflow.sh", data = ["phase8_verify.py", "phase8_verify_test.py"])',
+            ]),
         )
         self.write_file(
             root,
             "tools/bazel/rust_workflow.sh",
-            "\n".join(
-                [
-                    'case "$command_name" in',
-                    "  phase8_verify)",
-                    "    python3 tools/bazel/phase8_verify.py --all",
-                    "    ;;",
-                    "  phase8_verify_tests)",
-                    "    python3 tools/bazel/phase8_verify_test.py",
-                    "    ;;",
-                    "esac",
-                    "",
-                ]
-            ),
+            "\n".join([
+                'case "$command_name" in',
+                "  phase8_verify)",
+                "    python3 tools/bazel/phase8_verify.py --all",
+                "    ;;",
+                "  phase8_verify_tests)",
+                "    python3 tools/bazel/phase8_verify_test.py",
+                "    ;;",
+                "esac",
+                "",
+            ]),
         )
         self.write_file(
             root,
@@ -388,28 +427,28 @@ class Phase8VerifierTest(unittest.TestCase):
             "phase8-verify:\n    bazel run //tools/bazel:phase8_verify_tests\n    bazel run //tools/bazel:phase8_verify\n",
         )
 
-    def write_validation_contract(self, root: Path, extra_text: str = "") -> None:
+    def write_validation_contract(self,
+                                  root: Path,
+                                  extra_text: str = "") -> None:
         self.write_file(
             root,
             f"{PHASE_DIR}/08-VALIDATION.md",
-            "\n".join(
-                [
-                    "---",
-                    "status: complete",
-                    "nyquist_compliant: true",
-                    "wave_0_complete: true",
-                    f"phase_lifecycle_id: {PHASE_LIFECYCLE_ID}",
-                    "---",
-                    "Quick run command",
-                    "python3 tools/bazel/phase8_verify.py --quick",
-                    "Full suite command",
-                    "just phase8-verify",
-                    "08-W0-01 Plan 01 green",
-                    "08-W0-05 Plan 03 green",
-                    "manual-hardware-required hardware-smoke simulator-flow remain non-local evidence",
-                    extra_text,
-                ]
-            ),
+            "\n".join([
+                "---",
+                "status: complete",
+                "nyquist_compliant: true",
+                "wave_0_complete: true",
+                f"phase_lifecycle_id: {PHASE_LIFECYCLE_ID}",
+                "---",
+                "Quick run command",
+                "python3 tools/bazel/phase8_verify.py --quick",
+                "Full suite command",
+                "just phase8-verify",
+                "08-W0-01 Plan 01 green",
+                "08-W0-05 Plan 03 green",
+                "manual-hardware-required hardware-smoke simulator-flow remain non-local evidence",
+                extra_text,
+            ]),
         )
 
     def write_phase8_quick_surface(self, root: Path) -> None:
@@ -420,12 +459,18 @@ class Phase8VerifierTest(unittest.TestCase):
         self.write_facade_files(root)
         self.write_validation_contract(root)
 
+
+class Phase8VerifierTest(Phase8VerifierFixture, unittest.TestCase):
+
     def test_requires_gui_semantic_action_ids(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             self.write_phase8_quick_surface(root)
-            rows = [self.workflow_row(root, row_id) for row_id in REQUIRED_WORKFLOW_ROW_IDS]
+            rows = [
+                self.workflow_row(root, row_id)
+                for row_id in REQUIRED_WORKFLOW_ROW_IDS
+            ]
             for row in rows:
                 if row["id"] == "print-control-stop-confirmation":
                     row.pop("semantic_action_id")
@@ -439,224 +484,20 @@ class Phase8VerifierTest(unittest.TestCase):
         self.assertIn("print-control-stop-confirmation", result.stdout)
         self.assertIn("stop", result.stdout)
 
-    def test_rejects_semantic_action_on_wrong_workflow(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.write_phase8_quick_surface(root)
-            rows = [self.workflow_row(root, row_id) for row_id in REQUIRED_WORKFLOW_ROW_IDS]
-            for row in rows:
-                if row["id"] == "menu-settings-and-home-entry":
-                    row["semantic_action_id"] = "pause"
-            self.write_gui_workflows_manifest(root, maybe_rows=rows)
-
-            # Act
-            result = self.run_verifier(["--quick"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("menu-settings-and-home-entry", result.stdout)
-        self.assertIn("print-control", result.stdout)
-
-    def test_rejects_legacy_manifest_schema_fields(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.write_phase8_quick_surface(root)
-            rows = [self.workflow_row(root, row_id) for row_id in REQUIRED_WORKFLOW_ROW_IDS]
-            rows[0]["requirement"] = rows[0].pop("requirement_id")
-            rows[0]["source_paths"] = rows[0].pop("reference_sources")
-            self.write_gui_workflows_manifest(root, maybe_rows=rows)
-
-            # Act
-            result = self.run_verifier(["--quick"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("requirement_id", result.stdout)
-        self.assertIn("reference_sources", result.stdout)
-
-    def test_rejects_absolute_reference_source_paths(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.write_phase8_quick_surface(root)
-            rows = [self.workflow_row(root, row_id) for row_id in REQUIRED_WORKFLOW_ROW_IDS]
-            absolute_source = (root / "src/gui/guimain.cpp").as_posix()
-            rows[0]["reference_sources"] = [absolute_source]
-            self.write_gui_workflows_manifest(root, maybe_rows=rows)
-
-            # Act
-            result = self.run_verifier(["--quick"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("reference source must be repo-relative", result.stdout)
-        self.assertIn(absolute_source, result.stdout)
-
-    def test_rejects_parent_traversal_reference_source_paths(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.write_phase8_quick_surface(root)
-            rows = [self.workflow_row(root, row_id) for row_id in REQUIRED_WORKFLOW_ROW_IDS]
-            traversal_source = "src/gui/../gui/guimain.cpp"
-            rows[0]["reference_sources"] = [traversal_source]
-            self.write_gui_workflows_manifest(root, maybe_rows=rows)
-
-            # Act
-            result = self.run_verifier(["--quick"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("reference source must be repo-relative", result.stdout)
-        self.assertIn(traversal_source, result.stdout)
-
-    def test_rejects_display_layout_without_both_display_classes(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.write_phase8_quick_surface(root)
-            rows = [self.layout_row(root, row_id) for row_id in REQUIRED_LAYOUT_ROW_IDS]
-            for row in rows:
-                if row["id"] == "menu-layout-display-differences":
-                    row["display_classes"] = ["240x320"]
-            self.write_display_layouts_manifest(root, maybe_rows=rows)
-
-            # Act
-            result = self.run_verifier(["--quick"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("menu-layout-display-differences", result.stdout)
-        self.assertIn("480x320", result.stdout)
-
-    def test_rejects_stale_warning_dialog_description_rect(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.write_phase8_quick_surface(root)
-            rows = [self.layout_row(root, row_id) for row_id in REQUIRED_LAYOUT_ROW_IDS]
-            for row in rows:
-                if row["id"] == "warning-dialog-layout":
-                    row["layout_values"] = {
-                        "240x320": {
-                            "WarningDlgDescriptionRect": {
-                                "x": 6,
-                                "y": 112,
-                                "width": 228,
-                                "height": 268,
-                            },
-                        },
-                        "480x320": {
-                            "WarningDlgDescriptionRect": {
-                                "x": 26,
-                                "y": 182,
-                                "width": 428,
-                                "height": 256,
-                            },
-                        },
-                    }
-            self.write_display_layouts_manifest(root, maybe_rows=rows)
-
-            # Act
-            result = self.run_verifier(["--quick"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("warning-dialog-layout", result.stdout)
-        self.assertIn("WarningDlgTextRect", result.stdout)
-
-    def test_requires_cl008_and_crash_dump_concerns(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.write_phase8_quick_surface(root)
-            rows = [
-                self.concern_row(root, row_id)
-                for row_id in REQUIRED_CONCERN_ROW_IDS
-                if row_id != "concern-cl-008-home-screen-flash-start"
-            ]
-            for row in rows:
-                if row["id"] == "concern-cl-011-crash-dump-warning-surface":
-                    row["regression_guard"] = {
-                        "guard_type": "sensitive-diagnostics-boundary",
-                        "required_strings": ["Crash detected. Save it to USB?"],
-                    }
-            self.write_concern_manifest(root, maybe_rows=rows)
-
-            # Act
-            result = self.run_verifier(["--quick"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("CL-008", result.stdout)
-        self.assertIn("no raw crash dump memory contents", result.stdout)
-
-    def test_rejects_secret_or_crash_dump_byte_markers(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.write_phase8_quick_surface(root)
-            self.write_validation_contract(root, extra_text=" ".join(FORBIDDEN_MARKERS))
-
-            # Act
-            result = self.run_verifier(["--quick"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("password_value", result.stdout)
-        self.assertIn("BEGIN PRIVATE KEY", result.stdout)
-
-    def test_requires_gui_rust_api_surface(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.write_phase8_quick_surface(root)
-            self.write_rust_api_surface(
-                root,
-                gui_text="pub enum GuiWorkflow {}\n",
-                lib_text="#![forbid(unsafe_code)]\npub mod gui;\npub use gui::GuiWorkflow;\n",
-            )
-
-            # Act
-            result = self.run_verifier(["--quick"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        for needle in [
-            "DisplayClass",
-            "GuiParityRowId",
-            "GuiEvidenceClass",
-            "GuiParityContract",
-            "GuiSemanticAction",
-        ]:
-            self.assertIn(needle, result.stdout)
-
-    def test_rejects_phase8_overclaims(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.write_phase8_quick_surface(root)
-            self.write_validation_contract(root, extra_text=" ".join(OVERCLAIM_STRINGS))
-
-            # Act
-            result = self.run_verifier(["--quick"], maybe_root=root)
-
-        # Assert
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("hardware display verified locally", result.stdout)
-        self.assertIn("cutover evidence complete", result.stdout)
-
     def test_requires_bazel_and_just_wiring(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
             self.write_phase8_quick_surface(root)
-            self.write_file(root, "BUILD.bazel", 'alias(name = "phase8_verify")\n')
-            self.write_file(root, "tools/bazel/BUILD.bazel", 'shell_binary(name = "phase8_verify")\n')
-            self.write_file(root, "tools/bazel/rust_workflow.sh", 'case "$command_name" in esac\n')
-            self.write_file(root, "justfile", "phase8-verify:\n    bazel run //tools/bazel:phase8_verify\n")
+            self.write_file(root, "BUILD.bazel",
+                            'alias(name = "phase8_verify")\n')
+            self.write_file(root, "tools/bazel/BUILD.bazel",
+                            'shell_binary(name = "phase8_verify")\n')
+            self.write_file(root, "tools/bazel/rust_workflow.sh",
+                            'case "$command_name" in esac\n')
+            self.write_file(
+                root, "justfile",
+                "phase8-verify:\n    bazel run //tools/bazel:phase8_verify\n")
 
             # Act
             result = self.run_verifier(["--quick"], maybe_root=root)
@@ -666,7 +507,8 @@ class Phase8VerifierTest(unittest.TestCase):
         self.assertIn("phase8_verify_tests", result.stdout)
         self.assertIn("rust_workflow.sh", result.stdout)
 
-    def test_rejects_justfile_without_standalone_phase8_verify_command(self) -> None:
+    def test_rejects_justfile_without_standalone_phase8_verify_command(
+            self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
@@ -682,8 +524,18 @@ class Phase8VerifierTest(unittest.TestCase):
 
         # Assert
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("justfile must run phase8_verify_tests before phase8_verify", result.stdout)
+        self.assertIn(
+            "justfile must run phase8_verify_tests before phase8_verify",
+            result.stdout)
 
 
 if __name__ == "__main__":
-    unittest.main()
+    import phase8_verify_failure_test
+
+    loader = unittest.TestLoader()
+    suite = loader.loadTestsFromTestCase(Phase8VerifierTest)
+    suite.addTests(
+        loader.loadTestsFromTestCase(
+            phase8_verify_failure_test.Phase8VerifierFailureTest))
+    result = unittest.TextTestRunner().run(suite)
+    sys.exit(not result.wasSuccessful())
