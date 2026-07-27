@@ -3,15 +3,15 @@ gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
 status: executing
-stopped_at: Completed 40-02-PLAN.md
-last_updated: "2026-07-27T18:41:39.194Z"
+stopped_at: Completed 40-03-PLAN.md
+last_updated: "2026-07-27T19:05:49.302Z"
 last_activity: "2026-07-27"
 progress:
   total_phases: 10
   completed_phases: 8
   total_plans: 29
-  completed_plans: 16
-  percent: 55
+  completed_plans: 17
+  percent: 59
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-07-27)
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
 Phase: 40 (File Length Refactoring) — EXECUTING
-Plan: 3 of 15
+Plan: 4 of 15
 Status: Ready to execute
 Last activity: 2026-07-27
 
@@ -78,6 +78,7 @@ Progress: [########--] 80% (8/10 v1.3 phases complete; Phases 39 and 40 pending 
 | Phase 38 P03 | 19min | 2 tasks | 7 files |
 | Phase 40 P01 | 11m | 2 tasks | 7 files |
 | Phase 40 P02 | 13m | 2 tasks | 18 files |
+| Phase 40 P03 | 20m | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -124,6 +125,9 @@ Recent decisions affecting current work:
 - [Phase 40]: Network and auxiliary preserve their public module paths through explicit facades over private concept modules.
 - [Phase 40]: Feature and GUI retain cohesive production modules and move only cfg(test) suites into private children.
 - [Phase 40]: Historical API verifiers follow declared private Rust children instead of requiring dead facade shims.
+- [Phase 40]: Build configuration, preset generation, and artifact publication live behind a stable utils/build.py CLI and import facade.
+- [Phase 40]: Phase-stepping numerical transforms remain pure; direct Serial and Plotly imports are confined to adapters while phase_stepping.py preserves every original public definition.
+- [Phase 40]: Temporary utility exceptions are retired only after byte-for-byte CLI/generated-output comparisons and an executed representative build.
 
 ### Pending Todos
 
@@ -140,6 +144,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-27T18:41:39.191Z
-Stopped at: Completed 40-02-PLAN.md
+Last session: 2026-07-27T19:05:49.299Z
+Stopped at: Completed 40-03-PLAN.md
 Resume file: None

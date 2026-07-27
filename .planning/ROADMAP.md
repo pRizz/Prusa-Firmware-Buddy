@@ -221,7 +221,7 @@ Plans:
 Plans:
 - [x] 40-01-PLAN.md — Seed the exact 933-row ledger and Wave 0 policy/verification gate.
 - [x] 40-02-PLAN.md — Refactor the four Rust domain modules behind stable façades.
-- [ ] 40-03-PLAN.md — Refactor build and phase-stepping developer utilities.
+- [x] 40-03-PLAN.md — Refactor build and phase-stepping developer utilities.
 - [ ] 40-04-PLAN.md — Refactor Phase 5-11 Python verifiers and tests.
 - [ ] 40-05-PLAN.md — Refactor Phase 13-17 evidence producers and tests.
 - [ ] 40-06-PLAN.md — Refactor Phase 18-28 cutover, release, decision, and readiness tools.
@@ -284,4 +284,4 @@ Phases 31 through 38 execute in numeric order after Phase 30. Phase 39 remains t
 | 37. Reconcile Decisions Into Readiness | v1.3 | 2/2 | Complete    | 2026-07-26 |
 | 38. Fail-Closed Cutover Workflow | v1.3 | 3/3 | Complete    | 2026-07-27 |
 | 39. Milestone Metadata Reconciliation | v1.3 | 0/TBD | Pending | — |
-| 40. File Length Refactoring | v1.3 | 2/15 | In Progress|  |
+| 40. File Length Refactoring | v1.3 | 3/15 | In Progress|  |
