@@ -3,15 +3,15 @@ gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
 status: executing
-stopped_at: Completed 40-07-PLAN.md
-last_updated: "2026-07-27T21:22:20.643Z"
+stopped_at: Completed 40-08-PLAN.md
+last_updated: "2026-07-27T21:52:38.534Z"
 last_activity: "2026-07-27"
 progress:
   total_phases: 10
   completed_phases: 8
   total_plans: 29
-  completed_plans: 21
-  percent: 72
+  completed_plans: 22
+  percent: 76
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-07-27)
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
 Phase: 40 (File Length Refactoring) — EXECUTING
-Plan: 8 of 15
+Plan: 9 of 15
 Status: Ready to execute
 Last activity: 2026-07-27
 
@@ -83,6 +83,7 @@ Progress: [########--] 80% (8/10 v1.3 phases complete; Phases 39 and 40 pending 
 | Phase 40 P05 | 27m | 2 tasks | 22 files |
 | Phase 40 P06 | 40m | 3 tasks | 60 files |
 | Phase 40-file-length-refactoring P07 | 40m | 3 tasks | 64 files |
+| Phase 40-file-length-refactoring P08 | 27m | 3 tasks | 22 files |
 
 ## Accumulated Context
 
@@ -144,6 +145,9 @@ Recent decisions affecting current work:
 - [Phase 40-file-length-refactoring]: Phase 31-38 public scripts and Bazel labels remain stable facades over phase-local helpers.
 - [Phase 40-file-length-refactoring]: Phase 34 readiness, Phase 35 cutover, and reference demotion remain independent fail-closed authorities.
 - [Phase 40-file-length-refactoring]: Phase 38 extracts only pure final-status policy while marker, guard, and producer sequencing remain in the coordinator.
+- [Phase 40-file-length-refactoring]: Each extracted firmware characterization source remains in its original Catch executable so target names and host-test routing stay stable.
+- [Phase 40-file-length-refactoring]: Complete sorted Catch --list-tests output proves discovered case names, tags, and multiplicity remain exact across translation-unit splits.
+- [Phase 40-file-length-refactoring]: HTTP digest error coverage explicitly resets its mocked clock to the asserted zero-time precondition, eliminating test-order leakage.
 
 ### Pending Todos
 
@@ -160,6 +164,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-27T21:22:20.641Z
-Stopped at: Completed 40-07-PLAN.md
+Last session: 2026-07-27T21:52:38.530Z
+Stopped at: Completed 40-08-PLAN.md
 Resume file: None
