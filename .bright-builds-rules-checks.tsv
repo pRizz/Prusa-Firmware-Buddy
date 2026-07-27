@@ -833,7 +833,6 @@ file-lengths	src/guiapi/src/ili9488.cpp	temporary: campaign=hardware-auxiliary; 
 file-lengths	src/guiapi/src/st7789v.cpp	temporary: campaign=hardware-auxiliary; remove when file is below 629 lines and campaign gates pass
 file-lengths	src/marlin_stubs/G425.cpp	temporary: campaign=print-safety; remove when file is below 629 lines and campaign gates pass
 file-lengths	src/marlin_stubs/pause/pause.cpp	temporary: campaign=print-safety; remove when file is below 629 lines and campaign gates pass
-file-lengths	src/persistent_stores/store_instances/config_store/store_definition.cpp	temporary: campaign=persistent-storage; remove when file is below 629 lines and campaign gates pass
 file-lengths	src/persistent_stores/store_instances/config_store/store_definition.hpp	permanent: declarative registry; deletion-test=removing any item breaks the single persisted-layout definition authority
 file-lengths	src/puppies/Dwarf.cpp	temporary: campaign=hardware-auxiliary; remove when file is below 629 lines and campaign gates pass
 file-lengths	src/puppy/shared/modbus/ModbusProtocol.cpp	temporary: campaign=hardware-auxiliary; remove when file is below 629 lines and campaign gates pass

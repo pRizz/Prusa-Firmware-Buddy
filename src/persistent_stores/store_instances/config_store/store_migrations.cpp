@@ -1,0 +1,524 @@
+#include "store_definition.hpp"
+#include <Marlin/src/inc/MarlinConfigPre.h>
+#include <module/prusa/dock_position.hpp>
+#include <module/prusa/tool_offset.hpp>
+#include <option/has_adc_side_fsensor.h>
+#include <option/has_mmu2.h>
+#include <option/has_toolchanger.h>
+#include <option/has_config_store_wo_backend.h>
+#include <option/has_touch.h>
+#include <option/has_chamber_filtration_api.h>
+#include <common/sys.hpp>
+
+#include <option/has_auto_retract.h>
+#if HAS_AUTO_RETRACT()
+    #include <feature/auto_retract/auto_retract.hpp>
+#endif
+
+namespace config_store_ns {
+namespace {
+    template <size_t new_version>
+    bool should_migrate() {
+        static_assert(CurrentStore::newest_config_version >= new_version);
+        return config_store().config_version.get() < new_version;
+    }
+} // namespace
+
+void CurrentStore::perform_config_migrations() {
+    // See the comment on the bottom of this function
+
+#if PRINTER_IS_PRUSA_MK4()
+    if (should_migrate<1>()) {
+        // We've introduced nozzle_is_high_flow in 6.2.0
+        // If the user upgrades from previous FW versions, we need to guess the HF nozleness based on whether he has MK4S or not
+        // MK4S+MMU is shipped and recommended without the HF nozzle, so exclude those
+
+        const auto model = PrinterModelInfo::current().model;
+        if ((model == PrinterModel::mk4s || model == PrinterModel::mk3_9s) && !is_mmu_rework.get()) {
+            // Bitset -> first and only nozzle
+            nozzle_is_high_flow.set(1 << 0);
+        }
+    }
+#endif
+
+#if HAS_SELFTEST() && (PRINTER_IS_PRUSA_MK4() || PRINTER_IS_PRUSA_COREONE())
+    if (should_migrate<2>()) {
+        // We've introduced a gearbox alignment for XL, this means that gear alignment test must exist for every toolhead available
+        // This created a need for gear test refactoring
+        // [[ BFW-5785 ]]
+
+        SelftestTool st = get_selftest_result_tool(0);
+        st.gears = selftest_result.get().deprecated_gears;
+        set_selftest_result_tool(0, st);
+    }
+#endif
+#if HAS_SELFTEST()
+    if (should_migrate<3>()) {
+        // BFW-7867
+        // Do not show pritner setup screen if the user has run any selftests
+        // This is for backwards compatibility - we don't want to show the screen after the firmware update introducing it for already configured printers
+        if (selftest_result.get() != selftest_result.default_val) {
+            printer_hw_config_done.set(true);
+            printer_network_setup_done.set(true);
+        }
+    }
+#endif
+    if (should_migrate<4>()) {
+        // Don't show "Happy Printing" screen when upgrading firmware
+        happy_printing_seen.set(true);
+    }
+#if PRINTER_IS_PRUSA_COREONE()
+    if (should_migrate<5>()) {
+        // Printers that are upgraded are most likely CoreOne without vent grille lever
+        // Those have to keep the manual open/close mechanism.
+        // On new CoreOne+ printers, this will be checked in HW config
+        auto_chamber_vent_enabled.set(false);
+    }
+#endif
+
+    // To add a migration:
+    // - increment newest_config_version
+    // - add if(should_migrate<X>) { your migration code } at the END of this function
+    //    - the migrations have to be in an increasing order
+    //    - the X shall be the new incremented newest_config_version value
+    // - keep this comment on the BOTTOM of this function, so that it's visible when reviewing every new migration
+    //
+    // Don't confuse this with the config_store migrations.
+    // - config_store migrations are migrations on store item level (when the item structure changes and so on). They do not have access to the whole config_store/printer state.
+    // - migrations here are for the higher abstraction level
+}
+
+footer::Item CurrentStore::get_footer_setting([[maybe_unused]] uint8_t index) {
+    switch (index) {
+    case 0:
+        return footer_setting_0.get();
+#if FOOTER_ITEMS_PER_LINE__ > 1
+    case 1:
+        return footer_setting_1.get();
+#endif
+#if FOOTER_ITEMS_PER_LINE__ > 2
+    case 2:
+        return footer_setting_2.get();
+#endif
+#if FOOTER_ITEMS_PER_LINE__ > 3
+    case 3:
+        return footer_setting_3.get();
+#endif
+#if FOOTER_ITEMS_PER_LINE__ > 4
+    case 4:
+        return footer_setting_4.get();
+#endif
+    default:
+        assert(false && "invalid index");
+        return footer::Item::none;
+    }
+}
+
+void CurrentStore::set_footer_setting(uint8_t index, footer::Item value) {
+    switch (index) {
+    case 0:
+        footer_setting_0.set(value);
+        break;
+#if FOOTER_ITEMS_PER_LINE__ > 1
+    case 1:
+        footer_setting_1.set(value);
+        break;
+#endif
+#if FOOTER_ITEMS_PER_LINE__ > 2
+    case 2:
+        footer_setting_2.set(value);
+        break;
+#endif
+#if FOOTER_ITEMS_PER_LINE__ > 3
+    case 3:
+        footer_setting_3.set(value);
+        break;
+#endif
+#if FOOTER_ITEMS_PER_LINE__ > 4
+    case 4:
+        footer_setting_4.set(value);
+        break;
+#endif
+    default:
+        assert(false && "invalid index");
+        return;
+    }
+}
+
+int32_t CurrentStore::get_extruder_fs_ref_nins_value([[maybe_unused]] uint8_t index) {
+#if HOTENDS <= 1
+    assert(index == 0);
+    return extruder_fs_ref_nins_value_0.get();
+#else
+    switch (index) {
+    case 0:
+        return extruder_fs_ref_nins_value_0.get();
+    case 1:
+        return extruder_fs_ref_nins_value_1.get();
+    case 2:
+        return extruder_fs_ref_nins_value_2.get();
+    case 3:
+        return extruder_fs_ref_nins_value_3.get();
+    case 4:
+        return extruder_fs_ref_nins_value_4.get();
+    case 5:
+        return extruder_fs_ref_nins_value_5.get();
+    default:
+        assert(false && "invalid index");
+        return 0;
+    }
+#endif
+}
+
+void CurrentStore::set_extruder_fs_ref_nins_value([[maybe_unused]] uint8_t index, int32_t value) {
+#if HOTENDS <= 1
+    assert(index == 0);
+    extruder_fs_ref_nins_value_0.set(value);
+#else
+    switch (index) {
+    case 0:
+        extruder_fs_ref_nins_value_0.set(value);
+        break;
+    case 1:
+        extruder_fs_ref_nins_value_1.set(value);
+        break;
+    case 2:
+        extruder_fs_ref_nins_value_2.set(value);
+        break;
+    case 3:
+        extruder_fs_ref_nins_value_3.set(value);
+        break;
+    case 4:
+        extruder_fs_ref_nins_value_4.set(value);
+        break;
+    case 5:
+        extruder_fs_ref_nins_value_5.set(value);
+        break;
+    default:
+        assert(false && "invalid index");
+        return;
+    }
+#endif
+}
+
+int32_t CurrentStore::get_extruder_fs_ref_ins_value([[maybe_unused]] uint8_t index) {
+#if HOTENDS <= 1
+    assert(index == 0);
+    return extruder_fs_ref_ins_value_0.get();
+#else
+    switch (index) {
+    case 0:
+        return extruder_fs_ref_ins_value_0.get();
+    case 1:
+        return extruder_fs_ref_ins_value_1.get();
+    case 2:
+        return extruder_fs_ref_ins_value_2.get();
+    case 3:
+        return extruder_fs_ref_ins_value_3.get();
+    case 4:
+        return extruder_fs_ref_ins_value_4.get();
+    case 5:
+        return extruder_fs_ref_ins_value_5.get();
+    default:
+        assert(false && "invalid index");
+        return 0;
+    }
+#endif
+}
+
+void CurrentStore::set_extruder_fs_ref_ins_value([[maybe_unused]] uint8_t index, int32_t value) {
+#if HOTENDS <= 1
+    assert(index == 0);
+    extruder_fs_ref_ins_value_0.set(value);
+#else
+    switch (index) {
+    case 0:
+        extruder_fs_ref_ins_value_0.set(value);
+        break;
+    case 1:
+        extruder_fs_ref_ins_value_1.set(value);
+        break;
+    case 2:
+        extruder_fs_ref_ins_value_2.set(value);
+        break;
+    case 3:
+        extruder_fs_ref_ins_value_3.set(value);
+        break;
+    case 4:
+        extruder_fs_ref_ins_value_4.set(value);
+        break;
+    case 5:
+        extruder_fs_ref_ins_value_5.set(value);
+        break;
+    default:
+        assert(false && "invalid index");
+        return;
+    }
+#endif
+}
+
+#if HAS_ADC_SIDE_FSENSOR()
+int32_t CurrentStore::get_side_fs_ref_nins_value(uint8_t index) {
+    switch (index) {
+    case 0:
+        return side_fs_ref_nins_value_0.get();
+    case 1:
+        return side_fs_ref_nins_value_1.get();
+    case 2:
+        return side_fs_ref_nins_value_2.get();
+    case 3:
+        return side_fs_ref_nins_value_3.get();
+    case 4:
+        return side_fs_ref_nins_value_4.get();
+    case 5:
+        return side_fs_ref_nins_value_5.get();
+    default:
+        assert(false && "invalid index");
+        return 0;
+    }
+}
+
+void CurrentStore::set_side_fs_ref_nins_value(uint8_t index, int32_t value) {
+    switch (index) {
+    case 0:
+        side_fs_ref_nins_value_0.set(value);
+        break;
+    case 1:
+        side_fs_ref_nins_value_1.set(value);
+        break;
+    case 2:
+        side_fs_ref_nins_value_2.set(value);
+        break;
+    case 3:
+        side_fs_ref_nins_value_3.set(value);
+        break;
+    case 4:
+        side_fs_ref_nins_value_4.set(value);
+        break;
+    case 5:
+        side_fs_ref_nins_value_5.set(value);
+        break;
+    default:
+        assert(false && "invalid index");
+        return;
+    }
+}
+
+int32_t CurrentStore::get_side_fs_ref_ins_value(uint8_t index) {
+    switch (index) {
+    case 0:
+        return side_fs_ref_ins_value_0.get();
+    case 1:
+        return side_fs_ref_ins_value_1.get();
+    case 2:
+        return side_fs_ref_ins_value_2.get();
+    case 3:
+        return side_fs_ref_ins_value_3.get();
+    case 4:
+        return side_fs_ref_ins_value_4.get();
+    case 5:
+        return side_fs_ref_ins_value_5.get();
+    default:
+        assert(false && "invalid index");
+        return 0;
+    }
+}
+
+void CurrentStore::set_side_fs_ref_ins_value(uint8_t index, int32_t value) {
+    switch (index) {
+    case 0:
+        side_fs_ref_ins_value_0.set(value);
+        break;
+    case 1:
+        side_fs_ref_ins_value_1.set(value);
+        break;
+    case 2:
+        side_fs_ref_ins_value_2.set(value);
+        break;
+    case 3:
+        side_fs_ref_ins_value_3.set(value);
+        break;
+    case 4:
+        side_fs_ref_ins_value_4.set(value);
+        break;
+    case 5:
+        side_fs_ref_ins_value_5.set(value);
+        break;
+    default:
+        assert(false && "invalid index");
+        return;
+    }
+}
+#endif
+
+#if HAS_TOOLCHANGER()
+DockPosition CurrentStore::get_dock_position(uint8_t index) {
+    switch (index) {
+    case 0:
+        return dock_position_0.get();
+    case 1:
+        return dock_position_1.get();
+    case 2:
+        return dock_position_2.get();
+    case 3:
+        return dock_position_3.get();
+    case 4:
+        return dock_position_4.get();
+    case 5:
+        return dock_position_5.get();
+    default:
+        assert(false && "invalid index");
+        return {};
+    }
+}
+
+void CurrentStore::set_dock_position(uint8_t index, DockPosition value) {
+    switch (index) {
+    case 0:
+        dock_position_0.set(value);
+        break;
+    case 1:
+        dock_position_1.set(value);
+        break;
+    case 2:
+        dock_position_2.set(value);
+        break;
+    case 3:
+        dock_position_3.set(value);
+        break;
+    case 4:
+        dock_position_4.set(value);
+        break;
+    case 5:
+        dock_position_5.set(value);
+        break;
+    default:
+        assert(false && "invalid index");
+        return;
+    }
+}
+
+ToolOffset CurrentStore::get_tool_offset(uint8_t index) {
+    switch (index) {
+    case 0:
+        return tool_offset_0.get();
+    case 1:
+        return tool_offset_1.get();
+    case 2:
+        return tool_offset_2.get();
+    case 3:
+        return tool_offset_3.get();
+    case 4:
+        return tool_offset_4.get();
+    case 5:
+        return tool_offset_5.get();
+    default:
+        assert(false && "invalid index");
+        return {};
+    }
+}
+
+void CurrentStore::set_tool_offset(uint8_t index, ToolOffset value) {
+    switch (index) {
+    case 0:
+        tool_offset_0.set(value);
+        break;
+    case 1:
+        tool_offset_1.set(value);
+        break;
+    case 2:
+        tool_offset_2.set(value);
+        break;
+    case 3:
+        tool_offset_3.set(value);
+        break;
+    case 4:
+        tool_offset_4.set(value);
+        break;
+    case 5:
+        tool_offset_5.set(value);
+        break;
+    default:
+        assert(false && "invalid index");
+        return;
+    }
+}
+#endif
+
+FilamentType CurrentStore::get_filament_type([[maybe_unused]] uint8_t index) {
+    return loaded_filament_type.get(index);
+}
+
+void CurrentStore::set_filament_type(uint8_t index, FilamentType value) {
+    if (value == PendingAdHocFilamentType {}) {
+        value = AdHocFilamentType { .tool = index };
+        value.set_parameters(pending_adhoc_filament_parameters);
+    }
+
+#if HAS_AUTO_RETRACT()
+    if (value == FilamentType::none) {
+        // On filament removal, it invalidates retracted distance
+        buddy::auto_retract().set_retracted_distance(HAS_TOOLCHANGER() ? index : 0, std::nullopt);
+    }
+#endif
+
+    loaded_filament_type.set(index, value);
+}
+
+float CurrentStore::get_nozzle_diameter([[maybe_unused]] uint8_t index) {
+#if HOTENDS <= 1
+    assert(index == 0);
+    return nozzle_diameter_0.get();
+#else
+    switch (index) {
+    case 0:
+        return nozzle_diameter_0.get();
+    case 1:
+        return nozzle_diameter_1.get();
+    case 2:
+        return nozzle_diameter_2.get();
+    case 3:
+        return nozzle_diameter_3.get();
+    case 4:
+        return nozzle_diameter_4.get();
+    case 5:
+        return nozzle_diameter_5.get();
+    default:
+        assert(false && "invalid index");
+        return {};
+    }
+#endif
+}
+
+void CurrentStore::set_nozzle_diameter([[maybe_unused]] uint8_t index, float value) {
+#if HOTENDS <= 1
+    assert(index == 0);
+    nozzle_diameter_0.set(value);
+#else
+    switch (index) {
+    case 0:
+        nozzle_diameter_0.set(value);
+        break;
+    case 1:
+        nozzle_diameter_1.set(value);
+        break;
+    case 2:
+        nozzle_diameter_2.set(value);
+        break;
+    case 3:
+        nozzle_diameter_3.set(value);
+        break;
+    case 4:
+        nozzle_diameter_4.set(value);
+        break;
+    case 5:
+        nozzle_diameter_5.set(value);
+        break;
+    default:
+        assert(false && "invalid index");
+        return;
+    }
+#endif
+}
+
+} // namespace config_store_ns
