@@ -265,6 +265,7 @@ case "$command_name" in
     python3 tools/bazel/phase34_decision_reconciliation_integration_test.py
     python3 tools/bazel/phase35_cutover_decision_artifact_test.py
     python3 tools/bazel/phase38_cutover_workflow_test.py
+    python3 tools/bazel/phase38_cutover_workflow_failure_test.py
     python3 tools/bazel/phase38_cutover_workflow_integration_test.py
     ;;
   *)

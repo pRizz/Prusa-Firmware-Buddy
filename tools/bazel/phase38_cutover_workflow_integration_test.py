@@ -27,8 +27,14 @@ RUNTIME_FILES = [
     "tools/bazel/phase23_simulator_evidence_execution.py",
     "tools/bazel/phase24_hardware_media_safety_evidence_execution.py",
     "tools/bazel/phase25_live_service_evidence_execution.py",
+    "tools/bazel/phase35_authority_guard.py",
+    "tools/bazel/phase35_bundle_wiring.py",
+    "tools/bazel/phase35_contract_security.py",
     "tools/bazel/phase35_cutover_decision_artifact.py",
+    "tools/bazel/phase35_cutover_policy.py",
+    "tools/bazel/phase35_source_bundle.py",
     "tools/bazel/phase38_cutover_workflow.py",
+    "tools/bazel/phase38_workflow_policy.py",
     "tools/bazel/manifests/phase35_cutover_decision_artifact_contract.json",
 ]
 DEFAULT_PRODUCER_COMMANDS = [

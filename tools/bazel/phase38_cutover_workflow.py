@@ -14,6 +14,7 @@ from typing import Any
 
 import phase34_final_readiness_demotion_dry_run as phase34
 import phase35_cutover_decision_artifact as phase35
+import phase38_workflow_policy as workflow_policy
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -284,28 +285,15 @@ def clear_workflow_attempt_marker(root: Path, attempt_id: str) -> None:
 
 
 def _safe_reason(reason_category: str, fallback: str) -> str:
-    return (
-        reason_category
-        if reason_category in SAFE_REASON_CATEGORIES
-        else fallback
+    return workflow_policy.safe_reason(
+        reason_category,
+        SAFE_REASON_CATEGORIES,
+        fallback,
     )
 
 
 def _authority_is_consistent(authority: FinalAuthority) -> bool:
-    if not authority.available:
-        return False
-    if authority.verdict == "approved":
-        return (
-            authority.route == "production-cutover-planning"
-            and authority.readiness_state == "unblocked"
-            and not authority.requires_fresh_cutover_decision
-        )
-    if authority.verdict in {"blocked", "approved-with-exceptions"}:
-        return (
-            authority.route == "targeted-blocker-repair"
-            and authority.requires_fresh_cutover_decision
-        )
-    return False
+    return workflow_policy.authority_is_consistent(authority)
 
 
 def evaluate_final_status(
@@ -313,69 +301,12 @@ def evaluate_final_status(
     phase35_outcome: CommandOutcome,
     authority: FinalAuthority,
 ) -> WorkflowResult:
-    authority_consistent = _authority_is_consistent(authority)
-    operations_succeeded = (
-        phase34_outcome.status == 0
-        and phase35_outcome.status == 0
-    )
-    production_cutover_planning = (
-        operations_succeeded
-        and authority_consistent
-        and authority.verdict == "approved"
-        and authority.route == "production-cutover-planning"
-    )
-    reference_demotion_authorized = (
-        operations_succeeded
-        and authority_consistent
-        and authority.readiness_state == "unblocked"
-        and authority.demotion_validation_state == "valid"
-        and authority.demotion_decision_state == "approve"
-        and authority.demotion_gate_state == "open"
-    )
-
-    if phase34_outcome.status != 0:
-        status = phase34_outcome.status
-        reason_category = _safe_reason(
-            phase34_outcome.reason_category,
-            "phase34-operation-failed",
-        )
-    elif phase35_outcome.status != 0:
-        status = phase35_outcome.status
-        reason_category = _safe_reason(
-            phase35_outcome.reason_category,
-            "phase35-operation-failed",
-        )
-    elif not authority.available:
-        status = 1
-        reason_category = _safe_reason(
-            authority.reason_category,
-            "phase35-authority-invalid",
-        )
-    elif not authority_consistent:
-        status = 1
-        reason_category = "phase35-authority-contradictory"
-    else:
-        status = 0
-        reason_category = "none"
-
-    return WorkflowResult(
-        status=status,
-        reason_category=reason_category,
-        phase34_status=phase34_outcome.status,
-        phase35_status=phase35_outcome.status,
-        final_authority_available=(
-            operations_succeeded
-            and authority.available
-            and authority_consistent
-        ),
-        verdict=authority.verdict,
-        route=authority.route,
-        readiness_state=authority.readiness_state,
-        production_cutover_planning=production_cutover_planning,
-        reference_demotion_authorized=reference_demotion_authorized,
-        requires_fresh_cutover_decision=(
-            authority.requires_fresh_cutover_decision
-        ),
+    return workflow_policy.evaluate_final_status(
+        phase34_outcome,
+        phase35_outcome,
+        authority,
+        result_factory=WorkflowResult,
+        safe_reason_categories=SAFE_REASON_CATEGORIES,
     )
 
 
