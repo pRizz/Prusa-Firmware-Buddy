@@ -953,12 +953,31 @@ filegroup(
     ],
 )
 
+filegroup(
+    name = "phase31_runtime_modules",
+    srcs = [
+        "phase31_intake_policy.py",
+        "phase31_intake_receipts.py",
+        "phase31_intake_wiring.py",
+    ],
+)
+
+filegroup(
+    name = "phase31_test_modules",
+    srcs = [
+        "phase31_final_evidence_intake_failure_test.py",
+        "phase31_intake_test_support.py",
+        ":phase31_runtime_modules",
+    ],
+)
+
 shell_binary(
     name = "phase31_verify",
     src = "rust_workflow.sh",
     data = [
         "phase31_final_evidence_intake.py",
         "manifests/phase31_final_evidence_intake_contract.json",
+        ":phase31_runtime_modules",
         ":phase31_source_ref_manifests",
         "//:phase31_final_evidence_intake_docs",
     ],
@@ -971,6 +990,7 @@ shell_binary(
         "phase31_final_evidence_intake.py",
         "phase31_final_evidence_intake_test.py",
         "manifests/phase31_final_evidence_intake_contract.json",
+        ":phase31_test_modules",
         ":phase31_source_ref_manifests",
     ],
 )
@@ -989,6 +1009,28 @@ filegroup(
     ],
 )
 
+filegroup(
+    name = "phase32_runtime_modules",
+    srcs = [
+        "phase32_phase27_adapter.py",
+        "phase32_phase28_adapter.py",
+        "phase32_phase31_adapter.py",
+        "phase32_triage_contract.py",
+        "phase32_triage_policy.py",
+    ],
+)
+
+filegroup(
+    name = "phase32_test_modules",
+    srcs = [
+        "phase32_blocker_register_triage_failure_test.py",
+        "phase32_blocker_register_triage_producer_failure_test.py",
+        "phase32_producer_test_support.py",
+        "phase32_test_support.py",
+        ":phase32_runtime_modules",
+    ],
+)
+
 shell_binary(
     name = "phase32_verify",
     src = "rust_workflow.sh",
@@ -1000,6 +1042,8 @@ shell_binary(
         "phase32_blocker_normalization.py",
         "phase32_blocker_register_triage.py",
         "manifests/phase32_blocker_register_triage_contract.json",
+        ":phase31_runtime_modules",
+        ":phase32_runtime_modules",
         ":phase32_source_ref_manifests",
         "//:phase32_blocker_register_triage_docs",
     ],
@@ -1026,6 +1070,8 @@ shell_binary(
         "manifests/phase20_release_environment_inputs.template.json",
         "manifests/phase32_blocker_register_triage_contract.json",
         "manifests/unsafe_boundary_audit.json",
+        ":phase31_runtime_modules",
+        ":phase32_test_modules",
         ":phase32_source_ref_manifests",
     ],
 )
@@ -1056,6 +1102,8 @@ shell_binary(
         "phase32_blocker_register_triage.py",
         "phase33_maintainer_decision_inputs.py",
         "manifests/phase33_maintainer_decision_inputs_contract.json",
+        ":phase31_runtime_modules",
+        ":phase32_runtime_modules",
         ":phase33_source_ref_manifests",
         "//:phase33_maintainer_decision_inputs_docs",
     ],
@@ -1096,6 +1144,8 @@ shell_binary(
         "phase34_decision_reconciliation.py",
         "phase34_final_readiness_demotion_dry_run.py",
         "manifests/phase34_final_readiness_demotion_dry_run_contract.json",
+        ":phase31_runtime_modules",
+        ":phase32_runtime_modules",
         ":phase34_source_ref_manifests",
         "//:phase34_final_readiness_demotion_dry_run_docs",
     ],
@@ -1119,6 +1169,8 @@ shell_binary(
         "phase34_decision_reconciliation_test.py",
         "phase34_final_readiness_demotion_dry_run.py",
         "phase34_final_readiness_demotion_dry_run_test.py",
+        ":phase31_runtime_modules",
+        ":phase32_test_modules",
         ":phase26_source_ref_manifests",
         ":phase27_source_ref_manifests",
         ":phase28_source_ref_manifests",
@@ -1151,6 +1203,8 @@ shell_binary(
         "phase34_final_readiness_demotion_dry_run.py",
         "phase35_cutover_decision_artifact.py",
         "manifests/phase35_cutover_decision_artifact_contract.json",
+        ":phase31_runtime_modules",
+        ":phase32_runtime_modules",
         ":phase35_source_ref_manifests",
         "//:phase35_cutover_decision_artifact_docs",
     ],
@@ -1184,6 +1238,8 @@ filegroup(
         "phase34_final_readiness_demotion_dry_run.py",
         "phase35_cutover_decision_artifact.py",
         "phase38_cutover_workflow.py",
+        ":phase31_runtime_modules",
+        ":phase32_runtime_modules",
         "manifests/foreign_code_inventory.json",
         "manifests/phase11_cutover_readiness.json",
         "manifests/phase11_retained_code_justifications.json",
@@ -1224,6 +1280,8 @@ shell_binary(
         "phase35_cutover_decision_artifact_test.py",
         "phase38_cutover_workflow_integration_test.py",
         "phase38_cutover_workflow_test.py",
+        ":phase31_test_modules",
+        ":phase32_test_modules",
         ":phase38_actual_producer_runfiles",
     ],
 )
