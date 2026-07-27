@@ -798,13 +798,11 @@ file-lengths	lib/tinyusb/src/portable/synopsys/dwc2/dcd_dwc2.c	permanent: import
 file-lengths	lib/tinyusb/src/portable/synopsys/dwc2/dwc2_type.h	permanent: imported/upstream; provenance=vendored lib tree
 file-lengths	lib/tinyusb/src/portable/ti/msp430x5xx/dcd_msp430x5xx.c	permanent: imported/upstream; provenance=vendored lib tree
 file-lengths	lib/tinyusb/src/portable/valentyusb/eptri/dcd_eptri.c	permanent: imported/upstream; provenance=vendored lib tree
-file-lengths	src/buddy/filesystem_fatfs.cpp	temporary: campaign=network-media; remove when file is below 629 lines and campaign gates pass
 file-lengths	src/buddy/main.cpp	temporary: campaign=print-safety; remove when file is below 629 lines and campaign gates pass
 file-lengths	src/common/hwio_pindef.h	permanent: declarative registry; deletion-test=removing any board pin entry breaks the single compile-time hardware mapping authority
 file-lengths	src/common/marlin_print_preview.cpp	temporary: campaign=print-safety; remove when file is below 629 lines and campaign gates pass
 file-lengths	src/common/marlin_server.cpp	temporary: campaign=print-safety; remove when file is below 629 lines and campaign gates pass
 file-lengths	src/common/marlin_server_types/client_response.hpp	permanent: declarative registry; deletion-test=removing any response variant breaks the single protocol response registry
-file-lengths	src/common/media_prefetch/media_prefetch.cpp	temporary: campaign=network-media; remove when file is below 629 lines and campaign gates pass
 file-lengths	src/common/power_panic.cpp	temporary: campaign=print-safety; remove when file is below 629 lines and campaign gates pass
 file-lengths	src/connect/connect.cpp	temporary: campaign=network-media; remove when file is below 629 lines and campaign gates pass
 file-lengths	src/connect/marlin_printer.cpp	temporary: campaign=network-media; remove when file is below 629 lines and campaign gates pass

@@ -45,6 +45,7 @@ if(BOARD IN_LIST BUDDY_BOARDS)
             marlin_vars.cpp
             MarlinPin.cpp
             media_prefetch/media_prefetch.cpp
+            media_prefetch/media_prefetch_policy.cpp
             media_prefetch/prefetch_compression.cpp
             media_prefetch_instance.cpp
             metric.cpp

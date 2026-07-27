@@ -1,6 +1,7 @@
 add_executable(
   media_prefetch_tests
   ${CMAKE_SOURCE_DIR}/src/common/media_prefetch/media_prefetch.cpp
+  ${CMAKE_SOURCE_DIR}/src/common/media_prefetch/media_prefetch_policy.cpp
   ${CMAKE_SOURCE_DIR}/src/common/media_prefetch/prefetch_compression.cpp
   ${CMAKE_SOURCE_DIR}/tests/stubs/strlcpy.c
   ${CMAKE_CURRENT_SOURCE_DIR}/media_prefetch_error_tests.cpp

@@ -19,6 +19,8 @@ void gui_loop() {}
 
 namespace marlin_client {
 void notify_server_about_encoder_move() {}
+void notify_server_about_encoder_move_up() {}
+void notify_server_about_encoder_move_down() {}
 void notify_server_about_knob_click() {}
 } // namespace marlin_client
 

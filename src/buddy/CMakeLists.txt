@@ -3,6 +3,7 @@ target_sources(
   PRIVATE fatfs.cpp
           filesystem.cpp
           filesystem_fatfs.cpp
+          filesystem_fatfs_dir.cpp
           filesystem_littlefs.cpp
           filesystem_littlefs_bbf.cpp
           filesystem_littlefs_internal.cpp

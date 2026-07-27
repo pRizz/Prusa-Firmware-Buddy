@@ -194,35 +194,6 @@ void MediaPrefetchManager::stop() {
     worker_job.issue([this](AsyncJobExecutionControl &control) { fetch_routine(control); });
 }
 
-bool MediaPrefetchManager::check_buffer_empty() const {
-    std::lock_guard mutex_guard(mutex);
-    return (shared_state.read_head.buffer_pos == shared_state.read_tail.buffer_pos) && (shared_state.read_tail.status == Status::end_of_buffer);
-}
-
-MediaPrefetchManager::ReadyToStartPrintResult MediaPrefetchManager::check_ready_to_start_print() const {
-    const auto metrics = get_metrics();
-
-    if (metrics.buffer_occupancy_percent > 90) {
-        return ReadyToStartPrintResult::ready;
-    }
-
-    switch (metrics.tail_status) {
-    case Status::ok:
-    case Status::end_of_buffer:
-    case Status::not_downloaded:
-        return ReadyToStartPrintResult::needs_fetching;
-
-    case Status::end_of_file:
-        return ReadyToStartPrintResult::ready;
-
-    case Status::corruption:
-    case Status::usb_error:
-        return ReadyToStartPrintResult::error;
-    }
-
-    return ReadyToStartPrintResult::error;
-}
-
 void MediaPrefetchManager::issue_fetch() {
     {
         std::lock_guard mutex_guard(mutex);
@@ -237,18 +208,6 @@ void MediaPrefetchManager::issue_fetch() {
 
     log_debug(MediaPrefetch, "Media prefetch issue fetch");
     worker_job.issue([this](AsyncJobExecutionControl &control) { fetch_routine(control); });
-}
-
-MediaPrefetchManager::Metrics MediaPrefetchManager::get_metrics() const {
-    std::lock_guard mutex_guard(mutex);
-    auto &s = shared_state;
-    return Metrics {
-        .commands_in_buffer = s.commands_in_buffer,
-        .stream_size_estimate = s.stream_size_estimate,
-        .buffer_occupancy_percent = static_cast<uint8_t>(((s.read_tail.buffer_pos - s.read_head.buffer_pos + buffer_size) % buffer_size * 100) / buffer_size),
-        .tail_status = s.read_tail.status,
-        .is_fetching = worker_job.is_active(),
-    };
 }
 
 void MediaPrefetchManager::fetch_routine(AsyncJobExecutionControl &control) {
@@ -614,24 +573,6 @@ void MediaPrefetchManager::fetch_handle_error(AsyncJobExecutionControl &control,
     shared_state.worker_reset_pending |= is_error;
 }
 
-bool MediaPrefetchManager::can_read_entry_raw(size_t bytes) const {
-    assert(bytes < buffer_size);
-
-    const size_t read_pos = shared_state.read_head.buffer_pos;
-    const size_t read_tail = shared_state.read_tail.buffer_pos;
-    const size_t new_read_pos = (read_pos + bytes) % buffer_size;
-
-    // Check that we don't cross the read tail.
-    // If we wrapped around the buffer, we check for the opposite.
-    const bool does_wrap = (new_read_pos < read_pos);
-
-    // This is basically the only place where can_read_entry_raw differs from can_write_entry_raw
-    // And it's correct - for reading, we can catch up to the tail. But in writing, catching up would mean wrapping.
-    const bool does_cross_tail = ((read_pos <= read_tail) != (new_read_pos <= read_tail));
-
-    return (does_cross_tail == does_wrap);
-}
-
 void MediaPrefetchManager::read_entry_raw(void *target, size_t bytes) {
     assert(bytes < buffer_size);
 
@@ -647,24 +588,6 @@ void MediaPrefetchManager::read_entry_raw(void *target, size_t bytes) {
     memcpy(reinterpret_cast<uint8_t *>(target) + nonwrapped_bytes, &buffer[0], bytes - nonwrapped_bytes);
 
     read_pos = (read_pos + bytes) % buffer_size;
-}
-
-bool MediaPrefetchManager::can_write_entry_raw(size_t bytes) const {
-    assert(bytes < buffer_size);
-
-    const size_t write_pos = worker_state.write_tail.buffer_pos;
-    const size_t new_write_pos = (write_pos + bytes) % buffer_size;
-    const size_t read_head = worker_state.read_head.buffer_pos;
-
-    // Check that we don't catch up the read head  - that would be interpreted as write_pos having no data.
-    // If we wrapped around the buffer, we check for the opposite.
-    const bool does_wrap = (new_write_pos < write_pos);
-
-    // This is basically the only place where can_read_entry_raw differs from can_write_entry_raw
-    // And it's correct - for reading, we can catch up to the tail. But in writing, catching up would mean wrapping.
-    const bool does_catch_up_read_head = ((write_pos < read_head) != (new_write_pos < read_head));
-
-    return (does_catch_up_read_head == does_wrap);
 }
 
 void MediaPrefetchManager::write_entry_raw(const void *data, size_t bytes) {

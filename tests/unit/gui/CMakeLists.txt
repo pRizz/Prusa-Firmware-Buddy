@@ -67,7 +67,7 @@ add_catch_test(mini_text_input_layout_tests)
 add_executable(
   color_tests
   ${CMAKE_CURRENT_SOURCE_DIR}/color_tests.cpp ${CMAKE_SOURCE_DIR}/src/common/utils/color.cpp
-  ${CMAKE_SOURCE_DIR}/src/common/str_utils.cpp
+  ${CMAKE_SOURCE_DIR}/src/common/str_utils.cpp ${CMAKE_SOURCE_DIR}/src/lang/string_view_utf8.cpp
   )
 target_include_directories(
   color_tests PUBLIC ${CMAKE_SOURCE_DIR}/src/common ${CMAKE_SOURCE_DIR}/src/lang
