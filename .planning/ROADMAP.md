@@ -227,7 +227,7 @@ Plans:
 - [x] 40-06-PLAN.md — Refactor Phase 18-28 cutover, release, decision, and readiness tools.
 - [x] 40-07-PLAN.md — Refactor Phase 31-38 finality and cutover tooling.
 - [x] 40-08-PLAN.md — Split seven firmware characterization test sources in existing Catch targets.
-- [ ] 40-09-PLAN.md — Refactor parser/UI/protocol/WUI sources and convert two locked exceptions.
+- [x] 40-09-PLAN.md — Refactor parser/UI/protocol/WUI sources and convert two locked exceptions.
 - [ ] 40-10-PLAN.md — Refactor network/media sources and convert the locked planner exception.
 - [ ] 40-11-PLAN.md — Refactor journal and config-store persistence implementation.
 - [ ] 40-12-PLAN.md — Refactor hardware, display, and auxiliary-controller adapters.
@@ -284,4 +284,4 @@ Phases 31 through 38 execute in numeric order after Phase 30. Phase 39 remains t
 | 37. Reconcile Decisions Into Readiness | v1.3 | 2/2 | Complete    | 2026-07-26 |
 | 38. Fail-Closed Cutover Workflow | v1.3 | 3/3 | Complete    | 2026-07-27 |
 | 39. Milestone Metadata Reconciliation | v1.3 | 0/TBD | Pending | — |
-| 40. File Length Refactoring | v1.3 | 8/15 | In Progress|  |
+| 40. File Length Refactoring | v1.3 | 9/15 | In Progress|  |
