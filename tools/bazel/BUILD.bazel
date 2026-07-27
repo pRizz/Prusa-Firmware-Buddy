@@ -4,6 +4,21 @@ load(":shell_rules.bzl", "shell_binary")
 
 package(default_visibility = ["//visibility:public"])
 
+shell_binary(
+    name = "phase40_file_length_policy",
+    src = "phase40_file_length_policy.py",
+    data = ["//:.bright-builds-rules-checks.tsv"],
+)
+
+shell_binary(
+    name = "phase40_file_length_policy_test",
+    src = "phase40_file_length_policy_test.py",
+    data = [
+        "phase40_file_length_policy.py",
+        "//:.bright-builds-rules-checks.tsv",
+    ],
+)
+
 PHASE3_GENERATED_LABELS = [
     "generated_product_profiles_check",
     "generated_product_profiles_update",

@@ -319,6 +319,8 @@ filegroup(
     srcs = ["//tools/bazel:fixtures/phase7_storage/redacted_migration_catalog.json"],
 )
 
+exports_files([".bright-builds-rules-checks.tsv"])
+
 alias(
     name = "phase2_verify",
     actual = "//tools/bazel:phase2_verify",
@@ -647,6 +649,16 @@ alias(
 alias(
     name = "phase38_verify_tests",
     actual = "//tools/bazel:phase38_verify_tests",
+)
+
+alias(
+    name = "phase40_file_length_policy",
+    actual = "//tools/bazel:phase40_file_length_policy",
+)
+
+alias(
+    name = "phase40_file_length_policy_test",
+    actual = "//tools/bazel:phase40_file_length_policy_test",
 )
 
 alias(
