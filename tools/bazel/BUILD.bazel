@@ -211,6 +211,7 @@ shell_binary(
     name = "phase10_verify",
     src = "rust_workflow.sh",
     data = [
+        "phase10_contract_policy.py",
         "phase10_verify.py",
         "manifests/phase10_auxiliary_controllers.json",
         "manifests/phase10_mmu_transport.json",
@@ -227,7 +228,9 @@ shell_binary(
     name = "phase10_verify_tests",
     src = "rust_workflow.sh",
     data = [
+        "phase10_contract_policy.py",
         "phase10_verify.py",
+        "phase10_verify_failure_test.py",
         "phase10_verify_test.py",
     ],
 )
@@ -236,6 +239,7 @@ shell_binary(
     name = "phase11_verify",
     src = "rust_workflow.sh",
     data = [
+        "phase11_contract_policy.py",
         "phase11_verify.py",
         "manifests/phase11_cutover_readiness.json",
         "manifests/phase11_parity_pyramid.json",
@@ -251,7 +255,9 @@ shell_binary(
     name = "phase11_verify_tests",
     src = "rust_workflow.sh",
     data = [
+        "phase11_contract_policy.py",
         "phase11_verify.py",
+        "phase11_verify_failure_test.py",
         "phase11_verify_test.py",
         "manifests/phase11_cutover_readiness.json",
         "manifests/phase11_parity_pyramid.json",
