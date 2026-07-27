@@ -1,284 +1,15 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import json
-import importlib.util
-import shutil
-import subprocess
-import tempfile
 import unittest
-from types import ModuleType
-from pathlib import Path
+
+from phase26_release_signing_upstream_evidence_failure_test import *
+from phase26_release_test_support import *
 
 
-ROOT = Path(__file__).resolve().parents[2]
-VERIFIER = ROOT / "tools/bazel/phase26_release_signing_upstream_evidence.py"
-CONTRACT = "tools/bazel/manifests/phase26_release_signing_upstream_evidence_contract.json"
-PHASE17_CONTRACT = "tools/bazel/manifests/phase17_release_candidate_evidence_contract.json"
-PHASE18_CONTRACT = "tools/bazel/manifests/phase18_cutover_review_contract.json"
-PHASE20_CONTRACT = "tools/bazel/manifests/phase20_release_candidate_artifacts_contract.json"
-PHASE20_TEMPLATE = "tools/bazel/manifests/phase20_release_environment_inputs.template.json"
-PHASE23_CONTRACT = "tools/bazel/manifests/phase23_simulator_evidence_execution_contract.json"
-PHASE24_CONTRACT = "tools/bazel/manifests/phase24_hardware_media_safety_evidence_execution_contract.json"
-PHASE25_CONTRACT = "tools/bazel/manifests/phase25_live_service_evidence_execution_contract.json"
-DEFAULT_OUTPUT_DIR = "build/ci-evidence/phase26"
-REQUIRED_UPSTREAM_CRITERIA = {
-    "final-ci-evidence",
-    "final-simulator-evidence",
-    "final-hardware-safety-media-evidence",
-    "final-live-network-transfer-evidence",
-    "final-release-artifact-signing-evidence",
-    "final-retained-code-acceptance",
-    "final-residual-risk-review",
-    "final-maintainer-decision",
-    "final-reference-demotion-allowed",
-}
-REQUIRED_UPSTREAM_FIELDS = {
-    "criterion_id",
-    "evidence_family",
-    "requirement_ids",
-    "source_requirement_ids",
-    "owning_phase",
-    "source_lifecycle_id",
-    "source_lifecycle_status",
-    "evidence_refs",
-    "artifact_refs",
-    "status",
-    "failure_reason",
-    "redaction_status",
-    "source_ref_status",
-    "exception_status",
-    "maintainer_state",
-    "generated_at_utc",
-}
-RETAINED_OUTPUTS = [
-    "release-upstream-run-manifest.json",
-    "normalized-release-evidence-summary.json",
-    "upstream-result-row-table.json",
-    "upstream-result-manifest.json",
-    "redaction-provenance-summary.json",
-    "artifact-reference-summary.json",
-    "operator-release-input-template.json",
-    "contract-snapshots/phase17_release_candidate_evidence_contract.json",
-    "contract-snapshots/phase18_cutover_review_contract.json",
-    "contract-snapshots/phase20_release_candidate_artifacts_contract.json",
-    "contract-snapshots/phase20_release_environment_inputs.template.json",
-]
-WIRING_FILES = ["BUILD.bazel", "tools/bazel/BUILD.bazel", "tools/bazel/rust_workflow.sh", "justfile"]
-REQUIRED_ROW_IDS = [
-    "rel-bin-firmware-image",
-    "rel-bbf-firmware-package",
-    "rel-dfu-update-package",
-    "rel-map-and-provenance",
-    "rel-resource-image-package",
-    "rel-language-bundles",
-    "rel-wui-assets",
-    "rel-esp-packages",
-    "rel-mmu-package",
-    "rel-auxiliary-dwarf-firmware",
-    "rel-auxiliary-modularbed-firmware",
-    "rel-auxiliary-xbuddy-extension-firmware",
-    "rel-package-manifests",
-    "rel-signing-key-identity",
-    "rel-build-input-identity",
-    "rel-artifact-retention",
-    "rel-reference-comparison-report",
-    "rel-contract-traceability-redaction-boundary",
-]
-
-
-class Phase26ReleaseSigningUpstreamEvidenceTest(unittest.TestCase):
-    @classmethod
-    def load_verifier_module(cls) -> ModuleType:
-        spec = importlib.util.spec_from_file_location("phase26_release_signing_upstream_evidence", VERIFIER)
-        if spec is None or spec.loader is None:
-            raise RuntimeError("failed to load Phase 26 verifier module")
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module
-
-    def make_temp_root(self) -> tuple[tempfile.TemporaryDirectory[str], Path]:
-        temp_dir = tempfile.TemporaryDirectory()
-        root = Path(temp_dir.name)
-        for path in [
-            VERIFIER,
-            ROOT / CONTRACT,
-            ROOT / PHASE17_CONTRACT,
-            ROOT / PHASE18_CONTRACT,
-            ROOT / PHASE20_CONTRACT,
-            ROOT / PHASE20_TEMPLATE,
-            ROOT / PHASE23_CONTRACT,
-            ROOT / PHASE24_CONTRACT,
-            ROOT / PHASE25_CONTRACT,
-        ]:
-            destination = root / path.relative_to(ROOT)
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(path, destination)
-        return temp_dir, root
-
-    def run_verifier(self, args: list[str], maybe_root: Path | None = None) -> subprocess.CompletedProcess[str]:
-        root = maybe_root or ROOT
-        verifier = root / "tools/bazel/phase26_release_signing_upstream_evidence.py"
-        return subprocess.run(
-            ["python3", verifier.as_posix(), *args],
-            cwd=root,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            check=False,
-            shell=False,
-        )
-
-    def read_json(self, root: Path, path: str) -> dict[str, object]:
-        return json.loads((root / path).read_text(encoding="utf-8"))
-
-    def write_release_input(self, root: Path, rows: list[dict[str, object]], path: str = "release-input.json") -> str:
-        input_path = root / path
-        input_path.write_text(json.dumps({"evidence_rows": rows}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-        return path
-
-    def write_json(self, root: Path, path: str, data: dict[str, object]) -> str:
-        full_path = root / path
-        full_path.parent.mkdir(parents=True, exist_ok=True)
-        full_path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-        return path
-
-    def write_file(self, root: Path, path: str, text: str) -> None:
-        full_path = root / path
-        full_path.parent.mkdir(parents=True, exist_ok=True)
-        full_path.write_text(text, encoding="utf-8")
-
-    def copy_wiring_files(self, root: Path) -> None:
-        for path in WIRING_FILES:
-            destination = root / path
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(ROOT / path, destination)
-
-    def phase20_required_metadata_fields(self, contract_row: dict[str, object]) -> list[str]:
-        fields: list[str] = []
-        for group in [
-            "release_metadata_required",
-            "signing_metadata_required",
-            "provenance_metadata_required",
-            "retention_metadata_required",
-        ]:
-            values = contract_row.get(group, [])
-            if isinstance(values, list):
-                fields.extend(str(value) for value in values)
-        return list(dict.fromkeys(fields))
-
-    def release_metadata_value(self, field: str, row_id: str, artifact_ref: str) -> object:
-        if field == "artifact_refs":
-            return [artifact_ref]
-        if field == "retention_refs":
-            return ["external://phase20/retention/phase26-approved-run-001"]
-        if field == "subject_digests":
-            return [
-                {
-                    "artifact_ref": artifact_ref,
-                    "sha256": "a" * 64,
-                }
-            ]
-        if field == "key_identity_ref":
-            return "release-key-fingerprint:sha256:phase26-test"
-        if field == "signing_mode":
-            return "external-release-signing"
-        return f"phase26-test-{field.replace('_', '-')}:{row_id}"
-
-    def complete_release_rows(self, root: Path) -> list[dict[str, object]]:
-        contract = self.read_json(root, PHASE20_CONTRACT)
-        contract_rows = contract["rows"]
-        contract_by_id = {str(row["id"]): row for row in contract_rows if isinstance(row, dict)}
-        rows: list[dict[str, object]] = []
-        for row_id in REQUIRED_ROW_IDS:
-            contract_row = contract_by_id[row_id]
-            artifact_ref = f"external://phase20/artifacts/{row_id}.json"
-            artifact_surface = str(contract_row["artifact_surface"])
-            row = {
-                "id": row_id,
-                "artifact_refs": [artifact_ref],
-                "artifact_surface": artifact_surface,
-                "affected_artifact_surface": artifact_surface,
-                "build_input_identity": "git:phase26-test-build;bazel:phase17_release_candidate_artifacts",
-                "mismatch_class": "pass",
-                "mismatch_reason": "Approved release metadata matched the archived reference classification.",
-                "operator": "phase26-test-operator",
-                "owner_phase": "20-release-candidate-artifact-production",
-                "proof_class": "approved-release-run",
-                "release_run_id": "phase26-approved-run-001",
-                "residual_risk": "Limited to supplied release-environment evidence.",
-                "retention_refs": ["external://phase20/retention/phase26-approved-run-001"],
-                "status": "passed",
-                "subject_digests": [
-                    {
-                        "artifact_ref": artifact_ref,
-                        "sha256": "a" * 64,
-                    }
-                ],
-                "timestamp": "2026-06-24T14:00:00Z",
-                "verification_outcome": "approved-release-metadata",
-            }
-            for field in self.phase20_required_metadata_fields(contract_row):
-                if field not in row:
-                    row[field] = self.release_metadata_value(field, row_id, artifact_ref)
-            rows.append(row)
-        return rows
-
-    def upstream_row(self, phase: str, criterion_id: str, requirement_id: str, output_root: str, artifact_ref: str) -> dict[str, object]:
-        evidence_family = {
-            "EVID-01": "simulator",
-            "EVID-02": "hardware",
-            "EVID-03": "live-service",
-        }[requirement_id]
-        return {
-            "artifact_refs": [artifact_ref],
-            "criterion_id": criterion_id,
-            "evidence_family": evidence_family,
-            "manifest_ref": f"{output_root}/result-manifest.json",
-            "phase": phase,
-            "phase_lifecycle_id": f"{phase}-test-lifecycle",
-            "redaction_status": "passed",
-            "requirement_ids": [requirement_id],
-            "source_ref_status": "passed",
-            "status": "passed",
-        }
-
-    def write_valid_upstream_rows(self, root: Path) -> dict[str, str]:
-        return {
-            "phase23": self.write_json(
-                root,
-                "build/ci-evidence/phase23/upstream-simulator-result-row.json",
-                self.upstream_row(
-                    "23-simulator-evidence-execution",
-                    "final-simulator-evidence",
-                    "EVID-01",
-                    "build/ci-evidence/phase23",
-                    "external://phase23/simulator/startup-log.json",
-                ),
-            ),
-            "phase24": self.write_json(
-                root,
-                "build/ci-evidence/phase24/upstream-hardware-media-safety-result-row.json",
-                self.upstream_row(
-                    "24-hardware-media-and-safety-evidence-execution",
-                    "final-hardware-safety-media-evidence",
-                    "EVID-02",
-                    "build/ci-evidence/phase24",
-                    "external://phase24/hardware/safety-report.json",
-                ),
-            ),
-            "phase25": self.write_json(
-                root,
-                "build/ci-evidence/phase25/upstream-live-service-result-row.json",
-                self.upstream_row(
-                    "25-live-service-evidence-execution",
-                    "final-live-service-evidence",
-                    "EVID-03",
-                    "build/ci-evidence/phase25",
-                    "external://phase25/live-service/connect-report.json",
-                ),
-            ),
-        }
+class Phase26ReleaseSigningUpstreamEvidenceTest(
+        Phase26ReleaseSigningUpstreamEvidenceFailureTests,
+        Phase26ReleaseTestSupport, unittest.TestCase):
 
     def test_contract_lists_phase26_policy_and_phase20_rows(self) -> None:
         # Arrange
@@ -289,14 +20,22 @@ class Phase26ReleaseSigningUpstreamEvidenceTest(unittest.TestCase):
 
         # Assert
         self.assertEqual(result.returncode, 0, result.stdout)
-        self.assertEqual(contract["id"], "phase26_release_signing_upstream_evidence_contract")
+        self.assertEqual(contract["id"],
+                         "phase26_release_signing_upstream_evidence_contract")
         self.assertEqual(contract["output_root"], DEFAULT_OUTPUT_DIR)
         release_policy = contract["release_policy"]
-        self.assertEqual(release_policy["canonical_phase20_release_row_ids"], REQUIRED_ROW_IDS)
-        self.assertIn("approved-release-run", release_policy["pass_capable_proof_classes"])
-        self.assertIn("external-release-key-evidence", release_policy["pass_capable_proof_classes"])
-        self.assertEqual(set(contract["upstream_policy"]["canonical_phase18_criteria"]), REQUIRED_UPSTREAM_CRITERIA)
-        self.assertEqual(set(contract["upstream_policy"]["row_required_fields"]), REQUIRED_UPSTREAM_FIELDS)
+        self.assertEqual(release_policy["canonical_phase20_release_row_ids"],
+                         REQUIRED_ROW_IDS)
+        self.assertIn("approved-release-run",
+                      release_policy["pass_capable_proof_classes"])
+        self.assertIn("external-release-key-evidence",
+                      release_policy["pass_capable_proof_classes"])
+        self.assertEqual(
+            set(contract["upstream_policy"]["canonical_phase18_criteria"]),
+            REQUIRED_UPSTREAM_CRITERIA)
+        self.assertEqual(
+            set(contract["upstream_policy"]["row_required_fields"]),
+            REQUIRED_UPSTREAM_FIELDS)
 
     def test_security_only_accepts_checked_in_safe_inputs(self) -> None:
         # Arrange
@@ -308,246 +47,6 @@ class Phase26ReleaseSigningUpstreamEvidenceTest(unittest.TestCase):
         # Assert
         self.assertEqual(result.returncode, 0, result.stdout)
 
-    def test_missing_release_row_fails_closed(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            rows = self.complete_release_rows(root)
-            release_input = self.write_release_input(root, rows[:-1])
-
-            # Act
-            result = self.run_verifier(["--quick", "--release-input", release_input], maybe_root=root)
-
-            # Assert
-            self.assertNotEqual(result.returncode, 0, result.stdout)
-            self.assertIn("release input missing rows", result.stdout)
-
-    def test_duplicate_release_row_fails_closed(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            rows = self.complete_release_rows(root)
-            rows[-1] = dict(rows[0])
-            release_input = self.write_release_input(root, rows)
-
-            # Act
-            result = self.run_verifier(["--quick", "--release-input", release_input], maybe_root=root)
-
-            # Assert
-            self.assertNotEqual(result.returncode, 0, result.stdout)
-            self.assertIn("duplicates row id", result.stdout)
-
-    def test_unknown_release_row_fails_closed(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            rows = self.complete_release_rows(root)
-            rows[-1]["id"] = "rel-unknown-artifact"
-            release_input = self.write_release_input(root, rows)
-
-            # Act
-            result = self.run_verifier(["--quick", "--release-input", release_input], maybe_root=root)
-
-            # Assert
-            self.assertNotEqual(result.returncode, 0, result.stdout)
-            self.assertIn("uses unknown row id: rel-unknown-artifact", result.stdout)
-
-    def test_passed_release_row_requires_phase26_metadata(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            rows = self.complete_release_rows(root)
-            del rows[0]["release_run_id"]
-            release_input = self.write_release_input(root, rows)
-
-            # Act
-            result = self.run_verifier(["--quick", "--release-input", release_input], maybe_root=root)
-
-            # Assert
-            self.assertNotEqual(result.returncode, 0, result.stdout)
-            self.assertIn("release_run_id must be a non-empty string", result.stdout)
-
-    def test_signing_rows_require_key_identity_and_signing_mode(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            rows = self.complete_release_rows(root)
-            for row in rows:
-                if row["id"] == "rel-bbf-firmware-package":
-                    del row["key_identity_ref"]
-            release_input = self.write_release_input(root, rows)
-
-            # Act
-            result = self.run_verifier(["--quick", "--release-input", release_input], maybe_root=root)
-
-            # Assert
-            self.assertNotEqual(result.returncode, 0, result.stdout)
-            self.assertIn("key_identity_ref must be a non-empty string", result.stdout)
-
-    def test_passed_redaction_boundary_requires_phase20_metadata(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            rows = self.complete_release_rows(root)
-            for row in rows:
-                if row["id"] == "rel-contract-traceability-redaction-boundary":
-                    del row["redaction_scan"]
-            release_input = self.write_release_input(root, rows)
-
-            # Act
-            result = self.run_verifier(["--quick", "--release-input", release_input], maybe_root=root)
-
-            # Assert
-            self.assertNotEqual(result.returncode, 0, result.stdout)
-            self.assertIn("redaction_scan must be a non-empty string", result.stdout)
-
-    def test_release_candidate_cannot_pass_phase26(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            rows = self.complete_release_rows(root)
-            for row in rows:
-                row["proof_class"] = "release-candidate"
-            release_input = self.write_release_input(root, rows)
-
-            # Act
-            result = self.run_verifier(["--quick", "--release-input", release_input], maybe_root=root)
-
-            # Assert
-            self.assertNotEqual(result.returncode, 0, result.stdout)
-            self.assertIn("release-candidate cannot pass Phase 26", result.stdout)
-
-    def test_local_smoke_and_template_only_cannot_pass_phase26(self) -> None:
-        for proof_class in ["local-smoke", "template-only"]:
-            with self.subTest(proof_class=proof_class):
-                # Arrange
-                temp_dir, root = self.make_temp_root()
-                with temp_dir:
-                    rows = self.complete_release_rows(root)
-                    for row in rows:
-                        row["proof_class"] = proof_class
-                    release_input = self.write_release_input(root, rows)
-
-                    # Act
-                    result = self.run_verifier(["--quick", "--release-input", release_input], maybe_root=root)
-
-                    # Assert
-                    self.assertNotEqual(result.returncode, 0, result.stdout)
-                    self.assertIn("cannot pass with proof_class", result.stdout)
-
-    def test_secret_tainted_input_aborts_before_output_root_exists(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            rows = self.complete_release_rows(root)
-            rows[0]["private_key"] = "-----BEGIN PRIVATE KEY-----\nsecret\n-----END PRIVATE KEY-----"
-            release_input = self.write_release_input(root, rows)
-            output_root = root / DEFAULT_OUTPUT_DIR
-
-            # Act
-            result = self.run_verifier(["--quick", "--release-input", release_input, "--output-dir", DEFAULT_OUTPUT_DIR], maybe_root=root)
-
-            # Assert
-            self.assertNotEqual(result.returncode, 0, result.stdout)
-            self.assertIn("forbidden release evidence marker", result.stdout)
-            self.assertFalse(output_root.exists())
-
-    def test_camel_case_forbidden_security_field_is_rejected(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            template = self.read_json(root, PHASE20_TEMPLATE)
-            template["privateKey"] = "redacted-placeholder"
-            self.write_json(root, PHASE20_TEMPLATE, template)
-
-            # Act
-            result = self.run_verifier(["--security-only"], maybe_root=root)
-
-            # Assert
-            self.assertNotEqual(result.returncode, 0, result.stdout)
-            self.assertIn("privateKey", result.stdout)
-
-    def test_unsupported_release_input_field_aborts_before_output_root_exists(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            rows = self.complete_release_rows(root)
-            rows[0]["apiToken"] = "operator-metadata-that-must-not-be-retained"
-            release_input = self.write_release_input(root, rows)
-            output_root = root / DEFAULT_OUTPUT_DIR
-
-            # Act
-            result = self.run_verifier(["--quick", "--release-input", release_input, "--output-dir", DEFAULT_OUTPUT_DIR], maybe_root=root)
-
-            # Assert
-            self.assertNotEqual(result.returncode, 0, result.stdout)
-            self.assertIn("release input contains unsupported fields: apiToken", result.stdout)
-            self.assertFalse(output_root.exists())
-
-    def test_unsupported_subject_digest_field_aborts_before_output_root_exists(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            rows = self.complete_release_rows(root)
-            subject_digests = rows[0]["subject_digests"]
-            self.assertIsInstance(subject_digests, list)
-            subject_digests[0]["apiToken"] = "operator-metadata-that-must-not-be-retained"
-            release_input = self.write_release_input(root, rows)
-            output_root = root / DEFAULT_OUTPUT_DIR
-
-            # Act
-            result = self.run_verifier(["--quick", "--release-input", release_input, "--output-dir", DEFAULT_OUTPUT_DIR], maybe_root=root)
-
-            # Assert
-            self.assertNotEqual(result.returncode, 0, result.stdout)
-            self.assertIn("subject_digests[0] contains unsupported fields: apiToken", result.stdout)
-            self.assertFalse(output_root.exists())
-
-    def test_output_dir_rejects_absolute_parent_and_symlink_escapes(self) -> None:
-        for bad_output_dir in ["/tmp/phase26", "../phase26"]:
-            with self.subTest(output_dir=bad_output_dir):
-                # Arrange
-                temp_dir, root = self.make_temp_root()
-                with temp_dir:
-                    # Act
-                    result = self.run_verifier(["--quick", "--output-dir", bad_output_dir], maybe_root=root)
-
-                    # Assert
-                    self.assertNotEqual(result.returncode, 0, result.stdout)
-                    self.assertIn("--output-dir must", result.stdout)
-
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            outside = root / "outside-output"
-            outside.mkdir()
-            output_parent = root / "build/ci-evidence"
-            output_parent.mkdir(parents=True)
-            (output_parent / "phase26").symlink_to(outside, target_is_directory=True)
-
-            # Act
-            result = self.run_verifier(["--quick", "--output-dir", DEFAULT_OUTPUT_DIR], maybe_root=root)
-
-            # Assert
-            self.assertNotEqual(result.returncode, 0, result.stdout)
-            self.assertIn("symlink escape risk", result.stdout)
-
-    def test_output_dir_regular_file_is_rejected_without_traceback(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            output_root = root / DEFAULT_OUTPUT_DIR
-            output_root.parent.mkdir(parents=True, exist_ok=True)
-            output_root.write_text("not a directory\n", encoding="utf-8")
-
-            # Act
-            result = self.run_verifier(["--quick", "--output-dir", DEFAULT_OUTPUT_DIR], maybe_root=root)
-
-            # Assert
-            self.assertNotEqual(result.returncode, 0, result.stdout)
-            self.assertIn("--output-dir exists and is not a directory", result.stdout)
-            self.assertNotIn("Traceback", result.stdout)
-
     def test_quick_writes_retained_outputs(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
@@ -555,32 +54,46 @@ class Phase26ReleaseSigningUpstreamEvidenceTest(unittest.TestCase):
             output_root = root / DEFAULT_OUTPUT_DIR
 
             # Act
-            result = self.run_verifier(["--quick", "--output-dir", DEFAULT_OUTPUT_DIR], maybe_root=root)
+            result = self.run_verifier(
+                ["--quick", "--output-dir", DEFAULT_OUTPUT_DIR],
+                maybe_root=root)
 
             # Assert
             self.assertEqual(result.returncode, 0, result.stdout)
             for retained_output in RETAINED_OUTPUTS:
-                self.assertTrue((output_root / retained_output).exists(), retained_output)
+                self.assertTrue((output_root / retained_output).exists(),
+                                retained_output)
 
     def test_quick_upstream_rows_cover_phase18_schema(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
-            result = self.run_verifier(["--quick", "--output-dir", DEFAULT_OUTPUT_DIR], maybe_root=root)
+            result = self.run_verifier(
+                ["--quick", "--output-dir", DEFAULT_OUTPUT_DIR],
+                maybe_root=root)
             self.assertEqual(result.returncode, 0, result.stdout)
 
             # Act
-            rows = self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/upstream-result-row-table.json")["rows"]
+            rows = self.read_json(
+                root,
+                f"{DEFAULT_OUTPUT_DIR}/upstream-result-row-table.json")["rows"]
 
             # Assert
-            self.assertEqual({row["criterion_id"] for row in rows}, REQUIRED_UPSTREAM_CRITERIA)
-            self.assertTrue(all(REQUIRED_UPSTREAM_FIELDS <= set(row) for row in rows))
-            release_row = next(row for row in rows if row["criterion_id"] == "final-release-artifact-signing-evidence")
-            self.assertEqual(release_row["requirement_ids"], ["EVID-04", "ACPT-01"])
+            self.assertEqual({row["criterion_id"]
+                              for row in rows}, REQUIRED_UPSTREAM_CRITERIA)
             self.assertTrue(
-                all(row["requirement_ids"] == ["ACPT-01"] for row in rows if row["criterion_id"] != "final-release-artifact-signing-evidence")
-            )
-            self.assertTrue(all(row["maintainer_state"] in {"pending", "blocked", "not-required"} for row in rows))
+                all(REQUIRED_UPSTREAM_FIELDS <= set(row) for row in rows))
+            release_row = next(row for row in rows if row["criterion_id"] ==
+                               "final-release-artifact-signing-evidence")
+            self.assertEqual(release_row["requirement_ids"],
+                             ["EVID-04", "ACPT-01"])
+            self.assertTrue(
+                all(row["requirement_ids"] == ["ACPT-01"] for row in rows
+                    if row["criterion_id"] !=
+                    "final-release-artifact-signing-evidence"))
+            self.assertTrue(
+                all(row["maintainer_state"] in
+                    {"pending", "blocked", "not-required"} for row in rows))
 
     def test_consumed_upstream_rows_replace_default_pending_rows(self) -> None:
         # Arrange
@@ -608,38 +121,70 @@ class Phase26ReleaseSigningUpstreamEvidenceTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stdout)
             rows = {
                 row["criterion_id"]: row
-                for row in self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/upstream-result-row-table.json")["rows"]
+                for row in self.read_json(
+                    root,
+                    f"{DEFAULT_OUTPUT_DIR}/upstream-result-row-table.json")
+                ["rows"]
             }
-            self.assertEqual(rows["final-simulator-evidence"]["status"], "passed")
-            self.assertEqual(rows["final-simulator-evidence"]["requirement_ids"], ["EVID-01", "ACPT-01"])
-            self.assertIn(row_paths["phase23"], rows["final-simulator-evidence"]["artifact_refs"])
-            self.assertEqual(rows["final-hardware-safety-media-evidence"]["status"], "passed")
-            self.assertEqual(rows["final-hardware-safety-media-evidence"]["requirement_ids"], ["EVID-02", "ACPT-01"])
-            self.assertIn(row_paths["phase24"], rows["final-hardware-safety-media-evidence"]["artifact_refs"])
-            self.assertEqual(rows["final-live-network-transfer-evidence"]["status"], "passed")
-            self.assertEqual(rows["final-live-network-transfer-evidence"]["requirement_ids"], ["EVID-03", "ACPT-01"])
-            self.assertIn(row_paths["phase25"], rows["final-live-network-transfer-evidence"]["artifact_refs"])
+            self.assertEqual(rows["final-simulator-evidence"]["status"],
+                             "passed")
+            self.assertEqual(
+                rows["final-simulator-evidence"]["requirement_ids"],
+                ["EVID-01", "ACPT-01"])
+            self.assertIn(row_paths["phase23"],
+                          rows["final-simulator-evidence"]["artifact_refs"])
+            self.assertEqual(
+                rows["final-hardware-safety-media-evidence"]["status"],
+                "passed")
+            self.assertEqual(
+                rows["final-hardware-safety-media-evidence"]
+                ["requirement_ids"], ["EVID-02", "ACPT-01"])
+            self.assertIn(
+                row_paths["phase24"],
+                rows["final-hardware-safety-media-evidence"]["artifact_refs"])
+            self.assertEqual(
+                rows["final-live-network-transfer-evidence"]["status"],
+                "passed")
+            self.assertEqual(
+                rows["final-live-network-transfer-evidence"]
+                ["requirement_ids"], ["EVID-03", "ACPT-01"])
+            self.assertIn(
+                row_paths["phase25"],
+                rows["final-live-network-transfer-evidence"]["artifact_refs"])
 
     def test_absent_upstream_rows_keep_fail_closed_defaults(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
-            result = self.run_verifier(["--quick", "--output-dir", DEFAULT_OUTPUT_DIR], maybe_root=root)
+            result = self.run_verifier(
+                ["--quick", "--output-dir", DEFAULT_OUTPUT_DIR],
+                maybe_root=root)
             self.assertEqual(result.returncode, 0, result.stdout)
 
             # Act
             rows = {
                 row["criterion_id"]: row
-                for row in self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/upstream-result-row-table.json")["rows"]
+                for row in self.read_json(
+                    root,
+                    f"{DEFAULT_OUTPUT_DIR}/upstream-result-row-table.json")
+                ["rows"]
             }
 
             # Assert
-            self.assertEqual(rows["final-simulator-evidence"]["status"], "pending-simulator-input")
-            self.assertEqual(rows["final-hardware-safety-media-evidence"]["status"], "pending-hardware-input")
-            self.assertEqual(rows["final-live-network-transfer-evidence"]["status"], "pending-live-input")
-            self.assertEqual(rows["final-simulator-evidence"]["requirement_ids"], ["ACPT-01"])
+            self.assertEqual(rows["final-simulator-evidence"]["status"],
+                             "pending-simulator-input")
+            self.assertEqual(
+                rows["final-hardware-safety-media-evidence"]["status"],
+                "pending-hardware-input")
+            self.assertEqual(
+                rows["final-live-network-transfer-evidence"]["status"],
+                "pending-live-input")
+            self.assertEqual(
+                rows["final-simulator-evidence"]["requirement_ids"],
+                ["ACPT-01"])
 
-    def test_phase25_compact_live_service_row_maps_to_phase18_live_network_criterion(self) -> None:
+    def test_phase25_compact_live_service_row_maps_to_phase18_live_network_criterion(
+            self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
@@ -661,189 +206,55 @@ class Phase26ReleaseSigningUpstreamEvidenceTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stdout)
             rows = {
                 row["criterion_id"]: row
-                for row in self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/upstream-result-row-table.json")["rows"]
+                for row in self.read_json(
+                    root,
+                    f"{DEFAULT_OUTPUT_DIR}/upstream-result-row-table.json")
+                ["rows"]
             }
             self.assertNotIn("final-live-service-evidence", rows)
             live_row = rows["final-live-network-transfer-evidence"]
             self.assertEqual(live_row["status"], "passed")
-            self.assertEqual(live_row["requirement_ids"], ["EVID-03", "ACPT-01"])
+            self.assertEqual(live_row["requirement_ids"],
+                             ["EVID-03", "ACPT-01"])
             self.assertIn(row_paths["phase25"], live_row["evidence_refs"])
-
-    def test_invalid_upstream_row_guards_block_or_reject(self) -> None:
-        reject_cases = [
-            ("criterion_id", "final-ci-evidence", "criterion_id must be final-simulator-evidence"),
-            ("requirement_ids", ["EVID-02"], "requirement_ids must be ['EVID-01']"),
-            ("phase", "24-hardware-media-and-safety-evidence-execution", "phase must be 23-simulator-evidence-execution"),
-            ("phase_lifecycle_id", "", "phase_lifecycle_id must be a non-empty string"),
-            ("status", "exception-requested", "status is invalid"),
-            ("artifact_refs", ["../unsafe.json"], "ref escapes allowed roots"),
-        ]
-        for field, value, expected_message in reject_cases:
-            with self.subTest(field=field):
-                # Arrange
-                temp_dir, root = self.make_temp_root()
-                with temp_dir:
-                    row_paths = self.write_valid_upstream_rows(root)
-                    row = self.read_json(root, row_paths["phase23"])
-                    row[field] = value
-                    self.write_json(root, row_paths["phase23"], row)
-
-                    # Act
-                    result = self.run_verifier(
-                        ["--quick", "--phase23-simulator-row", row_paths["phase23"]],
-                        maybe_root=root,
-                    )
-
-                    # Assert
-                    self.assertNotEqual(result.returncode, 0, result.stdout)
-                    self.assertIn(expected_message, result.stdout)
-
-        block_cases = [
-            ("redaction_status", "failed", "redaction-failed"),
-            ("source_ref_status", "failed", "source-ref-failed"),
-        ]
-        for field, value, expected_reason in block_cases:
-            with self.subTest(field=field):
-                # Arrange
-                temp_dir, root = self.make_temp_root()
-                with temp_dir:
-                    row_paths = self.write_valid_upstream_rows(root)
-                    row = self.read_json(root, row_paths["phase23"])
-                    row[field] = value
-                    self.write_json(root, row_paths["phase23"], row)
-
-                    # Act
-                    result = self.run_verifier(
-                        [
-                            "--quick",
-                            "--output-dir",
-                            DEFAULT_OUTPUT_DIR,
-                            "--phase23-simulator-row",
-                            row_paths["phase23"],
-                        ],
-                        maybe_root=root,
-                    )
-
-                    # Assert
-                    self.assertEqual(result.returncode, 0, result.stdout)
-                    rows = self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/upstream-result-row-table.json")["rows"]
-                    simulator_row = next(row for row in rows if row["criterion_id"] == "final-simulator-evidence")
-                    self.assertEqual(simulator_row["status"], "blocked")
-                    self.assertIn(expected_reason, simulator_row["failure_reason"])
 
     def test_quick_marks_real_release_evidence_as_not_supplied(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
-            result = self.run_verifier(["--quick", "--output-dir", DEFAULT_OUTPUT_DIR], maybe_root=root)
+            result = self.run_verifier(
+                ["--quick", "--output-dir", DEFAULT_OUTPUT_DIR],
+                maybe_root=root)
             self.assertEqual(result.returncode, 0, result.stdout)
 
             # Act
-            manifest = self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/release-upstream-run-manifest.json")
-            rows = self.read_json(root, f"{DEFAULT_OUTPUT_DIR}/upstream-result-row-table.json")["rows"]
+            manifest = self.read_json(
+                root,
+                f"{DEFAULT_OUTPUT_DIR}/release-upstream-run-manifest.json")
+            rows = self.read_json(
+                root,
+                f"{DEFAULT_OUTPUT_DIR}/upstream-result-row-table.json")["rows"]
 
             # Assert
             self.assertFalse(manifest["real_release_evidence_supplied"])
-            release_row = next(row for row in rows if row["criterion_id"] == "final-release-artifact-signing-evidence")
+            release_row = next(row for row in rows if row["criterion_id"] ==
+                               "final-release-artifact-signing-evidence")
             self.assertEqual(release_row["status"], "pending-release-input")
             self.assertEqual(release_row["exception_status"], "none")
             self.assertEqual(release_row["maintainer_state"], "pending")
-
-    def test_redaction_failure_is_hard_blocker(self) -> None:
-        # Arrange
-        module = self.load_verifier_module()
-        requirement = {
-            "acceptable_statuses": ["passed"],
-            "exception_coverable_statuses": ["failed", "blocked"],
-            "hard_blocking_statuses": ["rejected-redaction"],
-        }
-        row = {
-            "criterion_id": "final-release-artifact-signing-evidence",
-            "status": "passed",
-            "redaction_status": "failed",
-            "source_ref_status": "passed",
-            "source_lifecycle_status": "current",
-            "failure_reason": "none",
-            "maintainer_state": "pending",
-        }
-
-        # Act
-        normalized = module.normalize_upstream_row(row, requirement)
-
-        # Assert
-        self.assertEqual(normalized["status"], "blocked")
-        self.assertIn("redaction-failed", normalized["failure_reason"])
-        self.assertEqual(normalized["maintainer_state"], "blocked")
-
-    def test_lifecycle_and_source_ref_failures_block_rows(self) -> None:
-        module = self.load_verifier_module()
-        requirement = {
-            "acceptable_statuses": ["passed"],
-            "exception_coverable_statuses": ["failed", "blocked"],
-            "hard_blocking_statuses": ["rejected-redaction"],
-        }
-        cases = [
-            ("source_ref_status", "invalid", "source-ref-failed"),
-            ("source_lifecycle_status", "stale", "lifecycle-mismatch"),
-        ]
-        for field, value, expected_reason in cases:
-            with self.subTest(field=field):
-                # Arrange
-                row = {
-                    "criterion_id": "final-ci-evidence",
-                    "status": "passed",
-                    "redaction_status": "passed",
-                    "source_ref_status": "passed",
-                    "source_lifecycle_status": "current",
-                    "failure_reason": "none",
-                    "maintainer_state": "pending",
-                }
-                row[field] = value
-
-                # Act
-                normalized = module.normalize_upstream_row(row, requirement)
-
-                # Assert
-                self.assertEqual(normalized["status"], "blocked")
-                self.assertIn(expected_reason, normalized["failure_reason"])
-                self.assertEqual(normalized["maintainer_state"], "blocked")
-
-    def test_exception_coverable_status_does_not_become_passed(self) -> None:
-        # Arrange
-        module = self.load_verifier_module()
-        requirement = {
-            "acceptable_statuses": ["passed"],
-            "exception_coverable_statuses": ["failed"],
-            "hard_blocking_statuses": ["rejected-redaction"],
-        }
-        row = {
-            "criterion_id": "final-ci-evidence",
-            "status": "failed",
-            "redaction_status": "passed",
-            "source_ref_status": "passed",
-            "source_lifecycle_status": "current",
-            "exception_status": "exception-approved",
-            "failure_reason": "failed source row",
-            "maintainer_state": "pending",
-        }
-
-        # Act
-        normalized = module.normalize_upstream_row(row, requirement)
-
-        # Assert
-        self.assertEqual(normalized["status"], "failed")
-        self.assertEqual(normalized["exception_status"], "exception-approved")
-        self.assertNotEqual(normalized["status"], "passed")
 
     def test_quick_outputs_do_not_overclaim_later_acceptance(self) -> None:
         # Arrange
         temp_dir, root = self.make_temp_root()
         with temp_dir:
-            result = self.run_verifier(["--quick", "--output-dir", DEFAULT_OUTPUT_DIR], maybe_root=root)
+            result = self.run_verifier(
+                ["--quick", "--output-dir", DEFAULT_OUTPUT_DIR],
+                maybe_root=root)
             self.assertEqual(result.returncode, 0, result.stdout)
             combined_output = "\n".join(
-                path.read_text(encoding="utf-8") for path in sorted((root / DEFAULT_OUTPUT_DIR).rglob("*.json"))
-            )
+                path.read_text(encoding="utf-8")
+                for path in sorted((root /
+                                    DEFAULT_OUTPUT_DIR).rglob("*.json")))
 
             # Act
             lower_output = combined_output.lower()
@@ -863,59 +274,6 @@ class Phase26ReleaseSigningUpstreamEvidenceTest(unittest.TestCase):
 
         # Assert
         self.assertEqual(result.returncode, 0, result.stdout)
-
-    def test_wiring_only_rejects_missing_phase26_source_ref_filegroup(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.copy_wiring_files(root)
-            tools_build = (root / "tools/bazel/BUILD.bazel").read_text(encoding="utf-8")
-            self.write_file(root, "tools/bazel/BUILD.bazel", tools_build.replace('name = "phase26_source_ref_manifests"', 'name = "phase26_source_refs_missing"'))
-
-            # Act
-            result = self.run_verifier(["--wiring-only"], maybe_root=root)
-
-            # Assert
-            self.assertNotEqual(result.returncode, 0, result.stdout)
-            self.assertIn("phase26_source_ref_manifests", result.stdout)
-
-    def test_wiring_only_rejects_workflow_order_drift(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.copy_wiring_files(root)
-            workflow = (root / "tools/bazel/rust_workflow.sh").read_text(encoding="utf-8")
-            workflow = workflow.replace(
-                "python3 tools/bazel/phase26_release_signing_upstream_evidence.py --wiring-only\n    python3 tools/bazel/phase26_release_signing_upstream_evidence.py --quick --output-dir build/ci-evidence/phase26",
-                "python3 tools/bazel/phase26_release_signing_upstream_evidence.py --quick --output-dir build/ci-evidence/phase26\n    python3 tools/bazel/phase26_release_signing_upstream_evidence.py --wiring-only",
-            )
-            self.write_file(root, "tools/bazel/rust_workflow.sh", workflow)
-
-            # Act
-            result = self.run_verifier(["--wiring-only"], maybe_root=root)
-
-            # Assert
-            self.assertNotEqual(result.returncode, 0, result.stdout)
-            self.assertIn("must run --wiring-only before --quick", result.stdout)
-
-    def test_wiring_only_rejects_just_order_drift(self) -> None:
-        # Arrange
-        temp_dir, root = self.make_temp_root()
-        with temp_dir:
-            self.copy_wiring_files(root)
-            justfile = (root / "justfile").read_text(encoding="utf-8")
-            justfile = justfile.replace(
-                "phase26-verify:\n    bazel run //tools/bazel:phase26_verify_tests\n    bazel run //tools/bazel:phase26_verify",
-                "phase26-verify:\n    bazel run //tools/bazel:phase26_verify\n    bazel run //tools/bazel:phase26_verify_tests",
-            )
-            self.write_file(root, "justfile", justfile)
-
-            # Act
-            result = self.run_verifier(["--wiring-only"], maybe_root=root)
-
-            # Assert
-            self.assertNotEqual(result.returncode, 0, result.stdout)
-            self.assertIn("must run tests before verifier", result.stdout)
 
 
 if __name__ == "__main__":
