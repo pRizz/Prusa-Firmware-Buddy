@@ -35,6 +35,7 @@ target_sources(
           MItem_network.cpp
           MItem_print.cpp
           MItem_tools.cpp
+          MItem_tools_actions.cpp
           numeric_input_config_common.cpp
           print_time_module.cpp
           pseudo_screen_callback.cpp
@@ -78,6 +79,7 @@ target_sources(
           screen_print_preview.cpp
           screen_printer_setup.cpp
           screen_printing.cpp
+          screen_printing_state.cpp
           screen_printing_end_result.cpp
           screen_prusa_link.cpp
           screen_qr_error.cpp

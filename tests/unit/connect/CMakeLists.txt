@@ -16,6 +16,7 @@ add_executable(
   ${CMAKE_SOURCE_DIR}/src/common/base64_stream_decoder.cpp
   ${CMAKE_SOURCE_DIR}/src/common/gcode/gcode_reader_any.cpp
   ${CMAKE_SOURCE_DIR}/src/common/gcode/gcode_reader_binary.cpp
+  ${CMAKE_SOURCE_DIR}/src/common/gcode/gcode_reader_binary_blocks.cpp
   ${CMAKE_SOURCE_DIR}/src/common/gcode/gcode_reader_interface.cpp
   ${CMAKE_SOURCE_DIR}/src/common/gcode/gcode_reader_plaintext.cpp
   ${CMAKE_SOURCE_DIR}/src/common/gcode/gcode_buffer.cpp
@@ -30,6 +31,8 @@ add_executable(
   ${CMAKE_SOURCE_DIR}/src/common/general_response.cpp
   ${CMAKE_SOURCE_DIR}/src/connect/background.cpp
   ${CMAKE_SOURCE_DIR}/src/connect/render.cpp
+  ${CMAKE_SOURCE_DIR}/src/connect/render_json.cpp
+  ${CMAKE_SOURCE_DIR}/src/connect/render_telemetry.cpp
   ${CMAKE_SOURCE_DIR}/src/connect/command.cpp
   ${CMAKE_SOURCE_DIR}/src/connect/planner.cpp
   ${CMAKE_SOURCE_DIR}/src/connect/printer.cpp
@@ -44,6 +47,8 @@ add_executable(
   ${CMAKE_SOURCE_DIR}/src/transfers/transfer_file_check.cpp
   ${CMAKE_SOURCE_DIR}/src/transfers/transfer_recovery.cpp
   ${CMAKE_SOURCE_DIR}/src/common/str_utils.cpp
+  ${CMAKE_SOURCE_DIR}/src/common/utils/string_builder.cpp
+  ${CMAKE_SOURCE_DIR}/src/lang/string_view_utf8.cpp
   ${CMAKE_SOURCE_DIR}/lib/heatshrink/heatshrink_decoder.c
   command.cpp
   missing_functions.cpp

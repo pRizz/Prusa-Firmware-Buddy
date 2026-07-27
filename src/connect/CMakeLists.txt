@@ -15,6 +15,8 @@ target_sources(
           printer_type.cpp
           registrator.cpp
           render.cpp
+          render_json.cpp
+          render_telemetry.cpp
           run.cpp
           sleep.cpp
           status.cpp
