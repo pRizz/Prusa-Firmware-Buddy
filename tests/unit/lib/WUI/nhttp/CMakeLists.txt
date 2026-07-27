@@ -9,6 +9,7 @@ add_executable(
   ${CMAKE_CURRENT_SOURCE_DIR}/transfer_mock.cpp
   # Some handlers are stubbed out.
   ${CMAKE_CURRENT_SOURCE_DIR}/server_tests.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/server_error_tests.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/req_parser_tests.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/job_command_tests.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/file_command_tests.cpp

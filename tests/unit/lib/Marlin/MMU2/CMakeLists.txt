@@ -2,6 +2,7 @@ add_compile_definitions(UNITTEST)
 add_executable(
   Marlin_MMU2_tests
   ${CMAKE_CURRENT_SOURCE_DIR}/mmu2-printer_test.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/mmu2_protocol_error_test.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/mmu2_protocol_logic_test.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/mmu2_percentage_test.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/stubs/mmu2_marlin2.cpp
