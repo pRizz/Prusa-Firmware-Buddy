@@ -1077,6 +1077,26 @@ shell_binary(
 )
 
 filegroup(
+    name = "phase33_runtime_modules",
+    srcs = [
+        "phase33_decision_outputs.py",
+        "phase33_decision_policy.py",
+        "phase33_decision_validation.py",
+        "phase33_decision_wiring.py",
+    ],
+)
+
+filegroup(
+    name = "phase33_test_modules",
+    srcs = [
+        "phase33_maintainer_decision_inputs_cases_test.py",
+        "phase33_maintainer_decision_inputs_failure_test.py",
+        "phase33_maintainer_decision_inputs_security_test.py",
+        ":phase33_runtime_modules",
+    ],
+)
+
+filegroup(
     name = "phase33_source_ref_manifests",
     srcs = [
         "manifests/phase23_simulator_evidence_execution_contract.json",
@@ -1104,6 +1124,7 @@ shell_binary(
         "manifests/phase33_maintainer_decision_inputs_contract.json",
         ":phase31_runtime_modules",
         ":phase32_runtime_modules",
+        ":phase33_runtime_modules",
         ":phase33_source_ref_manifests",
         "//:phase33_maintainer_decision_inputs_docs",
     ],
@@ -1116,7 +1137,34 @@ shell_binary(
         "phase33_maintainer_decision_inputs.py",
         "phase33_maintainer_decision_inputs_test.py",
         "manifests/phase33_maintainer_decision_inputs_contract.json",
+        ":phase33_test_modules",
         ":phase33_source_ref_manifests",
+    ],
+)
+
+filegroup(
+    name = "phase34_runtime_modules",
+    srcs = [
+        "phase34_bundle_publication.py",
+        "phase34_coverage_diagnostics.py",
+        "phase34_decision_validation.py",
+        "phase34_publication_state.py",
+        "phase34_readiness_policy.py",
+        "phase34_readiness_wiring.py",
+        "phase34_source_validation.py",
+    ],
+)
+
+filegroup(
+    name = "phase34_test_modules",
+    srcs = [
+        "phase34_final_readiness_cases_test.py",
+        "phase34_final_readiness_demotion_failure_test.py",
+        "phase34_final_readiness_source_failure_test.py",
+        "phase34_publication_state_test.py",
+        "phase34_test_contract.py",
+        "phase34_test_support.py",
+        ":phase34_runtime_modules",
     ],
 )
 
@@ -1146,6 +1194,8 @@ shell_binary(
         "manifests/phase34_final_readiness_demotion_dry_run_contract.json",
         ":phase31_runtime_modules",
         ":phase32_runtime_modules",
+        ":phase33_runtime_modules",
+        ":phase34_runtime_modules",
         ":phase34_source_ref_manifests",
         "//:phase34_final_readiness_demotion_dry_run_docs",
     ],
@@ -1171,11 +1221,36 @@ shell_binary(
         "phase34_final_readiness_demotion_dry_run_test.py",
         ":phase31_runtime_modules",
         ":phase32_test_modules",
+        ":phase33_test_modules",
+        ":phase34_test_modules",
         ":phase26_source_ref_manifests",
         ":phase27_source_ref_manifests",
         ":phase28_source_ref_manifests",
         "manifests/phase34_final_readiness_demotion_dry_run_contract.json",
         ":phase34_source_ref_manifests",
+    ],
+)
+
+filegroup(
+    name = "phase35_runtime_modules",
+    srcs = [
+        "phase35_authority_guard.py",
+        "phase35_bundle_wiring.py",
+        "phase35_contract_security.py",
+        "phase35_cutover_policy.py",
+        "phase35_source_bundle.py",
+    ],
+)
+
+filegroup(
+    name = "phase35_test_modules",
+    srcs = [
+        "phase35_cutover_decision_cases_test.py",
+        "phase35_cutover_decision_failure_test.py",
+        "phase35_cutover_decision_security_test.py",
+        "phase35_guarded_publication_test.py",
+        "phase35_source_failure_replacement_test.py",
+        ":phase35_runtime_modules",
     ],
 )
 
@@ -1205,6 +1280,9 @@ shell_binary(
         "manifests/phase35_cutover_decision_artifact_contract.json",
         ":phase31_runtime_modules",
         ":phase32_runtime_modules",
+        ":phase33_runtime_modules",
+        ":phase34_runtime_modules",
+        ":phase35_runtime_modules",
         ":phase35_source_ref_manifests",
         "//:phase35_cutover_decision_artifact_docs",
     ],
@@ -1217,6 +1295,7 @@ shell_binary(
         "phase35_cutover_decision_artifact.py",
         "phase35_cutover_decision_artifact_test.py",
         "manifests/phase35_cutover_decision_artifact_contract.json",
+        ":phase35_test_modules",
         ":phase35_source_ref_manifests",
     ],
 )
@@ -1240,6 +1319,9 @@ filegroup(
         "phase38_cutover_workflow.py",
         ":phase31_runtime_modules",
         ":phase32_runtime_modules",
+        ":phase33_runtime_modules",
+        ":phase34_runtime_modules",
+        ":phase35_runtime_modules",
         "manifests/foreign_code_inventory.json",
         "manifests/phase11_cutover_readiness.json",
         "manifests/phase11_retained_code_justifications.json",
@@ -1282,6 +1364,9 @@ shell_binary(
         "phase38_cutover_workflow_test.py",
         ":phase31_test_modules",
         ":phase32_test_modules",
+        ":phase33_test_modules",
+        ":phase34_test_modules",
+        ":phase35_test_modules",
         ":phase38_actual_producer_runfiles",
     ],
 )

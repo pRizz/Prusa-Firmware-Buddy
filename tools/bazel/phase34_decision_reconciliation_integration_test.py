@@ -23,8 +23,19 @@ PHASE33_NORMALIZED = "build/ci-evidence/phase33/normalized-decision-records.json
 PHASE34_OUTPUT = "build/ci-evidence/phase34"
 RUNTIME_FILES = [
     "tools/bazel/phase33_maintainer_decision_inputs.py",
+    "tools/bazel/phase33_decision_policy.py",
+    "tools/bazel/phase33_decision_validation.py",
+    "tools/bazel/phase33_decision_outputs.py",
+    "tools/bazel/phase33_decision_wiring.py",
     "tools/bazel/phase34_decision_reconciliation.py",
     "tools/bazel/phase34_final_readiness_demotion_dry_run.py",
+    "tools/bazel/phase34_publication_state.py",
+    "tools/bazel/phase34_source_validation.py",
+    "tools/bazel/phase34_decision_validation.py",
+    "tools/bazel/phase34_readiness_policy.py",
+    "tools/bazel/phase34_coverage_diagnostics.py",
+    "tools/bazel/phase34_bundle_publication.py",
+    "tools/bazel/phase34_readiness_wiring.py",
     "tools/bazel/manifests/phase33_maintainer_decision_inputs_contract.json",
     "tools/bazel/manifests/phase34_final_readiness_demotion_dry_run_contract.json",
 ]
