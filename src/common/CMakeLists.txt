@@ -57,6 +57,7 @@ if(BOARD IN_LIST BUDDY_BOARDS)
             print_utils.cpp
             printer_model.cpp
             probe_analysis.cpp
+            probe_analysis_math.cpp
             random_hw.cpp
             ring_allocator.cpp
             rw_mutex.cpp
@@ -136,6 +137,7 @@ elseif(BOARD STREQUAL "XL_DEV_KIT_XLB")
             Pin.cpp
             print_utils.cpp
             probe_analysis.cpp
+            probe_analysis_math.cpp
             random_sw.cpp
             safe_state.cpp
             serial_printing.cpp

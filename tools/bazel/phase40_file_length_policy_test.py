@@ -152,8 +152,10 @@ class ShrinkOnlyPolicyTests(unittest.TestCase):
     def test_rejects_unauthorized_owned_permanence(self) -> None:
         # Arrange
         entries = baseline_entries()
-        unauthorized_path = min(policy.ORIGINAL_TEMPORARY_PATHS -
-                                policy.LOCKED_OWNED_PATHS)
+        unauthorized_path = min(
+            entry.path for entry in entries
+            if entry.reason.startswith("temporary:")
+            and entry.path not in policy.LOCKED_OWNED_PATHS)
         changed = tuple(
             replace(entry, reason=OWNED_REASON) if entry.path ==
             unauthorized_path else entry for entry in entries)

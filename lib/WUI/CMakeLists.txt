@@ -4,6 +4,7 @@ target_sources(
   WUI
   INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/http_req_automaton.cpp
             espif.cpp
+            espif_lifecycle.cpp
             ethernetif.c
             ethernetif.cpp
             http_lifetime.cpp
@@ -29,6 +30,7 @@ target_sources(
             nhttp/send_file.cpp
             nhttp/send_json.cpp
             nhttp/server.cpp
+            nhttp/server_dispatch.cpp
             nhttp/splice.cpp
             nhttp/static_mem.cpp
             nhttp/status_page.cpp
@@ -38,6 +40,7 @@ target_sources(
             sntp/sntp.c
             sntp/sntp_client.c
             wui.cpp
+            wui_request.cpp
             wui_api.cpp
   )
 

@@ -11,7 +11,6 @@
 #endif
 
 #include <otp.hpp>
-#include <mbedtls/sha256.h>
 #include <tasks.hpp>
 
 #include "sntp_client.h"
@@ -21,26 +20,18 @@
 #include <array>
 #include <cstring>
 #include <cassert>
-#include <lwip/ip.h>
 #include <lwip/dns.h>
-#include <lwip/tcp.h>
-#include <lwip/altcp_tcp.h>
 #include <lwip/netifapi.h>
 #include <lwip/netif.h>
 #include <lwip/tcpip.h>
 #include <freertos/mutex.hpp>
 #include <mutex>
 #include "http_lifetime.h"
-#include <buddy/main.h>
+#include "nhttp/server.h"
 #include <buddy/ccm_thread.hpp>
-#include "tasks.hpp"
-
 #include "netdev.h"
 
-#include "otp.hpp"
 #include <config_store/store_instance.hpp>
-#include <nhttp/server.h>
-#include <random.h>
 
 LOG_COMPONENT_DEF(WUI, logging::Severity::debug);
 LOG_COMPONENT_DEF(Network, logging::Severity::info);
@@ -49,39 +40,12 @@ using std::unique_lock;
 
 #define LOOP_EVT_TIMEOUT 500UL
 
-// Avoid confusing character pairs ‒ 1/l/I, 0/O.
-static char charset[] = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-
-void wui_generate_password(char *password, uint32_t length) {
-    // One less, as the above contains '\0' at the end which we _do not_ want to generate.
-    const uint32_t charset_length = sizeof(charset) / sizeof(char) - 1;
-    uint32_t i = 0;
-
-    while (i < length - 1) {
-        uint32_t random = 0;
-        if (!rand_u_secure(&random)) {
-            // Failure in RNG, reset the password to „login disabled“.
-            password[0] = 0;
-            return;
-        }
-        password[i++] = charset[random % charset_length];
-    }
-    password[i] = 0;
-}
-
-void wui_store_password(char *password, uint32_t length) {
-    config_store().prusalink_password.set(password, length);
-}
+void wui_request_init_password();
+#if MDNS()
+void wui_request_init_mdns(netif *iface);
+#endif
 
 namespace {
-
-void prusalink_password_init(void) {
-    if (!strcmp(config_store().prusalink_password.get().data(), "")) {
-        char password[config_store_ns::pl_password_size] = { 0 };
-        wui_generate_password(password, config_store_ns::pl_password_size);
-        wui_store_password(password, config_store_ns::pl_password_size);
-    }
-}
 
 // This is the top-level manager of network settings and interfaces.
 //
@@ -220,18 +184,6 @@ private:
     static void status_callback_raw(struct netif *iface) {
         static_cast<NetworkState *>(iface->state)->status_callback(*iface);
     }
-
-#if MDNS()
-    static void mdns_netif_init(netif *iface) {
-        iface->flags |= NETIF_FLAG_IGMP;
-        igmp_start(iface);
-        //  TODO: Any way to handle errors? Can they even happen?
-        mdns_resp_add_netif(iface);
-        if (config_store().prusalink_enabled.get() == 1) {
-            mdns_resp_add_service_prusalink(iface);
-        }
-    }
-#endif
 
     void tcpip_init_done() {
 #if MDNS()
@@ -388,7 +340,7 @@ private:
         tcpip_init(tcpip_init_done_raw, this);
 
         if (allow_full) {
-            prusalink_password_init();
+            wui_request_init_password();
         }
 
         // During init, we store the events for later. Therefore, we accumulate
@@ -518,7 +470,7 @@ private:
                     if (active < ifaces.size() && netif_ip4_addr(&ifaces[active].dev)->addr != 0) {
                         // Wait with initialization until we get an IP address.
                         ifaces[active].mdns_initialized = true;
-                        netifapi_netif_common(&ifaces[active].dev, mdns_netif_init, nullptr);
+                        netifapi_netif_common(&ifaces[active].dev, wui_request_init_mdns, nullptr);
                     }
                 }
             }
@@ -643,10 +595,6 @@ void start_network_task(bool allow_full) {
     NetworkState::run_task(allow_full);
 }
 
-const char *wui_get_password() {
-    return config_store().prusalink_password.get_c_str();
-}
-
 void notify_esp_data() {
     NetworkState::notify(NetworkState::NetworkAction::EspData);
 }
@@ -677,88 +625,4 @@ uint32_t netdev_get_active_id() {
 
 void notify_reconfigure() {
     NetworkState::notify(NetworkState::NetworkAction::Reconfigure);
-}
-
-void netdev_set_active_id(uint32_t netdev_id) {
-    assert(netdev_id <= NETDEV_COUNT);
-
-    const auto target = static_cast<uint8_t>(netdev_id & 0xFF);
-    if (config_store().active_netdev.get() != target) {
-        config_store().active_netdev.set(target);
-        notify_reconfigure();
-    }
-}
-
-namespace {
-
-template <class F>
-void modify_flag(uint32_t netdev_id, F &&f) {
-    assert(netdev_id == NETDEV_ETH_ID || netdev_id == NETDEV_ESP_ID);
-
-    // Read it from the EEPROM, not from the state. For two reasons:
-    // * While it likely can't happen, it's unclear what should happen if the
-    //   state wasn't initiated yet.
-    // * The config in the state is delayed (reloaded in reconfigure), we want
-    //   as fresh value as possible. This still leaves the possibility of a
-    //   race condition (two threads messing with the same variable), but that
-    //   is unlikely.
-    const uint8_t old = netdev_id == NETDEV_ETH_ID ? config_store().lan_flag.get() : config_store().wifi_flag.get();
-    uint8_t flag = f(old);
-    if (old != flag) {
-        netdev_id == NETDEV_ETH_ID ? config_store().lan_flag.set(flag) : config_store().wifi_flag.set(flag);
-        notify_reconfigure();
-    }
-}
-
-} // namespace
-
-void netdev_set_static(uint32_t netdev_id) {
-    modify_flag(netdev_id, [](uint8_t flag) -> uint8_t {
-        CHANGE_FLAG_TO_STATIC(flag);
-        TURN_FLAG_ON(flag);
-        return flag;
-    });
-}
-
-void netdev_set_dhcp(uint32_t netdev_id) {
-    modify_flag(netdev_id, [](uint8_t flag) -> uint8_t {
-        CHANGE_FLAG_TO_DHCP(flag);
-        TURN_FLAG_ON(flag);
-        return flag;
-    });
-}
-
-// Support for enable disable device (i.e. to disable wifi)
-void netdev_set_enabled(const uint32_t netdev_id, const bool enabled) {
-    modify_flag(netdev_id, [&enabled](uint8_t flag) -> uint8_t {
-        if (enabled) {
-            TURN_FLAG_ON(flag);
-        } else {
-            TURN_FLAG_OFF(flag);
-        }
-        return flag;
-    });
-}
-
-bool netdev_is_enabled([[maybe_unused]] const uint32_t netdev_id) {
-    const uint8_t flag = config_store().wifi_flag.get();
-    return IS_LAN_ON(flag);
-}
-
-netdev_ip_obtained_t netdev_get_ip_obtained_type(uint32_t netdev_id) {
-    // FIXME: This API is subtly wrong. What if the device is off or not exist?
-    //
-    // Defaulting to DHCP is done for historical reasons, but feels weird.
-    if (netdev_id < NETDEV_COUNT) {
-        uint8_t extract = 0;
-        // We don't actually _modify_ it, just reuse the code.
-        modify_flag(netdev_id, [&](uint8_t flag) {
-            extract = flag;
-            return flag;
-        });
-
-        return IS_LAN_DHCP(extract) ? NETDEV_DHCP : NETDEV_STATIC;
-    } else {
-        return NETDEV_DHCP;
-    }
 }

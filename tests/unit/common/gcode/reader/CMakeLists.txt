@@ -4,6 +4,7 @@ add_executable(
   ${CMAKE_SOURCE_DIR}/src/common/gcode/gcode_buffer.cpp
   ${CMAKE_SOURCE_DIR}/src/common/gcode/gcode_reader_any.cpp
   ${CMAKE_SOURCE_DIR}/src/common/gcode/gcode_reader_binary.cpp
+  ${CMAKE_SOURCE_DIR}/src/common/gcode/gcode_reader_binary_blocks.cpp
   ${CMAKE_SOURCE_DIR}/src/common/gcode/gcode_reader_interface.cpp
   ${CMAKE_SOURCE_DIR}/src/common/gcode/gcode_reader_plaintext.cpp
   ${CMAKE_SOURCE_DIR}/src/common/gcode/meatpack.cpp
