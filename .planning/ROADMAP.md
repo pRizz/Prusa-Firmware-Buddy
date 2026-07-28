@@ -216,7 +216,7 @@ Plans:
   3. Exactly `src/guiapi/include/Rect16.h`, `src/connect/planner.cpp`, and `src/gui/screen_tools_mapping.cpp` convert to permanent-owned deletion-test reasons; no other owned path is reclassified.
   4. Firmware characterization tests split before production firmware work, print/safety work runs last, and `src/common/marlin_server.cpp` is the final production file refactored.
   5. Terminal reconciliation from a clean checkout reports exactly 841 permanent exceptions, zero temporary reasons, and `SUMMARY file-lengths ... findings=0`, with risk-tiered automated evidence and hardware-aware review complete.
-**Plans**: 15 plans
+**Plans**: 18 plans
 
 Plans:
 - [x] 40-01-PLAN.md — Seed the exact 933-row ledger and Wave 0 policy/verification gate.
@@ -234,6 +234,9 @@ Plans:
 - [x] 40-13-PLAN.md — Refactor non-server print and safety lifecycle sources.
 - [x] 40-14-PLAN.md — Refactor `marlin_server.cpp` last and remove the final temporary row.
 - [x] 40-15-PLAN.md — Perform exact terminal reconciliation and hardware-aware approval.
+- [ ] 40-16-PLAN.md — Materialize Phase 33 test modules and remove dynamic source reconstruction.
+- [ ] 40-17-PLAN.md — Materialize Phase 34 test modules and remove dynamic source reconstruction.
+- [ ] 40-18-PLAN.md — Materialize Phase 35 test modules and remove dynamic source reconstruction.
 
 ## Requirement Coverage
 
