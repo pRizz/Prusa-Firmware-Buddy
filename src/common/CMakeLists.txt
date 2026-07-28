@@ -41,8 +41,13 @@ if(BOARD IN_LIST BUDDY_BOARDS)
             marlin_client.cpp
             marlin_log_component.cpp
             marlin_print_preview.cpp
-            print_preview_policy.cpp
             marlin_server.cpp
+            marlin_server_events.cpp
+            marlin_server_lifecycle.cpp
+            marlin_server_media.cpp
+            marlin_server_print.cpp
+            marlin_server_requests.cpp
+            marlin_server_safety.cpp
             marlin_vars.cpp
             MarlinPin.cpp
             media_prefetch/media_prefetch.cpp
@@ -56,6 +61,7 @@ if(BOARD IN_LIST BUDDY_BOARDS)
             path_utils.cpp
             Pin.cpp
             ping_manager.cpp
+            print_preview_policy.cpp
             print_utils.cpp
             printer_model.cpp
             probe_analysis.cpp
@@ -130,14 +136,20 @@ elseif(BOARD STREQUAL "XL_DEV_KIT_XLB")
             marlin_errors.cpp
             marlin_log_component.cpp
             marlin_print_preview.cpp
-            print_preview_policy.cpp
             marlin_server.cpp
+            marlin_server_events.cpp
+            marlin_server_lifecycle.cpp
+            marlin_server_media.cpp
+            marlin_server_print.cpp
+            marlin_server_requests.cpp
+            marlin_server_safety.cpp
             marlin_vars.cpp
             MarlinPin.cpp
             metric.cpp
             odometer.cpp
             otp.cpp
             Pin.cpp
+            print_preview_policy.cpp
             print_utils.cpp
             probe_analysis.cpp
             probe_analysis_math.cpp
