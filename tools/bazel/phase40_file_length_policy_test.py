@@ -115,6 +115,12 @@ class LedgerParsingTests(unittest.TestCase):
 
 class ShrinkOnlyPolicyTests(unittest.TestCase):
 
+    def unused_temporary_path(self, entries: tuple[policy.LedgerEntry,
+                                                   ...]) -> str:
+        active_paths = {entry.path for entry in entries}
+        return min(policy.ORIGINAL_TEMPORARY_PATHS -
+                   policy.LOCKED_OWNED_PATHS - active_paths)
+
     def test_rejects_temporary_set_growth(self) -> None:
         # Arrange
         entries = baseline_entries()
@@ -152,13 +158,12 @@ class ShrinkOnlyPolicyTests(unittest.TestCase):
     def test_rejects_unauthorized_owned_permanence(self) -> None:
         # Arrange
         entries = baseline_entries()
-        unauthorized_path = min(
-            entry.path for entry in entries
-            if entry.reason.startswith("temporary:")
-            and entry.path not in policy.LOCKED_OWNED_PATHS)
-        changed = tuple(
-            replace(entry, reason=OWNED_REASON) if entry.path ==
-            unauthorized_path else entry for entry in entries)
+        unauthorized_path = self.unused_temporary_path(entries)
+        changed = entries + (policy.LedgerEntry(
+            check_id="file-lengths",
+            path=unauthorized_path,
+            reason=OWNED_REASON,
+        ), )
         parsed = policy.parse_ledger(render_entries(changed))
 
         # Act
@@ -172,22 +177,26 @@ class ShrinkOnlyPolicyTests(unittest.TestCase):
     def test_accepts_temporary_set_shrinkage(self) -> None:
         # Arrange
         entries = baseline_entries()
-        active_temporary_entries = tuple(
-            entry for entry in entries
-            if entry.reason.startswith("temporary:"))
+        active_temporary_count = sum(
+            entry.reason.startswith("temporary:") for entry in entries)
         active_owned_count = sum(
             entry.reason.startswith(policy.OWNED_REASON_PREFIX)
             for entry in entries)
-        removed_path = active_temporary_entries[0].path
-        changed = tuple(entry for entry in entries
-                        if entry.path != removed_path)
+        removed_path = self.unused_temporary_path(entries)
+        before_shrink = entries + (policy.LedgerEntry(
+            check_id="file-lengths",
+            path=removed_path,
+            reason=TEMPORARY_REASON,
+        ), )
 
         # Act
-        summary = policy.validate_policy(changed)
+        before_summary = policy.validate_policy(before_shrink)
+        summary = policy.validate_policy(entries)
 
         # Assert
-        self.assertEqual(summary.temporary_count,
-                         len(active_temporary_entries) - 1)
+        self.assertEqual(before_summary.temporary_count,
+                         active_temporary_count + 1)
+        self.assertEqual(summary.temporary_count, active_temporary_count)
         self.assertEqual(
             summary.permanent_count,
             len(policy.FROZEN_PERMANENT_PATHS) + active_owned_count,
