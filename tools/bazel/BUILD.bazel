@@ -1250,6 +1250,7 @@ filegroup(
         "phase35_cutover_decision_security_test.py",
         "phase35_guarded_publication_test.py",
         "phase35_source_failure_replacement_test.py",
+        "phase35_test_support.py",
         ":phase35_runtime_modules",
     ],
 )
