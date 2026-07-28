@@ -234,9 +234,9 @@ Plans:
 - [x] 40-13-PLAN.md — Refactor non-server print and safety lifecycle sources.
 - [x] 40-14-PLAN.md — Refactor `marlin_server.cpp` last and remove the final temporary row.
 - [x] 40-15-PLAN.md — Perform exact terminal reconciliation and hardware-aware approval.
-- [ ] 40-16-PLAN.md — Materialize Phase 33 test modules and remove dynamic source reconstruction.
-- [ ] 40-17-PLAN.md — Materialize Phase 34 test modules and remove dynamic source reconstruction.
-- [ ] 40-18-PLAN.md — Materialize Phase 35 test modules and remove dynamic source reconstruction.
+- [x] 40-16-PLAN.md — Materialize Phase 33 test modules and remove dynamic source reconstruction.
+- [x] 40-17-PLAN.md — Materialize Phase 34 test modules and remove dynamic source reconstruction.
+- [x] 40-18-PLAN.md — Materialize Phase 35 test modules and remove dynamic source reconstruction.
 
 ## Requirement Coverage
 
@@ -287,4 +287,4 @@ Phases 31 through 38 execute in numeric order after Phase 30. Phase 39 remains t
 | 37. Reconcile Decisions Into Readiness | v1.3 | 2/2 | Complete    | 2026-07-26 |
 | 38. Fail-Closed Cutover Workflow | v1.3 | 3/3 | Complete    | 2026-07-27 |
 | 39. Milestone Metadata Reconciliation | v1.3 | 0/TBD | Pending | — |
-| 40. File Length Refactoring | v1.3 | 15/15 | Complete   | 2026-07-28 |
+| 40. File Length Refactoring | v1.3 | 18/18 | Complete    | 2026-07-28 |
