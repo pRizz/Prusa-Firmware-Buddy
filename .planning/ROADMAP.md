@@ -231,7 +231,7 @@ Plans:
 - [x] 40-10-PLAN.md — Refactor network/media sources and convert the locked planner exception.
 - [x] 40-11-PLAN.md — Refactor journal and config-store persistence implementation.
 - [x] 40-12-PLAN.md — Refactor hardware, display, and auxiliary-controller adapters.
-- [ ] 40-13-PLAN.md — Refactor non-server print and safety lifecycle sources.
+- [x] 40-13-PLAN.md — Refactor non-server print and safety lifecycle sources.
 - [ ] 40-14-PLAN.md — Refactor `marlin_server.cpp` last and remove the final temporary row.
 - [ ] 40-15-PLAN.md — Perform exact terminal reconciliation and hardware-aware approval.
 
@@ -284,4 +284,4 @@ Phases 31 through 38 execute in numeric order after Phase 30. Phase 39 remains t
 | 37. Reconcile Decisions Into Readiness | v1.3 | 2/2 | Complete    | 2026-07-26 |
 | 38. Fail-Closed Cutover Workflow | v1.3 | 3/3 | Complete    | 2026-07-27 |
 | 39. Milestone Metadata Reconciliation | v1.3 | 0/TBD | Pending | — |
-| 40. File Length Refactoring | v1.3 | 12/15 | In Progress|  |
+| 40. File Length Refactoring | v1.3 | 13/15 | In Progress|  |

@@ -3,15 +3,15 @@ gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
 status: executing
-stopped_at: Completed 40-12-PLAN.md
-last_updated: "2026-07-28T00:53:10.376Z"
+stopped_at: Completed 40-13-PLAN.md
+last_updated: "2026-07-28T01:41:53.498Z"
 last_activity: "2026-07-28"
 progress:
   total_phases: 10
   completed_phases: 8
   total_plans: 29
-  completed_plans: 26
-  percent: 90
+  completed_plans: 27
+  percent: 93
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-07-27)
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
 Phase: 40 (File Length Refactoring) — EXECUTING
-Plan: 13 of 15
+Plan: 14 of 15
 Status: Ready to execute
 Last activity: 2026-07-28
 
@@ -88,6 +88,7 @@ Progress: [########--] 80% (8/10 v1.3 phases complete; Phases 39 and 40 pending 
 | Phase 40 P10 | 24m | 3 tasks | 18 files |
 | Phase 40 P11 | 17m | 2 tasks | 8 files |
 | Phase 40 P12 | 57min | 2 tasks | 26 files |
+| Phase 40 P13 | 44min | 2 tasks | 19 files |
 
 ## Accumulated Context
 
@@ -162,6 +163,8 @@ Recent decisions affecting current work:
 - [Phase 40]: Treat ordered config migrations and legacy indexed persisted-field adapters as one compatibility seam while leaving the declarative registry and public header unchanged.
 - [Phase 40]: Keep HAL, RCC, MMIO, wire I/O, exported callbacks, and fatal paths in original effect adapters.
 - [Phase 40]: Use exact source-order comparisons and representative board links without claiming unavailable physical-hardware evidence.
+- [Phase 40]: Keep lifecycle effects in existing public facades while private policy and transition modules own decisions.
+- [Phase 40]: Split pause by load state, unload state, and motion because a single extraction cannot satisfy the 629-line limit.
 
 ### Pending Todos
 
@@ -178,6 +181,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-28T00:53:10.373Z
-Stopped at: Completed 40-12-PLAN.md
+Last session: 2026-07-28T01:41:53.495Z
+Stopped at: Completed 40-13-PLAN.md
 Resume file: None
