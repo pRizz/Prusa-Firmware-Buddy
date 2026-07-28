@@ -3,15 +3,15 @@ gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
 status: executing
-stopped_at: Completed 40-13-PLAN.md
-last_updated: "2026-07-28T01:41:53.498Z"
+stopped_at: Completed 40-14-PLAN.md
+last_updated: "2026-07-28T02:25:29.638Z"
 last_activity: "2026-07-28"
 progress:
   total_phases: 10
   completed_phases: 8
   total_plans: 29
-  completed_plans: 27
-  percent: 93
+  completed_plans: 28
+  percent: 97
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-07-27)
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
 Phase: 40 (File Length Refactoring) — EXECUTING
-Plan: 14 of 15
+Plan: 15 of 15
 Status: Ready to execute
 Last activity: 2026-07-28
 
@@ -89,6 +89,7 @@ Progress: [########--] 80% (8/10 v1.3 phases complete; Phases 39 and 40 pending 
 | Phase 40 P11 | 17m | 2 tasks | 8 files |
 | Phase 40 P12 | 57min | 2 tasks | 26 files |
 | Phase 40 P13 | 44min | 2 tasks | 19 files |
+| Phase 40 P14 | 40min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -165,6 +166,8 @@ Recent decisions affecting current work:
 - [Phase 40]: Use exact source-order comparisons and representative board links without claiming unavailable physical-hardware evidence.
 - [Phase 40]: Keep lifecycle effects in existing public facades while private policy and transition modules own decisions.
 - [Phase 40]: Split pause by load state, unload state, and motion because a single extraction cannot satisfy the 629-line limit.
+- [Phase 40]: Keep marlin_server.cpp and public headers stable while private concept modules own lifecycle, request, event, media, print, and safety state knowledge.
+- [Phase 40]: Use synthetic immutable-original temporary fixtures so shrink-only tests remain valid after the active ledger reaches zero temporary entries.
 
 ### Pending Todos
 
@@ -181,6 +184,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-28T01:41:53.495Z
-Stopped at: Completed 40-13-PLAN.md
+Last session: 2026-07-28T02:25:29.635Z
+Stopped at: Completed 40-14-PLAN.md
 Resume file: None
