@@ -2,16 +2,16 @@
 gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
-status: executing
-stopped_at: Completed 40-14-PLAN.md
-last_updated: "2026-07-28T02:25:29.638Z"
+status: verifying
+stopped_at: Completed 40-15-PLAN.md
+last_updated: "2026-07-28T02:49:05.895Z"
 last_activity: "2026-07-28"
 progress:
   total_phases: 10
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 29
-  completed_plans: 28
-  percent: 97
+  completed_plans: 29
+  percent: 100
 ---
 
 # Project State
@@ -26,19 +26,19 @@ See: .planning/PROJECT.md (updated 2026-07-27)
 ## Current Position
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
-Phase: 40 (File Length Refactoring) — EXECUTING
+Phase: 40 (File Length Refactoring) — VERIFYING
 Plan: 15 of 15
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-28
 
-Progress: [########--] 80% (8/10 v1.3 phases complete; Phases 39 and 40 pending independently)
+Progress: [#########-] 90% (9/10 v1.3 phases complete; Phase 39 remains pending independently)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- v1.3 plans completed: 16/29 currently planned
-- v1.3 phases completed: 8/10
+- v1.3 plans completed: 29/29 currently planned
+- v1.3 phases completed: 9/10
 - Previous milestone baseline: v1.2 completed 9 plans across 8 phases
 - Earlier milestone baseline: v1.1 completed 13 plans across 10 phases
 
@@ -54,12 +54,12 @@ Progress: [########--] 80% (8/10 v1.3 phases complete; Phases 39 and 40 pending 
 | 36. Normalize Evidence and Blocker Rows | 2/2 | 39min | 19m30s |
 | 37 | 2 | - | - |
 | 38. Fail-Closed Cutover Workflow | 3/3 | 59min | 19m40s |
-| 40. File Length Refactoring | 2/15 | 24m | 12m |
+| 40. File Length Refactoring | 15/15 | 7h49m | 31m16s |
 
 **Recent Trend:**
 
-- Last 5 completed plans: Phase 38 P01, Phase 38 P02, Phase 38 P03, Phase 40 P01, Phase 40 P02
-- Trend: Phase 40 retired its first four temporary paths through stable Rust-domain façades and private test extraction; Phase 39 remains pending independently.
+- Last 5 completed plans: Phase 40 P11, Phase 40 P12, Phase 40 P13, Phase 40 P14, Phase 40 P15
+- Trend: Phase 40 completed exact terminal reconciliation with 841 permanent exceptions, zero temporary reasons, and zero findings; Phase 39 remains pending independently.
 
 **Recent Completed Plan Detail:**
 
@@ -90,6 +90,7 @@ Progress: [########--] 80% (8/10 v1.3 phases complete; Phases 39 and 40 pending 
 | Phase 40 P12 | 57min | 2 tasks | 26 files |
 | Phase 40 P13 | 44min | 2 tasks | 19 files |
 | Phase 40 P14 | 40min | 2 tasks | 11 files |
+| Phase 40 P15 | 20min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -168,6 +169,8 @@ Recent decisions affecting current work:
 - [Phase 40]: Split pause by load state, unload state, and motion because a single extraction cannot satisfy the 629-line limit.
 - [Phase 40]: Keep marlin_server.cpp and public headers stable while private concept modules own lifecycle, request, event, media, print, and safety state knowledge.
 - [Phase 40]: Use synthetic immutable-original temporary fixtures so shrink-only tests remain valid after the active ledger reaches zero temporary entries.
+- [Phase 40]: Approved the structural campaign while retaining explicit simulator, physical-hardware, archived-artifact, and macOS-host limitations.
+- [Phase 40]: Terminal authority is exactly the frozen 838 provenance/declarative paths plus the three locked owned deletion-test paths.
 
 ### Pending Todos
 
@@ -184,6 +187,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-28T02:25:29.635Z
-Stopped at: Completed 40-14-PLAN.md
+Last session: 2026-07-28T02:49:05.892Z
+Stopped at: Completed 40-15-PLAN.md
 Resume file: None

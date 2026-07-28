@@ -82,7 +82,7 @@ Full phase details are archived in `.planning/milestones/v1.2-ROADMAP.md`.
 - [x] **Phase 37: Reconcile Decisions Into Readiness** - Join retained-code, residual-risk, exception, and readiness decisions into resolvable Phase 34 ledger rows. (completed 2026-07-26)
 - [x] **Phase 38: Fail-Closed Cutover Workflow** - Make upstream failures replace stale authority and prove blocked, approved, and targeted-repair paths end to end. (completed 2026-07-27)
 - [ ] **Phase 39: Milestone Metadata Reconciliation** - Restore requirement-completion metadata and reconcile roadmap plan details before re-audit.
-- [ ] **Phase 40: File Length Refactoring** - Eliminate all temporary repo-owned file-length exceptions through ordered, behavior-preserving refactors while retaining only the exact approved permanent set. Independent of pending Phase 39 metadata reconciliation.
+- [x] **Phase 40: File Length Refactoring** - Eliminate all temporary repo-owned file-length exceptions through ordered, behavior-preserving refactors while retaining only the exact approved permanent set. Independent of pending Phase 39 metadata reconciliation. (completed 2026-07-28)
 
 ## Phase Details
 
@@ -233,7 +233,7 @@ Plans:
 - [x] 40-12-PLAN.md — Refactor hardware, display, and auxiliary-controller adapters.
 - [x] 40-13-PLAN.md — Refactor non-server print and safety lifecycle sources.
 - [x] 40-14-PLAN.md — Refactor `marlin_server.cpp` last and remove the final temporary row.
-- [ ] 40-15-PLAN.md — Perform exact terminal reconciliation and hardware-aware approval.
+- [x] 40-15-PLAN.md — Perform exact terminal reconciliation and hardware-aware approval.
 
 ## Requirement Coverage
 
@@ -284,4 +284,4 @@ Phases 31 through 38 execute in numeric order after Phase 30. Phase 39 remains t
 | 37. Reconcile Decisions Into Readiness | v1.3 | 2/2 | Complete    | 2026-07-26 |
 | 38. Fail-Closed Cutover Workflow | v1.3 | 3/3 | Complete    | 2026-07-27 |
 | 39. Milestone Metadata Reconciliation | v1.3 | 0/TBD | Pending | — |
-| 40. File Length Refactoring | v1.3 | 14/15 | In Progress|  |
+| 40. File Length Refactoring | v1.3 | 15/15 | Complete   | 2026-07-28 |
