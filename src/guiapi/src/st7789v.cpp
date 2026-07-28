@@ -1,4 +1,5 @@
 #include "st7789v.hpp"
+#include "st7789v_commands.hpp"
 
 #include "cmath_ext.h"
 #include "cmsis_os.h"
@@ -20,65 +21,7 @@
 #define ST7789V_FLG_DMA  0x08 // DMA enabled
 #define ST7789V_FLG_SAFE 0x20 // SAFE mode (no DMA and safe delay)
 
-constexpr static uint8_t ST7789V_DEF_MADCTL = 0xC0; // memory data access control (mirror XY)
 constexpr static uint8_t ST7789V_DEF_COLMOD = 0x05; // interface pixel format (5-6-5, hi-color)
-
-struct st7789v_config_t {
-    uint8_t flg; // flags (DMA, MISO)
-    uint8_t gamma;
-    uint8_t brightness;
-    uint8_t is_inverted;
-    uint8_t control;
-};
-
-st7789v_config_t st7789v_config = {
-    .flg = ST7789V_FLG_DMA, // flags (DMA, MISO)
-    .gamma = 0,
-    .brightness = 0,
-    .is_inverted = 0,
-    .control = 0,
-};
-
-// st7789 commands
-enum {
-    CMD_MADCTLRD = 0x0b, // Read MADCTL register
-    CMD_SLPIN = 0x10,
-    CMD_SLPOUT = 0x11,
-    CMD_INVOFF = 0x20, // Display Inversion Off
-    CMD_INVON = 0x21, // Display Inversion On
-    CMD_GAMMA_SET = 0x26, // gamma set
-    CMD_DISPOFF = 0x28,
-    CMD_DISPON = 0x29,
-    CMD_CASET = 0x2A,
-    CMD_RASET = 0x2B,
-    CMD_RAMWR = 0x2C,
-    CMD_RAMRD = 0x2E,
-    CMD_MADCTL = 0x36,
-    // CMD_IDMOFF = 0x38,//Idle Mode Off FIXME shouldn't be 0x37?
-    // CMD_IDMON = 0x38,//Idle Mode On
-    CMD_COLMOD = 0x3A,
-    CMD_RAMWRC = 0x3C,
-    CMD_WRDISBV = 0x51, // Write Display Brightness
-    CMD_RDDISBV = 0x52, // Read Display Brightness Value
-    CMD_WRCTRLD = 0x53, // Write CTRL Display
-                        //-Brightness Control Block - bit 5
-                        //-Display Dimming			- bit 3
-                        //-Backlight Control On/Off - bit 2
-    CMD_RDCTRLD = 0x54, // Read CTRL Value Display
-};
-
-// st7789 gamma
-enum {
-    GAMMA_CURVE0 = 0x01,
-    GAMMA_CURVE1 = 0x02,
-    GAMMA_CURVE2 = 0x04,
-    GAMMA_CURVE3 = 0x08,
-};
-
-// st7789 CTRL Display
-static const uint8_t MASK_CTRLD_BCTRL = 1 << 5; // Brightness Control Block
-// static const uint8_t MASK_CTRLD_DD = 1 << 3;    //Display Dimming
-// static const uint8_t MASK_CTRLD_BL = 1 << 2;    //Backlight Control
 
 // color constants
 enum {
@@ -127,7 +70,7 @@ size_t st7789v_buffer_size() {
 void st7789v_gamma_set_direct(uint8_t gamma_enu);
 uint8_t st7789v_read_ctrl(void);
 void st7789v_ctrl_set(uint8_t ctrl);
-static void st7789v_delay_ms(uint32_t ms);
+void st7789v_delay_ms(uint32_t ms);
 
 using buddy::hw::displayCs;
 using buddy::hw::displayRs;
@@ -191,7 +134,7 @@ static inline int is_interrupt(void) {
     return (SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) != 0;
 }
 
-static void st7789v_delay_ms(uint32_t ms) {
+void st7789v_delay_ms(uint32_t ms) {
     if (is_interrupt() || (st7789v_flg & (uint8_t)ST7789V_FLG_SAFE)) {
         volatile uint32_t temp;
         while (ms--) {
@@ -310,50 +253,6 @@ void st7789v_rd(uint8_t *pdata, uint16_t size) {
     }
 }
 
-void st7789v_cmd_slpout(void) {
-    st7789v_cmd(CMD_SLPOUT, 0, 0);
-}
-
-void st7789v_cmd_madctl(uint8_t madctl) {
-    st7789v_cmd(CMD_MADCTL, &madctl, 1);
-}
-
-void st7789v_cmd_colmod(uint8_t colmod) {
-    st7789v_cmd(CMD_COLMOD, &colmod, 1);
-}
-
-void st7789v_cmd_dispon(void) {
-    st7789v_cmd(CMD_DISPON, 0, 0);
-}
-
-void st7789v_cmd_caset(uint16_t x, uint16_t cx) {
-    uint8_t data[4] = { static_cast<uint8_t>(x >> 8), static_cast<uint8_t>(x & 0xff), static_cast<uint8_t>(cx >> 8), static_cast<uint8_t>(cx & 0xff) };
-    st7789v_cmd(CMD_CASET, data, sizeof(data));
-}
-
-void st7789v_cmd_raset(uint16_t y, uint16_t cy) {
-    uint8_t data[4] = { static_cast<uint8_t>(y >> 8), static_cast<uint8_t>(y & 0xff), static_cast<uint8_t>(cy >> 8), static_cast<uint8_t>(cy & 0xff) };
-    st7789v_cmd(CMD_RASET, data, sizeof(data));
-}
-
-void st7789v_cmd_ramwr(uint8_t *pdata, uint16_t size) {
-    st7789v_cmd(CMD_RAMWR, pdata, size);
-}
-
-void st7789v_cmd_ramrd(uint8_t *pdata, uint16_t size) {
-    st7789v_cmd(CMD_RAMRD, 0, 0);
-    st7789v_rd(pdata, size);
-}
-
-bool st7789v_is_reset_required() {
-    uint8_t pdata[ST7789V_MAX_COMMAND_READ_LENGHT] = { 0x00 };
-    st7789v_cmd_rd(CMD_MADCTLRD, pdata);
-    if ((pdata[1] != 0xE0 && pdata[1] != 0xF0 && pdata[1] != 0xF8)) {
-        return true;
-    }
-    return false;
-}
-
 /*void st7789v_test_miso(void)
 {
 //	uint16_t data_out[8] = {CLR565_WHITE, CLR565_WHITE, CLR565_RED, CLR565_RED, CLR565_GREEN, CLR565_GREEN, CLR565_BLUE, CLR565_BLUE};
@@ -388,17 +287,12 @@ void st7789v_init(void) {
     if (st7789v_flg & (uint8_t)ST7789V_FLG_SAFE) {
         st7789v_flg &= ~(uint8_t)ST7789V_FLG_DMA;
     } else {
-        st7789v_flg = st7789v_config.flg;
+        st7789v_flg = st7789v_default_flags();
     }
     st7789v_init_ctl_pins(); // CS=H, RS=H, RST=H
     st7789v_reset(); // 15ms reset pulse
     st7789v_delay_ms(120); // 120ms wait
-    st7789v_cmd_slpout(); // wakeup
-    st7789v_delay_ms(120); // 120ms wait
-    st7789v_cmd_madctl(ST7789V_DEF_MADCTL); // interface pixel format
-    st7789v_cmd_colmod(ST7789V_DEF_COLMOD); // memory data access control
-    st7789v_cmd_dispon(); // display on
-    st7789v_delay_ms(10); // 10ms wait
+    st7789v_run_startup_commands();
 }
 
 void st7789v_done(void) {
@@ -526,94 +420,6 @@ void st7789v_draw_from_buffer(uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
     st7789v_cmd_raset(y, y + h - 1);
     st7789v_cmd_ramwr(st7789v_buff, 2 * w * h);
     st7789v_set_cs();
-}
-
-void st7789v_inversion_on(void) {
-    st7789v_config.is_inverted = 1;
-    st7789v_cmd(CMD_INVON, 0, 0);
-}
-void st7789v_inversion_off(void) {
-    st7789v_config.is_inverted = 0;
-    st7789v_cmd(CMD_INVOFF, 0, 0);
-}
-
-void st7789v_inversion_tgl(void) {
-#if CMD_INVON == CMD_INVOFF + 1
-    // faster code if CMD_INVON == CMD_INVOFF + 1
-    // The result of the logical negation operator ! is 1 if the value of its operand is 0,
-    // 0 if the value of its operand is non-zero.
-    st7789v_config.is_inverted = !st7789v_inversion_get();
-    st7789v_cmd(CMD_INVOFF + st7789v_config.is_inverted, 0, 0);
-#else
-    // to be portable
-    if (st7789v_inversion_get()) {
-        st7789v_inversion_off();
-    } else {
-        st7789v_inversion_on();
-    }
-
-#endif
-}
-uint8_t st7789v_inversion_get(void) {
-    return st7789v_config.is_inverted;
-}
-
-// 0x01 -> 0x02 -> 0x04 -> 0x08 -> 0x01
-void st7789v_gamma_next(void) {
-    st7789v_gamma_set_direct(((st7789v_config.gamma << 1) | (st7789v_config.gamma >> 3)) & 0x0f);
-}
-
-// 0x01 -> 0x08 -> 0x04 -> 0x02 -> 0x01
-void st7789v_gamma_prev(void) {
-    st7789v_gamma_set_direct(((st7789v_config.gamma << 3) | (st7789v_config.gamma >> 1)) & 0x0f);
-}
-
-// use GAMMA_CURVE0 - GAMMA_CURVE3
-void st7789v_gamma_set_direct(uint8_t gamma_enu) {
-    st7789v_config.gamma = gamma_enu;
-    st7789v_cmd(CMD_GAMMA_SET, &st7789v_config.gamma, sizeof(st7789v_config.gamma));
-}
-
-// use 0 - 3
-void st7789v_gamma_set(uint8_t gamma) {
-    if (gamma != st7789v_gamma_get()) {
-        st7789v_gamma_set_direct(1 << (gamma & 0x03));
-    }
-}
-
-// returns 0 - 3
-uint8_t st7789v_gamma_get() {
-    uint8_t position = 3;
-    for (; position != 0; --position) {
-        if (st7789v_config.gamma == 1 << position) {
-            break;
-        }
-    }
-
-    return position;
-}
-
-void st7789v_brightness_enable(void) {
-    st7789v_ctrl_set(st7789v_config.control | MASK_CTRLD_BCTRL);
-}
-
-void st7789v_brightness_disable(void) {
-    st7789v_ctrl_set(st7789v_config.control & (~MASK_CTRLD_BCTRL));
-}
-
-void st7789v_brightness_set(uint8_t brightness) {
-    st7789v_config.brightness = brightness;
-    // set brightness
-    st7789v_cmd(CMD_WRDISBV, &st7789v_config.brightness, sizeof(st7789v_config.brightness));
-}
-
-uint8_t st7789v_brightness_get(void) {
-    return st7789v_config.brightness;
-}
-
-void st7789v_ctrl_set(uint8_t ctrl) {
-    st7789v_config.control = ctrl;
-    st7789v_cmd(CMD_WRCTRLD, &st7789v_config.control, sizeof(st7789v_config.control));
 }
 
 void st7789v_draw_qoi_ex(point_ui16_t pt, AbstractByteReader &reader, Color back_color, uint8_t rop) {

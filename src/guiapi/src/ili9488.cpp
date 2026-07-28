@@ -1,4 +1,5 @@
 #include "ili9488.hpp"
+#include "ili9488_commands.hpp"
 
 #include <device/board.h>
 #include <device/hal.h>
@@ -31,64 +32,9 @@ LOG_COMPONENT_REF(GUI);
 #define ILI9488_FLG_DMA  0x08 // DMA enabled
 #define ILI9488_FLG_SAFE 0x20 // SAFE mode (no DMA and safe delay)
 
-struct ili9488_config_t {
-    uint8_t flg; // flags (DMA, MISO)
-    uint8_t gamma;
-    uint8_t brightness;
-    uint8_t is_inverted;
-    uint8_t control;
-};
-
-constexpr static uint8_t DEFAULT_MADCTL = 0xE0; // memory data access control (mirror XY)
-constexpr static uint8_t DEFAULT_COLMOD = 0x66; // interface pixel format (6-6-6, hi-color)
-
-static ili9488_config_t ili9488_config = {
-    .flg = ILI9488_FLG_DMA, // flags (DMA, MISO)
-    .gamma = 0, // gamma curve
-    .brightness = 0, // brightness
-    .is_inverted = 0, // inverted
-    .control = 0, // default control reg value
-};
-
-// ili9488 commands
-#define CMD_SLPIN     0x10
-#define CMD_SLPOUT    0x11
-#define CMD_INVOFF    0x20 // Display Inversion Off
-#define CMD_INVON     0x21 // Display Inversion On
-#define CMD_GAMMA_SET 0x26 // gamma set
-#define CMD_DISPOFF   0x28
-#define CMD_DISPON    0x29
-#define CMD_CASET     0x2A
-#define CMD_RASET     0x2B
-#define CMD_RAMWR     0x2C
-#define CMD_RAMRD     0x2E
-#define CMD_MADCTL    0x36
-// #define CMD_IDMOFF 		0x38//Idle Mode Off
-// #define CMD_IDMON 		0x38//Idle Mode On
-#define CMD_COLMOD  0x3A
-#define CMD_RAMWRC  0x3C
-#define CMD_WRDISBV 0x51 // Write Display Brightness
-#define CMD_RDDISBV 0x52 // Read Display Brightness Value
-#define CMD_WRCTRLD 0x53 // Write CTRL Display
-//-Brightness Control Block - bit 5
-//-Display Dimming			- bit 3
-//-Backlight Control On/Off - bit 2
-#define CMD_RDCTRLD   0x54 // Read CTRL Value Display
-#define CMD_CABCCTRL2 0xC8
-
-// ili9488 gamma
-#define GAMMA_CURVE0 0x01
-#define GAMMA_CURVE1 0x02
-#define GAMMA_CURVE2 0x04
-#define GAMMA_CURVE3 0x08
-
-// ili9488 CTRL Display
-static const uint8_t MASK_CTRLD_BCTRL = (0x01 << 5); // Brightness Control Block
-static const uint8_t MASK_CTRLD_DD(0x01 << 3); // Display Dimming
-static const uint8_t MASK_CTRLD_BL(0x01 << 2); // Backlight Control
-
-const uint8_t CMD_MADCTLRD = 0x0B;
-constexpr static uint8_t CMD_NOP = 0x00;
+constexpr uint8_t CMD_MADCTLRD = 0x0B;
+constexpr uint8_t CMD_RAMRD = 0x2E;
+constexpr uint8_t CMD_NOP = 0x00;
 
 uint8_t ili9488_flg = 0; // flags
 
@@ -123,11 +69,6 @@ void ili9488_return_buffer() {
 size_t ili9488_buffer_size() {
     return sizeof(ili9488_buff);
 }
-
-/*some functions are in header - excluded from display_t struct*/
-void ili9488_gamma_set_direct(uint8_t gamma_enu);
-uint8_t ili9488_read_ctrl(void);
-void ili9488_ctrl_set(uint8_t ctrl);
 
 using namespace buddy::hw;
 
@@ -291,44 +232,6 @@ void ili9488_rd(uint8_t *pdata, uint16_t size) {
     displayCs.write(Pin::State::low);
 }
 
-void ili9488_cmd_slpout(void) {
-    ili9488_cmd(CMD_SLPOUT, 0, 0);
-}
-
-void ili9488_cmd_madctl(uint8_t madctl) {
-    ili9488_cmd(CMD_MADCTL, &madctl, 1);
-}
-
-void ili9488_cmd_colmod(uint8_t colmod) {
-    ili9488_cmd(CMD_COLMOD, &colmod, 1);
-}
-
-void ili9488_cmd_dispon(void) {
-    ili9488_cmd(CMD_DISPON, 0, 0);
-}
-
-void ili9488_cmd_dispoff(void) {
-    ili9488_cmd(CMD_DISPOFF, 0, 0);
-}
-
-void ili9488_cmd_caset(uint16_t x, uint16_t cx) {
-    uint8_t data[4] = { static_cast<uint8_t>(x >> 8), static_cast<uint8_t>(x & 0xff), static_cast<uint8_t>(cx >> 8), static_cast<uint8_t>(cx & 0xff) };
-    ili9488_cmd(CMD_CASET, data, 4);
-}
-
-void ili9488_cmd_raset(uint16_t y, uint16_t cy) {
-    uint8_t data[4] = { static_cast<uint8_t>(y >> 8), static_cast<uint8_t>(y & 0xff), static_cast<uint8_t>(cy >> 8), static_cast<uint8_t>(cy & 0xff) };
-    ili9488_cmd(CMD_RASET, data, 4);
-}
-
-void ili9488_cmd_ramwr(uint8_t *pdata, uint16_t size) {
-    ili9488_cmd(CMD_RAMWR, pdata, size);
-}
-
-void ili9488_cmd_ramrd(uint8_t *pdata, uint16_t size) {
-    ili9488_rd(pdata, size);
-}
-
 bool ili9488_is_reset_required() {
     // REMOVEME: This is a bit of hack to reduce config_store locks.
     // This function is called in lcd::communication_check every 2 s.
@@ -386,100 +289,21 @@ void ili9488_set_complete_lcd_reinit() {
     do_complete_lcd_reinit = true;
 }
 
-static void startup_old_manufacturer() {
-    ili9488_cmd_slpout(); // wakeup
-    ili9488_delay_ms(120); // 120ms wait
-    ili9488_cmd_madctl(DEFAULT_MADCTL); // interface pixel format
-    ili9488_cmd_colmod(DEFAULT_COLMOD); // memory data access control
-    ili9488_cmd_dispon(); // display on
-    ili9488_delay_ms(10); // 10ms wait
-    ili9488_clear(0x000000); // black screen after power on
-    ili9488_delay_ms(100); // time to set black color
-    ili9488_inversion_on();
-}
-
-static void startup_new_manufacturer() {
-    // Adjust Control 3
-    // DSI write DCS command, use loose packet RGB 666
-    ili9488_cmd_array(0xF7, std::to_array<uint8_t>({ 0xA9, 0x51, 0x2C, 0x82 }));
-
-    // Memory Access Control
-    // defines read/write scanning direction of the frame memory
-    // ili9488_cmd_1_data(CMD_MADCTL, 0x48); - original recommended value, does not work, we use 0xe0
-    ili9488_cmd_madctl(DEFAULT_MADCTL);
-
-    ili9488_cmd_colmod(DEFAULT_COLMOD); // Interface Pixel Format 0x66:RGB666
-
-    // Frame Rate Control (In Normal Mode/Full Colors) (this seems to be default)
-    ili9488_cmd_array(0xB1, std::to_array<uint8_t>({
-                                0xa0, // division ratio for internal clocks - Fosc, frame frequency of full color normal mode
-                                0x11 // Clocks per line
-                            }));
-
-    // Display Inversion Control (this seems to be default)
-    ili9488_cmd_1_data(0xB4, 0x02); // 2 dot inversion
-
-    // Power Control 1
-    ili9488_cmd_array(0xC0, std::to_array<uint8_t>({
-                                0x0f, // Set the VREG1OUT voltage for positive gamma
-                                0x0f // Set the VREG2OUT voltage for negative gammas
-                            }));
-
-    // Power Control 2
-    ili9488_cmd_1_data(0xC1, 0x41); // Set the factor used in the step-up circuits.
-
-    // Power Control 3 (For Normal Mode)
-    ili9488_cmd_1_data(0xC2, 0x22); // Select the operating frequency of the step-up circuit
-
-    // VCOM Control
-    ili9488_cmd_array(0xC5, std::to_array<uint8_t>({
-                                0x00, // 0: NV memory is not programmed
-                                0x53, // VCM_REG [7:0]
-                                0x80 // 1: VCOM value from VCM_REG [7:0].
-                            }));
-
-    // Entry Mode Set
-    //  Deep Standby Mode, Low voltage detection ... format 16bbp (R, G, B) to 18 bbp (R, G, B) stored in the internal GRAM
-    ili9488_cmd_1_data(0xB7, 0xc6);
-
-    // PGAMCTRL (Positive Gamma Control)
-    static constexpr auto gamma_control_data = std::to_array<uint8_t>({ 0x00, 0x08, 0x0c, 0x02, 0x0e, 0x04, 0x30, 0x45, 0x47, 0x04, 0x0c, 0x0a, 0x2e, 0x34, 0x0F });
-    ili9488_cmd_array(0xE0, gamma_control_data);
-
-    // NGAMCTRL (Negative Gamma Control)
-    static constexpr auto ngamma_control_data = std::to_array<uint8_t>({ 0x00, 0x11, 0x0d, 0x01, 0x0f, 0x05, 0x39, 0x36, 0x51, 0x06, 0x0f, 0x0d, 0x33, 0x37, 0x0F });
-    ili9488_cmd_array(0xE1, ngamma_control_data);
-
-    ili9488_inversion_on(); // Display Inversion ON
-
-    ili9488_cmd_slpout(); // Sleep OUT - turns off the sleep mode
-    ili9488_delay_ms(120); // 120ms wait
-    ili9488_cmd_dispon(); // display on
-    ili9488_clear(0x000000); // black screen after power on
-    // ili9488_delay_ms(100);      // time to set black color
-}
-
 void ili9488_init(void) {
     displayCs.write(Pin::State::low);
     ili9488_task_handle = osThreadGetId();
     if (ili9488_flg & ILI9488_FLG_SAFE) {
         ili9488_flg &= ~ILI9488_FLG_DMA;
     } else {
-        ili9488_flg = ili9488_config.flg;
+        ili9488_flg = ili9488_default_flags();
     }
 
     if (!option::bootloader || do_complete_lcd_reinit) {
         ili9488_reset(); // 15ms reset pulse
         ili9488_delay_ms(120); // 120ms wait
-        if (buddy::hw::Configuration::Instance().has_display_backlight_control()) {
-            startup_new_manufacturer();
-        } else {
-            startup_old_manufacturer();
-        }
+        ili9488_run_startup_commands(buddy::hw::Configuration::Instance().has_display_backlight_control());
     } else {
-        ili9488_cmd_madctl(DEFAULT_MADCTL); // interface pixel format
-        ili9488_cmd_colmod(DEFAULT_COLMOD); // memory data access control
-        ili9488_inversion_on();
+        ili9488_run_bootloader_commands();
     }
 
 #if HAS_TOUCH()
@@ -490,10 +314,7 @@ void ili9488_init(void) {
 
     if (Configuration::Instance().has_display_backlight_control()) {
         ili9488_brightness_enable();
-
-        // inverted brightness
-        uint8_t pwm_inverted = 0b10110001;
-        ili9488_cmd(CMD_CABCCTRL2, &pwm_inverted, sizeof(pwm_inverted));
+        ili9488_configure_backlight_pwm();
     }
 
     ili9488_brightness_set(0xFF); // set backlight to maximum
@@ -698,94 +519,6 @@ void ili9488_draw_qoi_ex(point_ui16_t pt, AbstractByteReader &reader, Color back
     // Write remaining pixels to display and close SPI transaction
     ili9488_wr(p_buf.data(), o_data - p_buf.begin());
     ili9488_set_cs();
-}
-
-void ili9488_inversion_on(void) {
-    ili9488_config.is_inverted = 1;
-    ili9488_cmd(CMD_INVON, 0, 0);
-}
-void ili9488_inversion_off(void) {
-    ili9488_config.is_inverted = 0;
-    ili9488_cmd(CMD_INVOFF, 0, 0);
-}
-
-void ili9488_inversion_tgl(void) {
-#if CMD_INVON == CMD_INVOFF + 1
-    // faster code if CMD_INVON == CMD_INVOFF + 1
-    // The result of the logical negation operator ! is 1 if the value of its operand is 0,
-    // 0 if the value of its operand is non-zero.
-    ili9488_config.is_inverted = !ili9488_inversion_get();
-    ili9488_cmd(CMD_INVOFF + ili9488_config.is_inverted, 0, 0);
-#else
-    // to be portable
-    if (ili9488_inversion_get()) {
-        ili9488_inversion_off();
-    } else {
-        ili9488_inversion_on();
-    }
-
-#endif
-}
-uint8_t ili9488_inversion_get(void) {
-    return ili9488_config.is_inverted;
-}
-
-// 0x01 -> 0x02 -> 0x04 -> 0x08 -> 0x01
-void ili9488_gamma_next(void) {
-    ili9488_gamma_set_direct(((ili9488_config.gamma << 1) | (ili9488_config.gamma >> 3)) & 0x0f);
-}
-
-// 0x01 -> 0x08 -> 0x04 -> 0x02 -> 0x01
-void ili9488_gamma_prev(void) {
-    ili9488_gamma_set_direct(((ili9488_config.gamma << 3) | (ili9488_config.gamma >> 1)) & 0x0f);
-}
-
-// use GAMMA_CURVE0 - GAMMA_CURVE3
-void ili9488_gamma_set_direct(uint8_t gamma_enu) {
-    ili9488_config.gamma = gamma_enu;
-    ili9488_cmd(CMD_GAMMA_SET, &ili9488_config.gamma, sizeof(ili9488_config.gamma));
-}
-
-// use 0 - 3
-void ili9488_gamma_set(uint8_t gamma) {
-    if (gamma != ili9488_gamma_get()) {
-        ili9488_gamma_set_direct(1 << (gamma & 0x03));
-    }
-}
-
-// returns 0 - 3
-uint8_t ili9488_gamma_get() {
-    uint8_t position;
-    for (position = 3; position != 0; --position) {
-        if (ili9488_config.gamma == 1 << position) {
-            break;
-        }
-    }
-
-    return position;
-}
-
-void ili9488_brightness_enable(void) {
-    ili9488_ctrl_set(ili9488_config.control | MASK_CTRLD_BCTRL | MASK_CTRLD_BL);
-}
-
-void ili9488_brightness_disable(void) {
-    ili9488_ctrl_set(ili9488_config.control & (~MASK_CTRLD_BCTRL) & (~MASK_CTRLD_BL));
-}
-
-void ili9488_brightness_set(uint8_t brightness) {
-    ili9488_config.brightness = brightness;
-    // set brightness
-    ili9488_cmd(CMD_WRDISBV, &ili9488_config.brightness, sizeof(ili9488_config.brightness));
-}
-
-uint8_t ili9488_brightness_get(void) {
-    return ili9488_config.brightness;
-}
-
-void ili9488_ctrl_set(uint8_t ctrl) {
-    ili9488_config.control = ctrl;
-    ili9488_cmd(CMD_WRCTRLD, &ili9488_config.control, sizeof(ili9488_config.control));
 }
 
 //! @brief enable safe mode (direct acces + safe delay)

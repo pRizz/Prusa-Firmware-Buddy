@@ -1,8 +1,15 @@
 add_subdirectory(startup)
 
 target_sources(
-  firmware PRIVATE core_init.cpp hal_msp.cpp interrupts_common.cpp interrupts_helper.cpp
-                   peripherals.cpp peripherals_uart.cpp
+  firmware
+  PRIVATE core_init.cpp
+          hal_msp.cpp
+          hal_msp_config.cpp
+          interrupts_common.cpp
+          interrupts_helper.cpp
+          peripheral_config.cpp
+          peripherals.cpp
+          peripherals_uart.cpp
   )
 
 if(BOARD STREQUAL "BUDDY")
