@@ -41,6 +41,7 @@ if(BOARD IN_LIST BUDDY_BOARDS)
             marlin_client.cpp
             marlin_log_component.cpp
             marlin_print_preview.cpp
+            print_preview_policy.cpp
             marlin_server.cpp
             marlin_vars.cpp
             MarlinPin.cpp
@@ -129,6 +130,7 @@ elseif(BOARD STREQUAL "XL_DEV_KIT_XLB")
             marlin_errors.cpp
             marlin_log_component.cpp
             marlin_print_preview.cpp
+            print_preview_policy.cpp
             marlin_server.cpp
             marlin_vars.cpp
             MarlinPin.cpp
@@ -151,7 +153,7 @@ elseif(BOARD STREQUAL "XL_DEV_KIT_XLB")
 endif()
 
 if(HAS_POWER_PANIC)
-  target_sources(firmware PRIVATE power_panic.cpp)
+  target_sources(firmware PRIVATE power_panic.cpp power_panic_state.cpp)
 
   if(${POWER_PANIC_STORAGE_IS_FLASH})
     target_sources(firmware PRIVATE power_panic_storage_flash.cpp)

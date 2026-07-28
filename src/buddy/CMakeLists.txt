@@ -15,6 +15,7 @@ target_sources(
           logging.cpp
           lwip.cpp
           main.cpp
+          startup_tasks.cpp
           timing_sys.cpp
           usb_device.cpp
           usb_device_cdc.cpp
