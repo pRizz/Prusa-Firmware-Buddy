@@ -25,6 +25,7 @@ target_sources(
           cmsis.cpp
           hal.cpp
           hal_clock.cpp
+          hal_config.cpp
           main.cpp
           mmu.cpp
           modbus.cpp

@@ -15,7 +15,7 @@ target_sources(
 target_link_libraries(BuddyHeaders INTERFACE lightmodbus)
 
 if(HAS_DWARF)
-  target_sources(firmware PUBLIC Dwarf.cpp)
+  target_sources(firmware PUBLIC Dwarf.cpp dwarf_registers.cpp)
 endif()
 
 if(HAS_PUPPY_MODULARBED)
