@@ -824,8 +824,6 @@ file-lengths	src/gui/res/cc/font_regular_9x16_latin_and_katakana.hpp	permanent: 
 file-lengths	src/gui/res/cc/font_regular_9x16_standard.hpp	permanent: generated; source=utils/translations_and_fonts
 file-lengths	src/gui/screen_tools_mapping.cpp	permanent: owned deep module; deletion-test=removing any coherent layout, selection, validation, spool-join, or event-handling region would break the single bidirectional G-code-to-physical-tool mapping workflow and protocol state authority
 file-lengths	src/guiapi/include/Rect16.h	permanent: owned deep module; deletion-test=removing any coherent constructor, coordinate, containment, padding, merge, or split region would fracture the single constexpr geometry value abstraction and its public operator contract
-file-lengths	src/marlin_stubs/G425.cpp	temporary: campaign=print-safety; remove when file is below 629 lines and campaign gates pass
-file-lengths	src/marlin_stubs/pause/pause.cpp	temporary: campaign=print-safety; remove when file is below 629 lines and campaign gates pass
 file-lengths	src/persistent_stores/store_instances/config_store/store_definition.hpp	permanent: declarative registry; deletion-test=removing any item breaks the single persisted-layout definition authority
 file-lengths	tests/stubs/FreeRTOS/Source/event_groups.c	permanent: imported/upstream; provenance=FreeRTOS and compatibility test stubs
 file-lengths	tests/stubs/FreeRTOS/Source/include/FreeRTOS.h	permanent: imported/upstream; provenance=FreeRTOS and compatibility test stubs

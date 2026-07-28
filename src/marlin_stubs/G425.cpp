@@ -22,6 +22,7 @@
  */
 
 #include "G425.hpp"
+#include "g425_policy.hpp"
 
 #include <algorithm>
 #include <array>
@@ -97,12 +98,8 @@ void plan_arc(const xyze_pos_t &, const ab_float_t &, const bool, const uint8_t)
     #error "G425 requires ARC_SUPPORT"
 #endif
 
-namespace {
+namespace g425_policy {
 
-// Absolute tool center - an input for offset computation [mm]
-METRIC_DEF(metric_center, "g425_cen", METRIC_VALUE_CUSTOM, 100, METRIC_ENABLED);
-// Tool offset relative to the first tool - result of the tool offset calibration [mm]
-METRIC_DEF(metric_offset, "g425_off", METRIC_VALUE_CUSTOM, 100, METRIC_ENABLED);
 // Raw XY probe [mm]
 METRIC_DEF(metric_xy_raw_hit, "g425_rxy", METRIC_VALUE_CUSTOM, 100, METRIC_ENABLED);
 // Verified XY probe - two raw probes agree on position [mm]
@@ -111,11 +108,7 @@ METRIC_DEF(metric_xy_hit, "g425_xy", METRIC_VALUE_CUSTOM, 100, METRIC_ENABLED);
 METRIC_DEF(metric_z_raw_hit, "g425_rz", METRIC_VALUE_CUSTOM, 100, METRIC_ENABLED);
 // Averaged Z probe - N raw probes averaged [mm]
 METRIC_DEF(metric_z_hit, "g425_z", METRIC_VALUE_CUSTOM, 100, METRIC_ENABLED);
-// Max deviation
-METRIC_DEF(metric_xy_dev, "g425_xy_dev", METRIC_VALUE_FLOAT, 100, METRIC_ENABLED);
-
 constexpr xyz_float_t dimensions { { CALIBRATION_OBJECT_DIMENSIONS } };
-constexpr xy_float_t nod = { { { CALIBRATION_NOZZLE_OUTER_DIAMETER, CALIBRATION_NOZZLE_OUTER_DIAMETER } } };
 constexpr xyz_pos_t true_center { { CALIBRATION_OBJECT_CENTER } };
 constexpr xyz_pos_t true_top_center = { { { .x = true_center.x,
     .y = true_center.y,
@@ -137,56 +130,6 @@ constexpr auto PROBE_FAIL_THRESHOLD_MM { 3 };
 constexpr auto XY_ACCELERATION_MMSS { 500 };
 constexpr auto RESONANCE_DAMPER_WAIT_MS { 500 };
 constexpr auto MIN_TRAVELED_DISTANCE_MM { 0.1f };
-constexpr auto MAX_DEVIATION_MM { 0.2f };
-
-struct measurements_t {
-    xyz_pos_t obj_center = true_top_center; // Non-static must be assigned from xyz_pos_t
-    xyz_float_t pos_error;
-    xy_float_t nozzle_outer_dimension = nod;
-};
-
-/// Center find phase
-// Center probing requires an approximate center as input. In order to increase precision the center
-// is probed several times starting from hardcoded center. As the center position is refined the probe
-// algorithms optimize retractions and increase number of hits in later phases.
-enum class Phase : uint8_t {
-    first,
-    second,
-    final,
-    _count
-};
-
-#define TEMPORARY_SOFT_ENDSTOP_STATE(enable) REMEMBER(tes, soft_endstops_enabled, enable);
-
-#if ENABLED(BACKLASH_GCODE)
-    #define TEMPORARY_BACKLASH_CORRECTION(value) REMEMBER(tbst, backlash.correction, value)
-#else
-    #define TEMPORARY_BACKLASH_CORRECTION(value)
-#endif
-
-#if ENABLED(BACKLASH_GCODE) && defined(BACKLASH_SMOOTHING_MM)
-    #define TEMPORARY_BACKLASH_SMOOTHING(value) REMEMBER(tbsm, backlash.smoothing_mm, value)
-#else
-    #define TEMPORARY_BACKLASH_SMOOTHING(value)
-#endif
-
-/// Limit max acceleration to a value, restore old value when destroyed
-class AccelerationLimiter {
-public:
-    AccelerationLimiter(const float max_acceleration_mmss)
-        : previous_x(planner.settings.max_acceleration_mm_per_s2[X_AXIS])
-        , previous_y(planner.settings.max_acceleration_mm_per_s2[Y_AXIS]) {
-        planner.set_max_acceleration(X_AXIS | Y_AXIS, max_acceleration_mmss);
-    }
-    ~AccelerationLimiter() {
-        planner.set_max_acceleration(X_AXIS, previous_x);
-        planner.set_max_acceleration(Y_AXIS, previous_y);
-    }
-
-private:
-    const float previous_x, previous_y;
-};
-
 inline void calibration_move() {
     do_blocking_move_to(current_position, MMM_TO_MMS(CALIBRATION_FEEDRATE_TRAVEL));
 }
@@ -199,7 +142,7 @@ inline void wait_ms(const uint32_t duration_ms) {
 }
 
 #if HOTENDS > 1
-inline void set_nozzle([[maybe_unused]] measurements_t &m, const uint8_t extruder) {
+void set_nozzle(const uint8_t extruder) {
     if (extruder != active_extruder) {
         tool_change(extruder);
     }
@@ -207,7 +150,7 @@ inline void set_nozzle([[maybe_unused]] measurements_t &m, const uint8_t extrude
 #endif
 
 #if HAS_HOTEND_OFFSET
-inline void normalize_hotend_offsets() {
+void normalize_hotend_offsets() {
     for (uint8_t e = 1; e < HOTENDS; e++) {
         hotend_offset[e] -= hotend_offset[0];
     }
@@ -476,322 +419,7 @@ float probe_z(const xyz_pos_t position, float uncertainty, const int num_measure
     return measurement_avg;
 }
 
-/// Issue a warning if a point deviates too much from the circle
-bool check_deviation(const xy_pos_t &center, std::span<const xy_pos_t> points) {
-    // Compute average radius
-    float radius = 0;
-    for (const xy_pos_t &p : points) {
-        radius += (center - p).magnitude();
-    }
-    radius /= points.size();
-
-    // Compute maximum deviation of point-center distance from average radius
-    float max_dev = 0;
-    for (const xy_pos_t &p : points) {
-        max_dev = max(max_dev, (center - p).magnitude() - radius);
-    }
-
-    // Issue warning if maximum deviation is above threshold
-    if (max_dev > MAX_DEVIATION_MM) {
-        return false;
-    }
-    metric_record_float(&metric_xy_dev, max_dev);
-    return true;
-}
-
-const std::optional<xyz_pos_t> get_single_xyz_center(const xyz_pos_t initial, const uint8_t tool, const Phase phase) {
-    static constexpr uint8_t PHASE_XY_HITS[std::to_underlying(Phase::_count)] = { 3, 3, 12 };
-    static constexpr uint8_t PHASE_Z_HITS[std::to_underlying(Phase::_count)] = { 1, 0, NUM_Z_MEASUREMENTS };
-    static constexpr float PHASE_Z_UNCERTAINTY[std::to_underlying(Phase::_count)] = { PROBE_XY_UNCERTAIN_DIST_MM, PROBE_Z_UNCERTAIN_DIST_MM, PROBE_Z_CERTAIN_DIST_MM };
-    xyz_pos_t start = initial;
-
-    // Get Z
-    if (PHASE_Z_HITS[std::to_underlying(phase)]) {
-        start.z = probe_z(initial, PHASE_Z_UNCERTAINTY[std::to_underlying(phase)], PHASE_Z_HITS[std::to_underlying(phase)], tool, phase);
-    }
-
-    // Get XY
-    AccelerationLimiter al(XY_ACCELERATION_MMSS);
-    static constexpr uint8_t MAX_HITS = *std::max_element(std::begin(PHASE_XY_HITS), std::end(PHASE_XY_HITS));
-    std::array<xy_pos_t, MAX_HITS> max_hits;
-    std::span<xy_pos_t> hits(max_hits.begin(), PHASE_XY_HITS[std::to_underlying(phase)]);
-    for (uint hit_no = 0; xy_pos_t & hit : hits) {
-        hit = probe_xy_verify(start, 2 * PI / hits.size() * hit_no++, PROBE_XY_UNCERTAIN_DIST_MM, tool, phase);
-    }
-    xyz_pos_t center = approximate_center(hits);
-    center.z = start.z;
-
-    if (phase == Phase::final) {
-        if (!check_deviation(center, hits)) {
-            return std::nullopt;
-        }
-    }
-
-    return center;
-}
-
-const std::optional<xyz_pos_t> get_xyz_center(const uint8_t tool) {
-
-    // Enable loadcell high precision across the entire procedure to prime the noise filters
-    auto loadcellPrecisionEnabler = Loadcell::HighPrecisionEnabler(loadcell);
-
-    std::optional<xyz_pos_t> center = true_top_center;
-    for (Phase phase = Phase::first; phase != Phase::_count; phase = Phase(std::to_underlying(phase) + 1)) {
-        if (!center.has_value()) {
-            return std::nullopt;
-        }
-        center = get_single_xyz_center(center.value(), tool, phase);
-    }
-
-    go_to_safe_height();
-
-    return center;
-}
-
-inline void update_measurements(measurements_t &m, const AxisEnum axis) {
-#if HAS_HOTEND_OFFSET
-    hotend_currently_applied_offset[axis] += m.pos_error[axis];
-#endif
-    m.obj_center[axis] = true_top_center[axis];
-    m.pos_error[axis] = 0;
-}
-
-/**
- * Probe around the calibration object. Adjust the position and toolhead offset
- * using the deviation from the known position of the calibration object.
- *
- *   m              in/out - Measurement record, updated with new readings
- *   extruder       in     - What extruder to probe
- *
- * Prerequisites:
- *    - Call calibrate_backlash() beforehand for best accuracy
- */
-inline bool calibrate_toolhead(measurements_t &m, const uint8_t extruder) {
-    TEMPORARY_BACKLASH_CORRECTION(all_on);
-    TEMPORARY_BACKLASH_SMOOTHING(0.0f);
-
-    // Disable PA to reduce filter delay during probe analysis
-    pressure_advance::PressureAdvanceDisabler pa_disabler;
-
-#if HOTENDS > 1
-    set_nozzle(m, extruder);
-#else
-    UNUSED(extruder);
-#endif
-
-    const std::optional<xyz_pos_t> center = get_xyz_center(extruder);
-    if (!center.has_value()) {
-        // TODO:
-        SERIAL_ECHOLNPAIR("G425: Tool ", extruder, " center not found.");
-        return false;
-    }
-    m.obj_center = center.value();
-    m.pos_error = true_top_center - center.value();
-
-// Adjust the hotend offset
-#if HAS_HOTEND_OFFSET
-    #if HAS_X_CENTER
-    hotend_offset[extruder].x += m.pos_error.x;
-    #endif
-    #if HAS_Y_CENTER
-    hotend_offset[extruder].y += m.pos_error.y;
-    #endif
-    hotend_offset[extruder].z += m.pos_error.z;
-    normalize_hotend_offsets();
-#endif
-
-// Update measurements
-#if HAS_X_CENTER
-    update_measurements(m, X_AXIS);
-#endif
-#if HAS_Y_CENTER
-    update_measurements(m, Y_AXIS);
-#endif
-    update_measurements(m, Z_AXIS);
-    return true;
-}
-
-/**
- * Probe around the calibration object for all toolheads, adjusting the coordinate
- * system for the first nozzle and the nozzle offset for subsequent nozzles.
- *
- *   m              in/out - Measurement record, updated with new readings
- *   uncertainty    in     - How far away from the object to begin probing
- */
-inline void calibrate_all_toolheads(measurements_t &m) {
-    TEMPORARY_BACKLASH_CORRECTION(all_on);
-    TEMPORARY_BACKLASH_SMOOTHING(0.0f);
-
-    HOTEND_LOOP() {
-#if ENABLED(PRUSA_TOOLCHANGER)
-        if (!prusa_toolchanger.getTool(e).is_enabled()) {
-            continue;
-        }
-#endif
-        calibrate_toolhead(m, e);
-    }
-
-#if HAS_HOTEND_OFFSET
-    normalize_hotend_offsets();
-    #if ENABLED(PRUSA_TOOLCHANGER)
-    prusa_toolchanger.save_tool_offsets();
-    #endif
-#endif
-}
-
-/**
- * Perform a full auto-calibration routine:
- *
- *   1) For each nozzle, touch top and sides of object to determine object position and
- *      nozzle offsets. Do a fast but rough search over a wider area.
- *   2) With the first nozzle, touch top and sides of object to determine backlash values
- *      for all axis (if BACKLASH_GCODE is enabled)
- */
-inline void calibrate_all() {
-    measurements_t m;
-
-#if HAS_HOTEND_OFFSET
-    reset_hotend_offsets();
-#endif
-
-    TEMPORARY_BACKLASH_CORRECTION(all_on);
-    TEMPORARY_BACKLASH_SMOOTHING(0.0f);
-
-    // Calibrate all toolheads
-    calibrate_all_toolheads(m);
-
-#if ENABLED(BACKLASH_GCODE)
-    calibrate_backlash(m);
-#endif
-
-    tool_change(prusa_toolchanger.MARLIN_NO_TOOL_PICKED, tool_return_t::no_return);
-}
-
-/**
- * Perform a full auto-calibration routine - simple implementation:
- *
- * This is simplified version that:
- * - un-applies, zeroes all offsets
- * - measures pin centers for all the pins
- * - computes new offsets
- */
-inline bool calibrate_all_simple() {
-    // Disable E steppers to reduce noise on loadcell
-    disable_e_steppers();
-
-#if ENABLED(CRASH_RECOVERY)
-    // Disable crash recovery. It would recover, but the measurement will be inaccurate anyway.
-    Crash_Temporary_Deactivate ctd;
-#endif
-
-    // Reset planner state
-    planner.synchronize();
-    planner.reset_position();
-
-    // Disable PA to reduce filter delay during probe analysis
-    pressure_advance::PressureAdvanceDisabler pa_disabler;
-
-    // Zero hotend offsets
-    reset_hotend_offsets();
-    hotend_currently_applied_offset = 0.f;
-
-    bool failed = false;
-    // Measure centers
-    std::array<xyz_pos_t, HOTENDS> centers;
-    HOTEND_LOOP() {
-#if ENABLED(PRUSA_TOOLCHANGER)
-        if (!prusa_toolchanger.getTool(e).is_enabled()) {
-            continue;
-        }
-#endif
-        tool_change(e, tool_return_t::no_return);
-        std::optional<xyz_pos_t> center = get_xyz_center(e);
-        if (!center.has_value()) {
-            SERIAL_ECHOLNPAIR("G425: Tool ", e, " center not found.");
-            failed = true;
-            break; // Do not continue with the next tool
-        }
-        centers[e] = center.value();
-        metric_record_custom(
-            &metric_center,
-            ",t=%u x=%.3f,y=%.3f,z=%.3f",
-            e,
-            static_cast<double>(centers[e].x),
-            static_cast<double>(centers[e].y),
-            static_cast<double>(centers[e].z));
-    }
-
-    if (failed) {
-        mapi::park(mapi::ZAction::absolute_move, mapi::ParkingPosition::from_xyz_pos({ { XYZ_NOZZLE_PARK_POINT_M600 } }));
-        marlin_server::set_warning(WarningType::NozzleDoesNotHaveRoundSection);
-        return false;
-    }
-
-    // Pick zero offset tool to be sure no offset is applied on toolchange
-    tool_change(prusa_toolchanger.MARLIN_NO_TOOL_PICKED, tool_return_t::no_return);
-
-    // Apply the offset
-    HOTEND_LOOP() {
-        if (!prusa_toolchanger.getTool(e).is_enabled()) {
-            continue;
-        }
-        // One might ask why the "-" in front of the centers[e].
-        // Remember, when tool is bend +x it will find the object at the position -x.
-        hotend_offset[e] = -centers[e];
-    }
-    normalize_hotend_offsets();
-
-    // Check offsets
-    HOTEND_LOOP() {
-#if ENABLED(PRUSA_TOOLCHANGER)
-        if (!prusa_toolchanger.getTool(e).is_enabled()) {
-            hotend_offset[e].reset();
-            continue;
-        }
-#endif
-
-        if (hotend_offset[e].x < X_MIN_OFFSET || hotend_offset[e].x > X_MAX_OFFSET) {
-            fatal_error(ErrCode::ERR_MECHANICAL_TOOL_OFFSET_OUT_OF_BOUNDS, e + 1, 'X', static_cast<double>(hotend_offset[e].x), static_cast<double>(X_MIN_OFFSET), static_cast<double>(X_MAX_OFFSET));
-        }
-        if (hotend_offset[e].y < Y_MIN_OFFSET || hotend_offset[e].y > Y_MAX_OFFSET) {
-            fatal_error(ErrCode::ERR_MECHANICAL_TOOL_OFFSET_OUT_OF_BOUNDS, e + 1, 'Y', static_cast<double>(hotend_offset[e].y), static_cast<double>(Y_MIN_OFFSET), static_cast<double>(Y_MAX_OFFSET));
-        }
-        if (hotend_offset[e].z < Z_MIN_OFFSET || hotend_offset[e].z > Z_MAX_OFFSET) {
-            fatal_error(ErrCode::ERR_MECHANICAL_TOOL_OFFSET_OUT_OF_BOUNDS, e + 1, 'Z', static_cast<double>(hotend_offset[e].z), static_cast<double>(Z_MIN_OFFSET), static_cast<double>(Z_MAX_OFFSET));
-        }
-    }
-    prusa_toolchanger.save_tool_offsets();
-
-    HOTEND_LOOP() {
-        if (!prusa_toolchanger.getTool(e).is_enabled()) {
-            continue;
-        }
-        osDelay(100); // Some time to send the metric before sending the next one
-        metric_record_custom(
-            &metric_offset,
-            ",t=%u x=%.3f,y=%.3f,z=%.3f",
-            e,
-            static_cast<double>(hotend_offset[e].x),
-            static_cast<double>(hotend_offset[e].y),
-            static_cast<double>(hotend_offset[e].z));
-    }
-    return true;
-}
-
-} // anonymous namespace
-
-bool full_calibration() {
-    TEMPORARY_SOFT_ENDSTOP_STATE(false);
-    TEMPORARY_BED_LEVELING_STATE(false);
-
-    phase_stepping::EnsureDisabled ps_disabler {};
-
-    if (axis_unhomed_error()) {
-        return false;
-    }
-
-    return calibrate_all_simple();
-}
+} // namespace g425_policy
 
 /**
  * \addtogroup G-Codes

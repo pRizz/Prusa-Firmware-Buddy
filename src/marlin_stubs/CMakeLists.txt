@@ -62,7 +62,7 @@ if(HAS_LEDS)
 endif()
 
 if(HAS_TOOLCHANGER)
-  target_sources(firmware PRIVATE G425.cpp P.cpp)
+  target_sources(firmware PRIVATE G425.cpp g425_policy.cpp P.cpp)
 endif()
 
 if(HAS_GUI)

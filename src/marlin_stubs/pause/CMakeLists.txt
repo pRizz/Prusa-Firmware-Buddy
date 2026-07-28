@@ -10,7 +10,10 @@ if(HAS_PAUSE)
             M701_2_parse.cpp
             M70X_preheat.cpp
             pause.cpp
+            pause_motion.cpp
             pause_settings.cpp
+            pause_state.cpp
+            pause_unload_state.cpp
     )
 
 endif()
