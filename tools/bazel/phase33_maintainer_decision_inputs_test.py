@@ -1,15 +1,25 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import importlib
 import importlib.util
-import textwrap
 import json
 import shutil
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+
+from phase33_maintainer_decision_inputs_cases_test import (
+    GENERATED_ARTIFACTS,
+    PHASE32_REGISTER_REF,
+    Phase33MaintainerDecisionInputsCasesMixin,
+)
+from phase33_maintainer_decision_inputs_failure_test import (
+    Phase33MaintainerDecisionInputsFailureMixin,
+)
+from phase33_maintainer_decision_inputs_security_test import (
+    Phase33MaintainerDecisionInputsSecurityMixin,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 VERIFIER = ROOT / "tools/bazel/phase33_maintainer_decision_inputs.py"
@@ -25,25 +35,6 @@ SOURCE_FILES = [
     "tools/bazel/manifests/phase27_retained_code_acceptance_decisions_contract.json",
     "tools/bazel/manifests/phase28_final_readiness_packet_contract.json",
 ]
-GENERATED_ARTIFACTS = [
-    "maintainer-decision-input-template.json",
-    "normalized-decision-records.json",
-    "retained-code-decision-register.json",
-    "residual-risk-decision-register.json",
-    "exception-decision-register.json",
-    "readiness-decision-handoff.json",
-    "demotion-decision-handoff.json",
-    "decision-validation-report.json",
-    "downstream-handoff-manifest.json",
-    "redacted-maintainer-decision-report.md",
-    "contract-snapshots/phase33_maintainer_decision_inputs_contract.json",
-    "contract-snapshots/phase32_blocker_register_triage_contract.json",
-    "contract-snapshots/phase27_retained_code_acceptance_decisions_contract.json",
-    "contract-snapshots/phase28_final_readiness_packet_contract.json",
-    "contract-snapshots/phase32-downstream-handoff-manifest.json",
-    "contract-snapshots/phase32-blocker-register.json",
-]
-PHASE32_REGISTER_REF = "build/ci-evidence/phase32/blocker-register.json"
 DECISION_TYPE_AXES = {
     "retained_code": "retained_code",
     "residual_risk": "residual_risk",
@@ -53,7 +44,11 @@ DECISION_TYPE_AXES = {
 }
 
 
-class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
+class Phase33MaintainerDecisionInputsTest(
+        Phase33MaintainerDecisionInputsCasesMixin,
+        Phase33MaintainerDecisionInputsFailureMixin,
+        Phase33MaintainerDecisionInputsSecurityMixin,
+        unittest.TestCase):
 
     def load_module(self):
         spec = importlib.util.spec_from_file_location(
@@ -268,15 +263,6 @@ class Phase33MaintainerDecisionInputsTest(unittest.TestCase):
         if decisions_path is not None:
             args.extend(["--maintainer-decisions", decisions_path])
         return self.run_temp_verifier(root, args)
-
-    for _module_name in (
-            "phase33_maintainer_decision_inputs_cases_test",
-            "phase33_maintainer_decision_inputs_failure_test",
-            "phase33_maintainer_decision_inputs_security_test",
-    ):
-        _module = importlib.import_module(_module_name)
-        exec(textwrap.dedent(_module.TEST_METHODS), globals(), locals())
-
 
 if __name__ == "__main__":
     unittest.main()
