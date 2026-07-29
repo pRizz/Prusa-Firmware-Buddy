@@ -96,11 +96,9 @@ Full phase details are archived in `.planning/milestones/v1.2-ROADMAP.md`.
   3. Maintainer can submit a final live-service evidence packet for Connect, PrusaLink/WUI, TLS, telemetry, proxy, transfer, negative-protocol, long-transfer, and crash-dump flows.
   4. Release manager can submit final release/signing/provenance evidence from real release-environment outputs with sanitized artifact, digest, signing, provenance, and comparison refs.
   5. Evidence intake accepts only sanitized artifacts or external refs for private keys, tokens, certificates, service payloads, raw crash dumps, and other secret-bearing data.
-**Plans**: 2/2 plans complete
+**Plans**: 1/1 plans complete
 Plans:
-- [x] 34-01-PLAN.md - Final readiness coverage ledger, demotion dry run, generated evidence bundle, and workflow wiring.
-- [x] 34-02-PLAN.md - Required-stream completeness gap closure and exception-bypass regressions.
-
+- [x] 31-01-PLAN.md - Create the shared Phase 31 final-evidence intake gate and retained-receipt workflow.
 ### Phase 32: Blocker Register and Evidence Triage
 **Goal**: Maintainers can see every consumed row's cutover-blocking state in one register with owner, severity, affected gate, next action, and decision impact.
 **Depends on**: Phase 31
@@ -110,11 +108,9 @@ Plans:
   2. Every failed, missing, stale, malformed, redaction-failed, or exceptioned row is classified with owner, severity, affected gate, required next action, and decision impact.
   3. Quick/default placeholder outputs, smoke fixtures, and local-only dry-run rows are visibly rejected as final cutover proof.
   4. The blocker register distinguishes repair items, exception requests, and unresolved decision blockers.
-**Plans**: 2 plans
+**Plans**: 1/1 plans complete
 Plans:
-- [x] 36-01-PLAN.md - Normalize actual Phase 26 release tables and add stable exact identities for Phase 27/28 decision-domain rows.
-- [x] 36-02-PLAN.md - Preserve malformed and unsupported Phase 27/28 producer containers as canonical fail-closed blockers while continuing to publish the complete Phase 32 bundle.
-
+- [x] 32-01-PLAN.md - Create the Phase 32 blocker register and evidence-triage handoff over Phase 31 final-intake outputs.
 ### Phase 33: Maintainer Decision Inputs
 **Goal**: Maintainers can record explicit machine-readable retained-code, residual-risk, exception, final-readiness, and reference-demotion decisions without inferring authorization from evidence status.
 **Depends on**: Phase 32
@@ -137,8 +133,10 @@ Plans:
   2. Final readiness is blocked when required evidence is absent, failed, stale, malformed, redaction-failed, underclassified, or not covered by an explicit approved exception.
   3. Reference-demotion dry run reports blocked when explicit demotion approval is missing or invalid, even when evidence rows are green.
   4. Reference-demotion dry run opens only when readiness is otherwise unblocked and the explicit demotion approval input is valid.
-**Plans**: TBD
-
+**Plans**: 2/2 plans complete
+Plans:
+- [x] 34-01-PLAN.md - Create the Phase 34 readiness coverage ledger, demotion dry run, generated evidence bundle, and workflow wiring.
+- [x] 34-02-PLAN.md - Close required-stream completeness gaps and add exception-bypass regressions.
 ### Phase 35: Cutover Decision Artifact
 **Goal**: Maintainers can produce an auditable go/no-go cutover artifact that routes the project to production cutover or targeted blocker repair.
 **Depends on**: Phase 34
