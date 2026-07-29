@@ -9,9 +9,9 @@ These requirements consume the v1.2 evidence and decision machinery with real sa
 
 ### Evidence Intake
 
-- [ ] **INTAKE-01**: Maintainer can supply final simulator evidence packets for startup, G-code, GUI, storage, transfer, and selected failure flows using sanitized real-run inputs.
-- [ ] **INTAKE-02**: Maintainer can supply final hardware/media/safety evidence packets for supported printer families, storage media, UI input, MMU, RS485, toolchanger, watchdog, thermal, motion, and safe-output scenarios.
-- [ ] **INTAKE-03**: Maintainer can supply final live-service evidence packets for Connect, PrusaLink/WUI, TLS, telemetry, proxy, transfer, negative-protocol, long-transfer, and crash-dump flows.
+- [x] **INTAKE-01**: Maintainer can supply final simulator evidence packets for startup, G-code, GUI, storage, transfer, and selected failure flows using sanitized real-run inputs.
+- [x] **INTAKE-02**: Maintainer can supply final hardware/media/safety evidence packets for supported printer families, storage media, UI input, MMU, RS485, toolchanger, watchdog, thermal, motion, and safe-output scenarios.
+- [x] **INTAKE-03**: Maintainer can supply final live-service evidence packets for Connect, PrusaLink/WUI, TLS, telemetry, proxy, transfer, negative-protocol, long-transfer, and crash-dump flows.
 - [x] **INTAKE-04**: Release manager can supply final release/signing/provenance evidence from real release-environment outputs without exposing private keys, tokens, certificates, service payloads, raw crash dumps, or other secret-bearing data.
 
 ### Evidence Triage
@@ -29,14 +29,14 @@ These requirements consume the v1.2 evidence and decision machinery with real sa
 ### Readiness and Demotion Trial
 
 - [x] **READY-01**: Maintainer can generate a final readiness packet from real consumed evidence rows, retained-code decisions, approved exceptions, residual risks, blockers, and artifact references.
-- [ ] **READY-02**: Final readiness remains blocked when required evidence is absent, failed, stale, malformed, redaction-failed, underclassified, or not covered by an explicit approved exception.
-- [ ] **READY-03**: Reference-demotion dry run proves demotion remains blocked without a valid explicit demotion approval and opens only when readiness is otherwise unblocked and the approval input is valid.
+- [x] **READY-02**: Final readiness remains blocked when required evidence is absent, failed, stale, malformed, redaction-failed, underclassified, or not covered by an explicit approved exception.
+- [x] **READY-03**: Reference-demotion dry run proves demotion remains blocked without a valid explicit demotion approval and opens only when readiness is otherwise unblocked and the approval input is valid.
 
 ### Cutover Decision
 
-- [ ] **CUTOVER-01**: Maintainer can produce a cutover decision artifact with one explicit verdict: approved, blocked, or approved with explicit exceptions.
+- [x] **CUTOVER-01**: Maintainer can produce a cutover decision artifact with one explicit verdict: approved, blocked, or approved with explicit exceptions.
 - [x] **CUTOVER-02**: Cutover decision artifact links every blocker, exception, residual risk, evidence packet, retained-code decision, readiness result, and demotion decision needed to audit the verdict.
-- [ ] **CUTOVER-03**: Cutover decision artifact routes the next milestone to production cutover when approved, or to targeted blocker repair when blocked or approved with exceptions that require follow-up.
+- [x] **CUTOVER-03**: Cutover decision artifact routes the next milestone to production cutover when approved, or to targeted blocker repair when blocked or approved with exceptions that require follow-up.
 
 ## Future Requirements
 
@@ -68,9 +68,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INTAKE-01 | Phase 39 | Pending |
-| INTAKE-02 | Phase 39 | Pending |
-| INTAKE-03 | Phase 39 | Pending |
+| INTAKE-01 | Phase 39 | Complete |
+| INTAKE-02 | Phase 39 | Complete |
+| INTAKE-03 | Phase 39 | Complete |
 | INTAKE-04 | Phase 36 | Complete |
 | TRIAGE-01 | Phase 36 | Complete |
 | TRIAGE-02 | Phase 36 | Complete |
@@ -79,11 +79,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DECIDE-02 | Phase 37 | Complete |
 | DECIDE-03 | Phase 33 | Complete |
 | READY-01 | Phase 37 | Complete |
-| READY-02 | Phase 38 | Pending |
-| READY-03 | Phase 38 | Pending |
-| CUTOVER-01 | Phase 38 | Pending |
+| READY-02 | Phase 38 | Complete |
+| READY-03 | Phase 38 | Complete |
+| CUTOVER-01 | Phase 38 | Complete |
 | CUTOVER-02 | Phase 35 | Complete |
-| CUTOVER-03 | Phase 38 | Pending |
+| CUTOVER-03 | Phase 38 | Complete |
 
 **Coverage:**
 
