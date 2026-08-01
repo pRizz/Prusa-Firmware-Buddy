@@ -1,120 +1,64 @@
 ---
 phase: 41-terminal-milestone-metadata-coherence
-reviewed: 2026-08-01T18:17:10Z
+reviewed: 2026-08-01T19:05:04Z
 depth: standard
-files_reviewed: 7
+files_reviewed: 14
 files_reviewed_list:
   - BUILD.bazel
   - justfile
   - tools/bazel/BUILD.bazel
   - tools/bazel/shell_rules.bzl
   - tools/bazel/phase41_terminal_consistency.py
+  - tools/bazel/phase41_terminal_consistency_archive_test.py
+  - tools/bazel/phase41_terminal_consistency_boundary_test.py
+  - tools/bazel/phase41_terminal_consistency_contracts.py
   - tools/bazel/phase41_terminal_consistency_policy.py
   - tools/bazel/phase41_terminal_consistency_test.py
+  - tools/bazel/phase41_terminal_consistency_test_support.py
+  - tools/bazel/phase41_terminal_consistency_timestamp_test.py
+  - .planning/phases/41-terminal-milestone-metadata-coherence/41-REVIEW.md
+  - .planning/phases/41-terminal-milestone-metadata-coherence/41-REVIEW-FIX.md
 findings:
-  critical: 1
-  warning: 3
+  critical: 0
+  warning: 1
   info: 0
-  total: 4
+  total: 1
 status: issues_found
 ---
 
 # Phase 41: Code Review Report
 
-**Reviewed:** 2026-08-01T18:17:10Z
+**Reviewed:** 2026-08-01T19:05:04Z
 **Depth:** standard
-**Files Reviewed:** 7
+**Files Reviewed:** 14
 **Status:** issues_found
 
 ## Summary
 
-The Phase 41 policy core is deterministic and the focused test target passes, but the filesystem/Markdown boundary is not fully fail closed. The strict pre-archive gate can pass without the independent Phase 41 verification required by the phase contract, and malformed or omitted validation/audit evidence can normalize into green values. Duplicate ROADMAP identities are also collapsed before the policy can reject them.
+All six previously recorded findings are closed for their stated direct cases. Pre-archive now requires independent passed verification in summary-to-verification-to-audit timestamp order; validation statuses use an exact grammar; audit absence remains absent and required rollups/sections are explicit; duplicate ROADMAP identities fail before normalization; validation identities match frozen exact Phase 31–41 inventories; and every relevant timestamp must be timezone-aware and is normalized to UTC. The frozen identity inventories also exactly match all eleven live validation documents.
 
-Review judgments were informed by repo-local `AGENTS.md`, `AGENTS.bright-builds.md`, the absence of active `standards-overrides.md` exceptions, and the managed architecture, code-shape, verification, and testing standards. Verification performed during review: 38 direct Python tests passed; the Bazel test target passed; `git diff --check` passed; the managed Bright Builds checker reported zero findings. Adversarial parser probes reproduced all three warning-class fail-open paths below.
+One broader boundary ambiguity still fails open. The generic Markdown parser silently collapses duplicate table headers and selects only the first matching section. This permits contradictory validation or audit evidence to be normalized as green and can produce a zero-violation pre-archive result. The terminal checker therefore does not yet meet its malformed-or-ambiguous-input fail-closed contract.
 
-## Critical Issues
-
-### CR-01: Pre-archive can pass without independent Phase 41 verification
-
-**File:** `tools/bazel/phase41_terminal_consistency_policy.py:171-179`
-
-**Issue:** `TerminalSnapshot` has no Phase 41 verification record, and `_evaluate_audit` at lines 491-527 checks only audit fields. The root runfiles list at `BUILD.bazel:293-311` likewise omits `41-VERIFICATION.md`. Consequently, the test fixture at `phase41_terminal_consistency_test.py:166-176` is considered coherent in `pre-archive` mode despite containing no verification evidence. This bypasses the explicitly required independent-verification gate and can authorize archival based only on mutable ROADMAP/STATE/VALIDATION/audit projections.
-
-**Fix:** Add a normalized verification input, parse the exact Phase 41 verification artifact at the boundary, include it in Bazel runfiles, and require it to be present, parsed, passed, and no newer than the audit before pre-archive can succeed. Add missing, malformed, failed, and stale verification tests.
-
-```python
-@dataclass(frozen=True)
-class VerificationRecord:
-    path: str
-    present: bool
-    parsed: bool
-    status: str
-    verified_at: datetime | None
-
-# In pre-archive evaluation:
-if not verification.present or not verification.parsed:
-    violations.append(_violation(verification.path, "P41_VERIFICATION_MISSING", ...))
-elif verification.status != "passed":
-    violations.append(_violation(verification.path, "P41_VERIFICATION_STATUS", ...))
-```
+Review judgments were informed by repo-local `AGENTS.md`, `AGENTS.bright-builds.md`, the absence of active `standards-overrides.md` exceptions, and the managed architecture, code-shape, verification, and testing standards. Verification performed during this final review: 72 direct Python tests passed; all four uncached Bazel test targets passed; the managed Bright Builds checker reported zero findings; the scoped `git diff --check` passed; and focused adversarial probes reproduced WR-01 below. The live direct pre-audit command reached the checker and reported the expected transitional ROADMAP/STATE lifecycle mismatches because Phase 41 remains in verification rather than terminal completion; this is phase-state evidence, not a source-code regression. Bazel-generated `MODULE.bazel.lock` drift was restored, and the pre-existing `.planning/config.json` modification was preserved.
 
 ## Warnings
 
-### WR-01: Missing and negative validation statuses normalize as green
+### WR-01: Ambiguous Markdown tables and sections can bypass terminal evidence checks
 
-**File:** `tools/bazel/phase41_terminal_consistency.py:242-257`
-
-**Issue:** `normalized_status` uses substring matching, so values such as `incomplete`, `not complete`, and `not passed` normalize to accepted statuses. Separately, an omitted or unparseable task-status table yields `task_statuses=()`, and the policy loop at `phase41_terminal_consistency_policy.py:418-433` emits no violation for an empty tuple. A validation file can therefore retain true frontmatter and checked sign-off bullets while deleting its campaign rows or using explicitly negative wording, and both modes accept it.
-
-**Fix:** Parse a bounded, exact status grammar after removing only known presentation markers, preserve unknown/negative values as invalid, and require a non-empty set of expected task or campaign identities for every validation file.
+**File:** `tools/bazel/phase41_terminal_consistency.py:112-145`
+**Issue:** `section()` returns the first matching heading without detecting another section with the same required identity, while `table_rows()` creates each row with `dict(zip(header, cells))` without rejecting duplicate normalized header names. Python retains only the last value for a duplicate key. A validation table with exact Phase 31 identities and headers `Task ID | Status | Status`, whose rows contain `red | green`, is therefore parsed as an exact all-green inventory and produces no pre-audit violation. The same construction with audit `Status` and `Audit classification` columns converts explicit `incomplete | complete` and `noncompliant | compliant` values into zero gaps; combined with a coherent snapshot it produced no pre-archive violation. Repeating a required audit heading also leaves a later contradictory section unexamined. This reopens the malformed-input fail-closed boundary even though the six specific prior cases are fixed.
+**Fix:** Make required-section and table parsing path-aware and uniqueness-enforcing. Reject repeated required headings, reject duplicate case-normalized header names before constructing row dictionaries, and parse tables as distinct contiguous blocks rather than flattening every pipe-prefixed line in a section. Add boundary regressions proving duplicate `Status`, duplicate `Audit classification`, and repeated required audit/validation sections yield a stable boundary violation and nonzero pre-archive result.
 
 ```python
-def normalized_status(value: str) -> str:
-    normalized = strip_known_markers(value).strip().lower()
-    if normalized not in {"pending", "red", "green", "pass", "passed", "complete"}:
-        return "unsupported"
-    return normalized
-
-if not record.task_statuses:
-    violations.append(_violation(path, "P41_VALIDATION_TASKS_MISSING", 0, ">= 1"))
-```
-
-### WR-02: Missing audit evidence is converted to zero gaps
-
-**File:** `tools/bazel/phase41_terminal_consistency.py:358-400`
-
-**Issue:** Missing `End-to-End Flows` and `Nyquist Coverage` tables produce empty lists whose sums are zero. Missing `Runtime integration gaps` and `Milestone archival blockers` rows also default directly to zero. The policy then treats all four zeroes as success. Removing those audit sections and rows reproduced an `AuditRecord` with `integration_gaps=0`, `flow_gaps=0`, `metadata_gaps=0`, and `nyquist_gaps=0`, so absent evidence is indistinguishable from an explicit zero-gap audit.
-
-**Fix:** Represent missing fields as `None` or add explicit presence/shape flags, require exact expected row identities/counts before calculating gaps, and mark the audit malformed when any required section or summary row is absent.
-
-```python
-if not flow_rows or not nyquist_rows:
-    parser.violation(AUDIT_PATH, "P41_AUDIT_SECTION_MISSING", ...)
-if maybe_integration is None or maybe_metadata is None:
-    parser.violation(AUDIT_PATH, "P41_AUDIT_ROLLUP_MISSING", ...)
-```
-
-### WR-03: Duplicate ROADMAP lifecycle and inventory rows are silently collapsed
-
-**File:** `tools/bazel/phase41_terminal_consistency.py:169-210`
-
-**Issue:** Duplicate phase headings and lifecycle rows are written into dictionaries keyed by phase, so later values overwrite earlier ones without a boundary violation. Roadmap plan entries are preserved initially, but `_evaluate_inventories` converts them to a set at `phase41_terminal_consistency_policy.py:339-341`, discarding duplicate identities. A probe with two Phase 31 lifecycle rows produced no boundary violation. This defeats the contract that ambiguous and duplicate input must fail closed and lets contradictory or repeated projections pass when the retained value matches expected state.
-
-**Fix:** Count raw phase headings, lifecycle rows, progress/count fields, and roadmap plan basenames before normalization. Emit a duplicate violation unless every required identity occurs exactly once, then build the normalized dictionaries/sets only after uniqueness is established.
-
-```python
-phase_row_counts = Counter(int(phase) for _, phase in status_matches)
-for phase, count in phase_row_counts.items():
-    if count != 1:
-        parser.violation(ROADMAP_PATH, "P41_ROADMAP_PHASE_DUPLICATE", phase, "one row")
-
-plan_counts = Counter(roadmap_plans)
-if any(count != 1 for count in plan_counts.values()):
-    parser.violation(ROADMAP_PATH, "P41_ROADMAP_PLAN_DUPLICATE", ...)
+normalized_headers = tuple(cell.strip().casefold() for cell in header)
+if len(set(normalized_headers)) != len(normalized_headers):
+    parser.violation(path, "P41_TABLE_HEADER_DUPLICATE", header,
+                     "unique case-normalized columns")
+    return []
 ```
 
 ***
 
-_Reviewed: 2026-08-01T18:17:10Z_
+_Reviewed: 2026-08-01T19:05:04Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
