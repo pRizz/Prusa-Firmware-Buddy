@@ -79,6 +79,96 @@ class BoundaryParser:
             values[key] = raw_value.strip().strip('"').strip("'")
         return values
 
+    def nested_frontmatter(self, path: str,
+                           text: str | None) -> dict[str, object] | None:
+        if text is None:
+            return None
+        lines = text.splitlines()
+        if not lines or lines[0] != "---":
+            self.violation(path, "P41_FRONTMATTER_MALFORMED",
+                           "missing opening delimiter", "YAML frontmatter")
+            return None
+        try:
+            closing = lines.index("---", 1)
+        except ValueError:
+            self.violation(path, "P41_FRONTMATTER_MALFORMED",
+                           "missing closing delimiter", "YAML frontmatter")
+            return None
+        root: dict[str, object] = {}
+        stack: list[tuple[int, dict[str, object]]] = [(-2, root)]
+        for line_number, line in enumerate(lines[1:closing], start=2):
+            if not line.strip() or line.lstrip().startswith("#"):
+                continue
+            leading_whitespace = line[:len(line) - len(line.lstrip())]
+            indentation = len(leading_whitespace)
+            if "\t" in leading_whitespace or indentation % 2 or ":" not in line:
+                self.violation(path, "P41_FRONTMATTER_NESTING",
+                               f"line {line_number}",
+                               "two-space mapping indentation")
+                return None
+            key, raw_value = line.strip().split(":", 1)
+            if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_-]*", key):
+                self.violation(path, "P41_FRONTMATTER_NESTING",
+                               f"line {line_number}:{key}",
+                               "plain mapping key")
+                return None
+            while stack and indentation <= stack[-1][0]:
+                stack.pop()
+            if not stack or indentation != stack[-1][0] + 2:
+                self.violation(path, "P41_FRONTMATTER_NESTING",
+                               f"line {line_number}:indent={indentation}",
+                               "one mapping level")
+                return None
+            mapping = stack[-1][1]
+            normalized_keys = {existing.casefold() for existing in mapping}
+            if key.casefold() in normalized_keys:
+                self.violation(path, "P41_FRONTMATTER_DUPLICATE", key,
+                               "unique case-normalized mapping keys")
+                return None
+            value_text = raw_value.strip()
+            if not value_text:
+                child: dict[str, object] = {}
+                mapping[key] = child
+                stack.append((indentation, child))
+                continue
+            maybe_value = _yaml_scalar(value_text)
+            if maybe_value is _INVALID_YAML_SCALAR:
+                self.violation(path, "P41_FRONTMATTER_SCALAR",
+                               f"line {line_number}:{value_text}",
+                               "integer, string, or inline integer list")
+                return None
+            mapping[key] = maybe_value
+        return root
+
+    def required_labeled_block(self,
+                               path: str,
+                               text: str,
+                               label: str,
+                               identity: str | None = None) -> str:
+        lines = _lines_outside_fences(text)
+        pattern = re.compile(rf"^\s*\*\*{re.escape(label)}:\*\*\s*$")
+        matches = [
+            index for index, line in enumerate(lines)
+            if pattern.fullmatch(line)
+        ]
+        block_name = identity or label
+        if len(matches) != 1:
+            self.violation(path, "P41_LABELED_BLOCK_REQUIRED",
+                           f"{block_name}:{len(matches)}",
+                           "one required labeled block")
+            return ""
+        start = matches[0] + 1
+        end = len(lines)
+        for index in range(start, len(lines)):
+            stripped = lines[index].strip()
+            if stripped.startswith("## ") or stripped.startswith("| "):
+                end = index
+                break
+            if index > start and re.fullmatch(r"\*\*[^*]+:\*\*", stripped):
+                end = index
+                break
+        return "\n".join(lines[start:end]).strip()
+
     def required_section(
         self,
         path: str,
@@ -229,3 +319,25 @@ def _table_cells(line: str) -> tuple[str, ...] | None:
 
 def _is_separator(cell: str) -> bool:
     return re.fullmatch(r":?-{3,}:?", cell.strip()) is not None
+
+
+_INVALID_YAML_SCALAR = object()
+
+
+def _yaml_scalar(value: str) -> object:
+    if re.fullmatch(r"-?\d+", value):
+        return int(value)
+    if value.startswith("[") and value.endswith("]"):
+        body = value[1:-1].strip()
+        if not body:
+            return ()
+        items = tuple(item.strip() for item in body.split(","))
+        if not all(re.fullmatch(r"-?\d+", item) for item in items):
+            return _INVALID_YAML_SCALAR
+        return tuple(int(item) for item in items)
+    if ((value.startswith('"') and value.endswith('"'))
+            or (value.startswith("'") and value.endswith("'"))):
+        return value[1:-1]
+    if re.fullmatch(r"[^\[\]{},#]+", value):
+        return value
+    return _INVALID_YAML_SCALAR

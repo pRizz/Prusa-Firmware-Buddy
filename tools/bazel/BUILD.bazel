@@ -26,6 +26,7 @@ shell_binary(
         "phase41_terminal_consistency_contracts.py",
         "phase41_terminal_consistency_markdown.py",
         "phase41_terminal_consistency_policy.py",
+        "phase41_terminal_consistency_projection_parser.py",
         "//:phase41_terminal_consistency_docs",
     ],
 )
@@ -51,6 +52,16 @@ shell_test(
 )
 
 shell_test(
+    name = "phase41_terminal_consistency_projection_policy_tests",
+    src = "phase41_terminal_consistency_projection_test.py",
+    data = [
+        "phase41_terminal_consistency_contracts.py",
+        "phase41_terminal_consistency_policy.py",
+        "phase41_terminal_consistency_test_support.py",
+    ],
+)
+
+shell_test(
     name = "phase41_terminal_consistency_boundary_tests",
     src = "phase41_terminal_consistency_boundary_test.py",
     data = [
@@ -58,6 +69,20 @@ shell_test(
         "phase41_terminal_consistency_markdown.py",
         "phase41_terminal_consistency.py",
         "phase41_terminal_consistency_policy.py",
+        "phase41_terminal_consistency_projection_parser.py",
+        "phase41_terminal_consistency_test_support.py",
+    ],
+)
+
+shell_test(
+    name = "phase41_terminal_consistency_projection_boundary_tests",
+    src = "phase41_terminal_consistency_projection_boundary_test.py",
+    data = [
+        "phase41_terminal_consistency.py",
+        "phase41_terminal_consistency_contracts.py",
+        "phase41_terminal_consistency_markdown.py",
+        "phase41_terminal_consistency_policy.py",
+        "phase41_terminal_consistency_projection_parser.py",
         "phase41_terminal_consistency_test_support.py",
     ],
 )
@@ -70,6 +95,7 @@ shell_test(
         "phase41_terminal_consistency_contracts.py",
         "phase41_terminal_consistency_markdown.py",
         "phase41_terminal_consistency_policy.py",
+        "phase41_terminal_consistency_projection_parser.py",
     ],
 )
 
@@ -79,6 +105,8 @@ test_suite(
         ":phase41_terminal_consistency_archive_tests",
         ":phase41_terminal_consistency_boundary_tests",
         ":phase41_terminal_consistency_policy_tests",
+        ":phase41_terminal_consistency_projection_boundary_tests",
+        ":phase41_terminal_consistency_projection_policy_tests",
         ":phase41_terminal_consistency_timestamp_tests",
     ],
 )

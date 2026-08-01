@@ -29,6 +29,11 @@ from phase41_terminal_consistency_policy import (
     exit_code_for_violations,
 )
 from phase41_terminal_consistency_markdown import BoundaryParser
+from phase41_terminal_consistency_projection_parser import (
+    parse_audit_frontmatter,
+    parse_requirements_coverage,
+    parse_roadmap_progress,
+)
 
 ROADMAP_PATH = ".planning/ROADMAP.md"
 REQUIREMENTS_PATH = ".planning/REQUIREMENTS.md"
@@ -471,11 +476,13 @@ def parse_audit(parser: BoundaryParser) -> AuditRecord:
     audited = parse_utc_timestamp(parser, AUDIT_PATH, "audited",
                                   (values or {}).get("audited", ""))
     fresh = audited is not None and latest_summary is not None and audited >= latest_summary
+    parsed = values is not None and len(parser.violations) == violation_count
+    frontmatter_projection = (parse_audit_frontmatter(parser, body)
+                              if text is not None else None)
     return AuditRecord(
         path=AUDIT_PATH,
         present=text is not None,
-        parsed=(values is not None
-                and len(parser.violations) == violation_count),
+        parsed=parsed,
         status=(values or {}).get("status", "missing"),
         fresh=fresh,
         audited_at=audited,
@@ -488,6 +495,7 @@ def parse_audit(parser: BoundaryParser) -> AuditRecord:
         nyquist_gaps=nyquist_gaps,
         reported_nyquist_gaps=reported_nyquist_gaps,
         archival_blockers=archival_blockers,
+        frontmatter_projection=frontmatter_projection,
     )
 
 
@@ -520,7 +528,10 @@ def load_snapshot(root: Path) -> TerminalSnapshot:
     roadmap_text = parser.read_text(ROADMAP_PATH) or ""
     state_text = parser.read_text(STATE_PATH) or ""
     requirements = parse_requirements(parser, requirements_text, roadmap_text)
+    requirements_coverage = parse_requirements_coverage(
+        parser, requirements_text)
     phases, inventories = parse_phases_and_inventories(parser, roadmap_text)
+    roadmap_progress = parse_roadmap_progress(parser, roadmap_text)
     validations = parse_validations(parser)
     milestone = parse_milestone(parser, roadmap_text, state_text, phases,
                                 inventories)
@@ -534,6 +545,8 @@ def load_snapshot(root: Path) -> TerminalSnapshot:
         milestone=milestone,
         audit=audit,
         verification=verification,
+        requirements_coverage=requirements_coverage,
+        roadmap_progress=roadmap_progress,
         boundary_violations=tuple(parser.violations),
     )
 
