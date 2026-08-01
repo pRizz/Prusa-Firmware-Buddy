@@ -116,6 +116,8 @@ def coherent_snapshot() -> TerminalSnapshot:
         flow_gaps=0,
         metadata_gaps=0,
         nyquist_gaps=0,
+        reported_nyquist_gaps=0,
+        archival_blockers=0,
     )
     verification = VerificationRecord(
         path=(".planning/phases/41-terminal-milestone-metadata-coherence/"

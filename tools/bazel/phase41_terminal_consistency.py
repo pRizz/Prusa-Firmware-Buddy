@@ -5,6 +5,7 @@ import argparse
 import os
 import re
 import sys
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
@@ -33,6 +34,15 @@ ROADMAP_PATH = ".planning/ROADMAP.md"
 REQUIREMENTS_PATH = ".planning/REQUIREMENTS.md"
 STATE_PATH = ".planning/STATE.md"
 AUDIT_PATH = ".planning/v1.3-MILESTONE-AUDIT.md"
+AUDIT_FLOW_IDENTITIES = (
+    "Four-stream intake to canonical blocker register",
+    "Typed maintainer decisions to readiness ledger",
+    "Complete approved path",
+    "Default and targeted-repair paths",
+    "Source/publication fault replacement",
+    "Terminal metadata reconciliation",
+    "Audit and Nyquist handoff",
+)
 VERIFICATION_PATH = (
     ".planning/phases/41-terminal-milestone-metadata-coherence/"
     "41-VERIFICATION.md")
@@ -382,50 +392,89 @@ def latest_phase41_summary_time(parser: BoundaryParser) -> datetime | None:
     return max(times) if times else None
 
 
+def audit_integer(parser: BoundaryParser, text: str, key: str) -> int | None:
+    matches = re.findall(rf"(?m)^\|\s*{re.escape(key)}\s*\|\s*(\d+)(?:\s*/[^|]*)?\s*\|\s*$",
+                         text)
+    if len(matches) != 1:
+        parser.violation(AUDIT_PATH, "P41_AUDIT_ROLLUP_MISSING",
+                         f"{key}:{len(matches)}", "one explicit row")
+        return None
+    return int(matches[0])
+
+
+def audit_section_rows(
+    parser: BoundaryParser,
+    text: str,
+    heading: str,
+    identity_column: str,
+    expected_identities: tuple[str, ...],
+) -> list[dict[str, str]] | None:
+    rows = table_rows(section(text, heading))
+    identities = tuple(row.get(identity_column, "") for row in rows)
+    if Counter(identities) != Counter(expected_identities):
+        parser.violation(AUDIT_PATH, "P41_AUDIT_SECTION_MISSING", heading,
+                         f"exact identities: {expected_identities}")
+        return None
+    return rows
+
+
 def parse_audit(parser: BoundaryParser) -> AuditRecord:
+    violation_count = len(parser.violations)
     text = parser.read_text(AUDIT_PATH)
     values = parser.frontmatter(AUDIT_PATH, text)
     body = text or ""
-    maybe_scope = re.search(r"\|\s*Phases\s*\|\s*(\d+)\s+through\s+(\d+)",
-                            body)
+    scope_matches = re.findall(
+        r"(?m)^\|\s*Phases\s*\|\s*(\d+)\s+through\s+(\d+)\s*\|\s*$",
+        body)
+    if len(scope_matches) != 1:
+        parser.violation(AUDIT_PATH, "P41_AUDIT_ROLLUP_MISSING",
+                         f"Phases:{len(scope_matches)}", "one explicit row")
     phase_numbers = tuple(
-        range(int(maybe_scope.group(1)),
-              int(maybe_scope.group(2)) + 1)) if maybe_scope else ()
-    requirement_count = next((
-        int(match.group(1))
-        for match in [re.search(r"\|\s*Requirements\s*\|\s*(\d+)\s*\|", body)]
-        if match), 0)
-    maybe_coherent = re.search(r"\|\s*Fully coherent\s*\|\s*(\d+)", body)
-    flow_rows = table_rows(section(body, "End-to-End Flows"))
-    flow_gaps = sum(
+        range(int(scope_matches[0][0]),
+              int(scope_matches[0][1]) + 1)) if len(scope_matches) == 1 else ()
+    requirement_count = audit_integer(parser, body, "Requirements")
+    coherent_requirement_count = audit_integer(parser, body,
+                                                "Fully coherent")
+    integration_gaps = audit_integer(parser, body, "Runtime integration gaps")
+    metadata_gaps = audit_integer(parser, body, "Metadata gaps")
+    reported_nyquist_gaps = audit_integer(parser, body, "Nyquist gaps")
+    archival_blockers = audit_integer(parser, body,
+                                      "Milestone archival blockers")
+    flow_rows = audit_section_rows(parser, body, "End-to-End Flows", "Flow",
+                                   AUDIT_FLOW_IDENTITIES)
+    flow_gaps = (sum(
         row.get("Status", "").lower() != "complete" for row in flow_rows)
-    nyquist_rows = table_rows(section(body, "Nyquist Coverage"))
-    nyquist_gaps = sum(
+                 if flow_rows is not None else None)
+    nyquist_rows = audit_section_rows(
+        parser,
+        body,
+        "Nyquist Coverage",
+        "Phase",
+        tuple(str(phase) for phase in MILESTONE_PHASES),
+    )
+    nyquist_gaps = (sum(
         row.get("Audit classification", "").lower() != "compliant"
-        for row in nyquist_rows)
-    maybe_integration = re.search(
-        r"\|\s*Runtime integration gaps\s*\|\s*(\d+)", body)
-    maybe_metadata = re.search(
-        r"\|\s*Milestone archival blockers\s*\|\s*(\d+)", body)
+        for row in nyquist_rows) if nyquist_rows is not None else None)
     audited = parse_iso((values or {}).get("audited", ""))
     latest_summary = latest_phase41_summary_time(parser)
     fresh = audited is not None and latest_summary is not None and audited >= latest_summary
     return AuditRecord(
         path=AUDIT_PATH,
         present=text is not None,
-        parsed=values is not None,
+        parsed=(values is not None
+                and len(parser.violations) == violation_count),
         status=(values or {}).get("status", "missing"),
         fresh=fresh,
         audited_at=audited,
         phase_numbers=phase_numbers,
         requirement_count=requirement_count,
-        coherent_requirement_count=int(maybe_coherent.group(1))
-        if maybe_coherent else 0,
-        integration_gaps=int(maybe_integration.group(1))
-        if maybe_integration else 0,
+        coherent_requirement_count=coherent_requirement_count,
+        integration_gaps=integration_gaps,
         flow_gaps=flow_gaps,
-        metadata_gaps=int(maybe_metadata.group(1)) if maybe_metadata else 0,
+        metadata_gaps=metadata_gaps,
         nyquist_gaps=nyquist_gaps,
+        reported_nyquist_gaps=reported_nyquist_gaps,
+        archival_blockers=archival_blockers,
     )
 
 

@@ -6,15 +6,94 @@ import unittest
 from pathlib import Path
 
 from phase41_terminal_consistency import (
+    AUDIT_FLOW_IDENTITIES,
+    AUDIT_PATH,
     VERIFICATION_PATH,
     BoundaryParser,
     normalized_status,
+    parse_audit,
     parse_verification,
     validation_tasks,
 )
 
 
+def valid_audit_text() -> str:
+    flow_rows = "\n".join(
+        f"| {identity} | complete | evidence |"
+        for identity in AUDIT_FLOW_IDENTITIES)
+    nyquist_rows = "\n".join(
+        f"| {phase} | compliant |" for phase in range(31, 42))
+    return f"""---
+audited: 2026-08-01T19:00:00Z
+status: passed
+---
+
+## Scope
+
+| Item | Result |
+| --- | --- |
+| Phases | 31 through 41 |
+| Requirements | 16 |
+| Fully coherent | 16 / 16 |
+| Runtime integration gaps | 0 |
+| Metadata gaps | 0 |
+| Nyquist gaps | 0 |
+| Milestone archival blockers | 0 |
+
+## End-to-End Flows
+
+| Flow | Status | Evidence |
+| --- | --- | --- |
+{flow_rows}
+
+## Nyquist Coverage
+
+| Phase | Audit classification |
+| --- | --- |
+{nyquist_rows}
+"""
+
+
 class Phase41BoundaryParserTest(unittest.TestCase):
+
+    def parse_audit_text(self, text: str):
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        root = Path(temp_dir.name)
+        audit_path = root / AUDIT_PATH
+        audit_path.parent.mkdir(parents=True)
+        audit_path.write_text(text, encoding="utf-8")
+        parser = BoundaryParser(root)
+        return parse_audit(parser), parser
+
+    def test_missing_audit_sections_fail_closed(self) -> None:
+        for heading in ("End-to-End Flows", "Nyquist Coverage"):
+            with self.subTest(heading=heading):
+                # Arrange
+                text = valid_audit_text().replace(f"## {heading}",
+                                                  f"## Missing {heading}")
+
+                # Act
+                audit, parser = self.parse_audit_text(text)
+
+                # Assert
+                self.assertFalse(audit.parsed)
+                self.assertIn("P41_AUDIT_SECTION_MISSING",
+                              {item.code for item in parser.violations})
+
+    def test_missing_audit_rollup_fails_closed(self) -> None:
+        # Arrange
+        text = valid_audit_text().replace(
+            "| Runtime integration gaps | 0 |\n", "")
+
+        # Act
+        audit, parser = self.parse_audit_text(text)
+
+        # Assert
+        self.assertFalse(audit.parsed)
+        self.assertIsNone(audit.integration_gaps)
+        self.assertIn("P41_AUDIT_ROLLUP_MISSING",
+                      {item.code for item in parser.violations})
 
     def test_validation_status_grammar_rejects_negative_substrings(self) -> None:
         # Arrange

@@ -455,6 +455,16 @@ class Phase41TerminalConsistencyTest(unittest.TestCase):
         # Act / Assert
         self.assert_has_code(mutated, "pre-archive", "P41_AUDIT_NYQUIST_GAPS")
 
+    def test_pre_archive_requires_explicit_zero_archival_blockers(self) -> None:
+        # Arrange
+        snapshot = coherent_snapshot()
+        audit = replace(snapshot.audit, archival_blockers=None)
+        mutated = replace(snapshot, audit=audit)
+
+        # Act / Assert
+        self.assert_has_code(mutated, "pre-archive",
+                             "P41_AUDIT_ARCHIVAL_BLOCKERS")
+
     def test_audit_cannot_make_unchecked_requirement_coherent(self) -> None:
         # Arrange
         snapshot = coherent_snapshot()

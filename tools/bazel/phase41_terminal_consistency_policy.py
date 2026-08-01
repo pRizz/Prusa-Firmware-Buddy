@@ -163,12 +163,14 @@ class AuditRecord:
     fresh: bool
     audited_at: datetime | None
     phase_numbers: tuple[int, ...]
-    requirement_count: int
-    coherent_requirement_count: int
-    integration_gaps: int
-    flow_gaps: int
-    metadata_gaps: int
-    nyquist_gaps: int
+    requirement_count: int | None
+    coherent_requirement_count: int | None
+    integration_gaps: int | None
+    flow_gaps: int | None
+    metadata_gaps: int | None
+    nyquist_gaps: int | None
+    reported_nyquist_gaps: int | None
+    archival_blockers: int | None
 
 
 @dataclass(frozen=True)
@@ -573,6 +575,10 @@ def _evaluate_audit(snapshot: TerminalSnapshot,
          audit.metadata_gaps, 0),
         (audit.nyquist_gaps == 0, "P41_AUDIT_NYQUIST_GAPS", audit.nyquist_gaps,
          0),
+        (audit.reported_nyquist_gaps == 0, "P41_AUDIT_NYQUIST_ROLLUP",
+         audit.reported_nyquist_gaps, 0),
+        (audit.archival_blockers == 0, "P41_AUDIT_ARCHIVAL_BLOCKERS",
+         audit.archival_blockers, 0),
     ]
     return [
         _violation(audit.path, code, observed, expected)
