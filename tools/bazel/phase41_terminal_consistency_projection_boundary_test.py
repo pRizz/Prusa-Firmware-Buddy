@@ -112,7 +112,7 @@ Plans:
 
 ## Milestones
 
-- **v1.3 Cutover Approval and Reference Demotion Trial** - Phases 31-41, shipped 2026-08-01.
+- **v1.3 Cutover Approval and Reference Demotion Trial** - Phases 31-41, complete 2026-08-01.
 
 ## Phases
 

@@ -11,7 +11,7 @@ The replacement firmware is not yet cut over. Final reference demotion remains b
 - **v1.0 Rust Port Evidence Foundation** - Phases 1-12, 38 plans, shipped 2026-06-15. Archives: [roadmap](milestones/v1.0-ROADMAP.md), [requirements](milestones/v1.0-REQUIREMENTS.md), [audit](milestones/v1.0-MILESTONE-AUDIT.md), [phase history](milestones/v1.0-phases/).
 - **v1.1 Cutover Evidence Hardening** - Phases 13-22, 13 plans, shipped 2026-06-22. Archives: [roadmap](milestones/v1.1-ROADMAP.md), [requirements](milestones/v1.1-REQUIREMENTS.md), [audit](milestones/v1.1-MILESTONE-AUDIT.md).
 - **v1.2 Cutover Evidence Execution and Acceptance** - Phases 23-30, 9 plans, shipped 2026-07-02. Archives: [roadmap](milestones/v1.2-ROADMAP.md), [requirements](milestones/v1.2-REQUIREMENTS.md), [audit](milestones/v1.2-MILESTONE-AUDIT.md).
-- **v1.3 Cutover Approval and Reference Demotion Trial** - Phases 31-41, active. Goal: consume real evidence packets, triage blockers, record maintainer decisions, prove reference demotion remains explicitly guarded, produce the cutover decision artifact, and reconcile terminal milestone metadata before archival.
+- **v1.3 Cutover Approval and Reference Demotion Trial** - Phases 31-41, complete 2026-08-01. Goal: consume real evidence packets, triage blockers, record maintainer decisions, prove reference demotion remains explicitly guarded, produce the cutover decision artifact, and reconcile terminal milestone metadata before archival.
 
 ## Phases
 
@@ -69,7 +69,7 @@ Full phase details are archived in `.planning/milestones/v1.2-ROADMAP.md`.
 
 </details>
 
-### v1.3 Cutover Approval and Reference Demotion Trial (Active)
+### v1.3 Cutover Approval and Reference Demotion Trial (Complete)
 
 **Milestone Goal:** Turn the v1.2 executable evidence and decision machinery into a real cutover approval trial, producing a go/no-go decision while keeping reference demotion explicitly guarded.
 
@@ -259,12 +259,13 @@ Plans:
   3. Phase 37, Phase 38, and Phase 40 VALIDATION files accurately reflect completed Wave 0 and task/campaign evidence, and Nyquist discovery reports no partial or missing phase.
   4. A repo-owned terminal consistency check fails closed on stale requirement counts, phase status, plan inventories, Nyquist state, and ROADMAP/REQUIREMENTS/STATE contradictions.
   5. A fresh milestone audit evaluates all eleven v1.3 phases, reports all sixteen requirements coherent, and finds no integration, flow, or Nyquist gap.
-**Plans**: 2/3 plans complete
+**Plans**: 4/4 plans complete
 
 Plans:
 - [x] 41-01-PLAN.md - Add the fail-closed terminal consistency checker and repository verification facade.
 - [x] 41-02-PLAN.md - Reconcile exact terminal planning projections and active lifecycle metadata.
 - [x] 41-03-PLAN.md - Reconcile Nyquist evidence and produce the fresh terminal audit candidate.
+- [x] 41-04-PLAN.md - Close verifier-discovered REQUIREMENTS, ROADMAP, and audit projection gaps.
 
 ## Requirement Coverage
 
@@ -287,7 +288,7 @@ Plans:
 | CUTOVER-02 | Phase 35 | Complete |
 | CUTOVER-03 | Phase 41 | Complete |
 
-**Coverage:** 16/16 v1.3 requirements are behavior-evidenced complete and mapped; 7/16 terminal-projection ownership rows remain assigned to active Phase 41 pending phase completion. No orphaned requirements. No duplicate requirement mappings.
+**Coverage:** 16/16 v1.3 requirements are behavior-evidenced complete and mapped; all 7/16 terminal-projection ownership rows assigned to Phase 41 are complete. No orphaned requirements. No duplicate requirement mappings.
 
 ## Progress
 

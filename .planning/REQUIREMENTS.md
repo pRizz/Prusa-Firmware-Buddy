@@ -90,11 +90,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 - v1.3 requirements: 16 total
 - Mapped to phases: 16
 - Behavior-evidenced complete: 16/16
-- Phase 41 terminal-projection ownership rows pending phase completion: 7/16
+- Phase 41 terminal-projection ownership rows complete: 7/16
 - Unmapped: 0
 - Duplicate mappings: 0
 
 ______________________________________________________________________
 
 *Requirements defined: 2026-07-02*
-*Last updated: 2026-08-01 during active Phase 41 terminal projection reconciliation*
+*Last updated: 2026-08-01 after passed Phase 41 terminal verification*

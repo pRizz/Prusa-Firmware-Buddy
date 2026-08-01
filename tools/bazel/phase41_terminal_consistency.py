@@ -306,8 +306,14 @@ def parse_milestone(
                                                ...]) -> MilestoneProjection:
     milestone_line = next(
         (line for line in roadmap_text.splitlines() if "**v1.3 " in line), "")
-    roadmap_status = "Complete" if "shipped" in milestone_line.lower(
-    ) else "Active" if "active" in milestone_line.lower() else "missing"
+    normalized_milestone_line = milestone_line.lower()
+    if ("shipped" in normalized_milestone_line
+            or "complete" in normalized_milestone_line):
+        roadmap_status = "Complete"
+    elif "active" in normalized_milestone_line:
+        roadmap_status = "Active"
+    else:
+        roadmap_status = "missing"
     roadmap_total_plans = sum(item.roadmap_total for item in inventories)
     roadmap_completed_plans = sum(item.roadmap_completed
                                   for item in inventories)
