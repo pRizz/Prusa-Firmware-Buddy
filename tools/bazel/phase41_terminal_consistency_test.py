@@ -407,63 +407,37 @@ class Phase41TerminalConsistencyTest(unittest.TestCase):
         # Act / Assert
         self.assert_has_code(mutated, "pre-audit", "P41_WAVE_ZERO_FALSE")
 
-    def test_non_phase41_pending_validation_task_fails_closed(self) -> None:
+    def test_pending_validation_tasks_follow_mode_boundary(self) -> None:
         # Arrange
-        snapshot = coherent_snapshot()
-        validation = replace(snapshot.validations[0],
-                             task_statuses=("pending", ))
-        mutated = replace(snapshot,
-                          validations=replace_at(snapshot.validations, 0,
-                                                 validation))
-
+        phase41_index = MILESTONE_PHASES.index(41)
+        cases = (
+            (coherent_snapshot(), 0, "pre-audit", ("pending", ), True),
+            (active_pre_audit_snapshot(), phase41_index, "pre-audit",
+             ("green", "pending"), False),
+            (active_pre_audit_snapshot(), phase41_index, "pre-audit",
+             ("green", "pending", "pending"), True),
+            (coherent_snapshot(), phase41_index, "pre-archive",
+             ("green", "pending"), True),
+        )
         # Act / Assert
-        self.assert_has_code(mutated, "pre-audit",
-                             "P41_VALIDATION_TASK_STATUS")
-
-    def test_pre_audit_allows_exactly_one_pending_phase41_task(self) -> None:
-        # Arrange
-        snapshot = active_pre_audit_snapshot()
-        index = MILESTONE_PHASES.index(41)
-        validation = replace(snapshot.validations[index],
-                             task_statuses=("green", "pending"))
-        mutated = replace(snapshot,
-                          validations=replace_at(snapshot.validations, index,
-                                                 validation))
-
-        # Act
-        violations = evaluate_terminal_consistency(mutated, "pre-audit")
-
-        # Assert
-        self.assertEqual(violations, ())
-
-    def test_pre_audit_rejects_two_pending_phase41_tasks(self) -> None:
-        # Arrange
-        snapshot = active_pre_audit_snapshot()
-        index = MILESTONE_PHASES.index(41)
-        validation = replace(snapshot.validations[index],
-                             task_statuses=("green", "pending", "pending"))
-        mutated = replace(snapshot,
-                          validations=replace_at(snapshot.validations, index,
-                                                 validation))
-
-        # Act / Assert
-        self.assert_has_code(mutated, "pre-audit",
-                             "P41_VALIDATION_TASK_STATUS")
-
-    def test_pre_archive_rejects_pending_phase41_task(self) -> None:
-        # Arrange
-        snapshot = coherent_snapshot()
-        index = MILESTONE_PHASES.index(41)
-        validation = replace(snapshot.validations[index],
-                             task_statuses=("green", "pending"))
-        mutated = replace(snapshot,
-                          validations=replace_at(snapshot.validations, index,
-                                                 validation))
-
-        # Act / Assert
-        self.assert_has_code(mutated, "pre-archive",
-                             "P41_VALIDATION_TASK_STATUS")
-
+        for snapshot, index, mode, statuses, should_fail in cases:
+            with self.subTest(phase=snapshot.validations[index].phase,
+                              mode=mode,
+                              statuses=statuses):
+                validation = replace(snapshot.validations[index],
+                                     task_statuses=statuses)
+                mutated = replace(
+                    snapshot,
+                    validations=replace_at(snapshot.validations, index,
+                                           validation),
+                )
+                codes = {
+                    violation.code
+                    for violation in evaluate_terminal_consistency(mutated,
+                                                                    mode)
+                }
+                self.assertEqual("P41_VALIDATION_TASK_STATUS" in codes,
+                                 should_fail)
     def test_red_validation_campaign_fails_closed(self) -> None:
         # Arrange
         snapshot = coherent_snapshot()
