@@ -3,15 +3,15 @@ gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
 status: executing
-stopped_at: Phase 41 context gathered
-last_updated: "2026-08-01T17:02:34.898Z"
-last_activity: 2026-08-01 -- Phase 41 planning complete
+stopped_at: Completed 41-01-PLAN.md
+last_updated: "2026-08-01T17:29:07.128Z"
+last_activity: "2026-08-01"
 progress:
   total_phases: 11
   completed_phases: 10
   total_plans: 36
-  completed_plans: 33
-  percent: 92
+  completed_plans: 34
+  percent: 94
 ---
 
 # Project State
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-27)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Milestone v1.3 complete — Phase 39 metadata reconciled
+**Current focus:** Phase 41 — terminal-milestone-metadata-coherence
 
 ## Current Position
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - complete
-Phase: 39 (Milestone Metadata Reconciliation) — COMPLETE
-Plan: 1 of 1 — Complete
+Phase: 41 (terminal-milestone-metadata-coherence) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-08-01 -- Phase 41 planning complete
+Last activity: 2026-08-01
 
 Progress: [##########] 100% (10/10 v1.3 phases complete)
 
@@ -92,6 +92,7 @@ Progress: [##########] 100% (10/10 v1.3 phases complete)
 | Phase 40 P13 | 44min | 2 tasks | 19 files |
 | Phase 40 P14 | 40min | 2 tasks | 11 files |
 | Phase 40 P15 | 20min | 2 tasks | 3 files |
+| Phase 41 P01 | 21min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -172,6 +173,9 @@ Recent decisions affecting current work:
 - [Phase 40]: Use synthetic immutable-original temporary fixtures so shrink-only tests remain valid after the active ledger reaches zero temporary entries.
 - [Phase 40]: Approved the structural campaign while retaining explicit simulator, physical-hardware, archived-artifact, and macOS-host limitations.
 - [Phase 40]: Terminal authority is exactly the frozen 838 provenance/declarative paths plus the three locked owned deletion-test paths.
+- [Phase 41]: Terminal consistency evaluation remains a pure immutable policy; filesystem and Markdown access stay in a thin read-only CLI.
+- [Phase 41]: Exact plan and summary identities, not declared counts, are authoritative for terminal inventory coherence.
+- [Phase 41]: The milestone audit is consumed only by pre-archive mode and never authorizes the facts it audits.
 
 ### Pending Todos
 
@@ -188,6 +192,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-08-01T16:36:46.019Z
-Stopped at: Phase 41 context gathered
-Resume file: .planning/phases/41-terminal-milestone-metadata-coherence/41-CONTEXT.md
+Last session: 2026-08-01T17:29:07.125Z
+Stopped at: Completed 41-01-PLAN.md
+Resume file: None
