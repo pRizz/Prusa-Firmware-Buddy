@@ -254,21 +254,32 @@ def scalar_bool(values: dict[str, str] | None, key: str) -> bool:
 
 
 def normalized_status(value: str) -> str:
-    lowered = value.lower()
-    for status in ("pending", "red", "green", "passed", "pass", "complete"):
-        if status in lowered:
-            return status
-    return lowered[:80]
+    normalized = value.strip()
+    for marker in ("✅", "❌", "⚠️", "⚠", "⬜"):
+        if normalized.startswith(marker):
+            normalized = normalized[len(marker):].strip()
+            break
+    lowered = normalized.lower()
+    if lowered in {"pending", "red", "green", "passed", "pass", "complete"}:
+        return lowered
+    return "unsupported"
 
 
-def validation_statuses(text: str) -> tuple[str, ...]:
-    statuses: list[str] = []
+def validation_tasks(text: str) -> tuple[tuple[str, str], ...]:
+    tasks: list[tuple[str, str]] = []
+    identity_columns = {"task id", "campaign"}
     for row in table_rows(text):
         maybe_status_key = next(
             (key for key in row if key.lower() == "status"), None)
-        if maybe_status_key is not None:
-            statuses.append(normalized_status(row[maybe_status_key]))
-    return tuple(statuses)
+        maybe_identity_key = next(
+            (key for key in row if key.lower() in identity_columns), None)
+        if maybe_status_key is None or maybe_identity_key is None:
+            continue
+        identity = row[maybe_identity_key].strip()
+        if not identity:
+            continue
+        tasks.append((identity, normalized_status(row[maybe_status_key])))
+    return tuple(tasks)
 
 
 def validation_signoff(text: str) -> bool:
@@ -288,6 +299,7 @@ def parse_validations(parser: BoundaryParser) -> tuple[ValidationRecord, ...]:
             f".planning/phases/{phase:02d}-missing/{phase:02d}-VALIDATION.md")
         text = parser.read_text(relative_path)
         values = parser.frontmatter(relative_path, text)
+        tasks = validation_tasks(text or "")
         records.append(
             ValidationRecord(
                 phase=phase,
@@ -296,7 +308,8 @@ def parse_validations(parser: BoundaryParser) -> tuple[ValidationRecord, ...]:
                 parsed=values is not None,
                 nyquist_compliant=scalar_bool(values, "nyquist_compliant"),
                 wave_0_complete=scalar_bool(values, "wave_0_complete"),
-                task_statuses=validation_statuses(text or ""),
+                task_identities=tuple(identity for identity, _ in tasks),
+                task_statuses=tuple(status for _, status in tasks),
                 signoff_complete=validation_signoff(text or ""),
             ))
     return tuple(records)

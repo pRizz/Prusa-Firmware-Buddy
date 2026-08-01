@@ -80,6 +80,7 @@ def coherent_snapshot() -> TerminalSnapshot:
             parsed=True,
             nyquist_compliant=True,
             wave_0_complete=True,
+            task_identities=(f"{phase:02d}-01-01", ),
             task_statuses=("green", ),
             signoff_complete=True,
         ) for phase in MILESTONE_PHASES)

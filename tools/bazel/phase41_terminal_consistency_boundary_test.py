@@ -8,11 +8,50 @@ from pathlib import Path
 from phase41_terminal_consistency import (
     VERIFICATION_PATH,
     BoundaryParser,
+    normalized_status,
     parse_verification,
+    validation_tasks,
 )
 
 
 class Phase41BoundaryParserTest(unittest.TestCase):
+
+    def test_validation_status_grammar_rejects_negative_substrings(self) -> None:
+        # Arrange
+        values = ("incomplete", "not complete", "not passed", "")
+
+        # Act
+        statuses = tuple(normalized_status(value) for value in values)
+
+        # Assert
+        self.assertEqual(statuses, ("unsupported", ) * len(values))
+
+    def test_validation_status_grammar_strips_one_known_marker(self) -> None:
+        # Arrange / Act / Assert
+        self.assertEqual(normalized_status("✅ green"), "green")
+        self.assertEqual(normalized_status("❌ red"), "red")
+        self.assertEqual(normalized_status("⬜ pending"), "pending")
+
+    def test_validation_tasks_require_task_or_campaign_identity(self) -> None:
+        # Arrange
+        text = """| Label | Status |
+| --- | --- |
+| unrelated | green |
+"""
+
+        # Act / Assert
+        self.assertEqual(validation_tasks(text), ())
+
+    def test_empty_validation_task_status_is_unsupported(self) -> None:
+        # Arrange
+        text = """| Task ID | Status |
+| --- | --- |
+| 41-01-01 | |
+"""
+
+        # Act / Assert
+        self.assertEqual(validation_tasks(text),
+                         (("41-01-01", "unsupported"), ))
 
     def test_absent_verification_is_optional_at_parse_boundary(self) -> None:
         # Arrange

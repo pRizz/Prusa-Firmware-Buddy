@@ -131,6 +131,7 @@ class ValidationRecord:
     parsed: bool
     nyquist_compliant: bool
     wave_0_complete: bool
+    task_identities: tuple[str, ...]
     task_statuses: tuple[str, ...]
     signoff_complete: bool
 
@@ -428,6 +429,17 @@ def _evaluate_validations(
         if not record.wave_0_complete:
             violations.append(
                 _violation(path, "P41_WAVE_ZERO_FALSE", record.phase, "true"))
+        if (not record.task_identities
+                or len(record.task_identities) != len(record.task_statuses)):
+            violations.append(
+                _violation(path, "P41_VALIDATION_TASKS_MISSING",
+                           len(record.task_identities), ">= 1 task/campaign row"))
+        identity_counts = Counter(record.task_identities)
+        for identity, count in sorted(identity_counts.items()):
+            if count != 1:
+                violations.append(
+                    _violation(path, "P41_VALIDATION_TASK_DUPLICATE",
+                               f"{identity}:{count}", "one row"))
         normalized_statuses = tuple(status.lower()
                                     for status in record.task_statuses)
         allows_in_flight_audit = (

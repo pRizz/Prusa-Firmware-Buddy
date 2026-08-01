@@ -312,6 +312,33 @@ class Phase41TerminalConsistencyTest(unittest.TestCase):
         self.assert_has_code(mutated, "pre-audit",
                              "P41_VALIDATION_TASK_STATUS")
 
+    def test_unknown_validation_task_status_fails_closed(self) -> None:
+        # Arrange
+        snapshot = coherent_snapshot()
+        validation = replace(snapshot.validations[0],
+                             task_statuses=("unsupported", ))
+        mutated = replace(snapshot,
+                          validations=replace_at(snapshot.validations, 0,
+                                                 validation))
+
+        # Act / Assert
+        self.assert_has_code(mutated, "pre-audit",
+                             "P41_VALIDATION_TASK_STATUS")
+
+    def test_empty_validation_task_evidence_fails_closed(self) -> None:
+        # Arrange
+        snapshot = coherent_snapshot()
+        validation = replace(snapshot.validations[0],
+                             task_identities=(),
+                             task_statuses=())
+        mutated = replace(snapshot,
+                          validations=replace_at(snapshot.validations, 0,
+                                                 validation))
+
+        # Act / Assert
+        self.assert_has_code(mutated, "pre-audit",
+                             "P41_VALIDATION_TASKS_MISSING")
+
     def test_incomplete_validation_signoff_fails_closed(self) -> None:
         # Arrange
         snapshot = coherent_snapshot()
