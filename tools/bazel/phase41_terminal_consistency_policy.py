@@ -1,222 +1,41 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import hashlib
 from collections import Counter
-from dataclasses import dataclass
-from datetime import datetime
 from enum import Enum
 
-from phase41_terminal_consistency_contracts import EXPECTED_VALIDATION_IDENTITIES
-
-MILESTONE_PHASES = tuple(range(31, 42))
-
-CANONICAL_REQUIREMENTS = {
-    "INTAKE-01": (
-        41,
-        "Maintainer can supply final simulator evidence packets for startup, G-code, GUI, storage, transfer, and selected failure flows using sanitized real-run inputs.",
-    ),
-    "INTAKE-02": (
-        41,
-        "Maintainer can supply final hardware/media/safety evidence packets for supported printer families, storage media, UI input, MMU, RS485, toolchanger, watchdog, thermal, motion, and safe-output scenarios.",
-    ),
-    "INTAKE-03": (
-        41,
-        "Maintainer can supply final live-service evidence packets for Connect, PrusaLink/WUI, TLS, telemetry, proxy, transfer, negative-protocol, long-transfer, and crash-dump flows.",
-    ),
-    "INTAKE-04": (
-        36,
-        "Release manager can supply final release/signing/provenance evidence from real release-environment outputs without exposing private keys, tokens, certificates, service payloads, raw crash dumps, or other secret-bearing data.",
-    ),
-    "TRIAGE-01": (
-        36,
-        "Maintainer can aggregate all consumed simulator, hardware/media/safety, live-service, release/signing, upstream-result, retained-code, and readiness rows into a single blocker register.",
-    ),
-    "TRIAGE-02": (
-        36,
-        "Maintainer can classify each failed, missing, stale, malformed, redaction-failed, or exceptioned row with owner, severity, affected gate, required next action, and decision impact.",
-    ),
-    "TRIAGE-03": (
-        32,
-        "Maintainer can prove quick/default placeholder outputs, smoke fixtures, and local-only dry-run rows are rejected as final cutover proof.",
-    ),
-    "DECIDE-01": (
-        37,
-        "Maintainer can record retained-code acceptance, rejection, or approved exception decisions with residual-risk rationale and owner signoff.",
-    ),
-    "DECIDE-02": (
-        37,
-        "Maintainer can record final-readiness approval or block decisions using machine-readable inputs that consume the triaged evidence rows and approved exceptions.",
-    ),
-    "DECIDE-03": (
-        33,
-        "Maintainer can record reference-demotion approval or rejection as a separate explicit decision that cannot be inferred from green evidence alone.",
-    ),
-    "READY-01": (
-        37,
-        "Maintainer can generate a final readiness packet from real consumed evidence rows, retained-code decisions, approved exceptions, residual risks, blockers, and artifact references.",
-    ),
-    "READY-02": (
-        41,
-        "Final readiness remains blocked when required evidence is absent, failed, stale, malformed, redaction-failed, underclassified, or not covered by an explicit approved exception.",
-    ),
-    "READY-03": (
-        41,
-        "Reference-demotion dry run proves demotion remains blocked without a valid explicit demotion approval and opens only when readiness is otherwise unblocked and the approval input is valid.",
-    ),
-    "CUTOVER-01": (
-        41,
-        "Maintainer can produce a cutover decision artifact with one explicit verdict: approved, blocked, or approved with explicit exceptions.",
-    ),
-    "CUTOVER-02": (
-        35,
-        "Cutover decision artifact links every blocker, exception, residual risk, evidence packet, retained-code decision, readiness result, and demotion decision needed to audit the verdict.",
-    ),
-    "CUTOVER-03": (
-        41,
-        "Cutover decision artifact routes the next milestone to production cutover when approved, or to targeted blocker repair when blocked or approved with exceptions that require follow-up.",
-    ),
-}
-
-REPOSITORY_VIOLATION_EXIT_CODE = 1
-INVOCATION_ERROR_EXIT_CODE = 2
+from phase41_terminal_consistency_contracts import (
+    CANONICAL_REQUIREMENTS,
+    EXPECTED_AUDIT_FLOW_COMPLETE,
+    EXPECTED_AUDIT_INTEGRATION_CONNECTED,
+    EXPECTED_ROADMAP_EXECUTION_EDGES,
+    EXPECTED_VALIDATION_IDENTITIES,
+    INVOCATION_ERROR_EXIT_CODE,
+    MILESTONE_PHASES,
+    REPOSITORY_VIOLATION_EXIT_CODE,
+    AuditFrontmatterProjection,
+    AuditRecord,
+    MilestoneProjection,
+    PhaseLifecycle,
+    PlanInventory,
+    RequirementRecord,
+    RequirementsCoverageProjection,
+    RoadmapProgressProjection,
+    RoadmapProgressRow,
+    TerminalSnapshot,
+    ValidationRecord,
+    VerificationRecord,
+    Violation,
+    bounded,
+    exit_code_for_violations,
+    normalize_semantic_text,
+    semantic_digest,
+)
 
 
 class ConsistencyMode(str, Enum):
     PRE_AUDIT = "pre-audit"
     PRE_ARCHIVE = "pre-archive"
-
-
-@dataclass(frozen=True, order=True)
-class Violation:
-    path: str
-    code: str
-    observed: str
-    expected: str
-
-
-@dataclass(frozen=True)
-class RequirementRecord:
-    requirement_id: str
-    semantic_text: str
-    checklist_count: int
-    checked: bool
-    requirements_phase: int
-    requirements_status: str
-    roadmap_phase: int
-    roadmap_status: str
-
-
-@dataclass(frozen=True)
-class PhaseLifecycle:
-    phase: int
-    directory_present: bool
-    roadmap_listed: bool
-    roadmap_status: str
-
-
-@dataclass(frozen=True)
-class PlanInventory:
-    phase: int
-    plans: tuple[str, ...]
-    summaries: tuple[str, ...]
-    roadmap_plans: tuple[str, ...]
-    roadmap_completed: int
-    roadmap_total: int
-
-
-@dataclass(frozen=True)
-class ValidationRecord:
-    phase: int
-    path: str
-    present: bool
-    parsed: bool
-    nyquist_compliant: bool
-    wave_0_complete: bool
-    task_identities: tuple[str, ...]
-    task_statuses: tuple[str, ...]
-    signoff_complete: bool
-
-
-@dataclass(frozen=True)
-class MilestoneProjection:
-    roadmap_status: str
-    roadmap_total_phases: int
-    roadmap_completed_phases: int
-    roadmap_total_plans: int
-    roadmap_completed_plans: int
-    state_status: str
-    state_milestone_status: str
-    state_total_phases: int
-    state_completed_phases: int
-    state_total_plans: int
-    state_completed_plans: int
-    state_current_phase: int
-    state_current_plan: int
-    state_narrative_terminal: bool
-
-
-@dataclass(frozen=True)
-class AuditRecord:
-    path: str
-    present: bool
-    parsed: bool
-    status: str
-    fresh: bool
-    audited_at: datetime | None
-    phase_numbers: tuple[int, ...]
-    requirement_count: int | None
-    coherent_requirement_count: int | None
-    integration_gaps: int | None
-    flow_gaps: int | None
-    metadata_gaps: int | None
-    nyquist_gaps: int | None
-    reported_nyquist_gaps: int | None
-    archival_blockers: int | None
-
-
-@dataclass(frozen=True)
-class VerificationRecord:
-    path: str
-    present: bool
-    parsed: bool
-    status: str
-    fresh: bool
-    verified_at: datetime | None
-
-
-@dataclass(frozen=True)
-class TerminalSnapshot:
-    requirements: tuple[RequirementRecord, ...]
-    phases: tuple[PhaseLifecycle, ...]
-    inventories: tuple[PlanInventory, ...]
-    validations: tuple[ValidationRecord, ...]
-    milestone: MilestoneProjection
-    audit: AuditRecord
-    verification: VerificationRecord
-    boundary_violations: tuple[Violation, ...] = ()
-
-
-def normalize_semantic_text(text: str) -> str:
-    return " ".join(text.split())
-
-
-def semantic_digest(text: str) -> str:
-    normalized = normalize_semantic_text(text)
-    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:16]
-
-
-def exit_code_for_violations(violations: tuple[Violation, ...]) -> int:
-    if violations:
-        return REPOSITORY_VIOLATION_EXIT_CODE
-    return 0
-
-
-def _bounded(value: object, limit: int = 160) -> str:
-    rendered = str(value).replace("\n", " ").replace("\r", " ")
-    if len(rendered) <= limit:
-        return rendered
-    return f"{rendered[:limit - 3]}..."
 
 
 def _violation(
@@ -225,7 +44,24 @@ def _violation(
     observed: object,
     expected: object,
 ) -> Violation:
-    return Violation(path, code, _bounded(observed), _bounded(expected))
+    return Violation(path, code, bounded(observed), bounded(expected))
+
+
+def _terminal_active(snapshot: TerminalSnapshot,
+                     mode: ConsistencyMode) -> bool:
+    if mode is not ConsistencyMode.PRE_AUDIT:
+        return False
+    terminal_phase = MILESTONE_PHASES[-1]
+    maybe_inventory = next(
+        (record
+         for record in snapshot.inventories if record.phase == terminal_phase),
+        None)
+    has_incomplete_inventory = (maybe_inventory is not None and len(
+        maybe_inventory.summaries) < len(maybe_inventory.plans))
+    has_active_phase = any(
+        record.phase == terminal_phase and record.roadmap_status == "Planned"
+        for record in snapshot.phases)
+    return has_incomplete_inventory or has_active_phase
 
 
 def _evaluate_requirements(snapshot: TerminalSnapshot) -> list[Violation]:
@@ -299,6 +135,175 @@ def _evaluate_requirements(snapshot: TerminalSnapshot) -> list[Violation]:
     return violations
 
 
+def _evaluate_requirements_coverage(
+    snapshot: TerminalSnapshot,
+    mode: ConsistencyMode,
+) -> list[Violation]:
+    path = ".planning/REQUIREMENTS.md"
+    projection = snapshot.requirements_coverage
+    if projection is None:
+        return [
+            _violation(path, "P41_REQUIREMENTS_COVERAGE_MISSING", "missing",
+                       "exact six-field coverage rollup")
+        ]
+    total = len(CANONICAL_REQUIREMENTS)
+    phase41_owned = sum(phase == 41
+                        for phase, _ in CANONICAL_REQUIREMENTS.values())
+    state = "pending" if _terminal_active(snapshot, mode) else "complete"
+    checks = (
+        (projection.total_requirements == total,
+         "P41_REQUIREMENTS_COVERAGE_TOTAL", projection.total_requirements,
+         total),
+        (projection.mapped_requirements == total,
+         "P41_REQUIREMENTS_COVERAGE_MAPPED", projection.mapped_requirements,
+         total),
+        ((projection.behavior_evidenced_complete,
+          projection.behavior_evidenced_total) == (total, total),
+         "P41_REQUIREMENTS_COVERAGE_BEHAVIOR",
+         (projection.behavior_evidenced_complete,
+          projection.behavior_evidenced_total), (total, total)),
+        ((projection.phase41_owned,
+          projection.phase41_ownership_total) == (phase41_owned, total),
+         "P41_REQUIREMENTS_COVERAGE_PHASE41_OWNERSHIP",
+         (projection.phase41_owned,
+          projection.phase41_ownership_total), (phase41_owned, total)),
+        (projection.phase41_ownership_state == state,
+         "P41_REQUIREMENTS_COVERAGE_PHASE41_STATE",
+         projection.phase41_ownership_state, state),
+        (projection.unmapped == 0, "P41_REQUIREMENTS_COVERAGE_UNMAPPED",
+         projection.unmapped, 0),
+        (projection.duplicate_mappings == 0,
+         "P41_REQUIREMENTS_COVERAGE_DUPLICATE_MAPPINGS",
+         projection.duplicate_mappings, 0),
+    )
+    return [
+        _violation(path, code, observed, expected)
+        for passed, code, observed, expected in checks if not passed
+    ]
+
+
+def _evaluate_roadmap_progress(
+    snapshot: TerminalSnapshot,
+    mode: ConsistencyMode,
+) -> list[Violation]:
+    path = ".planning/ROADMAP.md"
+    projection = snapshot.roadmap_progress
+    if projection is None:
+        return [
+            _violation(path, "P41_ROADMAP_PROGRESS_MISSING", "missing",
+                       "exact Progress projection")
+        ]
+    active = _terminal_active(snapshot, mode)
+    inventory_by_phase = {
+        record.phase: record
+        for record in snapshot.inventories
+    }
+    expected_rows = tuple(
+        RoadmapProgressRow(
+            phase,
+            len(inventory_by_phase[phase].summaries),
+            len(inventory_by_phase[phase].plans),
+            "In Progress" if active and phase == 41 else "Complete",
+        ) for phase in MILESTONE_PHASES if phase in inventory_by_phase)
+    violations: list[Violation] = []
+    if tuple(row.phase for row in projection.rows) != MILESTONE_PHASES:
+        violations.append(
+            _violation(path, "P41_ROADMAP_PROGRESS_PHASE_IDENTITIES",
+                       tuple(row.phase for row in projection.rows),
+                       MILESTONE_PHASES))
+    observed_by_phase = {row.phase: row for row in projection.rows}
+    for expected_row in expected_rows:
+        observed = observed_by_phase.get(expected_row.phase)
+        if observed != expected_row:
+            violations.append(
+                _violation(path,
+                           f"P41_ROADMAP_PROGRESS_PHASE_{expected_row.phase}",
+                           observed, expected_row))
+    completed_plans = sum(
+        len(record.summaries) for record in snapshot.inventories)
+    total_plans = sum(len(record.plans) for record in snapshot.inventories)
+    total_phases = len(MILESTONE_PHASES)
+    expected_completed_phases = total_phases - 1 if active else total_phases
+    checks = (
+        ((projection.milestone_completed_phases,
+          projection.milestone_total_phases) == (expected_completed_phases,
+                                                 total_phases),
+         "P41_ROADMAP_PROGRESS_MILESTONE_PHASES",
+         (projection.milestone_completed_phases,
+          projection.milestone_total_phases), (expected_completed_phases,
+                                               total_phases)),
+        ((projection.milestone_completed_plans,
+          projection.milestone_total_plans) == (completed_plans, total_plans),
+         "P41_ROADMAP_PROGRESS_MILESTONE_PLANS",
+         (projection.milestone_completed_plans,
+          projection.milestone_total_plans), (completed_plans, total_plans)),
+        (projection.milestone_status == ("Active" if active else "Complete"),
+         "P41_ROADMAP_PROGRESS_MILESTONE_STATUS", projection.milestone_status,
+         "Active" if active else "Complete"),
+        (projection.execution_edges == EXPECTED_ROADMAP_EXECUTION_EDGES,
+         "P41_ROADMAP_EXECUTION_PROJECTION", projection.execution_edges,
+         EXPECTED_ROADMAP_EXECUTION_EDGES),
+    )
+    violations.extend(
+        _violation(path, code, observed, expected)
+        for passed, code, observed, expected in checks if not passed)
+    return violations
+
+
+def _evaluate_audit_frontmatter(snapshot: TerminalSnapshot) -> list[Violation]:
+    audit = snapshot.audit
+    if not audit.present or not audit.parsed:
+        return []
+    projection = audit.frontmatter_projection
+    if projection is None:
+        return [
+            _violation(audit.path, "P41_AUDIT_PROJECTION_MISSING", "missing",
+                       "scores, integration_checker, nyquist")
+        ]
+    total = len(CANONICAL_REQUIREMENTS)
+    score_checks = (
+        (projection.scores_requirements == f"{total}/{total} coherent",
+         "P41_AUDIT_SCORE_REQUIREMENTS", projection.scores_requirements,
+         f"{total}/{total} coherent"),
+        (projection.scores_phases == "11/11 evaluated",
+         "P41_AUDIT_SCORE_PHASES", projection.scores_phases,
+         "11/11 evaluated"),
+        (projection.scores_integration == "15/15 connected; 0 gaps",
+         "P41_AUDIT_SCORE_INTEGRATION", projection.scores_integration,
+         "15/15 connected; 0 gaps"),
+        (projection.scores_flows == "7/7 complete; 0 gaps",
+         "P41_AUDIT_SCORE_FLOWS", projection.scores_flows,
+         "7/7 complete; 0 gaps"),
+    )
+    integration_observed = (
+        projection.integration_status,
+        projection.integration_connected,
+        projection.integration_partial,
+        projection.integration_broken,
+        projection.flow_complete,
+        projection.flow_partial,
+        projection.flow_broken,
+        projection.runtime_safety_gaps,
+        projection.metadata_gaps,
+        projection.archival_blockers,
+    )
+    integration_expected = ("passed", EXPECTED_AUDIT_INTEGRATION_CONNECTED, 0,
+                            0, EXPECTED_AUDIT_FLOW_COMPLETE, 0, 0, 0, 0, 0)
+    nyquist_observed = (projection.compliant_phases, projection.partial_phases,
+                        projection.missing_phases, projection.nyquist_overall)
+    nyquist_expected = (MILESTONE_PHASES, (), (), "compliant")
+    checks = (*score_checks, (integration_observed == integration_expected,
+                              "P41_AUDIT_INTEGRATION_PROJECTION",
+                              integration_observed, integration_expected),
+              (nyquist_observed == nyquist_expected,
+               "P41_AUDIT_NYQUIST_PROJECTION", nyquist_observed,
+               nyquist_expected))
+    return [
+        _violation(audit.path, code, observed, expected)
+        for passed, code, observed, expected in checks if not passed
+    ]
+
+
 def _evaluate_phases(snapshot: TerminalSnapshot,
                      mode: ConsistencyMode) -> list[Violation]:
     violations: list[Violation] = []
@@ -325,10 +330,9 @@ def _evaluate_phases(snapshot: TerminalSnapshot,
                     ".planning/ROADMAP.md", "P41_PHASE_PROJECTION",
                     f"{record.phase}:disk={record.directory_present},roadmap={record.roadmap_listed}",
                     "present in both"))
-        expected_statuses = ({"Planned", "Complete"}
-                             if mode is ConsistencyMode.PRE_AUDIT
-                             and record.phase == MILESTONE_PHASES[-1] else
-                             {"Complete"})
+        expected_statuses = (
+            {"Planned", "Complete"} if mode is ConsistencyMode.PRE_AUDIT
+            and record.phase == MILESTONE_PHASES[-1] else {"Complete"})
         if record.roadmap_status not in expected_statuses:
             violations.append(
                 _violation(".planning/ROADMAP.md", "P41_PHASE_STATUS",
@@ -341,9 +345,7 @@ def _evaluate_inventories(snapshot: TerminalSnapshot,
                           mode: ConsistencyMode) -> list[Violation]:
     violations: list[Violation] = []
     terminal_phase = MILESTONE_PHASES[-1]
-    terminal_active = mode is ConsistencyMode.PRE_AUDIT and any(
-        record.phase == terminal_phase and record.roadmap_status == "Planned"
-        for record in snapshot.phases)
+    terminal_active = _terminal_active(snapshot, mode)
     counts = Counter(record.phase for record in snapshot.inventories)
     for phase in MILESTONE_PHASES:
         count = counts.get(phase, 0)
@@ -437,7 +439,8 @@ def _evaluate_validations(
                 or len(record.task_identities) != len(record.task_statuses)):
             violations.append(
                 _violation(path, "P41_VALIDATION_TASKS_MISSING",
-                           len(record.task_identities), ">= 1 task/campaign row"))
+                           len(record.task_identities),
+                           ">= 1 task/campaign row"))
         identity_counts = Counter(record.task_identities)
         expected_identity_counts = Counter(
             EXPECTED_VALIDATION_IDENTITIES.get(record.phase, ()))
@@ -456,13 +459,11 @@ def _evaluate_validations(
                                f"{identity}:{count}", "one row"))
         normalized_statuses = tuple(status.lower()
                                     for status in record.task_statuses)
-        allows_in_flight_audit = (
-            mode is ConsistencyMode.PRE_AUDIT and record.phase == 41
-            and normalized_statuses.count("pending") == 1)
+        allows_in_flight_audit = (mode is ConsistencyMode.PRE_AUDIT
+                                  and record.phase == 41 and
+                                  normalized_statuses.count("pending") == 1)
         for status in sorted(normalized_statuses):
-            status_is_green = status in {
-                "green", "pass", "passed", "complete"
-            }
+            status_is_green = status in {"green", "pass", "passed", "complete"}
             if status_is_green or (allows_in_flight_audit
                                    and status == "pending"):
                 continue
@@ -486,22 +487,20 @@ def _evaluate_milestone(snapshot: TerminalSnapshot,
     completed_plans = sum(
         len(inventory.summaries) for inventory in snapshot.inventories)
     terminal_phase = MILESTONE_PHASES[-1]
-    active = mode is ConsistencyMode.PRE_AUDIT and any(
-        record.phase == terminal_phase and record.roadmap_status == "Planned"
-        for record in snapshot.phases)
-    terminal_inventory = next(
-        (inventory for inventory in snapshot.inventories
-         if inventory.phase == terminal_phase), None)
+    active = _terminal_active(snapshot, mode)
+    terminal_inventory = next((inventory for inventory in snapshot.inventories
+                               if inventory.phase == terminal_phase), None)
     terminal_summary_count = len(
         terminal_inventory.summaries) if terminal_inventory else 0
     terminal_plan_count = len(
         terminal_inventory.plans) if terminal_inventory else 0
-    active_plan = min(terminal_summary_count + 1,
-                      terminal_plan_count) if terminal_plan_count else 0
+    active_plan = min(terminal_summary_count +
+                      1, terminal_plan_count) if terminal_plan_count else 0
     expected = {
         "roadmap_status": "Active" if active else "Complete",
         "roadmap_total_phases": total_phases,
-        "roadmap_completed_phases": total_phases - 1 if active else total_phases,
+        "roadmap_completed_phases":
+        total_phases - 1 if active else total_phases,
         "roadmap_total_plans": total_plans,
         "roadmap_completed_plans": completed_plans,
         "state_status": "executing" if active else "complete",
@@ -547,8 +546,8 @@ def _evaluate_audit(snapshot: TerminalSnapshot,
 
     verification = snapshot.verification
     verification_checks = [
-        (verification.present and verification.parsed,
-         "P41_VERIFICATION_MISSING",
+        (verification.present
+         and verification.parsed, "P41_VERIFICATION_MISSING",
          f"present={verification.present},parsed={verification.parsed}",
          "present and parsed Phase 41 verification"),
     ]
@@ -556,11 +555,11 @@ def _evaluate_audit(snapshot: TerminalSnapshot,
         verification_checks.extend([
             (verification.status == "passed", "P41_VERIFICATION_STATUS",
              verification.status, "passed"),
-            (verification.verified_at is not None,
-             "P41_VERIFICATION_TIMESTAMP", verification.verified_at,
-             "valid verified timestamp"),
-            (verification.fresh, "P41_VERIFICATION_STALE",
-             verification.fresh, True),
+            (verification.verified_at
+             is not None, "P41_VERIFICATION_TIMESTAMP",
+             verification.verified_at, "valid verified timestamp"),
+            (verification.fresh, "P41_VERIFICATION_STALE", verification.fresh,
+             True),
             (verification.verified_at is not None
              and audit.audited_at is not None
              and verification.verified_at <= audit.audited_at,
@@ -610,10 +609,13 @@ def evaluate_terminal_consistency(
     violations = [
         *snapshot.boundary_violations,
         *_evaluate_requirements(snapshot),
+        *_evaluate_requirements_coverage(snapshot, selected_mode),
         *_evaluate_phases(snapshot, selected_mode),
         *_evaluate_inventories(snapshot, selected_mode),
         *_evaluate_validations(snapshot, selected_mode),
         *_evaluate_milestone(snapshot, selected_mode),
+        *_evaluate_roadmap_progress(snapshot, selected_mode),
+        *_evaluate_audit_frontmatter(snapshot),
         *_evaluate_audit(snapshot, selected_mode),
     ]
     return tuple(
