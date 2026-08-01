@@ -68,9 +68,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INTAKE-01 | Phase 41 | Pending |
-| INTAKE-02 | Phase 41 | Pending |
-| INTAKE-03 | Phase 41 | Pending |
+| INTAKE-01 | Phase 41 | Complete |
+| INTAKE-02 | Phase 41 | Complete |
+| INTAKE-03 | Phase 41 | Complete |
 | INTAKE-04 | Phase 36 | Complete |
 | TRIAGE-01 | Phase 36 | Complete |
 | TRIAGE-02 | Phase 36 | Complete |
@@ -79,22 +79,22 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DECIDE-02 | Phase 37 | Complete |
 | DECIDE-03 | Phase 33 | Complete |
 | READY-01 | Phase 37 | Complete |
-| READY-02 | Phase 41 | Pending |
-| READY-03 | Phase 41 | Pending |
-| CUTOVER-01 | Phase 41 | Pending |
+| READY-02 | Phase 41 | Complete |
+| READY-03 | Phase 41 | Complete |
+| CUTOVER-01 | Phase 41 | Complete |
 | CUTOVER-02 | Phase 35 | Complete |
-| CUTOVER-03 | Phase 41 | Pending |
+| CUTOVER-03 | Phase 41 | Complete |
 
 **Coverage:**
 
 - v1.3 requirements: 16 total
 - Mapped to phases: 16
-- Complete: 9
-- Pending: 7
+- Behavior-evidenced complete: 16/16
+- Phase 41 terminal-projection ownership rows pending phase completion: 7/16
 - Unmapped: 0
 - Duplicate mappings: 0
 
 ______________________________________________________________________
 
 *Requirements defined: 2026-07-02*
-*Last updated: 2026-08-01 after audit gap-closure Phase 41 was added*
+*Last updated: 2026-08-01 during active Phase 41 terminal projection reconciliation*

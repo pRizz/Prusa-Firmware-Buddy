@@ -270,9 +270,9 @@ Plans:
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INTAKE-01 | Phase 41 | Pending |
-| INTAKE-02 | Phase 41 | Pending |
-| INTAKE-03 | Phase 41 | Pending |
+| INTAKE-01 | Phase 41 | Complete |
+| INTAKE-02 | Phase 41 | Complete |
+| INTAKE-03 | Phase 41 | Complete |
 | INTAKE-04 | Phase 36 | Complete |
 | TRIAGE-01 | Phase 36 | Complete |
 | TRIAGE-02 | Phase 36 | Complete |
@@ -281,13 +281,13 @@ Plans:
 | DECIDE-02 | Phase 37 | Complete |
 | DECIDE-03 | Phase 33 | Complete |
 | READY-01 | Phase 37 | Complete |
-| READY-02 | Phase 41 | Pending |
-| READY-03 | Phase 41 | Pending |
-| CUTOVER-01 | Phase 41 | Pending |
+| READY-02 | Phase 41 | Complete |
+| READY-03 | Phase 41 | Complete |
+| CUTOVER-01 | Phase 41 | Complete |
 | CUTOVER-02 | Phase 35 | Complete |
-| CUTOVER-03 | Phase 41 | Pending |
+| CUTOVER-03 | Phase 41 | Complete |
 
-**Coverage:** 16/16 v1.3 requirements mapped; 9 complete and 7 pending gap closure. No orphaned requirements. No duplicate requirement mappings.
+**Coverage:** 16/16 v1.3 requirements are behavior-evidenced complete and mapped; 7/16 terminal-projection ownership rows remain assigned to active Phase 41 pending phase completion. No orphaned requirements. No duplicate requirement mappings.
 
 ## Progress
 
