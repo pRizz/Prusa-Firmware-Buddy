@@ -385,7 +385,10 @@ def _evaluate_inventories(snapshot: TerminalSnapshot,
     return violations
 
 
-def _evaluate_validations(snapshot: TerminalSnapshot) -> list[Violation]:
+def _evaluate_validations(
+    snapshot: TerminalSnapshot,
+    mode: ConsistencyMode,
+) -> list[Violation]:
     violations: list[Violation] = []
     counts = Counter(record.phase for record in snapshot.validations)
     for phase in MILESTONE_PHASES:
@@ -412,12 +415,22 @@ def _evaluate_validations(snapshot: TerminalSnapshot) -> list[Violation]:
         if not record.wave_0_complete:
             violations.append(
                 _violation(path, "P41_WAVE_ZERO_FALSE", record.phase, "true"))
-        for status in sorted(record.task_statuses):
-            if status.lower() not in {"green", "pass", "passed", "complete"}:
-                violations.append(
-                    _violation(path, "P41_VALIDATION_TASK_STATUS",
-                               f"Phase {record.phase}:{status}",
-                               "green/pass/passed/complete"))
+        normalized_statuses = tuple(status.lower()
+                                    for status in record.task_statuses)
+        allows_in_flight_audit = (
+            mode is ConsistencyMode.PRE_AUDIT and record.phase == 41
+            and normalized_statuses.count("pending") == 1)
+        for status in sorted(normalized_statuses):
+            status_is_green = status in {
+                "green", "pass", "passed", "complete"
+            }
+            if status_is_green or (allows_in_flight_audit
+                                   and status == "pending"):
+                continue
+            violations.append(
+                _violation(path, "P41_VALIDATION_TASK_STATUS",
+                           f"Phase {record.phase}:{status}",
+                           "green/pass/passed/complete"))
         if not record.signoff_complete:
             violations.append(
                 _violation(path, "P41_VALIDATION_SIGNOFF", record.phase,
@@ -528,7 +541,7 @@ def evaluate_terminal_consistency(
         *_evaluate_requirements(snapshot),
         *_evaluate_phases(snapshot, selected_mode),
         *_evaluate_inventories(snapshot, selected_mode),
-        *_evaluate_validations(snapshot),
+        *_evaluate_validations(snapshot, selected_mode),
         *_evaluate_milestone(snapshot, selected_mode),
         *_evaluate_audit(snapshot, selected_mode),
     ]
