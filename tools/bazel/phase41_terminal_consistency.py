@@ -25,10 +25,10 @@ from phase41_terminal_consistency_policy import (
     TerminalSnapshot,
     ValidationRecord,
     VerificationRecord,
-    Violation,
     evaluate_terminal_consistency,
     exit_code_for_violations,
 )
+from phase41_terminal_consistency_markdown import BoundaryParser
 
 ROADMAP_PATH = ".planning/ROADMAP.md"
 REQUIREMENTS_PATH = ".planning/REQUIREMENTS.md"
@@ -46,103 +46,6 @@ AUDIT_FLOW_IDENTITIES = (
 VERIFICATION_PATH = (
     ".planning/phases/41-terminal-milestone-metadata-coherence/"
     "41-VERIFICATION.md")
-
-
-class BoundaryParser:
-
-    def __init__(self, root: Path) -> None:
-        self.root = root
-        self.violations: list[Violation] = []
-        self._phase41_summary_time_loaded = False
-        self._maybe_phase41_summary_time: datetime | None = None
-
-    def violation(self, path: str, code: str, observed: object,
-                  expected: object) -> None:
-        self.violations.append(
-            Violation(path, code,
-                      str(observed)[:160],
-                      str(expected)[:160]))
-
-    def read_text(self, relative_path: str) -> str | None:
-        try:
-            return (self.root / relative_path).read_text(encoding="utf-8")
-        except (FileNotFoundError, OSError, UnicodeError):
-            self.violation(relative_path, "P41_BOUNDARY_READ", "unreadable",
-                           "readable UTF-8 file")
-            return None
-
-    def read_optional_text(self, relative_path: str) -> str | None:
-        try:
-            return (self.root / relative_path).read_text(encoding="utf-8")
-        except FileNotFoundError:
-            return None
-        except (OSError, UnicodeError):
-            self.violation(relative_path, "P41_BOUNDARY_READ", "unreadable",
-                           "readable UTF-8 file")
-            return None
-
-    def frontmatter(self, path: str,
-                    text: str | None) -> dict[str, str] | None:
-        if text is None:
-            return None
-        lines = text.splitlines()
-        if not lines or lines[0] != "---":
-            self.violation(path, "P41_FRONTMATTER_MALFORMED",
-                           "missing opening delimiter", "YAML frontmatter")
-            return None
-        try:
-            closing = lines.index("---", 1)
-        except ValueError:
-            self.violation(path, "P41_FRONTMATTER_MALFORMED",
-                           "missing closing delimiter", "YAML frontmatter")
-            return None
-        values: dict[str, str] = {}
-        for line in lines[1:closing]:
-            if not line or line[0].isspace() or ":" not in line:
-                continue
-            key, raw_value = line.split(":", 1)
-            if key in values:
-                self.violation(path, "P41_FRONTMATTER_DUPLICATE", key,
-                               "unique top-level keys")
-                return None
-            values[key] = raw_value.strip().strip('"').strip("'")
-        return values
-
-
-def section(text: str, heading: str) -> str:
-    pattern = re.compile(rf"(?m)^##+\s+{re.escape(heading)}\s*$")
-    match = pattern.search(text)
-    if match is None:
-        return ""
-    remainder = text[match.end():]
-    next_heading = re.search(r"(?m)^##+\s+", remainder)
-    return remainder[:next_heading.start()] if next_heading else remainder
-
-
-def table_rows(text: str) -> list[dict[str, str]]:
-    lines = [
-        line.strip() for line in text.splitlines() if line.startswith("|")
-    ]
-    rows: list[dict[str, str]] = []
-    index = 0
-    while index + 1 < len(lines):
-        header = [cell.strip() for cell in lines[index].strip("|").split("|")]
-        separator = lines[index + 1]
-        if not all(
-                re.fullmatch(r":?-{3,}:?", cell.strip())
-                for cell in separator.strip("|").split("|")):
-            index += 1
-            continue
-        index += 2
-        while index < len(lines):
-            cells = [
-                cell.strip() for cell in lines[index].strip("|").split("|")
-            ]
-            if len(cells) != len(header):
-                break
-            rows.append(dict(zip(header, cells)))
-            index += 1
-    return rows
 
 
 def parse_phase(value: str) -> int:
@@ -170,8 +73,23 @@ def parse_requirements(parser: BoundaryParser, requirements_text: str,
         for requirement_id in {row[1]
                                for row in checklist_rows}
     }
-    requirement_trace = table_rows(section(requirements_text, "Traceability"))
-    roadmap_trace = table_rows(section(roadmap_text, "Requirement Coverage"))
+    requirement_section = parser.required_section(REQUIREMENTS_PATH,
+                                                  requirements_text,
+                                                  "Traceability")
+    requirement_trace = parser.required_table(
+        REQUIREMENTS_PATH,
+        requirement_section,
+        ("Requirement", "Phase", "Status"),
+        "requirements traceability",
+    )
+    roadmap_section = parser.required_section(ROADMAP_PATH, roadmap_text,
+                                              "Requirement Coverage")
+    roadmap_trace = parser.required_table(
+        ROADMAP_PATH,
+        roadmap_section,
+        ("Requirement", "Phase", "Status"),
+        "roadmap requirement coverage",
+    )
     records: list[RequirementRecord] = []
     for marker, requirement_id, semantic_text in checklist_rows:
         requirements_phase, requirements_status = unique_projection(
@@ -228,8 +146,7 @@ def parse_phases_and_inventories(
                              f"lifecycle Phase {phase}:{count}", "one row")
     status_by_phase = {
         int(phase): "Complete" if marker.lower() == "x" else "Planned"
-        for marker, phase in status_matches
-        if status_counts[int(phase)] == 1
+        for marker, phase in status_matches if status_counts[int(phase)] == 1
     }
     sections = roadmap_phase_sections(parser, roadmap_text)
     phases: list[PhaseLifecycle] = []
@@ -303,14 +220,28 @@ def normalized_status(value: str) -> str:
     return "unsupported"
 
 
-def validation_tasks(text: str) -> tuple[tuple[str, str], ...]:
+def validation_tasks(parser: BoundaryParser, path: str,
+                     text: str) -> tuple[tuple[str, str], ...]:
+    verification_map = parser.required_section(
+        path,
+        text,
+        ("Per-Task Verification Map", "Per-Campaign Verification Map"),
+        "validation verification map",
+    )
+    rows = parser.required_table(
+        path,
+        verification_map,
+        ("Status", ),
+        "validation verification map",
+        ("Task ID", "Campaign"),
+    )
     tasks: list[tuple[str, str]] = []
     identity_columns = {"task id", "campaign"}
-    for row in table_rows(text):
+    for row in rows:
         maybe_status_key = next(
-            (key for key in row if key.lower() == "status"), None)
+            (key for key in row if key.casefold() == "status"), None)
         maybe_identity_key = next(
-            (key for key in row if key.lower() in identity_columns), None)
+            (key for key in row if key.casefold() in identity_columns), None)
         if maybe_status_key is None or maybe_identity_key is None:
             continue
         identity = row[maybe_identity_key].strip()
@@ -320,8 +251,8 @@ def validation_tasks(text: str) -> tuple[tuple[str, str], ...]:
     return tuple(tasks)
 
 
-def validation_signoff(text: str) -> bool:
-    signoff = section(text, "Validation Sign-Off")
+def validation_signoff(parser: BoundaryParser, path: str, text: str) -> bool:
+    signoff = parser.required_section(path, text, "Validation Sign-Off")
     bullets = re.findall(r"(?m)^- \[([ xX])\]", signoff)
     return bool(bullets) and all(marker.lower() == "x" for marker in bullets)
 
@@ -335,20 +266,25 @@ def parse_validations(parser: BoundaryParser) -> tuple[ValidationRecord, ...]:
             f".planning/phases/{maybe_directory.name}/"
             f"{phase:02d}-VALIDATION.md" if maybe_directory else
             f".planning/phases/{phase:02d}-missing/{phase:02d}-VALIDATION.md")
+        violation_count = len(parser.violations)
         text = parser.read_text(relative_path)
         values = parser.frontmatter(relative_path, text)
-        tasks = validation_tasks(text or "")
+        tasks = (validation_tasks(parser, relative_path, text)
+                 if text is not None else ())
+        signoff_complete = (validation_signoff(parser, relative_path, text)
+                            if text is not None else False)
         records.append(
             ValidationRecord(
                 phase=phase,
                 path=relative_path,
                 present=text is not None,
-                parsed=values is not None,
+                parsed=(values is not None
+                        and len(parser.violations) == violation_count),
                 nyquist_compliant=scalar_bool(values, "nyquist_compliant"),
                 wave_0_complete=scalar_bool(values, "wave_0_complete"),
                 task_identities=tuple(identity for identity, _ in tasks),
                 task_statuses=tuple(status for _, status in tasks),
-                signoff_complete=validation_signoff(text or ""),
+                signoff_complete=signoff_complete,
             ))
     return tuple(records)
 
@@ -409,8 +345,7 @@ def parse_utc_timestamp(parser: BoundaryParser, path: str, field: str,
     if (maybe_timestamp is None or maybe_timestamp.tzinfo is None
             or maybe_timestamp.utcoffset() is None):
         observed = value if value else "<missing>"
-        parser.violation(path, "P41_TIMESTAMP_INVALID",
-                         f"{field}={observed}",
+        parser.violation(path, "P41_TIMESTAMP_INVALID", f"{field}={observed}",
                          "timezone-aware ISO-8601 timestamp")
         return None
     return maybe_timestamp.astimezone(timezone.utc)
@@ -443,14 +378,27 @@ def latest_phase41_summary_time(parser: BoundaryParser) -> datetime | None:
     return parser._maybe_phase41_summary_time
 
 
-def audit_integer(parser: BoundaryParser, text: str, key: str) -> int | None:
-    matches = re.findall(rf"(?m)^\|\s*{re.escape(key)}\s*\|\s*(\d+)(?:\s*/[^|]*)?\s*\|\s*$",
-                         text)
+def audit_result(parser: BoundaryParser, rows: list[dict[str, str]],
+                 key: str) -> str | None:
+    matches = [row.get("Result", "") for row in rows if row.get("Item") == key]
     if len(matches) != 1:
         parser.violation(AUDIT_PATH, "P41_AUDIT_ROLLUP_MISSING",
                          f"{key}:{len(matches)}", "one explicit row")
         return None
-    return int(matches[0])
+    return matches[0]
+
+
+def audit_integer(parser: BoundaryParser, rows: list[dict[str, str]],
+                  key: str) -> int | None:
+    maybe_result = audit_result(parser, rows, key)
+    if maybe_result is None:
+        return None
+    maybe_match = re.fullmatch(r"(\d+)(?:\s*/[^|]*)?", maybe_result)
+    if maybe_match is None:
+        parser.violation(AUDIT_PATH, "P41_AUDIT_ROLLUP_MISSING",
+                         f"{key}:{maybe_result}", "one explicit integer row")
+        return None
+    return int(maybe_match.group(1))
 
 
 def audit_section_rows(
@@ -460,7 +408,13 @@ def audit_section_rows(
     identity_column: str,
     expected_identities: tuple[str, ...],
 ) -> list[dict[str, str]] | None:
-    rows = table_rows(section(text, heading))
+    required_section = parser.required_section(AUDIT_PATH, text, heading)
+    rows = parser.required_table(
+        AUDIT_PATH,
+        required_section,
+        (identity_column, ),
+        f"audit {heading}",
+    )
     identities = tuple(row.get(identity_column, "") for row in rows)
     if Counter(identities) != Counter(expected_identities):
         parser.violation(AUDIT_PATH, "P41_AUDIT_SECTION_MISSING", heading,
@@ -475,28 +429,35 @@ def parse_audit(parser: BoundaryParser) -> AuditRecord:
     text = parser.read_text(AUDIT_PATH)
     values = parser.frontmatter(AUDIT_PATH, text)
     body = text or ""
-    scope_matches = re.findall(
-        r"(?m)^\|\s*Phases\s*\|\s*(\d+)\s+through\s+(\d+)\s*\|\s*$",
-        body)
-    if len(scope_matches) != 1:
+    scope_section = parser.required_section(AUDIT_PATH, body, "Scope")
+    scope_rows = parser.required_table(AUDIT_PATH, scope_section,
+                                       ("Item", "Result"), "audit scope")
+    maybe_phase_scope = audit_result(parser, scope_rows, "Phases")
+    maybe_scope_match = (re.fullmatch(r"(\d+)\s+through\s+(\d+)",
+                                      maybe_phase_scope)
+                         if maybe_phase_scope is not None else None)
+    if maybe_phase_scope is not None and maybe_scope_match is None:
         parser.violation(AUDIT_PATH, "P41_AUDIT_ROLLUP_MISSING",
-                         f"Phases:{len(scope_matches)}", "one explicit row")
+                         f"Phases:{maybe_phase_scope}",
+                         "one explicit phase range row")
     phase_numbers = tuple(
-        range(int(scope_matches[0][0]),
-              int(scope_matches[0][1]) + 1)) if len(scope_matches) == 1 else ()
-    requirement_count = audit_integer(parser, body, "Requirements")
-    coherent_requirement_count = audit_integer(parser, body,
-                                                "Fully coherent")
-    integration_gaps = audit_integer(parser, body, "Runtime integration gaps")
-    metadata_gaps = audit_integer(parser, body, "Metadata gaps")
-    reported_nyquist_gaps = audit_integer(parser, body, "Nyquist gaps")
-    archival_blockers = audit_integer(parser, body,
+        range(int(maybe_scope_match.group(1)),
+              int(maybe_scope_match.group(2)) +
+              1)) if maybe_scope_match is not None else ()
+    requirement_count = audit_integer(parser, scope_rows, "Requirements")
+    coherent_requirement_count = audit_integer(parser, scope_rows,
+                                               "Fully coherent")
+    integration_gaps = audit_integer(parser, scope_rows,
+                                     "Runtime integration gaps")
+    metadata_gaps = audit_integer(parser, scope_rows, "Metadata gaps")
+    reported_nyquist_gaps = audit_integer(parser, scope_rows, "Nyquist gaps")
+    archival_blockers = audit_integer(parser, scope_rows,
                                       "Milestone archival blockers")
     flow_rows = audit_section_rows(parser, body, "End-to-End Flows", "Flow",
                                    AUDIT_FLOW_IDENTITIES)
     flow_gaps = (sum(
-        row.get("Status", "").lower() != "complete" for row in flow_rows)
-                 if flow_rows is not None else None)
+        row.get("Status", "").lower() != "complete"
+        for row in flow_rows) if flow_rows is not None else None)
     nyquist_rows = audit_section_rows(
         parser,
         body,

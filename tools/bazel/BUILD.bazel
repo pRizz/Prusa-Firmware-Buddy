@@ -24,6 +24,7 @@ shell_binary(
     src = "phase41_terminal_consistency.py",
     data = [
         "phase41_terminal_consistency_contracts.py",
+        "phase41_terminal_consistency_markdown.py",
         "phase41_terminal_consistency_policy.py",
         "//:phase41_terminal_consistency_docs",
     ],
@@ -54,6 +55,7 @@ shell_test(
     src = "phase41_terminal_consistency_boundary_test.py",
     data = [
         "phase41_terminal_consistency_contracts.py",
+        "phase41_terminal_consistency_markdown.py",
         "phase41_terminal_consistency.py",
         "phase41_terminal_consistency_policy.py",
         "phase41_terminal_consistency_test_support.py",
@@ -66,6 +68,7 @@ shell_test(
     data = [
         "phase41_terminal_consistency.py",
         "phase41_terminal_consistency_contracts.py",
+        "phase41_terminal_consistency_markdown.py",
         "phase41_terminal_consistency_policy.py",
     ],
 )
