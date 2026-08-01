@@ -281,7 +281,8 @@ def _evaluate_requirements(snapshot: TerminalSnapshot) -> list[Violation]:
     return violations
 
 
-def _evaluate_phases(snapshot: TerminalSnapshot) -> list[Violation]:
+def _evaluate_phases(snapshot: TerminalSnapshot,
+                     mode: ConsistencyMode) -> list[Violation]:
     violations: list[Violation] = []
     counts = Counter(record.phase for record in snapshot.phases)
     observed = set(counts)
@@ -306,16 +307,25 @@ def _evaluate_phases(snapshot: TerminalSnapshot) -> list[Violation]:
                     ".planning/ROADMAP.md", "P41_PHASE_PROJECTION",
                     f"{record.phase}:disk={record.directory_present},roadmap={record.roadmap_listed}",
                     "present in both"))
-        if record.roadmap_status != "Complete":
+        expected_statuses = ({"Planned", "Complete"}
+                             if mode is ConsistencyMode.PRE_AUDIT
+                             and record.phase == MILESTONE_PHASES[-1] else
+                             {"Complete"})
+        if record.roadmap_status not in expected_statuses:
             violations.append(
                 _violation(".planning/ROADMAP.md", "P41_PHASE_STATUS",
                            f"{record.phase}:{record.roadmap_status}",
-                           "Complete"))
+                           "/".join(sorted(expected_statuses))))
     return violations
 
 
-def _evaluate_inventories(snapshot: TerminalSnapshot) -> list[Violation]:
+def _evaluate_inventories(snapshot: TerminalSnapshot,
+                          mode: ConsistencyMode) -> list[Violation]:
     violations: list[Violation] = []
+    terminal_phase = MILESTONE_PHASES[-1]
+    terminal_active = mode is ConsistencyMode.PRE_AUDIT and any(
+        record.phase == terminal_phase and record.roadmap_status == "Planned"
+        for record in snapshot.phases)
     counts = Counter(record.phase for record in snapshot.inventories)
     for phase in MILESTONE_PHASES:
         count = counts.get(phase, 0)
@@ -351,10 +361,11 @@ def _evaluate_inventories(snapshot: TerminalSnapshot) -> list[Violation]:
                 _violation(".planning/ROADMAP.md", "P41_INVENTORY_IDENTITY",
                            f"Phase {inventory.phase}:{sorted(roadmap_plans)}",
                            sorted(plans)))
-        for name in sorted(expected_summaries - summaries):
-            violations.append(
-                _violation(path, "P41_PLAN_WITHOUT_SUMMARY", name,
-                           "matching SUMMARY"))
+        if not terminal_active or inventory.phase != terminal_phase:
+            for name in sorted(expected_summaries - summaries):
+                violations.append(
+                    _violation(path, "P41_PLAN_WITHOUT_SUMMARY", name,
+                               "matching SUMMARY"))
         for name in sorted(summaries - expected_summaries):
             violations.append(
                 _violation(path, "P41_SUMMARY_WITHOUT_PLAN", name,
@@ -414,30 +425,42 @@ def _evaluate_validations(snapshot: TerminalSnapshot) -> list[Violation]:
     return violations
 
 
-def _evaluate_milestone(snapshot: TerminalSnapshot) -> list[Violation]:
+def _evaluate_milestone(snapshot: TerminalSnapshot,
+                        mode: ConsistencyMode) -> list[Violation]:
     milestone = snapshot.milestone
     total_phases = len(MILESTONE_PHASES)
-    completed_phases = sum(record.roadmap_status == "Complete"
-                           for record in snapshot.phases)
     total_plans = sum(
         len(inventory.plans) for inventory in snapshot.inventories)
     completed_plans = sum(
         len(inventory.summaries) for inventory in snapshot.inventories)
+    terminal_phase = MILESTONE_PHASES[-1]
+    active = mode is ConsistencyMode.PRE_AUDIT and any(
+        record.phase == terminal_phase and record.roadmap_status == "Planned"
+        for record in snapshot.phases)
+    terminal_inventory = next(
+        (inventory for inventory in snapshot.inventories
+         if inventory.phase == terminal_phase), None)
+    terminal_summary_count = len(
+        terminal_inventory.summaries) if terminal_inventory else 0
+    terminal_plan_count = len(
+        terminal_inventory.plans) if terminal_inventory else 0
+    active_plan = min(terminal_summary_count + 1,
+                      terminal_plan_count) if terminal_plan_count else 0
     expected = {
-        "roadmap_status": "Complete",
+        "roadmap_status": "Active" if active else "Complete",
         "roadmap_total_phases": total_phases,
-        "roadmap_completed_phases": completed_phases,
+        "roadmap_completed_phases": total_phases - 1 if active else total_phases,
         "roadmap_total_plans": total_plans,
         "roadmap_completed_plans": completed_plans,
-        "state_status": "complete",
-        "state_milestone_status": "complete",
+        "state_status": "executing" if active else "complete",
+        "state_milestone_status": "active" if active else "complete",
         "state_total_phases": total_phases,
-        "state_completed_phases": completed_phases,
+        "state_completed_phases": total_phases - 1 if active else total_phases,
         "state_total_plans": total_plans,
         "state_completed_plans": completed_plans,
-        "state_current_phase": 41,
-        "state_current_plan": 3,
-        "state_narrative_terminal": True,
+        "state_current_phase": terminal_phase,
+        "state_current_plan": active_plan if active else terminal_plan_count,
+        "state_narrative_terminal": not active,
     }
     violations: list[Violation] = []
     for field, expected_value in expected.items():
@@ -503,10 +526,10 @@ def evaluate_terminal_consistency(
     violations = [
         *snapshot.boundary_violations,
         *_evaluate_requirements(snapshot),
-        *_evaluate_phases(snapshot),
-        *_evaluate_inventories(snapshot),
+        *_evaluate_phases(snapshot, selected_mode),
+        *_evaluate_inventories(snapshot, selected_mode),
         *_evaluate_validations(snapshot),
-        *_evaluate_milestone(snapshot),
+        *_evaluate_milestone(snapshot, selected_mode),
         *_evaluate_audit(snapshot, selected_mode),
     ]
     return tuple(

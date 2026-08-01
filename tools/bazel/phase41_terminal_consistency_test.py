@@ -121,6 +121,36 @@ def coherent_snapshot() -> TerminalSnapshot:
                             milestone, audit)
 
 
+def active_pre_audit_snapshot() -> TerminalSnapshot:
+    snapshot = coherent_snapshot()
+    phase_index = MILESTONE_PHASES.index(41)
+    phase = replace(snapshot.phases[phase_index], roadmap_status="Planned")
+    inventory = replace(
+        snapshot.inventories[phase_index],
+        summaries=("41-01-SUMMARY.md", ),
+        roadmap_completed=1,
+    )
+    completed_plans = sum(PLAN_COUNTS.values()) - 2
+    milestone = replace(
+        snapshot.milestone,
+        roadmap_status="Active",
+        roadmap_completed_phases=len(MILESTONE_PHASES) - 1,
+        roadmap_completed_plans=completed_plans,
+        state_status="executing",
+        state_milestone_status="active",
+        state_completed_phases=len(MILESTONE_PHASES) - 1,
+        state_completed_plans=completed_plans,
+        state_current_plan=2,
+        state_narrative_terminal=False,
+    )
+    return replace(
+        snapshot,
+        phases=replace_at(snapshot.phases, phase_index, phase),
+        inventories=replace_at(snapshot.inventories, phase_index, inventory),
+        milestone=milestone,
+    )
+
+
 def replace_at(values: tuple[object, ...], index: int,
                replacement: object) -> tuple[object, ...]:
     return (*values[:index], replacement, *values[index + 1:])
@@ -144,6 +174,29 @@ class Phase41TerminalConsistencyTest(unittest.TestCase):
         # Assert
         self.assertEqual(pre_audit, ())
         self.assertEqual(pre_archive, ())
+
+    def test_active_phase41_snapshot_passes_pre_audit(self) -> None:
+        # Arrange
+        snapshot = active_pre_audit_snapshot()
+
+        # Act
+        violations = evaluate_terminal_consistency(snapshot, "pre-audit")
+
+        # Assert
+        self.assertEqual(violations, ())
+
+    def test_active_phase41_snapshot_fails_pre_archive(self) -> None:
+        # Arrange
+        snapshot = active_pre_audit_snapshot()
+
+        # Act
+        violations = evaluate_terminal_consistency(snapshot, "pre-archive")
+        codes = {violation.code for violation in violations}
+
+        # Assert
+        self.assertIn("P41_PHASE_STATUS", codes)
+        self.assertIn("P41_PLAN_WITHOUT_SUMMARY", codes)
+        self.assertIn("P41_MILESTONE_PROJECTION", codes)
 
     def test_missing_requirement_fails_closed(self) -> None:
         # Arrange
