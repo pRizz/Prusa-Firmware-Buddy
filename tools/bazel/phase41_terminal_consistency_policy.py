@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 from collections import Counter
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
 
 MILESTONE_PHASES = tuple(range(31, 42))
@@ -159,6 +160,7 @@ class AuditRecord:
     parsed: bool
     status: str
     fresh: bool
+    audited_at: datetime | None
     phase_numbers: tuple[int, ...]
     requirement_count: int
     coherent_requirement_count: int
@@ -169,6 +171,16 @@ class AuditRecord:
 
 
 @dataclass(frozen=True)
+class VerificationRecord:
+    path: str
+    present: bool
+    parsed: bool
+    status: str
+    fresh: bool
+    verified_at: datetime | None
+
+
+@dataclass(frozen=True)
 class TerminalSnapshot:
     requirements: tuple[RequirementRecord, ...]
     phases: tuple[PhaseLifecycle, ...]
@@ -176,6 +188,7 @@ class TerminalSnapshot:
     validations: tuple[ValidationRecord, ...]
     milestone: MilestoneProjection
     audit: AuditRecord
+    verification: VerificationRecord
     boundary_violations: tuple[Violation, ...] = ()
 
 
@@ -506,6 +519,30 @@ def _evaluate_audit(snapshot: TerminalSnapshot,
     if mode is ConsistencyMode.PRE_AUDIT:
         return []
 
+    verification = snapshot.verification
+    verification_checks = [
+        (verification.present and verification.parsed,
+         "P41_VERIFICATION_MISSING",
+         f"present={verification.present},parsed={verification.parsed}",
+         "present and parsed Phase 41 verification"),
+    ]
+    if verification.present and verification.parsed:
+        verification_checks.extend([
+            (verification.status == "passed", "P41_VERIFICATION_STATUS",
+             verification.status, "passed"),
+            (verification.verified_at is not None,
+             "P41_VERIFICATION_TIMESTAMP", verification.verified_at,
+             "valid verified timestamp"),
+            (verification.fresh, "P41_VERIFICATION_STALE",
+             verification.fresh, True),
+            (verification.verified_at is not None
+             and audit.audited_at is not None
+             and verification.verified_at <= audit.audited_at,
+             "P41_AUDIT_PREDATES_VERIFICATION",
+             f"verification={verification.verified_at},audit={audit.audited_at}",
+             "verification timestamp no newer than audit timestamp"),
+        ])
+
     checks = [
         (audit.status == "passed", "P41_AUDIT_STATUS", audit.status, "passed"),
         (audit.fresh, "P41_AUDIT_STALE", audit.fresh, True),
@@ -528,6 +565,10 @@ def _evaluate_audit(snapshot: TerminalSnapshot,
     return [
         _violation(audit.path, code, observed, expected)
         for passed, code, observed, expected in checks if not passed
+    ] + [
+        _violation(verification.path, code, observed, expected)
+        for passed, code, observed, expected in verification_checks
+        if not passed
     ]
 
 

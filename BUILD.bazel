@@ -308,7 +308,12 @@ filegroup(
         ".planning/phases/39-milestone-metadata-reconciliation/39-VALIDATION.md",
         ".planning/phases/40-file-length-refactoring/40-VALIDATION.md",
         ".planning/phases/41-terminal-milestone-metadata-coherence/41-VALIDATION.md",
-    ],
+    ] + glob(
+        [
+            ".planning/phases/41-terminal-milestone-metadata-coherence/41-VERIFICATION.md",
+        ],
+        allow_empty = True,
+    ),
 )
 
 filegroup(

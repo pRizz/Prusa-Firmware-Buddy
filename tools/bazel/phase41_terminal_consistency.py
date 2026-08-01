@@ -23,6 +23,7 @@ from phase41_terminal_consistency_policy import (
     RequirementRecord,
     TerminalSnapshot,
     ValidationRecord,
+    VerificationRecord,
     Violation,
     evaluate_terminal_consistency,
     exit_code_for_violations,
@@ -32,6 +33,9 @@ ROADMAP_PATH = ".planning/ROADMAP.md"
 REQUIREMENTS_PATH = ".planning/REQUIREMENTS.md"
 STATE_PATH = ".planning/STATE.md"
 AUDIT_PATH = ".planning/v1.3-MILESTONE-AUDIT.md"
+VERIFICATION_PATH = (
+    ".planning/phases/41-terminal-milestone-metadata-coherence/"
+    "41-VERIFICATION.md")
 
 
 class BoundaryParser:
@@ -51,6 +55,16 @@ class BoundaryParser:
         try:
             return (self.root / relative_path).read_text(encoding="utf-8")
         except (FileNotFoundError, OSError, UnicodeError):
+            self.violation(relative_path, "P41_BOUNDARY_READ", "unreadable",
+                           "readable UTF-8 file")
+            return None
+
+    def read_optional_text(self, relative_path: str) -> str | None:
+        try:
+            return (self.root / relative_path).read_text(encoding="utf-8")
+        except FileNotFoundError:
+            return None
+        except (OSError, UnicodeError):
             self.violation(relative_path, "P41_BOUNDARY_READ", "unreadable",
                            "readable UTF-8 file")
             return None
@@ -389,6 +403,7 @@ def parse_audit(parser: BoundaryParser) -> AuditRecord:
         parsed=values is not None,
         status=(values or {}).get("status", "missing"),
         fresh=fresh,
+        audited_at=audited,
         phase_numbers=phase_numbers,
         requirement_count=requirement_count,
         coherent_requirement_count=int(maybe_coherent.group(1))
@@ -398,6 +413,24 @@ def parse_audit(parser: BoundaryParser) -> AuditRecord:
         flow_gaps=flow_gaps,
         metadata_gaps=int(maybe_metadata.group(1)) if maybe_metadata else 0,
         nyquist_gaps=nyquist_gaps,
+    )
+
+
+def parse_verification(parser: BoundaryParser) -> VerificationRecord:
+    text = parser.read_optional_text(VERIFICATION_PATH)
+    values = parser.frontmatter(VERIFICATION_PATH,
+                                text) if text is not None else None
+    verified_at = parse_iso((values or {}).get("verified", ""))
+    latest_summary = latest_phase41_summary_time(parser)
+    fresh = (verified_at is not None and latest_summary is not None
+             and verified_at >= latest_summary)
+    return VerificationRecord(
+        path=VERIFICATION_PATH,
+        present=text is not None,
+        parsed=values is not None,
+        status=(values or {}).get("status", "missing"),
+        fresh=fresh,
+        verified_at=verified_at,
     )
 
 
@@ -412,6 +445,7 @@ def load_snapshot(root: Path) -> TerminalSnapshot:
     milestone = parse_milestone(parser, roadmap_text, state_text, phases,
                                 inventories)
     audit = parse_audit(parser)
+    verification = parse_verification(parser)
     return TerminalSnapshot(
         requirements=requirements,
         phases=phases,
@@ -419,6 +453,7 @@ def load_snapshot(root: Path) -> TerminalSnapshot:
         validations=validations,
         milestone=milestone,
         audit=audit,
+        verification=verification,
         boundary_violations=tuple(parser.violations),
     )
 

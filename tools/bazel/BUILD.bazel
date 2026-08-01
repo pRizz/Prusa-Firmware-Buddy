@@ -29,9 +29,39 @@ shell_binary(
 )
 
 shell_test(
-    name = "phase41_terminal_consistency_tests",
+    name = "phase41_terminal_consistency_policy_tests",
     src = "phase41_terminal_consistency_test.py",
-    data = ["phase41_terminal_consistency_policy.py"],
+    data = [
+        "phase41_terminal_consistency_policy.py",
+        "phase41_terminal_consistency_test_support.py",
+    ],
+)
+
+shell_test(
+    name = "phase41_terminal_consistency_archive_tests",
+    src = "phase41_terminal_consistency_archive_test.py",
+    data = [
+        "phase41_terminal_consistency_policy.py",
+        "phase41_terminal_consistency_test_support.py",
+    ],
+)
+
+shell_test(
+    name = "phase41_terminal_consistency_boundary_tests",
+    src = "phase41_terminal_consistency_boundary_test.py",
+    data = [
+        "phase41_terminal_consistency.py",
+        "phase41_terminal_consistency_policy.py",
+    ],
+)
+
+test_suite(
+    name = "phase41_terminal_consistency_tests",
+    tests = [
+        ":phase41_terminal_consistency_archive_tests",
+        ":phase41_terminal_consistency_boundary_tests",
+        ":phase41_terminal_consistency_policy_tests",
+    ],
 )
 
 PHASE3_GENERATED_LABELS = [
