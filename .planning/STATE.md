@@ -3,15 +3,15 @@ gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
 status: executing
-stopped_at: Completed 41-03-PLAN.md
-last_updated: "2026-08-01T19:47:57.282Z"
-last_activity: 2026-08-01 -- Phase 41 execution started
+stopped_at: Completed 41-04-PLAN.md
+last_updated: "2026-08-01T20:13:50.308Z"
+last_activity: "2026-08-01"
 progress:
   total_phases: 11
-  completed_phases: 10
+  completed_phases: 11
   total_plans: 37
-  completed_plans: 36
-  percent: 97
+  completed_plans: 37
+  percent: 100
 ---
 
 # Project State
@@ -27,9 +27,9 @@ See: .planning/PROJECT.md (updated 2026-07-27)
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
 Phase: 41 (terminal-milestone-metadata-coherence) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 41
-Last activity: 2026-08-01 -- Phase 41 execution started
+Plan: 4 of 4
+Status: Ready to execute
+Last activity: 2026-08-01
 
 Progress: [#########░] 90% (10/11 v1.3 phases complete)
 
@@ -95,6 +95,7 @@ Progress: [#########░] 90% (10/11 v1.3 phases complete)
 | Phase 41 P01 | 21min | 2 tasks | 7 files |
 | Phase 41 P02 | 13min | 2 tasks | 6 files |
 | Phase 41 P03 | 15min | 2 tasks | 8 files |
+| Phase 41 P04 | 23min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -184,6 +185,9 @@ Recent decisions affecting current work:
 - [Phase 41]: Pre-audit may contain exactly one in-flight Phase 41 validation task; all other pending validation states fail closed.
 - [Phase 41]: The terminal audit remains a consumer-only candidate and grants no cutover, demotion, verification, or archival authority.
 - [Phase 41]: Independent verification and a fresh successful pre-archive gate remain orchestrator-owned prerequisites.
+- [Phase 41]: Derive active and terminal projection expectations from exact on-disk plan/summary inventory instead of stale declared totals.
+- [Phase 41]: Keep filesystem and Markdown parsing in bounded adapters while immutable projection records feed the pure consistency policy.
+- [Phase 41]: Parse only the YAML mapping, scalar, and inline-integer-list subset required by the audit projection and reject malformed nesting or case-normalized duplicates.
 
 ### Pending Todos
 
@@ -200,6 +204,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-08-01T18:05:53.442Z
-Stopped at: Completed 41-03-PLAN.md
+Last session: 2026-08-01T20:13:38.633Z
+Stopped at: Completed 41-04-PLAN.md
 Resume file: None
