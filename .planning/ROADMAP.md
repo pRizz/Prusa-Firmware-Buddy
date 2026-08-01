@@ -162,7 +162,11 @@ Plans:
   2. Phase 32 preserves stable source-domain and decision-resolution identities for retained-code, residual-risk, exception, readiness, and demotion rows.
   3. Unknown or malformed table and row shapes still fail closed without collapsing valid row tables into `unknown_unclassified`.
   4. Focused regressions exercise actual Phase 26, Phase 27, and Phase 28 producer output shapes.
-**Plans**: TBD
+**Plans**: 2/2 plans complete
+
+Plans:
+- [x] 36-01-PLAN.md - Normalize Phase 26-28 producer rows into stable Phase 32 blocker identities.
+- [x] 36-02-PLAN.md - Publish malformed Phase 27/28 producer containers as canonical fail-closed rows.
 
 ### Phase 37: Reconcile Decisions Into Readiness
 **Goal**: Phase 34 resolves the real Phase 27/28 blocker population with explicit Phase 33 decisions and can produce unblocked readiness from complete valid inputs.
@@ -174,7 +178,11 @@ Plans:
   2. Phase 33 retained-code, residual-risk, exception, and readiness decisions resolve only their exact matching rows.
   3. Uncovered, mismatched, stale, or invalid decisions remain blocking.
   4. A regression using actual Phase 31–33 producer outputs reaches unblocked readiness only when all evidence and decisions are valid.
-**Plans**: TBD
+**Plans**: 2/2 plans complete
+
+Plans:
+- [x] 37-01-PLAN.md - Normalize typed decision targets and implement exact-match reconciliation.
+- [x] 37-02-PLAN.md - Materialize reconciled ledger rows and prove the real approved and blocked paths.
 
 ### Phase 38: Fail-Closed Cutover Workflow
 **Goal**: The full Phase 31–35 workflow replaces stale authority for every upstream failure and reaches the correct blocked, approved, or targeted-repair route.
@@ -203,7 +211,10 @@ Plans:
   2. Phase 31, Phase 32, and Phase 34 roadmap plan counts and plan lists match their on-disk artifacts.
   3. Requirement traceability, roadmap phase status, summary extraction, and phase verification metadata contain no contradictions.
   4. A fresh milestone audit can evaluate all sixteen requirements from all three required sources.
-**Plans**: TBD
+**Plans**: 1/1 plans complete
+
+Plans:
+- [x] 39-01-PLAN.md - Backfill canonical requirement completion provenance and exact roadmap metadata.
 
 ### Phase 40: File Length Refactoring
 **Goal**: The managed file-length checker reports zero findings with exactly 841 authorized permanent paths, while all 92 refactored repo-owned files and every new source/test file are below 629 physical lines and all external interfaces, firmware behavior, persistence, and release artifacts remain compatible.
@@ -248,7 +259,12 @@ Plans:
   3. Phase 37, Phase 38, and Phase 40 VALIDATION files accurately reflect completed Wave 0 and task/campaign evidence, and Nyquist discovery reports no partial or missing phase.
   4. A repo-owned terminal consistency check fails closed on stale requirement counts, phase status, plan inventories, Nyquist state, and ROADMAP/REQUIREMENTS/STATE contradictions.
   5. A fresh milestone audit evaluates all eleven v1.3 phases, reports all sixteen requirements coherent, and finds no integration, flow, or Nyquist gap.
-**Plans**: TBD
+**Plans**: 1/3 plans complete
+
+Plans:
+- [x] 41-01-PLAN.md - Add the fail-closed terminal consistency checker and repository verification facade.
+- [ ] 41-02-PLAN.md - Reconcile exact terminal planning projections and active lifecycle metadata.
+- [ ] 41-03-PLAN.md - Reconcile Nyquist evidence and produce the fresh terminal audit candidate.
 
 ## Requirement Coverage
 
