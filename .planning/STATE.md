@@ -3,15 +3,15 @@ gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
 status: executing
-stopped_at: Completed 41-01-PLAN.md
-last_updated: "2026-08-01T17:40:00.325Z"
+stopped_at: Completed 41-02-PLAN.md
+last_updated: "2026-08-01T17:44:14.689Z"
 last_activity: "2026-08-01"
 progress:
   total_phases: 11
   completed_phases: 10
   total_plans: 36
-  completed_plans: 34
-  percent: 94
+  completed_plans: 35
+  percent: 97
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-07-27)
 
 Milestone: v1.3 Cutover Approval and Reference Demotion Trial - active
 Phase: 41 (terminal-milestone-metadata-coherence) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-08-01
 
@@ -37,7 +37,7 @@ Progress: [#########░] 90% (10/11 v1.3 phases complete)
 
 **Velocity:**
 
-- v1.3 plans completed: 34/36
+- v1.3 plans completed: 35/36
 - v1.3 phases completed: 10/11
 - Previous milestone baseline: v1.2 completed 9 plans across 8 phases
 - Earlier milestone baseline: v1.1 completed 13 plans across 10 phases
@@ -93,6 +93,7 @@ Progress: [#########░] 90% (10/11 v1.3 phases complete)
 | Phase 40 P14 | 40min | 2 tasks | 11 files |
 | Phase 40 P15 | 20min | 2 tasks | 3 files |
 | Phase 41 P01 | 21min | 2 tasks | 7 files |
+| Phase 41 P02 | 13min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -176,6 +177,9 @@ Recent decisions affecting current work:
 - [Phase 41]: Terminal consistency evaluation remains a pure immutable policy; filesystem and Markdown access stay in a thin read-only CLI.
 - [Phase 41]: Exact plan and summary identities, not declared counts, are authoritative for terminal inventory coherence.
 - [Phase 41]: The milestone audit is consumed only by pre-archive mode and never authorizes the facts it audits.
+- [Phase 41]: Pre-audit accepts a truthful active Phase 41 projection, while pre-archive continues to require terminal completion and exact PLAN/SUMMARY pairing.
+- [Phase 41]: Behavior-evidenced requirement completion is reported separately from the seven terminal-projection ownership rows assigned to active Phase 41.
+- [Phase 41]: Exact phase-local PLAN and SUMMARY identities remain authoritative over declared counts.
 
 ### Pending Todos
 
@@ -192,6 +196,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-08-01T17:29:07.125Z
-Stopped at: Completed 41-01-PLAN.md
+Last session: 2026-08-01T17:44:14.686Z
+Stopped at: Completed 41-02-PLAN.md
 Resume file: None

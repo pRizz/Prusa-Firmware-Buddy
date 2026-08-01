@@ -259,11 +259,11 @@ Plans:
   3. Phase 37, Phase 38, and Phase 40 VALIDATION files accurately reflect completed Wave 0 and task/campaign evidence, and Nyquist discovery reports no partial or missing phase.
   4. A repo-owned terminal consistency check fails closed on stale requirement counts, phase status, plan inventories, Nyquist state, and ROADMAP/REQUIREMENTS/STATE contradictions.
   5. A fresh milestone audit evaluates all eleven v1.3 phases, reports all sixteen requirements coherent, and finds no integration, flow, or Nyquist gap.
-**Plans**: 1/3 plans complete
+**Plans**: 2/3 plans complete
 
 Plans:
 - [x] 41-01-PLAN.md - Add the fail-closed terminal consistency checker and repository verification facade.
-- [ ] 41-02-PLAN.md - Reconcile exact terminal planning projections and active lifecycle metadata.
+- [x] 41-02-PLAN.md - Reconcile exact terminal planning projections and active lifecycle metadata.
 - [ ] 41-03-PLAN.md - Reconcile Nyquist evidence and produce the fresh terminal audit candidate.
 
 ## Requirement Coverage
@@ -316,4 +316,4 @@ Phases 31 through 38 execute in numeric order after Phase 30. Phase 39 and Phase
 | 38. Fail-Closed Cutover Workflow | v1.3 | 3/3 | Complete    | 2026-07-27 |
 | 39. Milestone Metadata Reconciliation | v1.3 | 1/1 | Complete    | 2026-07-29 |
 | 40. File Length Refactoring | v1.3 | 18/18 | Complete    | 2026-07-28 |
-| 41. Terminal Milestone Metadata Coherence | v1.3 | 1/3 | In Progress|  |
+| 41. Terminal Milestone Metadata Coherence | v1.3 | 2/3 | In Progress|  |
