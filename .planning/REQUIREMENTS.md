@@ -68,9 +68,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INTAKE-01 | Phase 39 | Complete |
-| INTAKE-02 | Phase 39 | Complete |
-| INTAKE-03 | Phase 39 | Complete |
+| INTAKE-01 | Phase 41 | Pending |
+| INTAKE-02 | Phase 41 | Pending |
+| INTAKE-03 | Phase 41 | Pending |
 | INTAKE-04 | Phase 36 | Complete |
 | TRIAGE-01 | Phase 36 | Complete |
 | TRIAGE-02 | Phase 36 | Complete |
@@ -79,11 +79,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DECIDE-02 | Phase 37 | Complete |
 | DECIDE-03 | Phase 33 | Complete |
 | READY-01 | Phase 37 | Complete |
-| READY-02 | Phase 38 | Complete |
-| READY-03 | Phase 38 | Complete |
-| CUTOVER-01 | Phase 38 | Complete |
+| READY-02 | Phase 41 | Pending |
+| READY-03 | Phase 41 | Pending |
+| CUTOVER-01 | Phase 41 | Pending |
 | CUTOVER-02 | Phase 35 | Complete |
-| CUTOVER-03 | Phase 38 | Complete |
+| CUTOVER-03 | Phase 41 | Pending |
 
 **Coverage:**
 
@@ -97,4 +97,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 ______________________________________________________________________
 
 *Requirements defined: 2026-07-02*
-*Last updated: 2026-07-25 after gap-closure Phases 36-39 were added*
+*Last updated: 2026-08-01 after audit gap-closure Phase 41 was added*

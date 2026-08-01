@@ -11,7 +11,7 @@ The replacement firmware is not yet cut over. Final reference demotion remains b
 - **v1.0 Rust Port Evidence Foundation** - Phases 1-12, 38 plans, shipped 2026-06-15. Archives: [roadmap](milestones/v1.0-ROADMAP.md), [requirements](milestones/v1.0-REQUIREMENTS.md), [audit](milestones/v1.0-MILESTONE-AUDIT.md), [phase history](milestones/v1.0-phases/).
 - **v1.1 Cutover Evidence Hardening** - Phases 13-22, 13 plans, shipped 2026-06-22. Archives: [roadmap](milestones/v1.1-ROADMAP.md), [requirements](milestones/v1.1-REQUIREMENTS.md), [audit](milestones/v1.1-MILESTONE-AUDIT.md).
 - **v1.2 Cutover Evidence Execution and Acceptance** - Phases 23-30, 9 plans, shipped 2026-07-02. Archives: [roadmap](milestones/v1.2-ROADMAP.md), [requirements](milestones/v1.2-REQUIREMENTS.md), [audit](milestones/v1.2-MILESTONE-AUDIT.md).
-- **v1.3 Cutover Approval and Reference Demotion Trial** - Phases 31-35, active. Goal: consume real evidence packets, triage blockers, record maintainer decisions, prove reference demotion remains explicitly guarded, and produce the cutover decision artifact.
+- **v1.3 Cutover Approval and Reference Demotion Trial** - Phases 31-41, active. Goal: consume real evidence packets, triage blockers, record maintainer decisions, prove reference demotion remains explicitly guarded, produce the cutover decision artifact, and reconcile terminal milestone metadata before archival.
 
 ## Phases
 
@@ -83,6 +83,7 @@ Full phase details are archived in `.planning/milestones/v1.2-ROADMAP.md`.
 - [x] **Phase 38: Fail-Closed Cutover Workflow** - Make upstream failures replace stale authority and prove blocked, approved, and targeted-repair paths end to end. (completed 2026-07-27)
 - [x] **Phase 39: Milestone Metadata Reconciliation** - Restore requirement-completion metadata and reconcile roadmap plan details before re-audit. (completed 2026-07-29)
 - [x] **Phase 40: File Length Refactoring** - Eliminate all temporary repo-owned file-length exceptions through ordered, behavior-preserving refactors while retaining only the exact approved permanent set. Independent of pending Phase 39 metadata reconciliation. (completed 2026-07-28)
+- [ ] **Phase 41: Terminal Milestone Metadata Coherence** - Reconcile terminal roadmap, requirements, state, plan-inventory, and Nyquist projections and make future drift fail closed before audit or archival.
 
 ## Phase Details
 
@@ -236,13 +237,26 @@ Plans:
 - [x] 40-17-PLAN.md — Materialize Phase 34 test modules and remove dynamic source reconstruction.
 - [x] 40-18-PLAN.md — Materialize Phase 35 test modules and remove dynamic source reconstruction.
 
+### Phase 41: Terminal Milestone Metadata Coherence
+**Goal**: Terminal ROADMAP, REQUIREMENTS, STATE, phase plan inventories, and Nyquist validation state agree with completed evidence and fail closed on future drift before audit or archival.
+**Depends on**: Phases 39 and 40
+**Requirements**: INTAKE-01, INTAKE-02, INTAKE-03, READY-02, READY-03, CUTOVER-01, CUTOVER-03
+**Gap Closure**: Closes audit gap M1, the broken milestone-metadata reconciliation flow, and the partial Nyquist state for Phases 37, 38, and 40.
+**Success Criteria** (what must be TRUE):
+  1. ROADMAP milestone status, requirement coverage, execution narrative, progress rows, and Phase 36/37/39 plan inventories agree with current on-disk lifecycle evidence.
+  2. REQUIREMENTS checkboxes, traceability rows, coverage rollups, and Phase 41 ownership agree without changing the already verified runtime meaning of any requirement.
+  3. Phase 37, Phase 38, and Phase 40 VALIDATION files accurately reflect completed Wave 0 and task/campaign evidence, and Nyquist discovery reports no partial or missing phase.
+  4. A repo-owned terminal consistency check fails closed on stale requirement counts, phase status, plan inventories, Nyquist state, and ROADMAP/REQUIREMENTS/STATE contradictions.
+  5. A fresh milestone audit evaluates all eleven v1.3 phases, reports all sixteen requirements coherent, and finds no integration, flow, or Nyquist gap.
+**Plans**: TBD
+
 ## Requirement Coverage
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INTAKE-01 | Phase 39 | Pending |
-| INTAKE-02 | Phase 39 | Pending |
-| INTAKE-03 | Phase 39 | Pending |
+| INTAKE-01 | Phase 41 | Pending |
+| INTAKE-02 | Phase 41 | Pending |
+| INTAKE-03 | Phase 41 | Pending |
 | INTAKE-04 | Phase 36 | Complete |
 | TRIAGE-01 | Phase 36 | Complete |
 | TRIAGE-02 | Phase 36 | Complete |
@@ -251,18 +265,18 @@ Plans:
 | DECIDE-02 | Phase 37 | Complete |
 | DECIDE-03 | Phase 33 | Complete |
 | READY-01 | Phase 37 | Complete |
-| READY-02 | Phase 38 | Pending |
-| READY-03 | Phase 38 | Pending |
-| CUTOVER-01 | Phase 38 | Pending |
+| READY-02 | Phase 41 | Pending |
+| READY-03 | Phase 41 | Pending |
+| CUTOVER-01 | Phase 41 | Pending |
 | CUTOVER-02 | Phase 35 | Complete |
-| CUTOVER-03 | Phase 38 | Pending |
+| CUTOVER-03 | Phase 41 | Pending |
 
 **Coverage:** 16/16 v1.3 requirements mapped; 9 complete and 7 pending gap closure. No orphaned requirements. No duplicate requirement mappings.
 
 ## Progress
 
 **Execution Order:**
-Phases 31 through 38 execute in numeric order after Phase 30. Phase 39 remains the pending metadata-reconciliation branch. Phase 40 is explicitly authorized to proceed from completed Phase 38 independently of Phase 39: `38 -> 39` and `38 -> 40`.
+Phases 31 through 38 execute in numeric order after Phase 30. Phase 39 and Phase 40 completed from Phase 38 on independent branches. Phase 41 joins their completed evidence to close terminal metadata and Nyquist drift before re-audit: `38 -> 39`, `38 -> 40`, then `39 + 40 -> 41`.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -286,3 +300,4 @@ Phases 31 through 38 execute in numeric order after Phase 30. Phase 39 remains t
 | 38. Fail-Closed Cutover Workflow | v1.3 | 3/3 | Complete    | 2026-07-27 |
 | 39. Milestone Metadata Reconciliation | v1.3 | 1/1 | Complete    | 2026-07-29 |
 | 40. File Length Refactoring | v1.3 | 18/18 | Complete    | 2026-07-28 |
+| 41. Terminal Milestone Metadata Coherence | v1.3 | 0/0 | Not started | - |
