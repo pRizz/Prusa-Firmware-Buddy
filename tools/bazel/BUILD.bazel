@@ -23,6 +23,7 @@ shell_binary(
     name = "phase41_terminal_consistency",
     src = "phase41_terminal_consistency.py",
     data = [
+        "phase41_terminal_consistency_contracts.py",
         "phase41_terminal_consistency_policy.py",
         "//:phase41_terminal_consistency_docs",
     ],
@@ -32,6 +33,7 @@ shell_test(
     name = "phase41_terminal_consistency_policy_tests",
     src = "phase41_terminal_consistency_test.py",
     data = [
+        "phase41_terminal_consistency_contracts.py",
         "phase41_terminal_consistency_policy.py",
         "phase41_terminal_consistency_test_support.py",
     ],
@@ -41,6 +43,7 @@ shell_test(
     name = "phase41_terminal_consistency_archive_tests",
     src = "phase41_terminal_consistency_archive_test.py",
     data = [
+        "phase41_terminal_consistency_contracts.py",
         "phase41_terminal_consistency_policy.py",
         "phase41_terminal_consistency_test_support.py",
     ],
@@ -50,8 +53,10 @@ shell_test(
     name = "phase41_terminal_consistency_boundary_tests",
     src = "phase41_terminal_consistency_boundary_test.py",
     data = [
+        "phase41_terminal_consistency_contracts.py",
         "phase41_terminal_consistency.py",
         "phase41_terminal_consistency_policy.py",
+        "phase41_terminal_consistency_test_support.py",
     ],
 )
 

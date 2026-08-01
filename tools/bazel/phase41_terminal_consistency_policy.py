@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 
+from phase41_terminal_consistency_contracts import EXPECTED_VALIDATION_IDENTITIES
+
 MILESTONE_PHASES = tuple(range(31, 42))
 
 CANONICAL_REQUIREMENTS = {
@@ -437,6 +439,16 @@ def _evaluate_validations(
                 _violation(path, "P41_VALIDATION_TASKS_MISSING",
                            len(record.task_identities), ">= 1 task/campaign row"))
         identity_counts = Counter(record.task_identities)
+        expected_identity_counts = Counter(
+            EXPECTED_VALIDATION_IDENTITIES.get(record.phase, ()))
+        if identity_counts != expected_identity_counts:
+            violations.append(
+                _violation(
+                    path,
+                    "P41_VALIDATION_TASK_IDENTITIES",
+                    tuple(sorted(identity_counts.items())),
+                    tuple(sorted(expected_identity_counts.items())),
+                ))
         for identity, count in sorted(identity_counts.items()):
             if count != 1:
                 violations.append(

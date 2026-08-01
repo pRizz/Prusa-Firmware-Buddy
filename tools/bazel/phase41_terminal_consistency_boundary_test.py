@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 from phase41_terminal_consistency import (
@@ -15,6 +16,14 @@ from phase41_terminal_consistency import (
     parse_phases_and_inventories,
     parse_verification,
     validation_tasks,
+)
+from phase41_terminal_consistency_policy import (
+    MILESTONE_PHASES,
+    evaluate_terminal_consistency,
+)
+from phase41_terminal_consistency_test_support import (
+    coherent_snapshot,
+    replace_at,
 )
 
 
@@ -56,6 +65,24 @@ status: passed
 
 
 class Phase41BoundaryParserTest(unittest.TestCase):
+
+    def validation_codes(self, phase: int, text: str) -> set[str]:
+        tasks = validation_tasks(text)
+        snapshot = coherent_snapshot()
+        index = MILESTONE_PHASES.index(phase)
+        validation = replace(
+            snapshot.validations[index],
+            task_identities=tuple(identity for identity, _ in tasks),
+            task_statuses=tuple(status for _, status in tasks),
+        )
+        mutated = replace(snapshot,
+                          validations=replace_at(snapshot.validations, index,
+                                                 validation))
+        return {
+            violation.code
+            for violation in evaluate_terminal_consistency(
+                mutated, "pre-audit")
+        }
 
     def parse_roadmap(self, text: str):
         temp_dir = tempfile.TemporaryDirectory()
@@ -199,6 +226,37 @@ class Phase41BoundaryParserTest(unittest.TestCase):
         # Act / Assert
         self.assertEqual(validation_tasks(text),
                          (("41-01-01", "unsupported"), ))
+
+    def test_fabricated_validation_identity_fails_after_boundary_parse(
+            self) -> None:
+        # Arrange
+        text = """| Task ID | Status |
+| --- | --- |
+| fabricated-row | green |
+"""
+
+        # Act
+        codes = self.validation_codes(31, text)
+
+        # Assert
+        self.assertIn("P41_VALIDATION_TASK_IDENTITIES", codes)
+
+    def test_valid_looking_validation_subset_fails_after_boundary_parse(
+            self) -> None:
+        # Arrange
+        text = """| Task ID | Status |
+| --- | --- |
+| 31-W0-01 | green |
+| 31-W0-02 | green |
+| 31-W0-03 | green |
+| 31-W0-04 | green |
+"""
+
+        # Act
+        codes = self.validation_codes(31, text)
+
+        # Assert
+        self.assertIn("P41_VALIDATION_TASK_IDENTITIES", codes)
 
     def test_absent_verification_is_optional_at_parse_boundary(self) -> None:
         # Arrange

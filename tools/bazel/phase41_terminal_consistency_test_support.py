@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 from phase41_terminal_consistency_policy import (
     CANONICAL_REQUIREMENTS,
+    EXPECTED_VALIDATION_IDENTITIES,
     MILESTONE_PHASES,
     AuditRecord,
     MilestoneProjection,
@@ -80,8 +81,9 @@ def coherent_snapshot() -> TerminalSnapshot:
             parsed=True,
             nyquist_compliant=True,
             wave_0_complete=True,
-            task_identities=(f"{phase:02d}-01-01", ),
-            task_statuses=("green", ),
+            task_identities=EXPECTED_VALIDATION_IDENTITIES[phase],
+            task_statuses=("green", ) * len(
+                EXPECTED_VALIDATION_IDENTITIES[phase]),
             signoff_complete=True,
         ) for phase in MILESTONE_PHASES)
     total_plans = sum(PLAN_COUNTS.values())

@@ -272,14 +272,19 @@ class Phase41TerminalConsistencyTest(unittest.TestCase):
     def test_pending_validation_tasks_follow_mode_boundary(self) -> None:
         # Arrange
         phase41_index = MILESTONE_PHASES.index(41)
+        coherent = coherent_snapshot()
+        active = active_pre_audit_snapshot()
+        phase31_statuses = coherent.validations[0].task_statuses
+        phase41_statuses = active.validations[phase41_index].task_statuses
         cases = (
-            (coherent_snapshot(), 0, "pre-audit", ("pending", ), True),
-            (active_pre_audit_snapshot(), phase41_index, "pre-audit",
-             ("green", "pending"), False),
-            (active_pre_audit_snapshot(), phase41_index, "pre-audit",
-             ("green", "pending", "pending"), True),
-            (coherent_snapshot(), phase41_index, "pre-archive",
-             ("green", "pending"), True),
+            (coherent, 0, "pre-audit",
+             ("pending", *phase31_statuses[1:]), True),
+            (active, phase41_index, "pre-audit",
+             (*phase41_statuses[:-1], "pending"), False),
+            (active, phase41_index, "pre-audit",
+             (*phase41_statuses[:-2], "pending", "pending"), True),
+            (coherent, phase41_index, "pre-archive",
+             (*phase41_statuses[:-1], "pending"), True),
         )
         # Act / Assert
         for snapshot, index, mode, statuses, should_fail in cases:
@@ -300,10 +305,86 @@ class Phase41TerminalConsistencyTest(unittest.TestCase):
                 }
                 self.assertEqual("P41_VALIDATION_TASK_STATUS" in codes,
                                  should_fail)
+
+    def test_fabricated_validation_identity_fails_closed(self) -> None:
+        # Arrange
+        snapshot = coherent_snapshot()
+        original = snapshot.validations[0]
+        validation = replace(
+            original,
+            task_identities=("fabricated-row", *original.task_identities[1:]),
+        )
+        mutated = replace(snapshot,
+                          validations=replace_at(snapshot.validations, 0,
+                                                 validation))
+
+        # Act / Assert
+        self.assert_has_code(mutated, "pre-audit",
+                             "P41_VALIDATION_TASK_IDENTITIES")
+
+    def test_valid_looking_validation_subset_fails_closed(self) -> None:
+        # Arrange
+        snapshot = coherent_snapshot()
+        original = snapshot.validations[0]
+        validation = replace(original,
+                             task_identities=original.task_identities[:-1],
+                             task_statuses=original.task_statuses[:-1])
+        mutated = replace(snapshot,
+                          validations=replace_at(snapshot.validations, 0,
+                                                 validation))
+
+        # Act / Assert
+        self.assert_has_code(mutated, "pre-audit",
+                             "P41_VALIDATION_TASK_IDENTITIES")
+
+    def test_extra_validation_identity_fails_closed(self) -> None:
+        # Arrange
+        snapshot = coherent_snapshot()
+        original = snapshot.validations[0]
+        validation = replace(
+            original,
+            task_identities=(*original.task_identities, "31-EXTRA-01"),
+            task_statuses=(*original.task_statuses, "green"),
+        )
+        mutated = replace(snapshot,
+                          validations=replace_at(snapshot.validations, 0,
+                                                 validation))
+
+        # Act / Assert
+        self.assert_has_code(mutated, "pre-audit",
+                             "P41_VALIDATION_TASK_IDENTITIES")
+
+    def test_duplicate_validation_identity_fails_closed(self) -> None:
+        # Arrange
+        snapshot = coherent_snapshot()
+        original = snapshot.validations[0]
+        validation = replace(
+            original,
+            task_identities=(*original.task_identities,
+                             original.task_identities[0]),
+            task_statuses=(*original.task_statuses, "green"),
+        )
+        mutated = replace(snapshot,
+                          validations=replace_at(snapshot.validations, 0,
+                                                 validation))
+
+        # Act
+        codes = {
+            violation.code
+            for violation in evaluate_terminal_consistency(
+                mutated, "pre-audit")
+        }
+
+        # Assert
+        self.assertIn("P41_VALIDATION_TASK_IDENTITIES", codes)
+        self.assertIn("P41_VALIDATION_TASK_DUPLICATE", codes)
+
     def test_red_validation_campaign_fails_closed(self) -> None:
         # Arrange
         snapshot = coherent_snapshot()
-        validation = replace(snapshot.validations[0], task_statuses=("red", ))
+        original = snapshot.validations[0]
+        validation = replace(original,
+                             task_statuses=("red", *original.task_statuses[1:]))
         mutated = replace(snapshot,
                           validations=replace_at(snapshot.validations, 0,
                                                  validation))
@@ -315,8 +396,11 @@ class Phase41TerminalConsistencyTest(unittest.TestCase):
     def test_unknown_validation_task_status_fails_closed(self) -> None:
         # Arrange
         snapshot = coherent_snapshot()
-        validation = replace(snapshot.validations[0],
-                             task_statuses=("unsupported", ))
+        original = snapshot.validations[0]
+        validation = replace(
+            original,
+            task_statuses=("unsupported", *original.task_statuses[1:]),
+        )
         mutated = replace(snapshot,
                           validations=replace_at(snapshot.validations, 0,
                                                  validation))
@@ -354,8 +438,11 @@ class Phase41TerminalConsistencyTest(unittest.TestCase):
         # Arrange
         snapshot = coherent_snapshot()
         index = MILESTONE_PHASES.index(37)
-        validation = replace(snapshot.validations[index],
-                             task_statuses=("pending", ))
+        original = snapshot.validations[index]
+        validation = replace(
+            original,
+            task_statuses=("pending", *original.task_statuses[1:]),
+        )
         mutated = replace(snapshot,
                           validations=replace_at(snapshot.validations, index,
                                                  validation))
@@ -368,8 +455,11 @@ class Phase41TerminalConsistencyTest(unittest.TestCase):
         # Arrange
         snapshot = coherent_snapshot()
         index = MILESTONE_PHASES.index(38)
-        validation = replace(snapshot.validations[index],
-                             task_statuses=("pending", ))
+        original = snapshot.validations[index]
+        validation = replace(
+            original,
+            task_statuses=("pending", *original.task_statuses[1:]),
+        )
         mutated = replace(snapshot,
                           validations=replace_at(snapshot.validations, index,
                                                  validation))
