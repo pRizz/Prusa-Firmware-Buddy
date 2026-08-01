@@ -60,12 +60,23 @@ shell_test(
     ],
 )
 
+shell_test(
+    name = "phase41_terminal_consistency_timestamp_tests",
+    src = "phase41_terminal_consistency_timestamp_test.py",
+    data = [
+        "phase41_terminal_consistency.py",
+        "phase41_terminal_consistency_contracts.py",
+        "phase41_terminal_consistency_policy.py",
+    ],
+)
+
 test_suite(
     name = "phase41_terminal_consistency_tests",
     tests = [
         ":phase41_terminal_consistency_archive_tests",
         ":phase41_terminal_consistency_boundary_tests",
         ":phase41_terminal_consistency_policy_tests",
+        ":phase41_terminal_consistency_timestamp_tests",
     ],
 )
 

@@ -6,7 +6,7 @@ import os
 import re
 import sys
 from collections import Counter
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 maybe_bazel_module_dir = Path(
@@ -53,6 +53,8 @@ class BoundaryParser:
     def __init__(self, root: Path) -> None:
         self.root = root
         self.violations: list[Violation] = []
+        self._phase41_summary_time_loaded = False
+        self._maybe_phase41_summary_time: datetime | None = None
 
     def violation(self, path: str, code: str, observed: object,
                   expected: object) -> None:
@@ -397,25 +399,48 @@ def parse_milestone(
     )
 
 
-def parse_iso(value: str) -> datetime | None:
+def parse_utc_timestamp(parser: BoundaryParser, path: str, field: str,
+                        value: str) -> datetime | None:
+    normalized = f"{value[:-1]}+00:00" if value.endswith("Z") else value
     try:
-        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        maybe_timestamp = datetime.fromisoformat(normalized)
     except ValueError:
+        maybe_timestamp = None
+    if (maybe_timestamp is None or maybe_timestamp.tzinfo is None
+            or maybe_timestamp.utcoffset() is None):
+        observed = value if value else "<missing>"
+        parser.violation(path, "P41_TIMESTAMP_INVALID",
+                         f"{field}={observed}",
+                         "timezone-aware ISO-8601 timestamp")
         return None
+    return maybe_timestamp.astimezone(timezone.utc)
 
 
 def latest_phase41_summary_time(parser: BoundaryParser) -> datetime | None:
+    if parser._phase41_summary_time_loaded:
+        return parser._maybe_phase41_summary_time
+    parser._phase41_summary_time_loaded = True
     directories = phase_directories(parser.root, 41)
     if len(directories) != 1:
         return None
     times: list[datetime] = []
-    for summary_path in directories[0].glob("41-*-SUMMARY.md"):
+    all_timestamps_valid = True
+    for summary_path in sorted(directories[0].glob("41-*-SUMMARY.md")):
         relative = summary_path.relative_to(parser.root).as_posix()
         values = parser.frontmatter(relative, parser.read_text(relative))
-        maybe_time = parse_iso((values or {}).get("generated_at", ""))
-        if maybe_time is not None:
-            times.append(maybe_time)
-    return max(times) if times else None
+        maybe_time = parse_utc_timestamp(
+            parser,
+            relative,
+            "generated_at",
+            (values or {}).get("generated_at", ""),
+        )
+        if maybe_time is None:
+            all_timestamps_valid = False
+            continue
+        times.append(maybe_time)
+    if times and all_timestamps_valid:
+        parser._maybe_phase41_summary_time = max(times)
+    return parser._maybe_phase41_summary_time
 
 
 def audit_integer(parser: BoundaryParser, text: str, key: str) -> int | None:
@@ -445,6 +470,7 @@ def audit_section_rows(
 
 
 def parse_audit(parser: BoundaryParser) -> AuditRecord:
+    latest_summary = latest_phase41_summary_time(parser)
     violation_count = len(parser.violations)
     text = parser.read_text(AUDIT_PATH)
     values = parser.frontmatter(AUDIT_PATH, text)
@@ -481,8 +507,8 @@ def parse_audit(parser: BoundaryParser) -> AuditRecord:
     nyquist_gaps = (sum(
         row.get("Audit classification", "").lower() != "compliant"
         for row in nyquist_rows) if nyquist_rows is not None else None)
-    audited = parse_iso((values or {}).get("audited", ""))
-    latest_summary = latest_phase41_summary_time(parser)
+    audited = parse_utc_timestamp(parser, AUDIT_PATH, "audited",
+                                  (values or {}).get("audited", ""))
     fresh = audited is not None and latest_summary is not None and audited >= latest_summary
     return AuditRecord(
         path=AUDIT_PATH,
@@ -505,17 +531,22 @@ def parse_audit(parser: BoundaryParser) -> AuditRecord:
 
 
 def parse_verification(parser: BoundaryParser) -> VerificationRecord:
+    latest_summary = latest_phase41_summary_time(parser)
     text = parser.read_optional_text(VERIFICATION_PATH)
     values = parser.frontmatter(VERIFICATION_PATH,
                                 text) if text is not None else None
-    verified_at = parse_iso((values or {}).get("verified", ""))
-    latest_summary = latest_phase41_summary_time(parser)
+    verified_at = (parse_utc_timestamp(
+        parser,
+        VERIFICATION_PATH,
+        "verified",
+        (values or {}).get("verified", ""),
+    ) if text is not None else None)
     fresh = (verified_at is not None and latest_summary is not None
              and verified_at >= latest_summary)
     return VerificationRecord(
         path=VERIFICATION_PATH,
         present=text is not None,
-        parsed=values is not None,
+        parsed=values is not None and verified_at is not None,
         status=(values or {}).get("status", "missing"),
         fresh=fresh,
         verified_at=verified_at,
