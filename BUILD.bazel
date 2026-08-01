@@ -291,6 +291,27 @@ filegroup(
 )
 
 filegroup(
+    name = "phase41_terminal_consistency_docs",
+    srcs = [
+        ".planning/REQUIREMENTS.md",
+        ".planning/ROADMAP.md",
+        ".planning/STATE.md",
+        ".planning/v1.3-MILESTONE-AUDIT.md",
+        ".planning/phases/31-final-evidence-intake/31-VALIDATION.md",
+        ".planning/phases/32-blocker-register-and-evidence-triage/32-VALIDATION.md",
+        ".planning/phases/33-maintainer-decision-inputs/33-VALIDATION.md",
+        ".planning/phases/34-final-readiness-and-demotion-dry-run/34-VALIDATION.md",
+        ".planning/phases/35-cutover-decision-artifact/35-VALIDATION.md",
+        ".planning/phases/36-normalize-evidence-and-blocker-rows/36-VALIDATION.md",
+        ".planning/phases/37-reconcile-decisions-into-readiness/37-VALIDATION.md",
+        ".planning/phases/38-fail-closed-cutover-workflow/38-VALIDATION.md",
+        ".planning/phases/39-milestone-metadata-reconciliation/39-VALIDATION.md",
+        ".planning/phases/40-file-length-refactoring/40-VALIDATION.md",
+        ".planning/phases/41-terminal-milestone-metadata-coherence/41-VALIDATION.md",
+    ],
+)
+
+filegroup(
     name = "phase22_metadata_reconciliation_docs",
     srcs = [
         ".planning/REQUIREMENTS.md",

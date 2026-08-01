@@ -1,6 +1,6 @@
 load(":artifact_rules.bzl", "phase3_release_artifacts")
 load(":generator_rules.bzl", "phase3_generated_surface")
-load(":shell_rules.bzl", "shell_binary")
+load(":shell_rules.bzl", "shell_binary", "shell_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -17,6 +17,21 @@ shell_binary(
         "phase40_file_length_policy.py",
         "//:.bright-builds-rules-checks.tsv",
     ],
+)
+
+shell_binary(
+    name = "phase41_terminal_consistency",
+    src = "phase41_terminal_consistency.py",
+    data = [
+        "phase41_terminal_consistency_policy.py",
+        "//:phase41_terminal_consistency_docs",
+    ],
+)
+
+shell_test(
+    name = "phase41_terminal_consistency_tests",
+    src = "phase41_terminal_consistency_test.py",
+    data = ["phase41_terminal_consistency_policy.py"],
 )
 
 PHASE3_GENERATED_LABELS = [

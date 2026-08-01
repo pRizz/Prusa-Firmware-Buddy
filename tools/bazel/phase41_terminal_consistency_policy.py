@@ -176,6 +176,7 @@ class TerminalSnapshot:
     validations: tuple[ValidationRecord, ...]
     milestone: MilestoneProjection
     audit: AuditRecord
+    boundary_violations: tuple[Violation, ...] = ()
 
 
 def normalize_semantic_text(text: str) -> str:
@@ -328,6 +329,19 @@ def _evaluate_inventories(snapshot: TerminalSnapshot) -> list[Violation]:
         plans = set(inventory.plans)
         summaries = set(inventory.summaries)
         roadmap_plans = set(inventory.roadmap_plans)
+        plan_prefix = f"{inventory.phase:02d}-"
+        for name in sorted(plans | roadmap_plans):
+            if not name.startswith(plan_prefix) or not name.endswith(
+                    "-PLAN.md"):
+                violations.append(
+                    _violation(path, "P41_PLAN_IDENTITY", name,
+                               f"{plan_prefix}*-PLAN.md"))
+        for name in sorted(summaries):
+            if not name.startswith(plan_prefix) or not name.endswith(
+                    "-SUMMARY.md"):
+                violations.append(
+                    _violation(path, "P41_SUMMARY_IDENTITY", name,
+                               f"{plan_prefix}*-SUMMARY.md"))
         expected_summaries = {
             name.replace("-PLAN.md", "-SUMMARY.md")
             for name in plans
@@ -487,6 +501,7 @@ def evaluate_terminal_consistency(
 ) -> tuple[Violation, ...]:
     selected_mode = ConsistencyMode(mode)
     violations = [
+        *snapshot.boundary_violations,
         *_evaluate_requirements(snapshot),
         *_evaluate_phases(snapshot),
         *_evaluate_inventories(snapshot),

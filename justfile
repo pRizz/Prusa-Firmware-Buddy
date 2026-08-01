@@ -129,6 +129,11 @@ phase40-verify *args:
     bazel run //:phase40_file_length_policy -- {{args}}
     bun scripts/bright-builds-check.ts all
 
+phase41-verify *args:
+    bazel test //tools/bazel:phase41_terminal_consistency_tests
+    bazel run //tools/bazel:phase41_terminal_consistency -- {{args}}
+    bun scripts/bright-builds-check.ts all
+
 phase17-release-artifacts-smoke:
     bazel build //tools/bazel:phase17_representative_release_smoke
 

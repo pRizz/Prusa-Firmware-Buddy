@@ -23,3 +23,31 @@ shell_binary = rule(
     },
     executable = True,
 )
+
+def _shell_test_impl(ctx):
+    output = ctx.actions.declare_file(ctx.label.name)
+    source = ctx.file.src
+
+    ctx.actions.write(
+        output = output,
+        content = """#!/usr/bin/env bash
+set -euo pipefail
+exec python3 "${TEST_SRCDIR}/${TEST_WORKSPACE}/%s" "$@"
+""" % source.short_path,
+        is_executable = True,
+    )
+
+    return [DefaultInfo(
+        executable = output,
+        files = depset([output]),
+        runfiles = ctx.runfiles(files = [source] + ctx.files.data),
+    )]
+
+shell_test = rule(
+    implementation = _shell_test_impl,
+    attrs = {
+        "data": attr.label_list(allow_files = True),
+        "src": attr.label(allow_single_file = True, mandatory = True),
+    },
+    test = True,
+)
