@@ -190,13 +190,22 @@ def parse_requirements(parser: BoundaryParser, requirements_text: str,
     return tuple(records)
 
 
-def roadmap_phase_sections(roadmap_text: str) -> dict[int, str]:
+def roadmap_phase_sections(parser: BoundaryParser,
+                           roadmap_text: str) -> dict[int, str]:
     matches = list(re.finditer(r"(?m)^### Phase (\d+):[^\n]*$", roadmap_text))
+    heading_counts = Counter(int(match.group(1)) for match in matches)
+    for phase, count in sorted(heading_counts.items()):
+        if count != 1:
+            parser.violation(ROADMAP_PATH, "P41_ROADMAP_PHASE_DUPLICATE",
+                             f"heading Phase {phase}:{count}", "one heading")
     sections: dict[int, str] = {}
     for index, match in enumerate(matches):
+        phase = int(match.group(1))
+        if heading_counts[phase] != 1:
+            continue
         end = matches[index + 1].start() if index + 1 < len(matches) else len(
             roadmap_text)
-        sections[int(match.group(1))] = roadmap_text[match.end():end]
+        sections[phase] = roadmap_text[match.end():end]
     return sections
 
 
@@ -210,11 +219,17 @@ def parse_phases_and_inventories(
 ) -> tuple[tuple[PhaseLifecycle, ...], tuple[PlanInventory, ...]]:
     status_matches = re.findall(r"(?m)^- \[([ xX])\] \*\*Phase (\d+):",
                                 roadmap_text)
+    status_counts = Counter(int(phase) for _, phase in status_matches)
+    for phase, count in sorted(status_counts.items()):
+        if count != 1:
+            parser.violation(ROADMAP_PATH, "P41_ROADMAP_PHASE_DUPLICATE",
+                             f"lifecycle Phase {phase}:{count}", "one row")
     status_by_phase = {
         int(phase): "Complete" if marker.lower() == "x" else "Planned"
         for marker, phase in status_matches
+        if status_counts[int(phase)] == 1
     }
-    sections = roadmap_phase_sections(roadmap_text)
+    sections = roadmap_phase_sections(parser, roadmap_text)
     phases: list[PhaseLifecycle] = []
     inventories: list[PlanInventory] = []
     for phase in MILESTONE_PHASES:
@@ -232,8 +247,19 @@ def parse_phases_and_inventories(
         detail = sections.get(phase, "")
         roadmap_plans = tuple(
             re.findall(r"(?m)^- \[[ xX]\]\s+(\d+-\d+-PLAN\.md)\b", detail))
-        maybe_fraction = re.search(r"\*\*Plans\*\*:\s*(\d+)/(\d+)", detail)
-        maybe_count = re.search(r"\*\*Plans\*\*:\s*(\d+)\s+plans?\b", detail)
+        plan_counts = Counter(roadmap_plans)
+        for plan_name, count in sorted(plan_counts.items()):
+            if count != 1:
+                parser.violation(ROADMAP_PATH, "P41_ROADMAP_PLAN_DUPLICATE",
+                                 f"{plan_name}:{count}", "one row")
+        progress_rows = re.findall(r"(?m)^\*\*Plans\*\*:[^\n]*$", detail)
+        if len(progress_rows) != 1:
+            parser.violation(ROADMAP_PATH,
+                             "P41_ROADMAP_PLAN_PROGRESS_DUPLICATE",
+                             f"Phase {phase}:{len(progress_rows)}", "one row")
+        progress = progress_rows[0] if len(progress_rows) == 1 else ""
+        maybe_fraction = re.search(r"\*\*Plans\*\*:\s*(\d+)/(\d+)", progress)
+        maybe_count = re.search(r"\*\*Plans\*\*:\s*(\d+)\s+plans?\b", progress)
         roadmap_total = int(maybe_fraction.group(2)) if maybe_fraction else (
             int(maybe_count.group(1)) if maybe_count else 0)
         roadmap_completed = int(

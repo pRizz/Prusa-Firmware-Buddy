@@ -12,6 +12,7 @@ from phase41_terminal_consistency import (
     BoundaryParser,
     normalized_status,
     parse_audit,
+    parse_phases_and_inventories,
     parse_verification,
     validation_tasks,
 )
@@ -55,6 +56,73 @@ status: passed
 
 
 class Phase41BoundaryParserTest(unittest.TestCase):
+
+    def parse_roadmap(self, text: str):
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        parser = BoundaryParser(Path(temp_dir.name))
+        parse_phases_and_inventories(parser, text)
+        return parser
+
+    def test_duplicate_roadmap_lifecycle_rows_fail_closed(self) -> None:
+        # Arrange
+        text = """- [x] **Phase 31: First**
+- [x] **Phase 31: Duplicate**
+"""
+
+        # Act
+        parser = self.parse_roadmap(text)
+
+        # Assert
+        self.assertIn("P41_ROADMAP_PHASE_DUPLICATE",
+                      {item.code for item in parser.violations})
+
+    def test_duplicate_roadmap_phase_headings_fail_closed(self) -> None:
+        # Arrange
+        text = """### Phase 31: First
+**Plans**: 1 plans
+- [x] 31-01-PLAN.md
+### Phase 31: Duplicate
+**Plans**: 1 plans
+- [x] 31-01-PLAN.md
+"""
+
+        # Act
+        parser = self.parse_roadmap(text)
+
+        # Assert
+        self.assertIn("P41_ROADMAP_PHASE_DUPLICATE",
+                      {item.code for item in parser.violations})
+
+    def test_duplicate_roadmap_plan_rows_fail_closed(self) -> None:
+        # Arrange
+        text = """### Phase 31: First
+**Plans**: 1 plans
+- [x] 31-01-PLAN.md
+- [x] 31-01-PLAN.md
+"""
+
+        # Act
+        parser = self.parse_roadmap(text)
+
+        # Assert
+        self.assertIn("P41_ROADMAP_PLAN_DUPLICATE",
+                      {item.code for item in parser.violations})
+
+    def test_duplicate_roadmap_plan_progress_rows_fail_closed(self) -> None:
+        # Arrange
+        text = """### Phase 31: First
+**Plans**: 1 plans
+**Plans**: 1/1 plans complete
+- [x] 31-01-PLAN.md
+"""
+
+        # Act
+        parser = self.parse_roadmap(text)
+
+        # Assert
+        self.assertIn("P41_ROADMAP_PLAN_PROGRESS_DUPLICATE",
+                      {item.code for item in parser.violations})
 
     def parse_audit_text(self, text: str):
         temp_dir = tempfile.TemporaryDirectory()
