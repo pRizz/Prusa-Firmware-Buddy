@@ -1,7 +1,7 @@
 ---
 phase: "41"
 slug: "terminal-milestone-metadata-coherence"
-status: in_progress
+status: complete
 nyquist_compliant: true
 wave_0_complete: true
 created: "2026-08-01"
@@ -39,7 +39,7 @@ created: "2026-08-01"
 | 41-02-01 | 02 | 2 | INTAKE-01, INTAKE-02, INTAKE-03 | T-41-02, T-41-06 | Exact Phase 36/37/39 plan inventories and all requirement projections agree with on-disk plan, summary, and passed-verification evidence. | live consistency | `just phase41-verify --mode pre-audit` | ✅ | ✅ green |
 | 41-02-02 | 02 | 2 | READY-02, READY-03, CUTOVER-01, CUTOVER-03 | T-41-02, T-41-04 | ROADMAP, REQUIREMENTS, and STATE mutations use supported GSD ownership or bounded asserted exceptions and cannot create cutover/demotion authority. | lifecycle/integration | `node "$HOME/.codex/get-shit-done/bin/gsd-tools.cjs" verify lifecycle 41 --require-plans --raw` | ✅ | ✅ green |
 | 41-03-01 | 03 | 3 | READY-02, READY-03 | T-41-07 | Phase 37/38/40 validation records reflect executed Wave 0/task/campaign evidence and Nyquist discovery has no partial or missing phase. | evidence/Nyquist | `just phase41-verify --mode pre-audit` | ✅ | ✅ green |
-| 41-03-02 | 03 | 3 | CUTOVER-01, CUTOVER-03 | T-41-04, T-41-08 | One fresh audit covers Phases 31–41 and sixteen coherent requirements, with zero integration/flow/Nyquist gap and no implied production or demotion authority. | terminal integration | `just phase41-verify --mode pre-archive` | ❌ W0 | ⬜ pending |
+| 41-03-02 | 03 | 3 | CUTOVER-01, CUTOVER-03 | T-41-04, T-41-08 | One fresh audit covers Phases 31–41 and sixteen coherent requirements, with zero integration/flow/Nyquist gap and no implied production or demotion authority. | terminal integration | `just phase41-verify --mode pre-audit` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -78,3 +78,5 @@ Also run `bun scripts/bright-builds-check.ts all`, the task's focused Phase 41 c
 - [x] `nyquist_compliant: true` set in frontmatter.
 
 **Approval:** approved 2026-08-01
+
+**Execution evidence:** completed 2026-08-01. The direct pre-audit consistency gate passed before audit mutation; ten live integration suites passed 323 tests; the fresh audit candidate evaluates Phases 31–41 and all sixteen requirements with zero integration, flow, metadata, or Nyquist gap. Independent `41-VERIFICATION.md` and the post-verification `pre-archive` gate remain pending and are not claimed here.
