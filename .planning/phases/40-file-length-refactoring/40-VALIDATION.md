@@ -1,9 +1,9 @@
 ---
 phase: "40"
 slug: "file-length-refactoring"
-status: planned
+status: complete
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: "2026-07-27"
 ---
 
@@ -32,20 +32,20 @@ created: "2026-07-27"
 
 | Campaign | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| Baseline | Exact 838 permanent + 95 temporary partition | T-40-01 | New or misclassified oversized paths fail closed | policy/unit | `just phase40-verify` | ⬜ pending |
-| Rust domain | Four stable Rust interfaces | T-40-02 | No visibility, error, or feature drift | unit/build | ordered Cargo sequence, then Rust `just` gates | ⬜ pending |
-| Utilities | CLI/import compatibility | T-40-03 | Arguments, exits, and output paths remain stable | unit/contract | utility tests, `python3 utils/build.py --help`, underlying build command | ⬜ pending |
-| Phases 5–11 | Existing verifier contracts | T-40-04 | Artifact and exit semantics remain stable | contract | `just phase5-verify` through `just phase11-verify` as affected | ⬜ pending |
-| Phases 13–17 | Evidence producer contracts | T-40-04 | Security and evidence schemas remain stable | contract | `just phase13-verify` through `just phase17-verify` as affected | ⬜ pending |
-| Phases 18–28 | Readiness evidence contracts | T-40-04 | Fail-closed outputs and schemas remain stable | contract | affected Phase 18–28 `just` gates | ⬜ pending |
-| Phases 31–38 | Finality and cutover contracts | T-40-04 | Authority, provenance, and failure publication remain stable | integration | affected Phase 31–38 `just` gates | ⬜ pending |
-| Firmware tests | Characterization coverage | T-40-05 | Splitting tests does not drop or combine behavior | unit | `BUDDY_BAZEL_EXECUTE_REFERENCE=1 just test`, then guarded `--list-tests` and direct execution of the seven owning Catch binaries under `build-tests/tests/unit/` | ⬜ pending |
-| Parser/UI/WUI | Public rendering and protocol behavior | T-40-06 | Public headers, resources, HTTP behavior, and state mapping remain stable | host/build | canonical executed host setup, guarded `--list-tests` and direct execution of each named owning Catch binary, representative build | ⬜ pending |
-| Network/media | Network and transfer behavior | T-40-07 | Protocols, filenames, recovery, and statuses remain stable | host/simulator | canonical executed host setup; guarded `--list-tests` plus full direct execution of `build-tests/tests/unit/media_prefetch/media_prefetch_tests`, `build-tests/tests/unit/connect/connect_tests`, `build-tests/tests/unit/connect/connect_planner_tests`, `build-tests/tests/unit/connect/connect_registration_tests`, and `build-tests/tests/unit/transfers/transfers_tests`; representative build; simulator parity | ⬜ pending |
-| Persistent storage | Stored schema and migration behavior | T-40-08 | Layout, hashes, defaults, and migration remain stable | unit/generated | canonical executed host setup, guarded `--list-tests` and direct execution of `build-tests/tests/unit/persistent_stores/eeprom_unit_tests`, generated check, build, simulator parity | ⬜ pending |
-| Hardware/auxiliary | HAL and wire behavior | T-40-09 | Register, protocol, and hardware adapter behavior remain stable | unit/build/simulator | focused tests, board builds, simulator where supported | ⬜ pending |
-| Print/safety | Lifecycle and safety behavior | T-40-10 | Queue ordering, state transitions, fatal paths, and recovery remain stable | characterization/integration | host tests, supported build matrix, simulator integration | ⬜ pending |
-| Terminal reconciliation | Exact final ledger and zero findings | T-40-01 | No temporary or unauthorized permanent exceptions survive | policy/full | `just phase40-verify --terminal` or equivalent terminal mode | ⬜ pending |
+| Baseline | Exact 838 permanent + 95 temporary partition | T-40-01 | New or misclassified oversized paths fail closed | policy/unit | `just phase40-verify` | ✅ green |
+| Rust domain | Four stable Rust interfaces | T-40-02 | No visibility, error, or feature drift | unit/build | ordered Cargo sequence, then Rust `just` gates | ✅ green |
+| Utilities | CLI/import compatibility | T-40-03 | Arguments, exits, and output paths remain stable | unit/contract | utility tests, `python3 utils/build.py --help`, underlying build command | ✅ green |
+| Phases 5–11 | Existing verifier contracts | T-40-04 | Artifact and exit semantics remain stable | contract | `just phase5-verify` through `just phase11-verify` as affected | ✅ green |
+| Phases 13–17 | Evidence producer contracts | T-40-04 | Security and evidence schemas remain stable | contract | `just phase13-verify` through `just phase17-verify` as affected | ✅ green |
+| Phases 18–28 | Readiness evidence contracts | T-40-04 | Fail-closed outputs and schemas remain stable | contract | affected Phase 18–28 `just` gates | ✅ green |
+| Phases 31–38 | Finality and cutover contracts | T-40-04 | Authority, provenance, and failure publication remain stable | integration | affected Phase 31–38 `just` gates | ✅ green |
+| Firmware tests | Characterization coverage | T-40-05 | Splitting tests does not drop or combine behavior | unit | `BUDDY_BAZEL_EXECUTE_REFERENCE=1 just test`, then guarded `--list-tests` and direct execution of the seven owning Catch binaries under `build-tests/tests/unit/` | ✅ green |
+| Parser/UI/WUI | Public rendering and protocol behavior | T-40-06 | Public headers, resources, HTTP behavior, and state mapping remain stable | host/build | canonical executed host setup, guarded `--list-tests` and direct execution of each named owning Catch binary, representative build | ✅ green |
+| Network/media | Network and transfer behavior | T-40-07 | Protocols, filenames, recovery, and statuses remain stable | host/simulator | canonical executed host setup; guarded `--list-tests` plus full direct execution of `build-tests/tests/unit/media_prefetch/media_prefetch_tests`, `build-tests/tests/unit/connect/connect_tests`, `build-tests/tests/unit/connect/connect_planner_tests`, `build-tests/tests/unit/connect/connect_registration_tests`, and `build-tests/tests/unit/transfers/transfers_tests`; representative build; simulator parity | ✅ green |
+| Persistent storage | Stored schema and migration behavior | T-40-08 | Layout, hashes, defaults, and migration remain stable | unit/generated | canonical executed host setup, guarded `--list-tests` and direct execution of `build-tests/tests/unit/persistent_stores/eeprom_unit_tests`, generated check, build, simulator parity | ✅ green |
+| Hardware/auxiliary | HAL and wire behavior | T-40-09 | Register, protocol, and hardware adapter behavior remain stable | unit/build/simulator | focused tests, board builds, simulator where supported | ✅ green |
+| Print/safety | Lifecycle and safety behavior | T-40-10 | Queue ordering, state transitions, fatal paths, and recovery remain stable | characterization/integration | host tests, supported build matrix, simulator integration | ✅ green |
+| Terminal reconciliation | Exact final ledger and zero findings | T-40-01 | No temporary or unauthorized permanent exceptions survive | policy/full | `just phase40-verify --terminal` or equivalent terminal mode | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -73,10 +73,10 @@ created: "2026-07-27"
 
 ## Wave 0 Requirements
 
-- [ ] `tools/bazel/phase40_file_length_policy.py` — parse the user-owned TSV and enforce approved reason/path categories without modifying the managed checker.
-- [ ] `tools/bazel/phase40_file_length_policy_test.py` — one-concern tests for malformed rows, unauthorized owned permanence, temporary-set growth, and terminal reconciliation.
-- [ ] `just phase40-verify` — execute the policy verifier/tests and `bun scripts/bright-builds-check.ts all`.
-- [ ] `.bright-builds-rules-checks.tsv` — sorted exact-path baseline with 838 permanent and 95 temporary reasons.
+- [x] `tools/bazel/phase40_file_length_policy.py` — parse the user-owned TSV and enforce approved reason/path categories without modifying the managed checker.
+- [x] `tools/bazel/phase40_file_length_policy_test.py` — one-concern tests for malformed rows, unauthorized owned permanence, temporary-set growth, and terminal reconciliation.
+- [x] `just phase40-verify` — execute the policy verifier/tests and `bun scripts/bright-builds-check.ts all`.
+- [x] `.bright-builds-rules-checks.tsv` — sorted exact-path baseline with 838 permanent and 95 temporary reasons.
 
 Existing Cargo, Python, Catch2/CTest, Bazel, build, and simulator infrastructure covers the remaining campaigns.
 
@@ -97,3 +97,5 @@ Existing Cargo, Python, Catch2/CTest, Bazel, build, and simulator infrastructure
 - [x] `nyquist_compliant: true` is set in frontmatter.
 
 **Approval:** approved 2026-07-27
+
+**Execution evidence:** reconciled 2026-08-01 from all eighteen Phase 40 summaries and passed `40-VERIFICATION.md`. The terminal policy reports 841 permanent, zero temporary, three approved owned exceptions, and zero findings. The accepted Mini404/simulator, physical-hardware, archived-artifact, and macOS host limitations remain explicit and are not converted into behavior claims.

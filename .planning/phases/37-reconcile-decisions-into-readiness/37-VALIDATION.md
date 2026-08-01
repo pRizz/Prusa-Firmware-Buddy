@@ -1,7 +1,7 @@
 ---
 phase: "37"
 slug: "reconcile-decisions-into-readiness"
-status: draft
+status: complete
 nyquist_compliant: true
 wave_0_complete: true
 created: "2026-07-26"
@@ -38,11 +38,11 @@ ______________________________________________________________________
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 37-01-01 | 01 | 1 | DECIDE-01, DECIDE-02 | T-37-01 | Typed target bindings reject mismatched, duplicate, stale, and conflicting targets without accepting unsafe refs. | boundary/unit | `python3 tools/bazel/phase33_maintainer_decision_inputs_test.py -q` | ✅ | ⬜ pending |
-| 37-01-02 | 01 | 1 | DECIDE-01, DECIDE-02, READY-01 | T-37-02 | Exact triple matching and axis-specific values are fail-closed; hard blockers cannot be approved away. | unit | `python3 tools/bazel/phase34_decision_reconciliation_test.py -q` | ❌ W0 | ⬜ pending |
-| 37-02-01 | 02 | 2 | READY-01 | T-37-03 | Phase 34 publishes one canonical ledger with first-class decision-domain rows and no implied demotion authority. | integration/unit | `python3 tools/bazel/phase34_final_readiness_demotion_dry_run_test.py -q` | ✅ | ⬜ pending |
-| 37-02-02 | 02 | 2 | DECIDE-01, DECIDE-02, READY-01 | T-37-04 | Actual Phase 31-33 outputs reach unblocked readiness only for complete valid inputs; every one-concern mutation stays blocked. | real-producer integration | `python3 tools/bazel/phase34_decision_reconciliation_integration_test.py -q` | ❌ W0 | ⬜ pending |
-| 37-02-03 | 02 | 2 | READY-01 | T-37-05 | Hermetic runfiles and the repo-owned gate execute all new tests before publishing Phase 34 outputs. | Bazel/shell | `bash -n tools/bazel/rust_workflow.sh && just phase34-verify` | ✅ | ⬜ pending |
+| 37-01-01 | 01 | 1 | DECIDE-01, DECIDE-02 | T-37-01 | Typed target bindings reject mismatched, duplicate, stale, and conflicting targets without accepting unsafe refs. | boundary/unit | `python3 tools/bazel/phase33_maintainer_decision_inputs_test.py -q` | ✅ | ✅ green |
+| 37-01-02 | 01 | 1 | DECIDE-01, DECIDE-02, READY-01 | T-37-02 | Exact triple matching and axis-specific values are fail-closed; hard blockers cannot be approved away. | unit | `python3 tools/bazel/phase34_decision_reconciliation_test.py -q` | ✅ | ✅ green |
+| 37-02-01 | 02 | 2 | READY-01 | T-37-03 | Phase 34 publishes one canonical ledger with first-class decision-domain rows and no implied demotion authority. | integration/unit | `python3 tools/bazel/phase34_final_readiness_demotion_dry_run_test.py -q` | ✅ | ✅ green |
+| 37-02-02 | 02 | 2 | DECIDE-01, DECIDE-02, READY-01 | T-37-04 | Actual Phase 31-33 outputs reach unblocked readiness only for complete valid inputs; every one-concern mutation stays blocked. | real-producer integration | `python3 tools/bazel/phase34_decision_reconciliation_integration_test.py -q` | ✅ | ✅ green |
+| 37-02-03 | 02 | 2 | READY-01 | T-37-05 | Hermetic runfiles and the repo-owned gate execute all new tests before publishing Phase 34 outputs. | Bazel/shell | `bash -n tools/bazel/rust_workflow.sh && just phase34-verify` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -50,9 +50,9 @@ ______________________________________________________________________
 
 ## Wave 0 Requirements
 
-- [ ] `tools/bazel/phase34_decision_reconciliation.py` — pure typed binding and axis/value reconciliation core.
-- [ ] `tools/bazel/phase34_decision_reconciliation_test.py` — focused one-concern reconciliation tests.
-- [ ] `tools/bazel/phase34_decision_reconciliation_integration_test.py` — actual Phase 31-33 producer-chain regression.
+- [x] `tools/bazel/phase34_decision_reconciliation.py` — pure typed binding and axis/value reconciliation core.
+- [x] `tools/bazel/phase34_decision_reconciliation_test.py` — focused one-concern reconciliation tests.
+- [x] `tools/bazel/phase34_decision_reconciliation_integration_test.py` — actual Phase 31-33 producer-chain regression.
 
 Existing Python, Bazel, shell, and Rust infrastructure covers all other requirements.
 
@@ -86,4 +86,4 @@ ______________________________________________________________________
 - [x] Feedback latency target is below 300 seconds for phase-local checks.
 - [x] `nyquist_compliant: true` set in frontmatter.
 
-**Approval:** approved 2026-07-26
+**Execution evidence:** reconciled 2026-08-01 from Plans 37-01/37-02 summaries and passed `37-VERIFICATION.md`; the focused Phase 33/34 suites and `just phase34-verify` were green.

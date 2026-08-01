@@ -1,9 +1,9 @@
 ---
 phase: "41"
 slug: "terminal-milestone-metadata-coherence"
-status: draft
+status: in_progress
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: "2026-08-01"
 ---
 
@@ -33,11 +33,11 @@ created: "2026-08-01"
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 41-01-01 | 01 | 1 | INTAKE-01, INTAKE-02, INTAKE-03 | T-41-01, T-41-02 | Raw Markdown/frontmatter is parsed once into strict normalized evidence types; malformed or duplicate input fails closed. | boundary/unit | `python3 tools/bazel/phase41_terminal_consistency_test.py -q` | ❌ W0 | ⬜ pending |
-| 41-01-02 | 01 | 1 | READY-02, READY-03, CUTOVER-01, CUTOVER-03 | T-41-03, T-41-04 | Pre-audit and pre-archive modes reject stale counts, identities, inventories, Nyquist state, audit scope, and lifecycle contradictions with deterministic exit codes. | policy/unit | `bazel test //tools/bazel:phase41_terminal_consistency_tests` | ❌ W0 | ⬜ pending |
-| 41-01-03 | 01 | 1 | READY-02, CUTOVER-03 | T-41-05 | Repo-owned Bazel and `just` gates run independently of a user-local GSD installation and compose with the managed checker without modifying it. | wiring/integration | `just phase41-verify` | ❌ W0 | ⬜ pending |
-| 41-02-01 | 02 | 2 | INTAKE-01, INTAKE-02, INTAKE-03 | T-41-02, T-41-06 | Exact Phase 36/37/39 plan inventories and all requirement projections agree with on-disk plan, summary, and passed-verification evidence. | live consistency | `just phase41-verify --pre-audit` | ❌ W0 | ⬜ pending |
-| 41-02-02 | 02 | 2 | READY-02, READY-03, CUTOVER-01, CUTOVER-03 | T-41-02, T-41-04 | ROADMAP, REQUIREMENTS, and STATE mutations use supported GSD ownership or bounded asserted exceptions and cannot create cutover/demotion authority. | lifecycle/integration | `node "$HOME/.codex/get-shit-done/bin/gsd-tools.cjs" verify lifecycle 41 --require-plans --raw` | ✅ | ⬜ pending |
+| 41-01-01 | 01 | 1 | INTAKE-01, INTAKE-02, INTAKE-03 | T-41-01, T-41-02 | Raw Markdown/frontmatter is parsed once into strict normalized evidence types; malformed or duplicate input fails closed. | boundary/unit | `python3 tools/bazel/phase41_terminal_consistency_test.py -q` | ✅ | ✅ green |
+| 41-01-02 | 01 | 1 | READY-02, READY-03, CUTOVER-01, CUTOVER-03 | T-41-03, T-41-04 | Pre-audit and pre-archive modes reject stale counts, identities, inventories, Nyquist state, audit scope, and lifecycle contradictions with deterministic exit codes. | policy/unit | `bazel test //tools/bazel:phase41_terminal_consistency_tests` | ✅ | ✅ green |
+| 41-01-03 | 01 | 1 | READY-02, CUTOVER-03 | T-41-05 | Repo-owned Bazel and `just` gates run independently of a user-local GSD installation and compose with the managed checker without modifying it. | wiring/integration | `just phase41-verify` | ✅ | ✅ green |
+| 41-02-01 | 02 | 2 | INTAKE-01, INTAKE-02, INTAKE-03 | T-41-02, T-41-06 | Exact Phase 36/37/39 plan inventories and all requirement projections agree with on-disk plan, summary, and passed-verification evidence. | live consistency | `just phase41-verify --mode pre-audit` | ✅ | ✅ green |
+| 41-02-02 | 02 | 2 | READY-02, READY-03, CUTOVER-01, CUTOVER-03 | T-41-02, T-41-04 | ROADMAP, REQUIREMENTS, and STATE mutations use supported GSD ownership or bounded asserted exceptions and cannot create cutover/demotion authority. | lifecycle/integration | `node "$HOME/.codex/get-shit-done/bin/gsd-tools.cjs" verify lifecycle 41 --require-plans --raw` | ✅ | ✅ green |
 | 41-03-01 | 03 | 3 | READY-02, READY-03 | T-41-07 | Phase 37/38/40 validation records reflect executed Wave 0/task/campaign evidence and Nyquist discovery has no partial or missing phase. | evidence/Nyquist | `just phase41-verify --pre-audit` | ❌ W0 | ⬜ pending |
 | 41-03-02 | 03 | 3 | CUTOVER-01, CUTOVER-03 | T-41-04, T-41-08 | One fresh audit covers Phases 31–41 and sixteen coherent requirements, with zero integration/flow/Nyquist gap and no implied production or demotion authority. | terminal integration | `just phase41-verify --pre-archive` | ❌ W0 | ⬜ pending |
 
@@ -45,11 +45,11 @@ created: "2026-08-01"
 
 ## Wave 0 Requirements
 
-- [ ] `tools/bazel/phase41_terminal_consistency_policy.py` — pure normalized authority and comparison core.
-- [ ] `tools/bazel/phase41_terminal_consistency.py` — thin read-only CLI with pre-audit/pre-archive modes and exit codes 0/1/2.
-- [ ] `tools/bazel/phase41_terminal_consistency_test.py` — coherent fixture plus one-invariant fail-closed mutations.
-- [ ] `tools/bazel/BUILD.bazel` — Phase 41 Bazel binary and test targets with declared planning inputs.
-- [ ] `just phase41-verify` — focused tests, live checker, and managed checker composition.
+- [x] `tools/bazel/phase41_terminal_consistency_policy.py` — pure normalized authority and comparison core.
+- [x] `tools/bazel/phase41_terminal_consistency.py` — thin read-only CLI with pre-audit/pre-archive modes and exit codes 0/1/2.
+- [x] `tools/bazel/phase41_terminal_consistency_test.py` — coherent fixture plus one-invariant fail-closed mutations.
+- [x] `tools/bazel/BUILD.bazel` — Phase 41 Bazel binary and test targets with declared planning inputs.
+- [x] `just phase41-verify` — focused tests, live checker, and managed checker composition.
 
 ## Manual-Only Verifications
 

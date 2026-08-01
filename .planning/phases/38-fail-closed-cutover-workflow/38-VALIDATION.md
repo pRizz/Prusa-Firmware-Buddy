@@ -1,7 +1,7 @@
 ---
 phase: "38"
 slug: "fail-closed-cutover-workflow"
-status: draft
+status: complete
 nyquist_compliant: true
 wave_0_complete: true
 created: "2026-07-26"
@@ -38,11 +38,11 @@ ______________________________________________________________________
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 38-01-01 | 01 | 1 | READY-02, READY-03 | T-38-01, T-38-03, T-38-05 | Every invalid Phase 31/33 source publishes a sanitized blocked Phase 34 replacement before nonzero return. | boundary/unit | `python3 tools/bazel/phase34_final_readiness_demotion_dry_run_test.py -q` | ✅ | ⬜ pending |
-| 38-01-02 | 01 | 1 | READY-03, CUTOVER-01 | T-38-02, T-38-03, T-38-04 | Phase 35 publication faults retain a blocking guard; absolute, traversal, symlink-escape, wrong-root, and non-directory targets fail before mutation; canonical data remains recoverable without reviving stale approval. | fault-injection unit | `python3 tools/bazel/phase35_cutover_decision_artifact_test.py -q` | ✅ | ⬜ pending |
-| 38-02-01 | 02 | 2 | READY-02, READY-03, CUTOVER-01, CUTOVER-03 | T-38-01, T-38-02 | The production coordinator finalizes Phase 35, preserves nonzero operational failure, and rejects present, malformed, unreadable, lifecycle-stale, and unsafe-path guards. | coordinator unit | `python3 tools/bazel/phase38_cutover_workflow_test.py -q` | ❌ W0 | ⬜ pending |
-| 38-02-02 | 02 | 2 | READY-02, READY-03, CUTOVER-01, CUTOVER-03 | T-38-01, T-38-05 | Actual Phase 31-35 producer paths cover blocked, approved, targeted-repair, and invalid-source replacement while demotion remains independent. | real-producer integration | `python3 tools/bazel/phase38_cutover_workflow_integration_test.py -q` | ❌ W0 | ⬜ pending |
-| 38-02-03 | 02 | 2 | READY-02, READY-03, CUTOVER-01, CUTOVER-03 | T-38-01, T-38-02 | Owned coordinator wiring assertions prove hermetic runfiles and the repo-owned gate execute all focused and integration tests before default blocked publication. | wiring/shell unit | `python3 tools/bazel/phase38_cutover_workflow_test.py -q && bash -n tools/bazel/rust_workflow.sh` | ❌ W0 | ⬜ pending |
+| 38-01-01 | 01 | 1 | READY-02, READY-03 | T-38-01, T-38-03, T-38-05 | Every invalid Phase 31/33 source publishes a sanitized blocked Phase 34 replacement before nonzero return. | boundary/unit | `python3 tools/bazel/phase34_final_readiness_demotion_dry_run_test.py -q` | ✅ | ✅ green |
+| 38-01-02 | 01 | 1 | READY-03, CUTOVER-01 | T-38-02, T-38-03, T-38-04 | Phase 35 publication faults retain a blocking guard; absolute, traversal, symlink-escape, wrong-root, and non-directory targets fail before mutation; canonical data remains recoverable without reviving stale approval. | fault-injection unit | `python3 tools/bazel/phase35_cutover_decision_artifact_test.py -q` | ✅ | ✅ green |
+| 38-02-01 | 02 | 2 | READY-02, READY-03, CUTOVER-01, CUTOVER-03 | T-38-01, T-38-02 | The production coordinator finalizes Phase 35, preserves nonzero operational failure, and rejects present, malformed, unreadable, lifecycle-stale, and unsafe-path guards. | coordinator unit | `python3 tools/bazel/phase38_cutover_workflow_test.py -q` | ✅ | ✅ green |
+| 38-02-02 | 02 | 2 | READY-02, READY-03, CUTOVER-01, CUTOVER-03 | T-38-01, T-38-05 | Actual Phase 31-35 producer paths cover blocked, approved, targeted-repair, and invalid-source replacement while demotion remains independent. | real-producer integration | `python3 tools/bazel/phase38_cutover_workflow_integration_test.py -q` | ✅ | ✅ green |
+| 38-02-03 | 02 | 2 | READY-02, READY-03, CUTOVER-01, CUTOVER-03 | T-38-01, T-38-02 | Owned coordinator wiring assertions prove hermetic runfiles and the repo-owned gate execute all focused and integration tests before default blocked publication. | wiring/shell unit | `python3 tools/bazel/phase38_cutover_workflow_test.py -q && bash -n tools/bazel/rust_workflow.sh` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -50,10 +50,10 @@ ______________________________________________________________________
 
 ## Wave 0 Requirements
 
-- [ ] `tools/bazel/phase38_cutover_workflow.py` — production coordinator and final authority validation.
-- [ ] `tools/bazel/phase38_cutover_workflow_test.py` — focused coordinator and route/status tests.
-- [ ] `tools/bazel/phase38_cutover_workflow_integration_test.py` — actual Phase 31-through-35 workflow regression.
-- [ ] Phase 35 fault-injection fixture — controlled guard/write/rename/restore/cleanup failures without a production test-only authority flag.
+- [x] `tools/bazel/phase38_cutover_workflow.py` — production coordinator and final authority validation.
+- [x] `tools/bazel/phase38_cutover_workflow_test.py` — focused coordinator and route/status tests.
+- [x] `tools/bazel/phase38_cutover_workflow_integration_test.py` — actual Phase 31-through-35 workflow regression.
+- [x] Phase 35 fault-injection fixture — controlled guard/write/rename/restore/cleanup failures without a production test-only authority flag.
 
 Existing Python, Bazel, shell, and Rust infrastructure covers all other requirements.
 
@@ -87,4 +87,4 @@ ______________________________________________________________________
 - [x] Feedback latency target is below 420 seconds for phase-local checks.
 - [x] `nyquist_compliant: true` set in frontmatter.
 
-**Approval:** approved 2026-07-26
+**Execution evidence:** reconciled 2026-08-01 from Plans 38-01 through 38-03 summaries and passed `38-VERIFICATION.md`; the focused Phase 34/35/38 suites, shell syntax check, and `just phase38-verify` were green.
