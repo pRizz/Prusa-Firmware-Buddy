@@ -83,7 +83,7 @@ Full phase details are archived in `.planning/milestones/v1.2-ROADMAP.md`.
 - [x] **Phase 38: Fail-Closed Cutover Workflow** - Make upstream failures replace stale authority and prove blocked, approved, and targeted-repair paths end to end. (completed 2026-07-27)
 - [x] **Phase 39: Milestone Metadata Reconciliation** - Restore requirement-completion metadata and reconcile roadmap plan details before re-audit. (completed 2026-07-29)
 - [x] **Phase 40: File Length Refactoring** - Eliminate all temporary repo-owned file-length exceptions through ordered, behavior-preserving refactors while retaining only the exact approved permanent set. Independent of pending Phase 39 metadata reconciliation. (completed 2026-07-28)
-- [ ] **Phase 41: Terminal Milestone Metadata Coherence** - Reconcile terminal roadmap, requirements, state, plan-inventory, and Nyquist projections and make future drift fail closed before audit or archival.
+- [x] **Phase 41: Terminal Milestone Metadata Coherence** - Reconcile terminal roadmap, requirements, state, plan-inventory, and Nyquist projections and make future drift fail closed before audit or archival. (completed 2026-08-01)
 
 ## Phase Details
 
@@ -264,7 +264,7 @@ Plans:
 Plans:
 - [x] 41-01-PLAN.md - Add the fail-closed terminal consistency checker and repository verification facade.
 - [x] 41-02-PLAN.md - Reconcile exact terminal planning projections and active lifecycle metadata.
-- [ ] 41-03-PLAN.md - Reconcile Nyquist evidence and produce the fresh terminal audit candidate.
+- [x] 41-03-PLAN.md - Reconcile Nyquist evidence and produce the fresh terminal audit candidate.
 
 ## Requirement Coverage
 
@@ -316,4 +316,4 @@ Phases 31 through 38 execute in numeric order after Phase 30. Phase 39 and Phase
 | 38. Fail-Closed Cutover Workflow | v1.3 | 3/3 | Complete    | 2026-07-27 |
 | 39. Milestone Metadata Reconciliation | v1.3 | 1/1 | Complete    | 2026-07-29 |
 | 40. File Length Refactoring | v1.3 | 18/18 | Complete    | 2026-07-28 |
-| 41. Terminal Milestone Metadata Coherence | v1.3 | 2/3 | In Progress|  |
+| 41. Terminal Milestone Metadata Coherence | v1.3 | 3/3 | Complete   | 2026-08-01 |
