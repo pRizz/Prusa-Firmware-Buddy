@@ -2,12 +2,12 @@
 gsd_state_version: "1.0"
 milestone: v1.4
 milestone_name: Bazel-Native Rust Firmware Bring-Up
-status: defining_requirements
-stopped_at: Defining v1.4 requirements
-last_updated: "2026-08-02T19:47:29Z"
+status: roadmap_ready
+stopped_at: Roadmap created; Phase 42 ready for planning
+last_updated: "2026-08-02T20:13:59Z"
 last_activity: "2026-08-02"
 progress:
-  total_phases: 0
+  total_phases: 8
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,17 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-02)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** v1.4 Bazel-native Rust firmware bring-up requirements
+**Current focus:** Plan Phase 42 of the v1.4 Bazel-native Rust firmware bring-up
 
 ## Current Position
 
 Milestone: v1.4 Bazel-Native Rust Firmware Bring-Up
-Phase: Not started (defining requirements)
+Phase: 42 of 49 — Truthful Bazel Graph and Executable MINI Toolchain
 Plan: —
-Status: Defining requirements
-Last activity: 2026-08-02 — Milestone v1.4 started
+Status: Roadmap ready; Phase 42 ready for planning
+Last activity: 2026-08-02 — v1.4 roadmap created with 25/25 requirements mapped
 
-Progress: [----------] 0% (roadmap not yet defined)
+Progress: [----------] 0% (0/8 phases complete)
 
 ## Performance Metrics
 
@@ -61,7 +61,7 @@ Progress: [----------] 0% (roadmap not yet defined)
 **Recent Trend:**
 
 - Last 5 completed plans: Phase 39 P01, Phase 41 P01, Phase 41 P02, Phase 41 P03, Phase 41 P04
-- Trend: v1.3 completed its cutover-decision trial, terminal metadata reconciliation, passed audit, and phase-history archival; next milestone planning should create fresh requirements from the decision route.
+- Trend: v1.3 completed its cutover-decision trial, terminal metadata reconciliation, passed audit, and phase-history archival; v1.4 now has an eight-phase roadmap and is ready to plan Phase 42.
 
 **Recent Completed Plan Detail:**
 
@@ -191,6 +191,12 @@ Recent decisions affecting current work:
 - [Phase 41]: Parse only the YAML mapping, scalar, and inline-integer-list subset required by the audit projection and reject malformed nesting or case-normalized duplicates.
 - [v1.3-complete]: Archived the v1.3 roadmap, requirements, passed audit, and Phase 31-41 history under `.planning/milestones/`; the live requirements surface will be removed before the next milestone.
 - [v1.4-start]: Target the first real Bazel-built embedded Rust firmware image at `MINI/BUDDY/STM32F407VG`, retain C/C++ only as the reference oracle, and keep production cutover and reference demotion blocked.
+- [v1.4-roadmap]: Continue sequential numbering with eight dependency-ordered phases, Phase 42 through Phase 49.
+- [v1.4-roadmap]: Map all 25 active requirements exactly once across truthful toolchains, pure safe-boot policy, reset/link ownership, GPIO safety, executable runtime, artifact lineage, simulator evidence, and canonical CI qualification.
+- [v1.4-roadmap]: Keep the milestone to one development-only `MINI/BUDDY/STM32F407VG` safe-boot image; additional targets and operational printer behavior remain deferred.
+- [v1.4-roadmap]: Preserve CMake/C++ through separately named reference and rollback commands that can never satisfy Rust qualification.
+- [v1.4-roadmap]: Require focused research before Phases 44, 45, 47, 48, and 49 for reset/link facts, GPIO sequencing, BBF lineage, Mini404 observability, and evidence-root semantics respectively.
+- [v1.4-roadmap]: Physical qualification, release signing, production flashing, behavior parity, cutover, and reference demotion remain explicitly blocked after milestone completion.
 
 ### Pending Todos
 
@@ -198,15 +204,16 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-- Real simulator, hardware/media/safety, live-service, release/signing, upstream-result, retained-code, residual-risk, and maintainer-decision inputs must be supplied externally.
-- Evidence artifacts must avoid private signing keys, tokens, certificates, service payloads, raw crash dumps, and other secret-bearing data.
-- Hardware availability and failure-injection scope can block final readiness if required scenarios cannot be observed or explicitly exception-approved.
-- Quick/default placeholder outputs, smoke fixtures, and local-only dry-run rows must not be accepted as final cutover proof.
-- Reference demotion must remain blocked unless readiness is otherwise unblocked and a valid explicit maintainer demotion approval is supplied.
-- Post-cutover retained vendor/HAL replacement and long-run dashboards are deferred unless v1.3 evidence reveals a narrow decision-blocking defect.
+- No known blocker prevents Phase 42 planning; the following focused research gates must resolve before their named phases are planned.
+- The exact MINI reset/link handoff, boot exchange sections, and Mini404 load behavior need focused Phase 44 research before the first accepted link.
+- GPIO reset state, polarity, clock prerequisites, and latch-before-output-mode ordering need focused Phase 45 research; simulator evidence cannot substitute for later physical electrical qualification.
+- Unsigned BBF header, load offsets, metadata, and payload identity need focused Phase 47 research against the established packer and CMake/C++ reference artifact.
+- Mini404 GPIO, fault-injection, watchdog, reset-cause, and canonical boot-layout observability are uncertain; unsupported observations must remain `blocked` or `not_observed`.
+- Current/reference/archive evidence-root and failed-run publication semantics need focused Phase 49 research so stale evidence cannot become current authority.
+- Physical qualification, release signing, production flashing, behavior parity, cutover, and reference demotion are scope boundaries, not v1.4 completion gates.
 
 ## Session Continuity
 
-Last session: 2026-08-02T19:47:29Z
-Stopped at: Defining v1.4 requirements
+Last session: 2026-08-02T20:13:59Z
+Stopped at: Roadmap created; Phase 42 ready for planning
 Resume file: None
