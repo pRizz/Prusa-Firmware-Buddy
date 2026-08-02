@@ -1,221 +1,259 @@
 # Feature Research
 
-**Domain:** Behavior-parity Rust+Bazel rewrite of STM32 Prusa printer firmware
-**Researched:** 2026-06-02
-**Confidence:** HIGH for repository-derived parity scope; MEDIUM for phase-cost estimates until hardware validation plans are written
+**Domain:** Safety-conscious Bazel-native embedded Rust firmware bring-up for `MINI/BUDDY/STM32F407VG`
+**Researched:** 2026-08-02
+**Confidence:** HIGH for the required capability set and current repository gap; MEDIUM for the exact Mini404 observation hooks until they are exercised against the new image
+
+## Scope and User
+
+The “users” of this milestone are firmware developers, safety reviewers, release-artifact reviewers, and CI maintainers. A credible bring-up does not need to print, render the production GUI, connect to cloud services, or replace every foreign component. It does need to prove that Bazel produced a real MCU image, that the image starts deterministically on the selected MINI platform, that hazardous outputs remain inhibited, and that the proof is observable outside the firmware’s own claims.
+
+Milestone acceptance must remain explicitly narrower than production readiness. Passing v1.4 means “the first Rust image is real and safely testable.” It does not mean “the Rust firmware has feature parity,” “the image is safe on physical hardware,” “the package is release-signed,” or “reference demotion is authorized.”
+
+## Observed Baseline
+
+The repository already provides strong domain models and evidence plumbing, but its build/runtime surfaces are not yet an embedded bring-up:
+
+- `//platforms:mini_buddy_stm32f407vg` models the product/board/MCU constraints, but the registered firmware “toolchains” are `reference_toolchain` metadata providers rather than Rust/C/ASM compilers and linkers.
+- `just build` runs `//tools/bazel:build_firmware`, which exits successfully after printing `python3 utils/build.py` while `BUDDY_BAZEL_EXECUTE_REFERENCE=0` remains the default.
+- `just simulator-parity` likewise prints a reference pytest command containing `<firmware.bin>` rather than booting an artifact.
+- `//tools/bazel:rust_firmware` builds the host Rust workspace; the current crates are libraries and the runtime adapter explicitly says it does not boot STM32 startup code or FreeRTOS.
+- Phase 3 `.bin` and `.map` outputs are deterministic package-surface fixtures marked with `BUDDY_PHASE3_PACKAGE_SURFACE_FIXTURE`; they are not linked MCU artifacts.
+- `.github/workflows/ci-evidence.yml` currently writes Phase 19 evidence but does not cross-compile or boot a Rust firmware image.
+- The reference firmware already defines the safety target: `hwio_safe_state()` drives fans to their safe state, turns hotend and bed heat off, and disables motors. The existing evidence schemas already distinguish simulator observations from required physical-hardware proof.
+
+These gaps make truthful execution, genuine artifact lineage, independent safe-output observation, and fail-closed claim boundaries table stakes rather than polish.
 
 ## Feature Landscape
 
-For this project, "features" means parity capabilities, migration deliverables, and acceptance gates. The current C/C++/CMake firmware is the reference product. The Rust replacement is not viable until it preserves the observable behavior of supported printer builds, artifacts, safety behavior, UI flows, network protocols, persistence, resources, and tests.
+### Table Stakes (Maintainers Expect These)
 
-### Table Stakes (Users Expect These)
-
-Missing any P1 item below means the Rust firmware is not a behavior-parity replacement.
+Missing any P1 row below makes the bring-up incomplete or misleading.
 
 | Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Supported printer, board, MCU, bootloader, and artifact matrix | `ProjectOptions.cmake`, `CMakePresets.json`, and `README.md` define the release surface users and CI expect. | HIGH | Preserve COREONE, MINI, MK4, MK3.5, XL, iX, XL_DEV_KIT, BUDDY, XBUDDY, XLBUDDY, DWARF, MODULARBED, XL_DEV_KIT_XLB, XBUDDY_EXTENSION, STM32F4/G0/H5 MCUs, boot/noboot variants, debug/release presets, `.bin`, `.bbf`, `.dfu`, `.map`, signing, version fields, and resource images. Verify the README-listed MK3.9 mapping before roadmap lock because the CMake option matrix exposes MK3.5/MK4 but not a separate MK3.9 option. |
-| Bazel-primary build and `justfile` workflow parity | The project decision makes Bazel authoritative now, and developers still need stable wrappers for common commands. | HIGH | Bazel must build firmware, host tools, generated assets, unit tests, simulator/integration inputs, release artifacts, and puppy/extension firmware. The `justfile` should wrap bootstrap, build, test, format, lint, codegen drift checks, and release packaging. |
-| STM32 startup, HAL/CMSIS, linker, FreeRTOS, and task orchestration | Firmware cannot boot safely without board-specific startup, memory layout, interrupts, peripherals, scheduler, watchdog, and task dependency behavior. | HIGH | Preserve `src/device`, `src/buddy/main.cpp`, `src/freertos`, `TaskDeps`, filesystem/network/display/connect/puppy task startup, C/C++ runtime replacement semantics, crash dump entry paths, and safe-state failure behavior. |
-| Marlin-derived printing core and Buddy bridge behavior | Printing behavior is the product baseline: G-code, motion, planner, thermal, pause/resume/cancel, host control, and slicer compatibility must not regress. | HIGH | Preserve Marlin setup/loop semantics, `marlin_server` serialization, `marlin_client` request/event behavior, `marlin_vars`, Buddy G/M-code stubs such as M862 checks, M997 updates, M600 color change, G29 mesh/probe flows, serial printing behavior, BGcode/file parsing, and GUI/Connect command routing. |
-| Safety-critical thermal, motion, selftest, and recovery behavior | Users do not distinguish firmware rewrites from safety regressions; hardware must fail into known safe states. | HIGH | Preserve min/max/temp-runaway/preheat errors, crash detection, power panic, emergency stop, safe outputs, watchdog/assert/BSOD/redscreen flows, selftest gates, calibration flows, fan/loadcell/axis/first-layer tests, and integration tests such as `tests/integration/test_safety.py`. |
-| Printer-specific hardware feature gates | Existing firmware behavior varies by printer and board; parity requires matching those combinations, not just compiling one generic image. | HIGH | Preserve filament sensor variants, Trinamic/TMC paths, precise homing, phase stepping, burst stepping, input shaper calibration, loadcell/HX717, beds/local/remote/modular, side sensors, ESP flashing, XLCD/touch, LEDs, MMU2, NFC, door sensor, chamber, cold pull, cancel object, auto retract, nozzle cleaner, belt tuning, gearbox alignment, wastebin, print fan type, and xBuddy extension gates. |
-| GUI workflows for both display classes | The GUI is the primary local control surface. Missing screens or wrong layout behavior is a user-visible regression. | HIGH | Preserve 240x320 MINI and 480x320 XLCD layouts, touch defaults, screen stack/static allocation semantics, dialogs, menus, wizards, print preview/control/progress, redscreen/warning screens, language selection, filament workflows, selftest/calibration screens, Connect registration dialogs, PrusaLink screens, and unit layout/text-fit coverage. |
-| Networking, Prusa Connect, PrusaLink/WUI, transfers, and service protocols | Remote control, local API access, downloads, and telemetry are existing firmware capabilities and integration surfaces. | HIGH | Preserve LwIP integration, Prusa Connect registration/telemetry/events/WebSocket-current behavior, token/fingerprint headers, TLS 1.2 verification, proxy behavior and its current limitations, custom certificate path after bug fix, PrusaLink API v1, OctoPrint-compatible endpoints, WUI static assets, digest/API-key auth, downloads, encrypted/ranged transfers, transfer recovery, SNTP, mDNS, metrics, and syslog. |
-| Persistent configuration, migrations, filesystems, and settings import/export | Existing settings and credentials must survive firmware replacement without corrupting EEPROM/internal flash state. | HIGH | Preserve config-store schema, journal IDs/hashes, migrations, defaults, deprecated item IDs, EEPROM/NFC/storage drivers, `/usb`, `/internal`, optional `/semihosting`, FatFs, littlefs, config keys in `doc/prusa_printer_settings.ini`, Wi-Fi/PrusaLink/Connect credentials, selftest results, and resource revisions. |
-| Resources, localization, fonts, web assets, ESP blobs, bootloader resources, and generated files | The firmware bundles assets into release artifacts and runtime resource images; stale generation changes user-visible behavior. | HIGH | Preserve littlefs images, QOI/icon/font generation, translations for CS/DE/ES/FR/IT/JA/PL/UK, MINI extflash translation behavior, WUI assets, ESP32/ESP8266 blobs, MMU/puppy firmware resources, bootloader update images, hash headers, and generated-file drift checks. |
-| Puppy, Dwarf, ModularBed, xBuddy Extension, MMU2, and toolchanger ecosystem | XL/iX/COREONE behavior depends on auxiliary controllers and bootload/update flows, not only master-board firmware. | HIGH | Preserve puppy firmware builds, resource embedding, startup flashing, Modbus/RS485 protocols, Dwarf and ModularBed runtime firmware, xBuddy Extension firmware, time sync, crash dump download, remote bed, toolchanger, dock/tool offset flows, MMU over UART/extension behavior, and development modes such as skip-flash/prebuilt binaries. |
-| Observability, diagnostics, and support artifacts | Debugging firmware regressions depends on logs, metrics, crash dumps, version/provenance, and CI artifacts. | MEDIUM | Preserve log components/destinations, RTT/file/syslog/USB/buffer sinks, metrics G-codes and UDP output, generated error-code and translation reports, crash dump export behavior, firmware version/build suffixes, map files, memory reports, and simulator logs. |
-| Host, simulator, unit, integration, and generated-file verification gates | Big Bang migration needs evidence, not assertion, that behavior still matches the reference firmware. | HIGH | Preserve and expand Catch2-style unit coverage as Rust unit tests where possible, pytest simulator flows, MK4 noboot integration baseline, blockdevice tests, Python binding tests or replacements, pre-commit/codegen checks, and CI-equivalent Bazel targets. Add parity harnesses against reference artifacts/protocol traces. |
+| --- | --- | --- | --- |
+| Truthful developer commands | `just build`, `just test`, and the simulator command must either perform the named work or exit nonzero; a printed recipe is not a build/test result. | MEDIUM | Preserve stable `just` entrypoints, but make their completion messages name the Bazel target and real output/evidence paths. Keep reference-only commands separately named. |
+| One explicit product target | Developers need one unambiguous authority label for `MINI/BUDDY/STM32F407VG`, not a generic host workspace build. | MEDIUM | The existing platform label is the correct selection key. Unsupported platform selections should fail during analysis rather than silently fall back to host or CMake behavior. |
+| Real pinned embedded Rust toolchain | Bazel must invoke a known Rust compiler/sysroot/linker for the MCU target instead of exposing metadata-only toolchains. | HIGH | STM32F407 is Cortex-M4 with a single-precision FPU. Select and lock the ABI deliberately; `thumbv7em-none-eabihf` is the conventional hard-float target, but retained C/ASM ABI compatibility must decide the final choice. |
+| Bazel-owned `no_std`/`no_main` firmware binary | A host `rlib` or Cargo workspace build cannot boot an MCU. | HIGH | Add an actual binary crate and Bazel Rust rule. It needs a non-returning entrypoint, exactly one panic handler, and no accidental `std` dependency. |
+| Correct reset, vector, and memory layout | A linked ARM file is not bootable unless its reset vector, exception vectors, stack, flash/RAM regions, bootloader offset, and sections match the selected MINI image mode. | HIGH | Reuse or explicitly replace the retained STM32F407 startup/linker ownership. Check vector-table placement and `Reset`/`Reset_Handler`, stack start, `.text`, `.data`, `.bss`, and load addresses from the ELF/map. |
+| Inspectable embedded ELF acceptance | Reviewers need machine proof that the output is a 32-bit little-endian ARM executable for the intended ABI and memory map. | MEDIUM | Validate architecture, entrypoint, loadable segments, vector section/symbols, section ranges, image size, and absence of fixture markers. A filename ending in `.elf` is insufficient. |
+| Genuine artifact family from one link | The milestone promises ELF, map, bin, and unsigned development BBF artifacts, all derived from the same embedded image. | HIGH | `bin` must be extracted from ELF loadable content; the map must come from the actual link; BBF must wrap that bin through the repository’s reference-format packer. Do not substitute Phase 3 fixture payloads. |
+| Artifact identity and development-only provenance | Maintainers must be able to prove which source, toolchain, platform, and ELF produced each derivative without mistaking it for a production release. | MEDIUM | Emit hashes, sizes, target triple/ABI, Bazel labels, source revision, linker script identity, retained-component identities, and `unsigned-development`/`non-production` classification. Cross-check ELF→bin→BBF hashes. |
+| Deterministic safe-boot state machine | The first image must reach a bounded, named safe-ready state rather than merely loop somewhere after reset. | HIGH | Recommended observable sequence: reset entered → earliest safe-output write → memory/runtime init → retained-boundary init if required → watchdog armed → safe outputs verified → safe-ready heartbeat/quiescent loop. Transitions should be typed and host-tested. |
+| Earliest practical hazardous-output inhibition | Heaters and motion enables must be driven inactive before nonessential initialization can fail or hang. | HIGH | Match the reference polarity and behavior for MINI: hotend heat off, bed heat off, X/Y/Z/E motor enables disabled, fans in the documented safe state. If pre-RAM action is needed, keep it in retained/generated assembly or narrowly reviewed unsafe code; do not assume ordinary Rust can safely run before RAM initialization. |
+| Independent safe-output observation | A firmware log saying “outputs safe” cannot be its own only proof. | HIGH | Simulator evidence should inspect modeled GPIO/PWM/peripheral state or a Mini404 trace after each critical transition. A firmware marker may delimit the observation point, but pass/fail must be derived by the harness. |
+| Panic, HardFault, and unexpected-interrupt convergence | A credible bring-up defines what happens when Rust panics, the CPU HardFaults, or an unhandled interrupt fires. | HIGH | Each fatal path must be non-returning, attempt safe outputs using a bounded allocation-free path, emit a distinguishable sanitized marker when possible, and then halt or await watchdog reset. Test at least one Rust panic and one CPU/exception fault path. |
+| Watchdog normal and expiry behavior | STM32F407 provides an independent watchdog specifically to reset the device when software stops progressing; ignoring it leaves the safe-loop claim weak. | HIGH | Arm IWDG in the embedded image, feed it only from an explicit healthy safe-ready condition, inject starvation, observe reset cause/count, and prove the reboot re-enters safe state. Simulator timing is evidence for logic, not physical timeout calibration. |
+| Real-image Mini404 startup scenario | The existing simulator machinery is only relevant to v1.4 if it boots the newly linked image. | HIGH | Pass the real ELF/bin to `qemu-system-buddy`; pin the `MINI` machine, CPU assumptions, arguments, and dependency identity. Use bounded timeouts and fail on early exit, hang, missing safe-ready, or unsafe output. |
+| Simulator fault/watchdog/safe-output scenario set | One happy-path boot does not exercise the safety contract named by the milestone. | HIGH | Minimum set: cold reset to safe-ready, panic/fault convergence, watchdog starvation/reset/re-entry, and hazardous-output inhibition throughout. Keep each scenario’s status and artifacts separate. |
+| Host tests for pure boot/safety policy | Hardware adapters are effectful, but transition policy and watchdog-feed eligibility should be cheap to test exhaustively. | MEDIUM | Follow the existing functional-core/imperative-shell split. Unit-test legal state transitions, failure convergence, output intent, and feed/no-feed decisions; adapter integration belongs in simulator checks. |
+| Explicit retained-boundary bill of materials | Retained startup, linker, CMSIS, HAL, ASM, RTOS, or C helpers must be visible rather than quietly linked. | MEDIUM | For each retained component record owner, exact source/label, reason, ABI, unsafe/FFI surface, initialization order, safety responsibility, test evidence, and replacement/defer decision. Confirm actual linked symbols against the declaration. |
+| Clean-checkout CI build and simulator gate | A local-only bring-up is not credible if CI cannot recreate it from declared inputs. | HIGH | CI must cross-build, inspect ELF/map, derive artifacts, run host tests and Mini404 scenarios, and retain redacted logs/manifests. Missing simulator/toolchain prerequisites must fail or produce an explicitly blocked non-passing job, never a green placeholder. |
+| Fail-closed evidence and claim vocabulary | Existing evidence machinery relies on distinguishing passed, failed, blocked, and exception-requested results. | MEDIUM | Real-image rows must carry artifact identity and source refs. Simulator pass must retain residual `pending-hardware`/manual-hardware boundaries and must not alter production cutover or reference-demotion authority. |
 
-### Differentiators (Competitive Advantage)
-
-These are valuable outcomes of the rewrite. They should not add new printer behavior unless they directly support parity or fix known defects.
+### Differentiators (Valuable After the P1 Bring-Up)
 
 | Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Typed printer/board/feature/artifact model | Replaces global macro coupling with explicit Rust/Bazel invariants. | HIGH | Encode valid printer-board-MCU-feature-artifact combinations as types, constructors, and Bazel transitions/rules so invalid builds fail early. |
-| Pure state-machine cores with thin adapters | Makes Marlin bridge, Connect planner, transfers, config migrations, selftests, and resource decisions cheaper to test. | HIGH | Follow functional-core/imperative-shell: keep HAL, RTOS, filesystem, network, and FFI at boundaries; unit test pure transitions. |
-| Hermetic Bazel code generation and packaging | Eliminates generated asset drift and makes releases reproducible. | HIGH | Make option headers, CMakePreset-equivalent matrix data, resources, translations, fonts, log docs, journal hashes, BBF/DFU packaging, and reports generated/checkable by Bazel targets. |
-| Explicit foreign-code boundary manifest | Prevents accidental churn in vendor/HAL/Marlin/FreeRTOS/mbedTLS/TinyUSB code while still naming retained C/ASM dependencies. | MEDIUM | v1 can retain carefully wrapped C/ASM/vendor code where replacement would risk behavior; every retained boundary should have owner, reason, API, and verification gates. |
-| Rust safety wrappers for RTOS, queues, locks, buffers, and hardware resources | Reduces concurrency, lifetime, and memory unsafety without pretending embedded firmware is fully safe Rust. | HIGH | Model task ownership, lock ordering, single-transfer slot semantics, DMA/buffer lifetimes, interrupt access, filesystem handles, and hardware capabilities with narrow unsafe boundaries. |
-| Defect-remediation parity gate | Fixes known fragile areas while preserving behavior. | MEDIUM | Prioritize custom TLS DER read path, probe-analysis classification coupling, home-screen flash-action freeze, transfer direct-sector race constraints, MMU availability state, STM32G0 IRQ path, and generated drift checks. |
-| Reference-firmware comparison harness | Gives roadmap phases a concrete acceptance mechanism. | HIGH | Compare build matrix, artifact metadata, resource hashes where appropriate, API responses, G-code outcomes, simulator screen flows, safety errors, config migrations, and network/transfer traces against the C/C++ reference. |
-| Developer workflow convergence through `just` | Makes the new Bazel workflow discoverable and avoids CMake-era tribal knowledge. | LOW | Provide `just bootstrap`, `just build`, `just test`, `just fmt`, `just lint`, `just codegen-check`, `just sim-test`, and `just release` wrappers around Bazel/Rust tools. |
+| --- | --- | --- | --- |
+| Byte-for-byte reproducible development artifacts | Two clean builds with identical source/config producing equal ELF/bin/BBF hashes makes the Bazel authority unusually strong and exposes timestamp/path leakage early. | HIGH | First make actions hermetic and use stable provenance separate from volatile run metadata. Cross-host reproducibility can follow same-host double-build proof. |
+| Link-time flash/RAM/stack budgets | Prevents a “boots once” image from growing beyond the STM32F407VG envelope and makes map review actionable. | MEDIUM | Gate flash/RAM section ranges immediately; add policy thresholds and stack-paint/high-water evidence after the safe runtime is stable. |
+| Typed, machine-readable boot trace | Gives reviewers one canonical transition ledger shared by host tests, simulator assertions, and CI evidence. | MEDIUM | Prefer stable state/reason enums and monotonic sequence numbers over free-form logs. Treat it as diagnostics, not sole safety proof. |
+| Reference-image structural comparison | Shows intentional differences in vector placement, memory use, package metadata, and safe-output polarity without demanding byte identity between Rust and C++. | MEDIUM | Compare normalized facts, not raw binaries. Any behavior-parity claim remains deferred. |
+| Expanded deterministic fault-injection matrix | Exercises default interrupts, invalid memory access, assertion/panic, retained-boundary failure, and watchdog edge cases before full firmware complexity arrives. | HIGH | Add only once the minimum panic/HardFault/watchdog scenarios are stable and independently observable. |
+| Physical MINI safe-output smoke with instrumentation | Adds electrical evidence that GPIO polarity and reset behavior match the real board. | HIGH | Valuable next gate, but it requires hardware, operator procedure, probes/fixtures, and existing Phase 24 evidence handling. It does not belong in the minimum simulator/CI bring-up definition. |
+| Flash/debug developer facade | A discoverable `just flash-mini-dev` or debug-server command shortens hardware iteration and ties the flashed image to provenance. | MEDIUM | Must require an explicit development target/device and never auto-flash production hardware from normal build/test commands. |
+| Build Event Protocol or action-graph provenance | Provides strong audit links from CI outputs back to the exact Bazel actions and toolchain. | MEDIUM | Add after the essential artifact manifest exists; avoid making a dashboard a prerequisite. |
+| Differential safe-output trace against C reference | Detects polarity/order drift while the Rust runtime is still small. | HIGH | Compare normalized simulator traces for only the safe-boot envelope. Do not expand the comparison into full printer behavior in v1.4. |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
 | Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| Drop older or awkward printer variants to shrink v1 | It would reduce migration work. | It violates Behavior Parity and hides compatibility gaps until late. | Preserve the current supported matrix and explicitly resolve the MK3.9/MK3.5/MK4 mapping ambiguity before phase planning. |
-| Incremental dual production ownership | It feels safer than Big Bang. | The user chose Big Bang; dual ownership can leave two firmware stacks with divergent behavior and unclear release authority. | Build parity harnesses and comparison gates while keeping the cutover target as one coherent Rust+Bazel firmware. |
-| Add new printer/product features during parity work | New features create visible progress. | They obscure whether Rust matches the reference and expand the acceptance surface. | Only fix known defects or reduce migration risk; park new behavior for v1.x/v2. |
-| Treat Bazel as a wrapper around CMake | It seems faster for initial builds. | It contradicts Bazel Primary Now and preserves the global target/codegen coupling the rewrite is meant to remove. | Use CMake as a reference/comparison input, but make Bazel the authoritative graph for builds, codegen, tests, and release artifacts. |
-| Rewrite all vendor/upstream code immediately | A "pure Rust" target sounds cleaner. | Replacing Marlin, HAL/CMSIS, FreeRTOS, mbedTLS, TinyUSB, FatFs/littlefs, or low-level ASM too early risks behavior drift and schedule collapse. | Retain or wrap foreign code where prudent, document each boundary, and replace only when the behavior contract and tests are understood. |
-| Copy C/C++ sentinel-heavy patterns into Rust | It is mechanically close to the reference. | It gives up the main rewrite benefit and carries known ambiguity into the new code. | Parse raw values into domain types and use enums/newtypes/state machines for printer, config, transfer, command, and hardware states. |
-| Ship with compile-only or single-printer verification | It is cheaper than full parity testing. | Embedded behavior can compile while safety, network, UI, artifact, or printer-specific behavior is wrong. | Require matrix builds plus targeted unit, simulator, protocol, artifact, and hardware-aware gates. |
-| Expand beyond existing transfer semantics, such as concurrent downloads | It can look like a platform improvement. | Existing code intentionally has single-slot transfer semantics and lock-order constraints; changing them is not parity. | Preserve one active transfer slot in v1; redesign concurrency only after parity is stable. |
-| Add unsupported network/security extensions such as proxy auth or broad custom TLS behavior | It may satisfy enterprise requests. | Existing docs state proxy limitations; changing authentication/TLS flows risks compatibility and support surprises. | Fix the known custom DER read bug, preserve current proxy semantics, and defer new proxy/auth/security features to post-parity work. |
-| Remove legacy protocols because a newer path exists | It simplifies implementation. | PrusaLink, OctoPrint-compatible endpoints, current Connect command paths, serial G-code, and firmware artifacts are compatibility surfaces. | Preserve existing protocol behavior first; deprecate only through an explicit compatibility decision later. |
+| --- | --- | --- | --- |
+| All printer/board targets in the first bring-up | Feels closer to eventual parity. | Multiplies linker, startup, HAL, simulator, and safety variables before one vertical slice works. | Make `MINI/BUDDY/STM32F407VG` real and keep other platforms explicitly unsupported by the new target. |
+| Printing, motion commands, or heating | Demonstrates visible printer usefulness. | Authorizing hazardous actuation changes the safety envelope and expands into Marlin/planner/thermal parity. | Keep all motion and heating commands unavailable; prove their outputs remain inhibited. |
+| Production GUI, networking, storage, Connect, or transfer flows | Existing evidence contracts already mention these capabilities. | These are full-parity concerns, not prerequisites for reset-to-safe bring-up. They also introduce large retained dependency graphs. | Emit a minimal simulator/debug boot marker and defer application services. |
+| Signed or release-publishable BBF | Makes the artifact look complete. | Pulls private-key handling, release authorization, device installation policy, and rollback risk into a development milestone. | Produce a structurally valid unsigned development BBF with an unmistakable non-production classification. |
+| Production flashing, rollout, cutover, or reference demotion | Converts the bring-up into a practical deployment. | v1.4 has neither feature parity nor physical safety proof, and prior milestones keep these authorizations independent and fail-closed. | Retain C/C++ production firmware and all demotion/cutover gates unchanged. |
+| Full Rust replacement of startup/HAL/CMSIS/ASM/FreeRTOS | Maximizes Rust ownership immediately. | Rewrites multiple safety-critical boundaries before the Rust image can provide evidence; it obscures whether failures are build, ABI, startup, or application defects. | Retain narrowly justified components behind explicit Bazel/FFI boundaries and replace them in later, evidence-driven work. |
+| Introduce a new async executor or RTOS architecture | Modern embedded Rust ecosystems make this attractive. | It adds scheduling, interrupt, timer, and memory decisions unrelated to proving safe boot and may conflict with future parity architecture. | Use the smallest deterministic loop or explicitly retained runtime needed for safe bring-up. |
+| Let CMake/Python fallback satisfy Bazel build success | Keeps developer commands working while Bazel matures. | A green command would no longer prove Bazel built the Rust image; authority remains ambiguous. | Give reference builds a clearly named compatibility command and make the Bazel firmware command fail when its own target fails. |
+| Keep fixture payloads behind production-looking filenames | Existing Phase 3 fixtures are deterministic and convenient. | `.bin`, `.map`, and `.bbf` extensions can mislead reviewers even though no MCU link occurred. | Reject the fixture marker and require all derivatives to trace to the accepted embedded ELF. |
+| Self-reported safe outputs only | Easy to add as a log line. | The same broken code that leaves a heater enabled can print that it disabled it. | Combine a firmware transition marker with independent simulator GPIO/PWM observation. |
+| Treat simulator pass as physical safety qualification | Avoids scarce hardware work. | Emulation cannot prove board-level pull states, electrical polarity, power transients, or physical watchdog timing. | Preserve explicit residual hardware gates and schedule instrumented hardware smoke separately. |
+| Full crash-dump/recovery parity | Rich failure artifacts are useful. | CrashCatcher, storage, UI, and recovery flows expand far beyond panic/fault convergence for a first image. | Emit bounded sanitized fault identity and prove safe halt/watchdog reset; defer full dump compatibility. |
+| Byte identity with the C/C++ firmware | Sounds like the strongest compatibility proof. | Different languages, linkers, runtimes, and ownership boundaries make binary equality meaningless. | Compare normalized memory/package/safe-output facts and later compare observable behavior. |
+| Automatic evidence approval from a green CI job | Reduces maintainer steps. | Conflates bring-up evidence with production readiness and demotion authority. | Publish scoped evidence rows only; keep all prior explicit decision predicates intact. |
 
 ## Feature Dependencies
 
 ```text
-Reference firmware inventory
-    requires -> Build matrix extraction
-    requires -> Runtime capability inventory
-    requires -> Test and artifact inventory
+[Truthful developer facade]
+└──requires──> [Repaired Bazel graph]
+                 └──requires──> [Pinned embedded Rust toolchain + MINI platform]
+                                    └──requires──> [no_std/no_main firmware target]
+                                                       └──requires──> [Linker/startup ownership]
+                                                                          └──produces──> [Accepted ELF + real map]
+                                                                                              └──produces──> [bin + unsigned dev BBF]
+                                                                                                                  └──requires──> [Artifact lineage/provenance]
 
-Bazel authoritative graph
-    requires -> Toolchain and platform definitions
-    requires -> Printer/board/MCU/feature model
-    requires -> Codegen and resource ownership
-    enables  -> justfile workflows
-    enables  -> release artifact parity
-    enables  -> simulator/test targets
+[Retained-boundary declaration] ──constrains──> [Linker/startup ownership]
+[MINI pin polarity + reference safe state] ──requires──> [Earliest safe-output adapter]
+[Pure typed boot policy] ──drives──> [Deterministic safe-boot runtime]
+[Earliest safe-output adapter] ──requires──> [Deterministic safe-boot runtime]
+[Panic/HardFault convergence] ──requires──> [Earliest safe-output adapter]
+[Watchdog feed/expiry policy] ──requires──> [Deterministic safe-boot runtime]
 
-STM32/HAL/RTOS shell
-    requires -> Linker/startup/interrupt parity
-    requires -> FreeRTOS/task primitive wrappers
-    enables  -> Filesystems, GUI, networking, Marlin server, puppy task
+[Accepted ELF + real map] ──requires──> [Real-image Mini404 runner]
+[Independent simulator observation] ──requires──> [Real-image Mini404 runner]
+[Fault injection + watchdog starvation] ──requires──> [Real-image Mini404 runner]
+[Safe-boot, fault, watchdog scenarios] ──produce──> [Fail-closed evidence rows]
 
-Marlin printing core and Buddy bridge
-    requires -> STM32/HAL/RTOS shell
-    requires -> Config store and persistent state
-    requires -> Filesystem/media access
-    enables  -> GUI print controls
-    enables  -> Connect/PrusaLink remote commands
-    enables  -> Safety and selftest workflows
+[Clean-checkout CI]
+├──requires──> [Truthful developer facade]
+├──requires──> [Artifact lineage/provenance]
+├──requires──> [Host policy tests]
+└──requires──> [Safe-boot, fault, watchdog scenarios]
 
-Persistent config and filesystems
-    requires -> Storage drivers and migrations
-    enables  -> Network credentials
-    enables  -> Resources and translations
-    enables  -> Transfers, crash dumps, settings import/export
-
-Resources and generated assets
-    requires -> Bazel codegen ownership
-    requires -> Filesystem/image packaging
-    enables  -> GUI assets, WUI assets, translations, ESP flashing, puppy bootload, bootloader updates
-
-Puppy/MMU/toolchanger ecosystem
-    requires -> Resource packaging
-    requires -> Modbus/RS485 protocols
-    requires -> Marlin/toolchanger integration
-    enables  -> XL/iX/COREONE parity
-
-Parity acceptance gates
-    requires -> Reference artifacts and protocol traces
-    requires -> Bazel-built Rust artifacts
-    requires -> Simulator/hardware-aware execution
-    gates    -> v1 cutover
+[Production signing/cutover] ──conflicts──> [v1.4 development-only bring-up scope]
+[Full feature parity] ──conflicts──> [single-platform safe vertical slice]
+[Physical hardware qualification] ──enhances──> [simulator evidence; does not replace or retroactively broaden it]
 ```
 
 ### Dependency Notes
 
-- **Bazel graph requires the feature matrix:** Printer, board, MCU, bootloader, resource, translation, GUI, touch, puppy, MMU, and network options must become authoritative structured data before reliable Rust target generation is possible.
-- **Runtime shell precedes product behavior:** Marlin, GUI, Connect, WUI, resources, transfers, and puppies all depend on startup, HAL, FreeRTOS, task readiness, filesystems, and logging.
-- **Config and storage unlock network/UI parity:** Connect, PrusaLink, Wi-Fi, credentials, settings import/export, selftest results, resources, and migrations all read/write the config store or mounted filesystems.
-- **Resources are a release and runtime dependency:** WUI assets, ESP firmware, puppy firmware, bootloader resources, translations, fonts, QOI images, and hashes must be generated and packaged before end-to-end boot and UI parity can pass.
-- **Puppies are not optional for XL/iX/COREONE parity:** Dwarf, ModularBed, and xBuddy Extension behavior gates toolchanger, remote bed, chamber, MMU pass-through, bootload, and crash-dump flows.
-- **Known defect fixes require coupled tests:** Probe math, TLS DER loading, transfer races, GUI freeze paths, MMU availability, generated drift, and STM32G0 IRQ behavior should each gain regression guards when rebuilt.
+- **The Bazel graph and embedded toolchain precede runtime work:** until Bazel owns a compiler, target sysroot, linker, and output-producing rule, all later “firmware” capabilities can accidentally remain host or reference wrappers.
+- **ABI choice precedes retained-code linkage:** hard-float versus soft-float must agree across Rust and any retained C/ASM objects. The STM32F407VG has a single-precision FPU, but hardware capability alone does not prove the retained ABI.
+- **Safe-output polarity precedes boot-state implementation:** output intent is not enough; MINI pin polarity and reset behavior determine which writes actually inhibit heaters and motors.
+- **ELF acceptance precedes packaging and simulation:** bin/BBF extraction and Mini404 execution must consume only an ELF that passed architecture, memory, vector, and anti-fixture checks.
+- **Independent observation precedes a safety pass:** the firmware may publish state markers, but simulator/hardware adapters must decide whether output states satisfy the contract.
+- **Normal watchdog service and starvation are one feature:** proving only that the image pets the watchdog can hide a dead watchdog; proving only reset can hide a reset loop. Both healthy service and deliberate expiry/re-entry are required.
+- **CI consumes existing evidence machinery:** v1.4 should add real-image producer rows and artifacts, then reuse fail-closed normalization/redaction patterns. It should not redesign cutover approval.
+- **Hardware proof remains additive:** simulator evidence can validate deterministic logic and modeled peripherals; electrical and physical timing claims remain blocked until a separate hardware run supplies them.
 
 ## MVP Definition
 
-### Launch With (v1)
+For this research, “MVP” means the minimum v1.4 milestone acceptance packet, not a production firmware launch.
 
-Because the user chose Big Bang plus Behavior Parity, v1 launch is the replacement cutover, not a reduced product.
+### Launch With (v1.4)
 
-- [ ] Complete Bazel build matrix for supported master and auxiliary firmware targets, including boot/noboot, debug/release, resources, signing, `.bin`, `.bbf`, `.dfu`, `.map`, and host tools.
-- [ ] `justfile` wrappers for bootstrap, build, test, format, lint, generated-file checks, simulator tests, and release artifact creation.
-- [ ] STM32 startup/HAL/FreeRTOS/task/filesystem/logging shell parity for all supported boards and MCUs.
-- [ ] Marlin printing core parity or an explicitly wrapped retained core with Rust-safe request/event/domain boundaries.
-- [ ] Safety, thermal, crash, selftest, calibration, power panic, emergency stop, and recovery behavior parity.
-- [ ] GUI parity across 240x320 and 480x320 display classes, including menus, dialogs, print controls, registration, warnings, redscreens, translations, and layout tests.
-- [ ] Network parity for Prusa Connect, PrusaLink/WUI, OctoPrint-compatible API, TLS/proxy/custom-cert current behavior, downloads, transfers, SNTP, mDNS, metrics, and syslog.
-- [ ] Persistent config, journal/migration, EEPROM/NFC/internal flash, filesystem, settings import/export, credential, and resource revision parity.
-- [ ] Resource and localization generation/package parity for fonts, icons, translations, WUI, ESP blobs, puppy firmware, bootloader resources, and generated hashes.
-- [ ] Puppy/Dwarf/ModularBed/xBuddy Extension/MMU2/toolchanger/remote bed/chamber feature parity for affected printers.
-- [ ] Reference comparison gates for build artifacts, option matrix, generated assets, G-code behavior, simulator flows, PrusaLink/Connect responses, transfer behavior, config migrations, and safety errors.
-- [ ] Documented foreign-code boundary manifest for retained C/C++/ASM/vendor components.
+- [ ] `just build` builds one Bazel-native embedded Rust target for `MINI/BUDDY/STM32F407VG` and names its outputs; failure is nonzero.
+- [ ] The target is a real `no_std`/`no_main` Cortex-M4 image built by a pinned Bazel Rust toolchain with deliberate ABI selection.
+- [ ] ELF inspection proves ARM architecture, entry/vector placement, memory ranges, linked ownership, and absence of Phase 3 fixture content.
+- [ ] Bazel emits a genuine ELF, link map, bin, unsigned development BBF, and machine-readable lineage/provenance bundle.
+- [ ] The runtime drives MINI hotend heat off, bed heat off, X/Y/Z/E motor enables disabled, and fans to the documented safe state before nonessential work.
+- [ ] The runtime reaches a deterministic safe-ready state and remains quiescent with hazardous commands unavailable.
+- [ ] Panic, HardFault/unhandled exception, and watchdog expiry converge on safe outputs and an observable non-returning/reset path.
+- [ ] Mini404 boots the real image and independently verifies safe-ready, hazardous-output inhibition, fault convergence, and watchdog reset/re-entry.
+- [ ] Host tests cover the pure boot-state and watchdog-feed policy.
+- [ ] Retained startup/HAL/CMSIS/ASM/RTOS/C boundaries are declared and checked against the actual link.
+- [ ] CI repeats build, ELF/artifact inspection, host tests, simulator scenarios, and redacted evidence retention from a clean checkout.
+- [ ] Every output and evidence row is labeled development-only; physical safety, production cutover, and reference demotion remain blocked.
 
 ### Add After Validation (v1.x)
 
-These are useful after the parity cutover is credible, but they should not block v1 unless a phase discovers they are required for parity.
+- [ ] Same-host then cross-host reproducibility proof — add after artifact timestamps, paths, and provenance fields stabilize.
+- [ ] Enforced flash/RAM/stack budgets — add once the first real map establishes a defensible baseline.
+- [ ] Broader deterministic fault injection — add after the minimum panic/HardFault/watchdog scenarios are reliable.
+- [ ] Instrumented physical MINI safe-output smoke — add when board access, measurement procedure, and operator evidence inputs are available.
+- [ ] Explicit flash/debug facade — add when hardware iteration begins; keep it opt-in and development-only.
+- [ ] Normalized structural comparison with the C reference — add after Rust artifact facts are stable enough to avoid noisy comparisons.
 
-- [ ] Wider simulator coverage beyond the current MK4 noboot baseline - add after Bazel can produce all simulator inputs reliably.
-- [ ] Hardware-in-the-loop smoke matrix - add as soon as representative boards are available and core firmware boots.
-- [ ] Dependency inventory and update policy for retained vendor code - add after the foreign-code boundary manifest stabilizes.
-- [ ] Additional security hardening such as credential export policy or encryption-at-rest - add after compatibility and hardware assumptions are documented.
-- [ ] Expanded observability dashboards and performance telemetry - add after parity tests can detect baseline regressions.
-- [ ] Connect/WebSocket path cleanup or deprecation decisions - add only after current server behavior and protocol compatibility are validated.
+### Future Consideration (Later Milestones)
 
-### Future Consideration (v2+)
-
-- [ ] New printer UX/product features - defer because they obscure parity.
-- [ ] Multi-transfer or concurrent transfer redesign - defer because current single-slot semantics are a compatibility constraint.
-- [ ] Broad proxy authentication, enterprise TLS modes, or new cloud APIs - defer because current docs and code define narrower behavior.
-- [ ] Full Rust replacement of every vendor/upstream component - defer until behavior contracts, licensing, update cadence, and tests justify the churn.
-- [ ] New display resolutions or UI frameworks - defer unless required by a supported printer in the current matrix.
+- [ ] Additional printer/board/MCU targets — defer until the MINI vertical slice establishes reusable toolchain, boundary, and evidence patterns.
+- [ ] FreeRTOS/task orchestration and application services — defer until safe bare-metal/retained-runtime bring-up is trustworthy.
+- [ ] Printing, thermal control, motion planning, GUI, persistence, networking, Connect, PrusaLink, and transfers — these are parity work, not bring-up.
+- [ ] Full crash-dump and recovery compatibility — defer until the runtime can safely own storage and recovery paths.
+- [ ] Signed release candidate and installation flows — defer to an explicitly authorized release/cutover milestone with physical evidence.
+- [ ] Replacement of retained vendor/HAL/ASM components — replace boundary by boundary only when evidence shows replacement risk is lower than retention risk.
 
 ## Feature Prioritization Matrix
 
 | Feature | User Value | Implementation Cost | Priority |
-|---------|------------|---------------------|----------|
-| Supported printer/board/build/artifact matrix | HIGH | HIGH | P1 |
-| Bazel authoritative graph and `justfile` workflows | HIGH | HIGH | P1 |
-| STM32/HAL/FreeRTOS runtime shell | HIGH | HIGH | P1 |
-| Marlin printing core and Buddy bridge | HIGH | HIGH | P1 |
-| Safety, thermal, crash, selftest, and recovery behavior | HIGH | HIGH | P1 |
-| GUI parity across supported display classes | HIGH | HIGH | P1 |
-| Networking, Connect, PrusaLink/WUI, transfers, TLS, metrics | HIGH | HIGH | P1 |
-| Persistent config, migrations, filesystems, resources | HIGH | HIGH | P1 |
-| Puppy/MMU/toolchanger/remote-bed ecosystem | HIGH | HIGH | P1 |
-| Generated asset/codegen drift checks | HIGH | MEDIUM | P1 |
-| Reference comparison harness | HIGH | HIGH | P1 |
-| Typed domain model and Rust safety boundaries | HIGH | HIGH | P1 |
-| Known defect remediation with regression tests | HIGH | MEDIUM | P1 |
-| Wider simulator and hardware-in-loop coverage | HIGH | MEDIUM | P2 |
-| Dependency inventory/update policy | MEDIUM | MEDIUM | P2 |
-| Security hardening beyond current behavior | MEDIUM | HIGH | P2 |
-| Performance/observability dashboards | MEDIUM | MEDIUM | P2 |
-| New printer features | LOW for parity | HIGH | P3 |
-| Full vendor rewrite | LOW for parity | HIGH | P3 |
+| --- | --- | --- | --- |
+| Truthful `just`/Bazel commands | HIGH | MEDIUM | P1 |
+| Pinned cross-compiling Rust toolchain | HIGH | HIGH | P1 |
+| `no_std`/`no_main` MINI firmware target | HIGH | HIGH | P1 |
+| Linker/vector/memory ownership and ELF validation | HIGH | HIGH | P1 |
+| Genuine ELF/map/bin/unsigned BBF lineage | HIGH | HIGH | P1 |
+| Deterministic safe-boot state | HIGH | HIGH | P1 |
+| Earliest hazardous-output inhibition | HIGH | HIGH | P1 |
+| Panic/HardFault/default-handler convergence | HIGH | HIGH | P1 |
+| Watchdog healthy-service and expiry/re-entry proof | HIGH | HIGH | P1 |
+| Independent Mini404 safe-output observation | HIGH | HIGH | P1 |
+| Host boot/safety policy tests | HIGH | MEDIUM | P1 |
+| Explicit retained-boundary bill of materials | HIGH | MEDIUM | P1 |
+| Clean-checkout CI and retained redacted evidence | HIGH | HIGH | P1 |
+| Fail-closed non-hardware/non-production claims | HIGH | MEDIUM | P1 |
+| Byte reproducibility | MEDIUM | HIGH | P2 |
+| Memory and stack budgets | MEDIUM | MEDIUM | P2 |
+| Physical MINI safe-output smoke | HIGH | HIGH | P2 |
+| Expanded fault matrix | MEDIUM | HIGH | P2 |
+| Flash/debug facade | MEDIUM | MEDIUM | P2 |
+| Additional product targets | HIGH eventually | HIGH | P3 |
+| Printing/application parity | HIGH eventually | HIGH | P3 |
+| Production signing/cutover | HIGH eventually | HIGH | P3 |
 
 **Priority key:**
 
-- P1: Must have for v1 behavior-parity cutover
-- P2: Should have after core parity is demonstrable or where a phase proves it is necessary
-- P3: Future consideration; do not include in v1 parity scope
+- P1: Required for v1.4 acceptance
+- P2: Valuable after the first credible bring-up is stable
+- P3: Later parity, release, or cutover milestone
 
-## Competitor Feature Analysis
+## Baseline Approach Comparison
 
-For this brownfield rewrite, the "competitor" is the reference C/C++/CMake firmware. The Rust+Bazel replacement wins only by matching behavior while improving maintainability, testability, and build discipline.
+| Capability | Current C/C++/CMake Reference | Current Rust/Bazel Surface | Recommended v1.4 Approach |
+| --- | --- | --- | --- |
+| Firmware build | Produces supported production firmware through `utils/build.py` and CMake. | `build_firmware` prints the reference command by default; `rust_firmware` builds host libraries. | One real Bazel `rust_binary`/equivalent embedded target selected by the MINI platform. |
+| Startup/runtime | Mature STM32 startup, HAL, CMSIS, FreeRTOS, and application task graph. | Typed contracts describe retained surfaces; no Rust MCU entrypoint exists. | Small Rust-owned safe-boot state machine with explicitly retained minimum startup/ABI boundaries. |
+| Safety outputs | `hwio_safe_state()` turns heaters off, disables motors, and sets fans safe. | Pure Rust safety models classify the behavior but do not drive pins. | Implement the MINI safe-output adapter and verify its actual simulator-visible state before safe-ready. |
+| Fault/watchdog | Existing fatal/crash/watchdog code includes IWDG handling and hardware evidence boundaries. | Boundary contracts name the symbols and evidence classes only. | Minimum panic/HardFault/watchdog implementation with normal service, injected expiry, safe reset, and retained residual hardware proof. |
+| Artifacts | Real `.bin`, `.bbf`, `.dfu`, `.map`, and resources. | Phase 3 produces deterministic fixture package surfaces. | ELF/map/bin/unsigned dev BBF derived from one accepted Rust ELF, with hashes and non-production provenance. |
+| Simulator | Existing integration harness can launch Mini404 with a firmware kernel and script I/O. | Evidence contracts can ingest real rows, but default commands do not boot a Rust image. | Boot the new image directly, inspect modeled outputs, inject minimum faults, and publish scenario-specific evidence. |
+| CI | Jenkins/reference flows build production C/C++; GitHub evidence workflow emits evidence packets. | No GitHub job cross-builds and boots embedded Rust. | Clean-checkout cross-build + artifact inspection + host tests + real-image Mini404 job, retaining redacted artifacts even on failure. |
+| Claim boundary | Production reference behavior is real but separate cutover decisions are required. | Evidence tooling is deliberately fail-closed. | Reuse fail-closed statuses and preserve `pending-hardware`, production-cutover, and demotion boundaries. |
 
-| Feature | Reference Firmware | Risk if Missing | Our Approach |
-|---------|--------------------|-----------------|--------------|
-| Release build matrix | `utils/build.py`, `ProjectOptions.cmake`, and `CMakePresets.json` build supported printer/bootloader variants and products. | Users cannot install or compare release artifacts. | Encode the matrix in Bazel, expose `just` wrappers, and compare artifact metadata/resources against the reference. |
-| Print behavior | Marlin plus Buddy server/client bridge owns G-code, motion, planner, thermal, pause/resume/cancel, and state reporting. | Unsafe or visibly different printing. | Retain/wrap or port with strict request/event/state-machine tests and simulator/hardware gates. |
-| Local UI | `src/gui` provides screen stack, dialogs, menus, wizards, layouts, text fitting, translations, and print controls. | Printer feels broken even if motion works. | Port UI domain/state/layout logic with golden screen-flow tests and resolution-specific layout checks. |
-| Remote/local network control | `src/connect`, `lib/WUI`, `src/transfers`, and LwIP/mbedTLS expose Connect, PrusaLink, WUI, downloads, TLS, proxy, SNTP, mDNS, metrics, syslog. | Existing apps, cloud, slicers, and support workflows regress. | Preserve APIs and protocol traces; fix known custom-cert defect with targeted tests. |
-| Persistence/resources | Config store, journal, littlefs/FatFs, resource images, fonts, translations, WUI assets, ESP/puppy blobs, bootloader resources. | Settings loss, bad assets, failed bootload/update, missing localization. | Make codegen and image packaging hermetic in Bazel; add drift checks and migration tests. |
-| Auxiliary boards | Puppy, Dwarf, ModularBed, xBuddy Extension, MMU2, and toolchanger flows are built and flashed through the firmware/resource pipeline. | XL/iX/COREONE support is incomplete. | Treat auxiliary firmware and Modbus protocols as first-class Bazel targets with integration gates. |
-| Verification | Catch2, CTest, pytest simulator, blockdevice tests, Python binding tests, pre-commit/codegen hooks, Jenkins stages. | Big Bang cutover relies on hope. | Replace/port tests into Bazel/Rust equivalents and add reference comparison gates. |
+## Evidence and Confidence Assessment
+
+| Area | Confidence | Basis |
+| --- | --- | --- |
+| Current repository gap | HIGH | Direct execution and inspection of Bazel labels, `justfile`, `reference_contract.sh`, Rust crates, artifact packager, simulator harness, and CI workflow. |
+| Bare-metal Rust requirements | HIGH | Rust target documentation, Rust Reference, Embedded Rust Book, and `cortex-m-rt` documentation agree on `no_std`, entry/panic ownership, target triple, vector table, linker memory layout, and ELF inspection. |
+| STM32F407 target/watchdog facts | HIGH | Current ST datasheet identifies Cortex-M4 with single-precision FPU and describes IWDG as an independent-clock reset mechanism. |
+| Bazel toolchain and hermetic artifact expectations | HIGH | Current official `rules_rust` and Bazel documentation describe registered toolchains, Rust binary rules, declared outputs/actions, sandboxing, and reproducibility. |
+| Safe-output scope | HIGH | Direct reference implementation in `src/common/safe_state.cpp` and existing Phase 6/15/24 safety contracts. |
+| Exact Mini404 GPIO/watchdog probes | MEDIUM | The local harness proves real-kernel launch and script I/O, but the exact independent observation/fault-injection command set for the new minimal image must be confirmed during phase research. If Mini404 lacks a needed probe, add a narrow emulator trace hook or keep that row blocked; do not downgrade to self-report. |
 
 ## Sources
 
-- Local repository context: `.planning/PROJECT.md`
-- Local codebase map: `.planning/codebase/STACK.md`, `.planning/codebase/ARCHITECTURE.md`, `.planning/codebase/STRUCTURE.md`, `.planning/codebase/INTEGRATIONS.md`, `.planning/codebase/TESTING.md`, `.planning/codebase/CONCERNS.md`
-- Local build and option evidence: `ProjectOptions.cmake`, `CMakePresets.json`, `CMakeLists.txt`, `utils/build.py`, `utils/presets/presets.json`
-- Local runtime and feature evidence: `src/buddy`, `src/common`, `src/common/feature`, `src/feature`, `src/gui`, `src/connect`, `src/transfers`, `src/persistent_stores`, `src/resources`, `src/mmu2`, `src/puppies`, `src/puppy`, `lib/Marlin`, `lib/WUI`
-- Local verification evidence: `tests/unit`, `tests/integration`, `tests/blockdevice`, `.pre-commit-config.yaml`, `utils/holly/build-pr.jenkins`, `README.md`, `tests/unit/README.md`, `tests/integration/README.md`
-- External standards context: `https://raw.githubusercontent.com/bright-builds-llc/bright-builds-rules/05f8d7a6c9c2e157ec4f922a05273e72dab97676/standards/index.md`
-- External standards context: `https://raw.githubusercontent.com/bright-builds-llc/bright-builds-rules/05f8d7a6c9c2e157ec4f922a05273e72dab97676/standards/core/architecture.md`
-- External standards context: `https://raw.githubusercontent.com/bright-builds-llc/bright-builds-rules/05f8d7a6c9c2e157ec4f922a05273e72dab97676/standards/core/verification.md`
-- External standards context: `https://raw.githubusercontent.com/bright-builds-llc/bright-builds-rules/05f8d7a6c9c2e157ec4f922a05273e72dab97676/standards/core/testing.md`
-- External standards context: `https://raw.githubusercontent.com/bright-builds-llc/bright-builds-rules/05f8d7a6c9c2e157ec4f922a05273e72dab97676/standards/languages/rust.md`
+### Repository Sources (HIGH confidence)
 
-______________________________________________________________________
+- `.planning/PROJECT.md` and `.planning/STATE.md` — v1.4 goal, active requirements, and explicit no-cutover boundary.
+- `.planning/milestones/v1.3-REQUIREMENTS.md` and `.planning/milestones/v1.3-MILESTONE-AUDIT.md` — fail-closed evidence, separate demotion approval, and accepted non-local evidence limits.
+- `MODULE.bazel`, `.bazelrc`, `platforms/BUILD.bazel`, `tools/bazel/toolchains/BUILD.bazel`, and `tools/bazel/toolchains/reference_toolchain.bzl` — modeled platform and metadata-only toolchains.
+- `justfile`, `tools/bazel/reference_contract.sh`, and `tools/bazel/rust_workflow.sh` — current printed reference commands and host Rust workflow.
+- `tools/bazel/artifact_rules.bzl`, `tools/bazel/artifact_packager.py`, and `tools/bazel/fixtures/firmware_payloads/` — fixture artifact surfaces and reference-format wrapper behavior.
+- `rust/crates/runtime-adapter/src/startup.rs`, `rust/crates/runtime-adapter/src/panic_boundary.rs`, `rust/crates/domain/src/safety.rs`, and the crate manifests — typed contracts without an embedded binary runtime.
+- `src/common/safe_state.cpp`, `src/common/wdt.cpp`, `src/buddy/main.cpp`, and `src/buddy/startup_tasks.cpp` — reference safe outputs, watchdog, and fatal startup behavior.
+- `utils/simulator/simulator.py`, `tests/integration/test_safety.py`, `tools/bazel/manifests/phase14_simulator_evidence_contract.json`, `tools/bazel/manifests/phase23_simulator_evidence_execution_contract.json`, and `tools/bazel/manifests/phase24_hardware_media_safety_evidence_execution_contract.json` — simulator capabilities and simulator-versus-hardware claim boundaries.
+- `.github/workflows/ci-evidence.yml` — current CI evidence production without an embedded Rust build/run.
 
-*Feature research for: behavior-parity Rust+Bazel firmware rewrite*
-*Researched: 2026-06-02*
+### Current Official Ecosystem Sources
+
+- [Rust bare-metal Armv7E-M targets](https://doc.rust-lang.org/nightly/rustc/platform-support/thumbv7em-none-eabi.html) — `thumbv7em-none-eabi`/`thumbv7em-none-eabihf`, Cortex-M4F, FPU and ABI details (HIGH).
+- [Rust Reference: panic handlers](https://doc.rust-lang.org/stable/reference/panic.html) — a `no_std` binary requires one non-returning panic handler (HIGH).
+- [Embedded Rust Book: `no_std`](https://doc.rust-lang.org/stable/embedded-book/intro/no-std.html) — bare-metal firmware runtime and allocation constraints (HIGH).
+- [Embedded Rust Book: QEMU bring-up](https://docs.rust-embedded.org/book/start/qemu.html) — `no_std`/`no_main`, target memory layout, cross-compilation, real ELF execution, and emulator/CPU selection (HIGH).
+- [Embedded Rust Book: panicking](https://docs.rust-embedded.org/book/start/panicking.html) and [exceptions](https://docs.rust-embedded.org/book/start/exceptions.html) — explicit panic and HardFault/default-handler behavior (HIGH).
+- [`cortex-m-rt` documentation](https://docs.rs/cortex-m-rt/latest/cortex_m_rt/) — vector table, reset/exception symbols, linker scripts, memory sections, ELF inspection, VTOR, and the pre-init safety limitation (HIGH).
+- [STM32F407VG datasheet](https://www.st.com/resource/en/datasheet/stm32f407vg.pdf) — Cortex-M4 with single-precision FPU, memory/peripheral facts, and independent/window watchdog behavior (HIGH; DS8626 Rev 12, March 2026).
+- [`rules_rust` setup](https://bazelbuild.github.io/rules_rust/) and [`rust_binary` rules](https://bazelbuild.github.io/rules_rust/rust.html) — current Bzlmod dependency/toolchain configuration and output-producing Rust rules (HIGH).
+- [`rules_rust` custom toolchains](https://bazelbuild.github.io/rules_rust/rust_toolchains.html) — target triples, linker selection, and registered platform-compatible toolchains (HIGH).
+- [Bazel hermeticity](https://bazel.build/concepts/hermeticity) and [remote caching](https://bazel.build/remote/caching) — declared inputs/outputs, pinned tools, sandboxing, and repeat-build hash comparison (HIGH).
+- [Upstream Prusa-Firmware-Buddy](https://github.com/prusa3d/Prusa-Firmware-Buddy) — supported product/build context and C/C++ reference implementation (MEDIUM for fast-moving upstream state; local checkout remains authoritative for v1.4 planning).
+
+***
+
+*Feature research for: Bazel-native Rust MINI safe firmware bring-up*
+*Researched: 2026-08-02*

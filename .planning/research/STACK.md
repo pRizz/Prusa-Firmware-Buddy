@@ -1,250 +1,198 @@
 # Stack Research
 
-**Domain:** Rust rewrite of STM32/FreeRTOS/Marlin-style 3D printer firmware with Bazel as the authoritative build system
-**Researched:** 2026-06-02
-**Confidence:** HIGH for current tool versions and official target support; MEDIUM for migration sequencing choices because they combine official facts with repository-specific architecture evidence
+**Domain:** Bazel-native Rust bring-up for the Prusa MINI Buddy board (STM32F407VG)
+**Milestone:** v1.4 Bazel-Native Rust Firmware Bring-Up
+**Researched:** 2026-08-02
+**Confidence:** HIGH for the target ABI, repository integration points, and published Bazel rules; MEDIUM for the final-link rule shape until a real ELF proves the mixed Rust/ASM link
+
+## Recommendation in One Sentence
+
+Pin Bazel 9.2.0, `rules_rust` 0.71.3, Rust 1.85.0, `rules_cc` 0.2.22, and the repository's existing Arm GNU 13.2.Rel1 toolchain; build one `thumbv7em-none-eabihf` MINI image from a `no_std` Rust crate plus the retained STM32F407 startup assembly and boot linker script, then derive genuine ELF/map/BIN/unsigned-development-BBF artifacts and run them through the existing Mini404 0.9.10 pytest evidence path.
+
+This is intentionally a bring-up stack, not the final Rust HAL/runtime stack. It changes build ownership and introduces a real Rust firmware entry point without simultaneously replacing startup, the linker layout, FreeRTOS, the STM32 HAL, packaging, or the simulator.
 
 ## Recommended Stack
 
 ### Core Technologies
 
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Bazel | 9.1.0 | Authoritative build, test, packaging, generation, and toolchain graph | Current Bazel release is a 9.x LTS release. Big Bang plus behavior parity needs one graph for Rust, retained C/ASM, generated resources, simulator tests, and firmware artifacts. |
-| Bzlmod / `MODULE.bazel` | Bazel 9 native | External dependency model | Use Bzlmod from the start. It is the current documented external dependency flow and matches rules_rust and Bazel Central Registry installation snippets. |
-| rules_rust | 0.70.0 | Bazel Rust rules, Rust toolchains, `rust_binary`, `rust_library`, `rust_test`, crate integration | Current rules_rust release in the Bazel Central Registry. Release notes include Bazel 9 compatibility work and embedded-relevant improvements such as `thumbv7em-none-eabihf` target support and `rust_objcopy` integration. |
-| Rust | 1.96.0 stable | Firmware and host Rust compiler | Current stable Rust channel as of 2026-06-02. Use edition 2024 for new crates and explicitly register this version through rules_rust instead of inheriting a developer-local toolchain. |
-| Rust `no_std` | Rust 1.96.0 | Firmware crate environment | Bare-metal firmware should default to `#![no_std]`; `std` stays limited to host tools, tests, simulator helpers, and build-time generators. |
-| Rust target triples | Rust 1.96.0 official target list | Cortex-M cross compilation | Use `thumbv7em-none-eabihf` for STM32F4/M4F boards, `thumbv6m-none-eabi` for STM32G0/M0+ boards, and `thumbv8m.main-none-eabi` or `thumbv8m.main-none-eabihf` for STM32H5/M33 boards depending on the exact FPU/ABI requirement. |
-| rules_cc | 0.2.19 | Retained C/ASM build support and ARM C toolchain integration | Current Bazel Central Registry version. The rewrite still needs C/ASM for STM32 startup/linker pieces and retained HAL/CMSIS/FreeRTOS/LwIP/mbedTLS/FatFs/littlefs/TinyUSB code during parity migration. |
-| ARM GNU / ST C toolchain | Pin from repo bootstrap, currently GCC Arm None Eabi 13.2.1 in codebase map | C/ASM compilation and linking support for retained firmware code | Do not let CMake own this. Register the ARM toolchain in Bazel and make retained C a first-class Bazel input. Existing bootstrap artifacts can seed the pin, but Bazel should be the source of truth. |
-| FreeRTOS | Retain current project version initially | Runtime scheduler and task primitives | Behavior parity is the chosen migration strategy. Replacing the scheduler while rewriting language/build system would multiply risk across GUI, networking, transfers, Marlin-style loops, and motion/thermal timing. Wrap it in Rust adapters first. |
-| STM32 HAL/CMSIS C stack | Retain current project/vendor versions initially | MCU startup, registers, clocks, interrupts, peripheral access | Keep exact board behavior during the Big Bang rewrite. Introduce Rust traits and typed adapters at boundaries before replacing vendor C peripheral code. |
-| just | 1.51.0 | Developer command entrypoint | Use `just` as a small wrapper around Bazel commands and repo bootstrap checks. Keep build truth in Bazel/Starlark, not in shell recipe bodies. |
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| Bazel | 9.2.0, pinned in `.bazelversion` | Authoritative build, link, artifact, and test graph | This is the installed repository-era Bazel and an official 9.x LTS release. Pinning removes the current host-dependent Bazel version. |
+| Bzlmod | Bazel 9.2.0 native | Resolve Bazel rules and host toolchains | `MODULE.bazel` already exists. Use its lockfile as the external-dependency record; do not add WORKSPACE-era parallel resolution. |
+| `rules_rust` | 0.71.3 | Register Rust 1.85.0 and compile the embedded crate | This is the latest published BCR release at research time and is tested with Bazel 7/8/9. Its toolchain extension accepts exact Rust versions and extra target triples. |
+| Rust | 1.85.0 stable, edition 2024 | Compile firmware and existing workspace crates | `Cargo.toml` already declares `rust-version = "1.85"` and edition 2024. Matching that floor avoids an unrelated compiler upgrade during first firmware bring-up. No nightly or `build-std` is required. |
+| Rust target | `thumbv7em-none-eabihf` | STM32F407VG machine code | The STM32F407 is Cortex-M4F and the current CMake flags use FPv4-SP-D16 with the hard-float ABI. Rust documents this exact target for Cortex-M4F/M7F with hardware floating point. |
+| `rules_cc` | 0.2.22 | Compile retained startup ASM and provide the Arm linker toolchain | It is the current BCR release and is tested on Bazel 9. A direct dependency is appropriate because this milestone loads its C/C++ toolchain APIs rather than relying on a transitive version. |
+| Arm GNU Toolchain | 13.2.Rel1 (`13.2.1` in `utils/bootstrap.py`) | Assemble startup, perform the final link, emit map/BIN, inspect ELF | Reuse the exact reference toolchain and flags for the first link. An opportunistic upgrade would add code-generation and ABI drift while the build boundary is already changing. |
+| `rules_python` | 2.2.0 | Run `utils/pack_fw.py` and existing pytest integration tooling under Bazel | Current BCR release tested on Bazel 9. Python remains an implementation dependency of the reference BBF and simulator paths, but Bazel owns invocation and outputs. |
+| Mini404 | 0.9.10, repository pin | MINI simulator evidence | This is the emulator already bootstrapped and understood by the integration/evidence scripts. Replacing the simulator would make bring-up failures harder to attribute. |
+| `just` | Repository-required facade | Stable developer commands | Keep recipes thin: `just build`, `just test`, and the bring-up evidence recipe must call real Bazel labels and propagate failures. |
 
-### Supporting Libraries
+### Firmware Inputs and Supporting Code
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| `cortex-m` | 0.7.7 | Low-level Cortex-M intrinsics, interrupt masking, assembly helpers | Use in board/runtime crates where Rust code needs CPU-level operations. Keep direct use out of pure domain crates. |
-| `cortex-m-rt` | 0.7.5 | Minimal Cortex-M startup/runtime support | Use only for board personalities where Rust owns reset/startup. If retained vendor startup remains authoritative, keep this optional and avoid two competing startup paths. |
-| `embedded-hal` | 1.0.0 | Hardware abstraction traits | Use for Rust-facing driver and adapter boundaries. New Rust code should target 1.0.0 traits, not legacy `embedded-hal` 0.2 APIs. |
-| `embedded-io` | 0.7.1 | Byte-stream traits for embedded environments | Use for serial, socket-like, transfer, file, and test-double boundaries where byte I/O abstractions help decouple retained C libraries from pure Rust logic. |
-| `embedded-storage` | 0.3.1 | Storage abstraction traits | Use at flash/storage adapter edges where it clarifies EEPROM, flash, and persistent-store responsibilities. Keep product-specific persistence invariants in domain types. |
-| `critical-section` | 1.2.0 | Cross-platform critical-section abstraction | Use for shared embedded crates that need critical sections without hard-coding a FreeRTOS or Cortex-M implementation. |
-| `heapless` | 0.9.3 | Fixed-capacity collections and strings | Use for firmware queues, buffers, parser state, command metadata, and UI/Connect message structures that must not allocate dynamically. |
-| `static_cell` | 2.1.1 | Static allocation with runtime initialization | Use for singleton peripherals, task resources, and long-lived firmware state when ownership must be explicit without heap allocation. |
-| `defmt` | 1.1.0 | Compact embedded logging | Use in debug/probe firmware profiles and low-level bring-up. Do not replace production logging/syslog behavior until parity requirements approve it. |
-| `defmt-rtt` | 1.2.0 | RTT transport for defmt logs | Use with debug probe configurations, not as the only product logging path. |
-| `panic-probe` | 1.0.0 | Probe-friendly panic handler | Use for probe/debug builds. Production panic policy should be mapped to existing watchdog/reboot/error-reporting behavior. |
-| `rtt-target` | 0.6.2 | RTT target-side I/O | Use for optional bring-up diagnostics when raw RTT channels are needed outside defmt. |
-| `probe-rs` | 0.31.0 | Host flashing/debugging/probe tooling | Use as the preferred host-side probe tool for Rust debug flows. Keep firmware flashing/package validation Bazel-owned. |
-| rules_python | 2.0.2 | Python tools and simulator/parity test wrapping | Use to bring existing Python generators, simulator tests, and pytest-style parity checks under Bazel. |
-| rules_pkg | 1.2.0 | Build firmware delivery artifacts | Use for Bazel-owned packaging steps where it fits; keep `.bin`, `.bbf`, `.dfu`, map-file, and metadata production in the Bazel graph even when custom rules are needed. |
+| Input | Version | Purpose | When to Use |
+|------|---------|---------|-------------|
+| Rust `core` | Rust 1.85.0 target component | Allocation-free language/runtime primitives | Use everywhere in the embedded image. Do not introduce `std` or `alloc` in this milestone. |
+| `buddy-domain`, `buddy-application` | Workspace 0.1.0 | Existing safe domain/application seams | Link only behavior needed by the safe-boot slice; preserve host `rust_test` coverage. |
+| `buddy-board-adapter` | Workspace 0.1.0 | Sole audited unsafe/MMIO boundary | Put volatile GPIO/watchdog access or narrow retained-C FFI here. Keep domain, application, and runtime crates `unsafe_code = "forbid"`. |
+| `buddy-runtime-adapter` | Workspace 0.1.0 | Startup, linker, panic, and watchdog contracts | Use its existing typed surfaces to describe the safe parked state; do not boot the full scheduler merely to prove the image. |
+| `src/device/stm32f4/startup/` | Retained repository code | Reset vector, vector table, RAM initialization | Compile exactly one MINI-compatible startup assembly source. The retained-code manifest already defers replacement until simulator and hardware evidence exist. |
+| `stm32f407vg_boot.ld` | Retained repository code | Bootloader-aware memory layout | Make this the development BBF default: FLASH starts at `0x08020200` with 895 KiB, RAM is 128 KiB, and CCMRAM is 64 KiB. |
+| `stm32f407vg.ld` | Retained repository code | Direct/no-boot simulator variant | Expose only as a separate explicit Bazel label/config when Mini404 requires a raw image at `0x08000000`; never select it implicitly. |
+| `utils/pack_fw.py --no-sign` | Existing reference implementation | Produce development BBF | Reuse the real BBF encoder with Bazel-declared metadata and outputs. A missing Python dependency must fail as bootstrap-required, never fall back to a fixture package. |
 
-### Development Tools
+No third-party Rust crates are needed for this milestone. In particular, direct volatile access can remain in the existing narrow board-adapter unsafe boundary; adding a HAL/runtime crate now would expand the proof surface without helping establish a truthful cross-compiled image.
 
-| Tool | Version | Purpose | Why |
-|------|---------|---------|-----|
-| `rustfmt` | Rust 1.96.0 component | Formatting | Required by Bright Builds Rust verification. Run through Bazel/just, not ad hoc editor state. |
-| Clippy | Rust 1.96.0 component | Rust linting | Required for Rust code quality. Gate warning-free pure/core crates early. |
-| `rust-src` | Rust 1.96.0 component | Core/std source for cross targets and tooling | Needed by many `no_std` cross-compilation and analysis flows. Register it hermetically through the toolchain. |
-| `llvm-tools-preview` | Rust 1.96.0 component | Rust-side objcopy/size/nm workflows | Prefer rules_rust-integrated tools where possible; use GNU ARM tools only where required by existing firmware artifact parity. |
-| `bazelisk` or pinned Bazel binary | Bazel 9.1.0 | Local Bazel version enforcement | Store `.bazelversion` with `9.1.0`. Developers can use Bazelisk, but the repo pin is authoritative. |
-| `just` | 1.51.0 | Human command facade | Standardize `just build`, `just test`, `just fmt`, `just clippy`, `just package`, and `just parity` as small wrappers. |
-
-## Installation
-
-Recommended initial Bazel module shape:
+### Required Toolchain Configuration
 
 ```starlark
-module(name = "prusa_firmware_buddy_rust")
+module(name = "prusa_firmware_buddy")
 
-bazel_dep(name = "rules_rust", version = "0.70.0")
-bazel_dep(name = "rules_rust_bindgen", version = "0.70.0")
-bazel_dep(name = "rules_cc", version = "0.2.19")
-bazel_dep(name = "rules_python", version = "2.0.2")
-bazel_dep(name = "rules_pkg", version = "1.2.0")
+bazel_dep(name = "rules_rust", version = "0.71.3")
+bazel_dep(name = "rules_cc", version = "0.2.22")
+bazel_dep(name = "rules_python", version = "2.2.0")
 
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 rust.toolchain(
     edition = "2024",
-    versions = ["1.96.0"],
+    extra_target_triples = ["thumbv7em-none-eabihf"],
+    versions = ["1.85.0"],
 )
 use_repo(rust, "rust_toolchains")
+register_toolchains("@rust_toolchains//:all")
 ```
 
-Recommended Rust dependency set for the first firmware graph:
+The Arm toolchain must be a checksum-pinned Bazel repository/toolchain, not a lookup on `PATH` and not an undeclared read from `.dependencies`. Preserve these target flags from the reference build:
 
-```toml
-[dependencies]
-cortex-m = "0.7.7"
-cortex-m-rt = { version = "0.7.5", optional = true }
-critical-section = "1.2.0"
-embedded-hal = "1.0.0"
-embedded-io = "0.7.1"
-embedded-storage = "0.3.1"
-heapless = "0.9.3"
-static_cell = "2.1.1"
-defmt = { version = "1.1.0", optional = true }
-defmt-rtt = { version = "1.2.0", optional = true }
-panic-probe = { version = "1.0.0", optional = true }
-rtt-target = { version = "0.6.2", optional = true }
-
-[features]
-probe-debug = ["dep:defmt", "dep:defmt-rtt", "dep:panic-probe", "dep:rtt-target"]
+```text
+-mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16
+-ffunction-sections -fdata-sections
+-Wl,--gc-sections -Wl,--print-memory-usage
 ```
 
-Use rules_rust crate integration to materialize these into Bazel targets. Cargo may remain a metadata input for crate resolution, but Cargo must not become the authoritative build, test, feature, or packaging entrypoint.
+Use `panic=abort`, no unwinding, no default allocator, and no hosted startup. The final link must use the Arm GCC driver so retained ASM/native objects, Rust hard-float objects, the linker script, and libgcc conventions share one explicit ABI boundary.
+
+## Bazel Target and Artifact Pattern
+
+Use a small purpose-built Starlark firmware image rule rather than stretching the existing fixture-oriented Phase 3 macro:
+
+```text
+rules_rust firmware crate/archive
+            + retained startup cc/asm target
+            + stm32f407vg_boot.ld
+            + Arm GNU linker toolchain
+                         |
+                         v
+                 declared ELF + linker MAP
+                         |
+           arm-none-eabi-objcopy -O binary
+                         |
+                         v
+                        BIN
+                         |
+            utils/pack_fw.py --no-sign
+                         |
+                         v
+             development-only unsigned BBF
+```
+
+The final-link action must declare both `.elf` and `.map`; a post-link text dump named `.map` is not equivalent. The ELF should remain unstripped for inspection. Generate `.bin` with the same Arm GNU `objcopy`, and validate all outputs with `readelf`, `nm`, and `size` from that pinned toolchain. A provenance manifest should record SHA-256, Bazel/Rust/Arm tool versions, target triple, linker script, boot mode, and signing mode.
+
+Required structural checks before simulator execution:
+
+- ELF machine is ARM, entry is `Reset_Handler`, and hard-float attributes match the toolchain contract.
+- `.isr_vector` begins at the selected FLASH origin; `.data`, `.bss`, stack, RAM, and CCMRAM stay within the linker-script regions.
+- No undefined hosted/syscall, allocator, unwinding, or semihosting symbols are present.
+- The BIN is derived from the ELF, the BBF contains that BIN, and the BBF is marked unsigned/development-only.
+- Map and size budgets are real linker evidence, not fixture or bootstrap-marker output.
+
+## Integration Points
+
+| Existing Surface | Required Change | Contract to Preserve |
+|------------------|-----------------|----------------------|
+| `MODULE.bazel`, `.bazelrc`, `platforms/BUILD.bazel` | Replace descriptive toolchain registrations with real Rust/Arm toolchains for `//platforms:mini_buddy_stm32f407vg` | Existing platform/config label remains the selection point. |
+| `tools/bazel/toolchains/reference_toolchain.bzl` | Keep reference-only labels separate; add real toolchain definitions rather than relabeling fake targets as executable | Truthful evidence classification. |
+| `justfile` and `//tools/bazel:build_firmware` | Route to the real MINI image label; remove the shell script that only prints reference behavior | `just build` either produces real artifacts or fails. |
+| `tools/bazel/artifact_rules.bzl` / packager helpers | Add a real-image path that accepts the Bazel ELF/BIN; disable fixture/bootstrap fallback for v1.4 success | Existing BBF format and unsigned-local policy. |
+| `utils/pack_fw.py` | Invoke via a declared Python target with `--no-sign` and MINI metadata derived from the Bazel product profile | BBF format remains reference-compatible; no private key enters the graph. |
+| `tests/integration/conftest.py` and Phase 14/23 evidence tooling | Pass the real BIN and adjacent real BBF plus the pinned `qemu-system-buddy` | Existing launch/readiness/timeout and evidence schemas. |
+| `.github/workflows/ci-evidence.yml` | Build, inspect, and simulate the exact real target on canonical Linux; upload ELF/MAP/BIN/BBF and evidence manifests | Simulator claims remain CI-verifiable and artifact-backed. |
+
+The safe-boot firmware should do the minimum observable work: enter through the retained reset vector, establish hazardous-output inhibit through the board adapter, expose a deterministic marker/state for the simulator, service or deliberately test watchdog behavior, and park. Full HAL, FreeRTOS, Marlin, UI, networking, and storage integration belongs after this first image is reproducible.
 
 ## Alternatives Considered
 
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| Build authority | Bazel 9.1.0 with Bzlmod | Cargo workspace plus CMake or `xtask` | Cargo is strong for Rust-only work, but this firmware needs one graph for Rust, C/ASM, generated assets, simulator tests, and firmware packaging. |
-| Rust Bazel rules | rules_rust 0.70.0 | Handwritten `genrule` calls to `rustc` | Handwritten rustc actions lose toolchain semantics, dependency metadata, test support, and future IDE/build integration. |
-| Runtime | Retained FreeRTOS with Rust adapters | Embassy or RTIC as primary runtime | Good greenfield runtimes, but adopting them now would change scheduling and interrupt/task semantics during a behavior-parity Big Bang rewrite. Consider later only after parity tests prove timing-sensitive behavior. |
-| MCU/HAL layer | Retained STM32 HAL/CMSIS C with Rust wrappers | Community STM32 HAL crates as the foundation | Community HAL crates are useful, but this project already has board-specific vendor behavior. Replace peripheral areas only after a board-by-board parity proof. |
-| Hardware traits | `embedded-hal` 1.0.0 | `embedded-hal` 0.2.x | 1.0.0 is the current stable trait set. Legacy drivers should be shimmed at boundaries instead of pulling old traits into new code. |
-| Logging/debug | Existing production logging plus optional defmt/probe-rs debug profile | Replace product logging wholesale with defmt | defmt is excellent for constrained debug logs, but production logging is externally visible behavior and should not change until parity requirements approve it. |
-| Packaging | Bazel-owned firmware package rules, with rules_pkg where it fits | Shell scripts outside Bazel | Artifact identity, map files, `.bin`, `.bbf`, `.dfu`, metadata, and signing/checksum steps must be reproducible and testable in the graph. |
+| Recommended | Alternative | When to Use Alternative |
+|-------------|-------------|-------------------------|
+| Retain startup ASM and linker script | `cortex-m-rt` owns reset/vector/link layout | After the retained-code boundary is deliberately retired and simulator plus hardware evidence covers reset, interrupts, bootloader offset, RAM initialization, and fault behavior. |
+| Arm GNU 13.2.Rel1 final linker/tools | `rust-lld` plus LLVM tools | After ELF sections, map semantics, native ABI, BBF input, and simulator/hardware behavior have a passing baseline. |
+| Existing Mini404 0.9.10 | Renode, stock QEMU, or a new simulator | Only if Mini404 cannot model the required MINI boot/watchdog observation and the replacement has an explicit evidence mapping. |
+| Existing Python BBF encoder | New Rust BBF encoder | After byte/structural compatibility tests exist and packaging replacement is itself a scoped milestone. |
+| Rust 1.85.0 | Current stable Rust | Upgrade separately once the real image is reproducible; do not mix compiler migration with first-link diagnosis. |
 
-## What NOT to Use
+## What NOT to Add in v1.4
 
 | Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| CMake as the authoritative build during the rewrite | Conflicts with the selected Bazel Primary Now migration and makes parity artifacts depend on two graphs | Bazel owns the graph; CMake can be read as source material only. |
-| Cargo as the product build authority | Cannot directly own retained C/ASM/vendor libraries, generated firmware resources, and product packages as one embedded graph | rules_rust and Bzlmod with Cargo metadata as an input, not the driver. |
-| Scheduler replacement in the first rewrite phase | Changes runtime behavior while the language, architecture, and build system are already changing | Keep FreeRTOS, wrap it, then evaluate scheduler alternatives after parity. |
-| Runtime-wide heap as the default firmware model | Hides memory budgets and failure modes on constrained MCUs | Prefer `heapless`, `static_cell`, explicit arenas, and typed capacities. |
-| Raw FFI spread through domain code | Makes illegal states, lifetimes, task ownership, and error handling hard to reason about | Put FFI in thin adapter crates and expose typed, fallible Rust APIs. |
-| Generated `#define`-style Rust constants as the main configuration model | Recreates the current feature-gate complexity without stronger invariants | Generate typed board/printer/config models and parse at Bazel-owned boundaries. |
-| `embedded-hal` 0.2.x in new public APIs | Locks new code to legacy traits | Use `embedded-hal` 1.0.0 and isolate legacy drivers behind shims. |
-| `probe-run` as the main debug tool | probe-rs is the current host-side project/tooling direction | Use `probe-rs` directly for probe workflows. |
+|------|-----|-------------|
+| `cortex-m-rt` or a Rust vector table | Creates two startup authorities and bypasses the retained-code decision | Existing STM32F407 startup ASM. |
+| `stm32f4xx-hal`, Embassy, or RTIC | Replaces peripheral and scheduling behavior before the build/boot proof exists | Existing board/runtime adapter seam and narrowly retained code. |
+| `cortex-m`, `critical-section`, `heapless`, `defmt`, `panic-probe`, `probe-rs` | Useful later, but none is necessary to link, safely park, package, or simulate the first image | `core`, a tiny panic handler, existing logging/evidence surfaces, and Arm GNU inspection tools. |
+| `crate_universe` | There are no external Rust crates to resolve in this slice | First-party `rust_library`/firmware targets only. |
+| `rules_pkg` | BBF is a firmware-specific format already encoded by the reference script | Bazel action around `utils/pack_fw.py --no-sign`. |
+| CMake/Cargo product-build fallback | Would let the milestone pass without Bazel owning the real image | Bazel must own compile, link, artifacts, simulator inputs, and CI evidence. |
+| Synthetic payloads, bootstrap-marker BBFs, or fake map files | Repeat the current descriptive facade and produce false progress | Fail closed unless all real outputs are produced and validated. |
+| Release signing keys | The milestone requests a development BBF, not a release artifact | Explicit unsigned-local metadata and `--no-sign`. |
 
-## Stack Patterns by Variant
+## Version Compatibility and Risks
 
-### Pure Firmware Core
+| Area | Decision / Risk | Mitigation |
+|------|-----------------|------------|
+| Bazel / rules | Bazel 9.2.0 + `rules_rust` 0.71.3 + `rules_cc` 0.2.22 + `rules_python` 2.2.0 | Pin versions and commit `MODULE.bazel.lock`; all three rule releases declare Bazel 9 support. |
+| Rust edition | Edition 2024 requires Rust 1.85+ | Pin exactly 1.85.0 in the rules_rust extension and keep `Cargo.toml` aligned. |
+| FPU ABI | `eabihf` Rust objects must not mix with soft-float native objects | Preserve `-mfloat-abi=hard -mfpu=fpv4-sp-d16`; inspect ELF attributes and fail on mismatch. The startup file's `.fpu softvfp` directive is acceptable only because it contains no floating-point ABI boundary; verify this in the real link. |
+| Memory layout | Boot and no-boot linker scripts have different FLASH origins and sizes | Separate Bazel labels/configs; default the development BBF to the boot script and assert section addresses. |
+| Rust sections/symbols | Orphan unwind, vector, panic, or allocator sections can silently bloat or break startup | `panic=abort`, no allocator, link-map allowlist/budget checks, and undefined-symbol checks. |
+| Genuine map output | `rust_binary` alone does not provide a declared paired GNU linker map | Make the final firmware link a dedicated Starlark action with ELF and map outputs; do not accept a side effect or renamed `objdump`. |
+| Arm toolchain hosts | Repository-pinned 13.2.Rel1 has Linux x86_64/aarch64 and Windows archives, but the current Darwin URL is x86_64-only and ends in the suspicious `.tar.xzg` suffix | Make Linux CI canonical. Fail with an actionable unsupported-host message on Apple silicon unless a verified Rosetta/x86_64 archive path is supplied. Do not silently use Arm GNU 15.x on one host. |
+| Mini404 host runtime | Prior local evidence found a missing `libfdt` dynamic library on macOS | Run canonical simulator evidence on pinned Linux; add a bootstrap preflight that reports missing host libraries before tests. |
+| Simulator fidelity | Mini404 evidence is not hardware proof | Treat v1.4 as build/simulator bring-up. Preserve explicit hardware-required evidence for later cutover phases. |
+| Unsigned BBF confusion | A valid development BBF can be mistaken for releasable firmware | Include `signing_mode=unsigned-local`, a development artifact name, and a CI policy that forbids release-candidate classification. |
 
-Use `std`-enabled host builds for fast unit tests and `no_std` firmware builds for target integration. This is where most behavior parity tests should live.
+## Verification Commands the Stack Must Enable
 
-Recommended crates/modules:
-
-```text
-crates/firmware_core/
-  src/lib.rs
-  src/gcode.rs
-  src/gcode/
-  src/motion.rs
-  src/motion/
-  src/thermal.rs
-  src/thermal/
-  src/config.rs
-  src/config/
+```bash
+bazel build --config=mini //rust/firmware/mini:development_artifacts
+bazel test //rust/...
+bazel test --config=mini //tests/integration:mini_safe_boot_simulator
+just build
+just test
 ```
 
-Rules:
-
-- Model invariants with newtypes and enums: temperature ranges, axis IDs, planner states, fan PWM limits, bed mesh dimensions, printer model capabilities, transfer states, and persistent-store schema versions.
-- Use `foo.rs` plus `foo/` directories for multi-file modules.
-- Prefer `let...else` guards for early exits.
-- Prefix optional values with `maybe_`.
-- Keep hardware, FreeRTOS, filesystem, networking, and UI side effects out of this layer.
-- Add Bazel `rust_test` targets for pure logic first; unit tests should use Arrange, Act, Assert comments when they improve clarity.
-
-### Board and Runtime Adapter Layer
-
-Use one adapter boundary per external subsystem:
-
-```text
-crates/firmware_board/
-crates/firmware_hal_stm32/
-crates/firmware_rtos_freertos/
-crates/firmware_fs/
-crates/firmware_net/
-crates/firmware_usb/
-crates/firmware_ui_adapter/
-```
-
-Rules:
-
-- Retained C libraries are `cc_library` targets.
-- Rust wrappers are `rust_library` targets with minimal `unsafe` modules.
-- FFI types do not cross into pure core crates.
-- Each adapter parses C/global/raw state into typed Rust values at the boundary.
-- Adapter APIs should return typed errors; do not swallow C status codes.
-
-### Firmware Images
-
-Use Bazel platforms and configuration settings for printer/board variants:
-
-```text
-//platforms/printer:mk4_xbuddy
-//platforms/printer:mk3_5_xbuddy
-//platforms/printer:mini_buddy
-//platforms/printer:xl_xbuddy
-```
-
-Each image target should declare:
-
-- Board target triple.
-- Linker script.
-- Memory layout.
-- Startup ownership: retained vendor startup or Rust `cortex-m-rt`, not both.
-- Feature set as typed generated Rust inputs.
-- Artifact outputs: ELF, BIN, DFU where applicable, BBF package, map file, size report, manifest/checksums.
-
-### Host Tools and Simulator Tests
-
-Use `std` Rust and Python under Bazel:
-
-- `rust_binary` for new deterministic generators and package tools.
-- `py_test` or Bazel-wrapped pytest for existing simulator/parity flows.
-- `rust_test` for host-only pure firmware logic.
-- `sh_test` only for thin smoke checks when a native rule is not practical.
-
-## Version Compatibility
-
-| Area | Recommendation | Notes |
-|------|----------------|-------|
-| Bazel / rules_rust | Bazel 9.1.0 with rules_rust 0.70.0 | Bazel 9 removed old C++ provider compatibility paths that can break older rules. Pin current rulesets and avoid stale transitive rule versions. |
-| Rust / rules_rust | Rust 1.96.0 registered explicitly through rules_rust | rules_rust 0.70.0 has an MSRV below this. Register stable Rust rather than using the rules default toolchain version. |
-| Rust editions | Edition 2024 for new crates | Avoid edition drift across the rewrite unless a third-party crate forces a narrower choice. |
-| Cortex-M targets | Official Rust target triples listed above | Confirm exact FPU ABI per board before final platform definitions. The F4/M4F case should use hardfloat; H5/M33 must be verified per MCU/board. |
-| `no_std` and allocation | `no_std` by default; optional `alloc` only with an explicit memory budget | `libcore` is the base environment for firmware. Use `std` only in host/test/build tools. |
-| `embedded-hal` | 1.0.0 for new APIs | Isolate any driver requiring 0.2.x behind compatibility adapters. |
-| defmt/probe-rs | defmt 1.1.0, defmt-rtt 1.2.0, probe-rs 0.31.0 | Treat as debug profile tooling unless production logging parity is intentionally changed. |
-| rules_python | 2.0.2 | Use for existing Python tooling/tests under Bazel; do not keep Python as an untracked side channel. |
-| rules_pkg | 1.2.0 | Useful for packaging primitives, but firmware-specific package/sign/checksum rules may still need custom Starlark. |
+The exact labels may change during planning, but the semantics may not: the first command must create the real ELF/MAP/BIN/BBF output group, and the simulator test must consume those outputs rather than prebuilt CMake firmware or fixtures.
 
 ## Sources
 
-- Bazel releases, 9.1.0 latest release: https://github.com/bazelbuild/bazel/releases/tag/9.1.0
-- Bazel Bzlmod / external dependencies docs: https://bazel.build/docs/bzlmod
-- Bazel platforms docs: https://bazel.build/docs/platforms
-- Bazel Central Registry, rules_rust 0.70.0: https://registry.bazel.build/modules/rules_rust
-- rules_rust docs: https://bazelbuild.github.io/rules_rust/
-- rules_rust 0.70.0 release: https://github.com/bazelbuild/rules_rust/releases/tag/0.70.0
-- Bazel Central Registry, rules_cc 0.2.19: https://registry.bazel.build/modules/rules_cc
-- Bazel Central Registry, rules_python 2.0.2: https://registry.bazel.build/modules/rules_python
-- Bazel Central Registry, rules_pkg 1.2.0: https://registry.bazel.build/modules/rules_pkg
-- Rust stable channel manifest, Rust 1.96.0: https://static.rust-lang.org/dist/channel-rust-stable.toml
-- Rust platform support target list: https://doc.rust-lang.org/rustc/platform-support.html
-- Rust Embedded Book, `no_std`: https://docs.rust-embedded.org/book/intro/no-std.html
-- cortex-m crate: https://crates.io/crates/cortex-m
-- cortex-m-rt crate: https://crates.io/crates/cortex-m-rt
-- embedded-hal crate: https://crates.io/crates/embedded-hal
-- embedded-io crate: https://crates.io/crates/embedded-io
-- embedded-storage crate: https://crates.io/crates/embedded-storage
-- critical-section crate: https://crates.io/crates/critical-section
-- heapless crate: https://crates.io/crates/heapless
-- static_cell crate: https://crates.io/crates/static_cell
-- defmt crate: https://crates.io/crates/defmt
-- defmt-rtt crate: https://crates.io/crates/defmt-rtt
-- panic-probe crate: https://crates.io/crates/panic-probe
-- rtt-target crate: https://crates.io/crates/rtt-target
-- probe-rs crate: https://crates.io/crates/probe-rs
-- probe-rs project docs: https://probe.rs/
-- just 1.51.0 release: https://github.com/casey/just/releases/tag/1.51.0
-- Bright Builds architecture standard: https://raw.githubusercontent.com/bright-builds-llc/bright-builds-rules/05f8d7a6c9c2e157ec4f922a05273e72dab97676/standards/core/architecture.md
-- Bright Builds Rust standard: https://raw.githubusercontent.com/bright-builds-llc/bright-builds-rules/05f8d7a6c9c2e157ec4f922a05273e72dab97676/standards/languages/rust.md
+### Authoritative external sources
+
+- [Bazel 9.2.0 release](https://github.com/bazelbuild/bazel/releases/tag/9.2.0) — verified 9.2.0 is a 9.x LTS minor release (HIGH).
+- [Bazel Central Registry: rules_rust](https://registry.bazel.build/modules/rules_rust) — verified published version 0.71.3 and Bazel 7/8/9 test matrix (HIGH).
+- [rules_rust Bzlmod toolchain docs](https://bazelbuild.github.io/rules_rust/rust_bzlmod.html) — verified exact Rust version, edition, and `extra_target_triples` configuration (HIGH).
+- [rules_rust rule reference](https://bazelbuild.github.io/rules_rust/rust.html) and [toolchain reference](https://bazelbuild.github.io/rules_rust/rust_toolchains.html) — verified native link dependencies, linker scripts, linker selection, and objcopy/toolchain surfaces (HIGH).
+- [Bazel Central Registry: rules_cc](https://registry.bazel.build/modules/rules_cc) — verified 0.2.22 and Bazel 9 support (HIGH).
+- [Bazel Central Registry: rules_python](https://registry.bazel.build/modules/rules_python) — verified 2.2.0 and Bazel 9 support (HIGH).
+- [Rust `thumbv7em-none-eabi*` target documentation](https://doc.rust-lang.org/beta/rustc/platform-support/thumbv7em-none-eabi.html) and [Embedded Rust installation guide](https://doc.rust-lang.org/stable/embedded-book/intro/install.html) — verified Cortex-M4F hard-float target selection (HIGH).
+- [Arm GNU Toolchain downloads](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads) — verified 13.2.Rel1 remains an official release branch and that current Apple-silicon host packages are a later toolchain capability (HIGH).
+
+### Repository evidence
+
+- `Cargo.toml`; `rust/crates/*/Cargo.toml` — Rust 1.85/edition 2024, first-party crate graph, and unsafe-code policy (HIGH).
+- `cmake/GccArmNoneEabi.cmake`; `cmake/AnyGccArmNoneEabi.cmake`; `utils/bootstrap.py` — Cortex-M4F hard-float flags, Arm GNU 13.2.1, Mini404 0.9.10, and host archive constraints (HIGH).
+- `src/device/stm32f4/startup/`; `src/device/stm32f4/linker/stm32f407vg_boot.ld`; `src/device/stm32f4/linker/stm32f407vg.ld` — reset/vector ownership and exact memory layouts (HIGH).
+- `utils/pack_fw.py`; `tools/bazel/artifact_rules.bzl`; `tools/bazel/artifact_packager.py` — BBF reference path and current fixture/bootstrap fallback that v1.4 must not treat as success (HIGH).
+- `tests/integration/README.md`; `tests/integration/conftest.py`; `tools/bazel/phase14_*`; `tools/bazel/phase23_*` — Mini404 invocation and simulator evidence contracts (HIGH).
+- `.planning/PROJECT.md`; `.planning/codebase/{STACK,ARCHITECTURE,INTEGRATIONS,CONCERNS}.md`; retained-code/unsafe-audit manifests under `tools/bazel/manifests/` — milestone scope and staged startup/HAL/runtime boundary (HIGH).
+
+***
+
+*Stack research for: v1.4 Bazel-Native Rust Firmware Bring-Up*
+*Researched: 2026-08-02*
