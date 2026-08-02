@@ -1,5 +1,33 @@
 # Project Milestones: Prusa Firmware Buddy Rust Port
 
+## v1.3 Cutover Approval and Reference Demotion Trial (Shipped: 2026-08-02)
+
+**Delivered:** Secret-safe final evidence intake, exact decision-to-readiness reconciliation, fail-closed cutover routing, file-length debt elimination, and terminal metadata/audit coherence while reference demotion remains separately authorized.
+
+**Phases completed:** 31-41 (37 plans, 86 tasks)
+
+**Key accomplishments:**
+
+- Added secret-safe final evidence intake, one canonical blocker register, and explicit machine-readable retained-code, residual-risk, exception, readiness, and demotion decisions.
+- Reconciled exact typed decision identities into one readiness ledger that opens only for complete valid producer inputs and stays blocked for stale, ambiguous, conflicting, or malformed authority.
+- Made Phase 34/35 publication attempt-correlated and fail-closed so upstream or installation failures cannot revive stale cutover approval.
+- Preserved production cutover and reference demotion as distinct explicit predicates across blocked, approved, and targeted-repair routes.
+- Refactored all 92 oversized repo-owned targets while retaining exactly 841 authorized permanent exceptions and zero managed file-length findings.
+- Added a pure terminal consistency policy, completed 7/7 independent verification, and archived an eleven-phase, sixteen-requirement audit with zero integration, flow, metadata, Nyquist, or archival gaps.
+
+**Stats:**
+
+- 580 files changed
+- 107,804 insertions and 44,297 deletions
+- 11 phases, 37 plans, 86 tasks
+- 280 commits across 30 elapsed days (2026-07-02 to 2026-08-01)
+
+**Git range:** `b01f2efa7` → `debbf1bce`
+
+**What's next:** Start a fresh milestone from the v1.3 decision route: production-cutover planning only from valid approved authority, otherwise targeted blocker repair. Reference demotion remains a separate explicit maintainer decision.
+
+---
+
 ## v1.2 Cutover Evidence Execution and Acceptance (Shipped: 2026-07-02)
 
 **Delivered:** External cutover evidence execution and acceptance flows, with secret-safe retained outputs, upstream result flow closure, final readiness packet generation, and an explicit blocked reference-demotion gate.

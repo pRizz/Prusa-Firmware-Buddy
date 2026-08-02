@@ -20,19 +20,15 @@ Milestone v1.2 Cutover Evidence Execution and Acceptance shipped on 2026-07-02. 
 
 The replacement firmware is not yet cut over. Final reference demotion remains intentionally blocked until the validated external simulator, hardware, live-service, release, signing, upstream-result, retained-code, residual-risk, and maintainer-decision inputs are supplied, accepted, and followed by an explicit valid demotion approval.
 
-Milestone v1.3 Cutover Approval and Reference Demotion Trial has completed all 11 phases and 37 plans. Final sanitized evidence intake, blocker triage, explicit maintainer decisions, contract-complete readiness generation, fail-closed reference-demotion behavior, the cutover artifact, exact decision reconciliation, file-length refactoring, and terminal metadata reconciliation are verified. All 16 v1.3 requirement records agree across supported summaries, passed verifications, tracking metadata, Nyquist evidence, and the refreshed milestone audit; the repository-owned pre-archive gate passes while production cutover and reference demotion remain separately authorized decisions.
+Milestone v1.3 Cutover Approval and Reference Demotion Trial shipped on 2026-08-02 with all 11 phases, 37 plans, and 16 requirements complete. Final sanitized evidence intake, blocker triage, explicit maintainer decisions, contract-complete readiness generation, fail-closed reference-demotion behavior, the cutover artifact, exact decision reconciliation, file-length refactoring, and terminal metadata reconciliation are verified. The roadmap, requirements, audit, and phase history are archived under `.planning/milestones/`; production cutover and reference demotion remain separately authorized decisions.
 
-## Current Milestone: v1.3 Cutover Approval and Reference Demotion Trial
+## Next Milestone Goals
 
-**Goal:** Turn the v1.2 executable evidence and decision machinery into a real cutover approval trial, producing a go/no-go decision while keeping reference demotion explicitly guarded.
+No next milestone is scoped yet. `/gsd-new-milestone` should create a fresh requirements surface from the v1.3 cutover decision route:
 
-**Target features:**
-
-- Real simulator, hardware/media/safety, live-service, and release/signing evidence intake using sanitized maintainer/operator packets.
-- Evidence triage and blocker register for failed, missing, stale, or exceptioned rows.
-- Maintainer acceptance review for retained code, exceptions, residual risks, final readiness, and demotion authorization.
-- Final readiness packet and reference-demotion dry run that proves the gate only opens with valid explicit approval.
-- Cutover decision artifact: approved, blocked, or approved with explicit exceptions.
+- An approved cutover artifact may route to production-cutover planning.
+- A blocked or follow-up-bearing artifact routes to targeted blocker repair.
+- Reference demotion remains a distinct explicit maintainer authorization regardless of the selected route.
 
 ## Requirements
 
@@ -85,7 +81,7 @@ Milestone v1.3 Cutover Approval and Reference Demotion Trial has completed all 1
 
 <!-- Current scope. Building toward these. -->
 
-No active v1.3 requirement remains; milestone archival is a separate lifecycle operation.
+No active requirement remains. The next milestone will define fresh requirements.
 
 ### Out of Scope
 
@@ -107,7 +103,7 @@ v1.1 used the archived v1.0 source-backed evidence baseline without redefining p
 
 v1.2 executed those gate capabilities. Phases 23, 24, and 25 added real-input execution contracts for simulator, hardware/media/safety, and live-service evidence while retaining quick/default outputs as blocked placeholders. Phase 26 added release/signing/provenance evidence handling and upstream result rows. Phase 27 added retained-code, residual-risk, exception, and final-readiness decision inputs. Phase 28 generated the final readiness packet while keeping readiness fail-closed and reference demotion separate. Phase 29 closed the upstream evidence flow from Phase 23-25 rows through Phase 26 into Phase 28. Phase 30 reconciled summary extraction, validation metadata, Phase 25 verification shape, state metadata, and the v1.2 milestone audit before archival.
 
-v1.3 uses the v1.2 machinery with real sanitized inputs instead of expanding the schema surface. Phases 31 through 41 cover intake, triage, maintainer decisions, contract-complete final readiness, fail-closed demotion dry-run behavior, the durable cutover decision artifact, canonical producer identities, exact decision reconciliation, attempt-correlated workflow authority that cannot revive stale approval after failure, metadata reconciliation, file-length refactoring, and terminal milestone coherence. Phase 41 verified all 16 requirement records, all 37 PLAN/SUMMARY pairs, complete Nyquist records, and the refreshed audit through a passing pre-archive gate. Retained vendor/HAL replacement, long-run dashboards, and new printer behavior remain future work unless the v1.3 evidence trial exposes a narrow blocker that must be repaired before a decision can be made.
+v1.3 used the v1.2 machinery with real sanitized inputs instead of expanding the schema surface. Phases 31 through 41 delivered intake, triage, maintainer decisions, contract-complete final readiness, fail-closed demotion dry-run behavior, the durable cutover decision artifact, canonical producer identities, exact decision reconciliation, attempt-correlated workflow authority that cannot revive stale approval after failure, metadata reconciliation, file-length refactoring, and terminal milestone coherence. Phase 41 verified all 16 requirement records, all 37 PLAN/SUMMARY pairs, complete Nyquist records, and the refreshed audit through a passing pre-archive gate before the milestone was archived. Retained vendor/HAL replacement, long-run dashboards, and new printer behavior remain future work unless the next milestone's selected route requires narrower repair.
 
 The current architecture is a CMake-composed firmware target with board/printer feature gates, a FreeRTOS imperative shell, Marlin as the printing core, and application layers for GUI, Connect, WUI, transfers, persistent stores, puppies/MMU, resources, and packaging. The Rust rewrite should deliberately separate pure firmware/domain decisions from hardware, RTOS, filesystem, networking, UI, and packaging adapters where practical.
 
@@ -160,6 +156,7 @@ Known concerns to prioritize during planning include global build target couplin
 | Derive final-evidence completeness from the Phase 31 contract | Submitted accepted receipts are not themselves proof that every required stream is present; readiness needs an independent complete required set. | Phase 34 derives simulator, hardware/media/safety, live-service, and release/signing requirements from validated Phase 31 stream adapters, emits blocked missing rows, and prevents exceptions from covering absent evidence. |
 | Resolve decision readiness only through exact typed identity | Similar row, gate, path, prefix, axis, or subject values must never authorize a canonical blocker row. | Phase 37 binds `row_ref`, `decision_axis`, and `decision_subject_id` as one exact target, keeps demotion orthogonal, and rejects ambiguous, stale, invalid, hard-blocker, or symlink-escaped authority inputs. |
 | Make failed cutover publication authority attempt-correlated and status-truthful | A safe fallback bundle must block stale approval without converting the failed operation into success or allowing prior authority to become effective. | Phase 38 publishes blocking shells before payloads, correlates failed Phase 34 authority to the exact attempt and safe reason, protects every Phase 35 reader, and preserves nonzero Phase 35 validation failures. |
+| Archive v1.3 only after terminal metadata is independently coherent | Roadmap, requirements, state, exact plan inventories, Nyquist evidence, verification, and audit freshness must agree before archival. | Phase 41 passed 7/7 verification and the pre-archive gate; v1.3 archives preserve all 11 phases, 37 plans, 16 requirements, and the passed audit. |
 
 ## Evolution
 
@@ -182,4 +179,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ______________________________________________________________________
 
-*Last updated: 2026-08-01 after Phase 41 completion and pre-archive confirmation*
+*Last updated: 2026-08-02 after v1.3 milestone archival*

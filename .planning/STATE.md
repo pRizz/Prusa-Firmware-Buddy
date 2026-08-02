@@ -3,9 +3,9 @@ gsd_state_version: "1.0"
 milestone: v1.3
 milestone_name: Cutover Approval and Reference Demotion Trial
 status: complete
-stopped_at: Phase 41 verified complete; pre-archive confirmation passed
-last_updated: "2026-08-01T20:33:54.717Z"
-last_activity: "2026-08-01"
+stopped_at: Archived v1.3 milestone
+last_updated: "2026-08-02T19:26:39.208Z"
+last_activity: "2026-08-02"
 progress:
   total_phases: 11
   completed_phases: 11
@@ -18,18 +18,18 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-27)
+See: .planning/PROJECT.md (updated 2026-08-02)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Phase 41 complete — terminal milestone metadata coherent
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Milestone: v1.3 Cutover Approval and Reference Demotion Trial - complete
-Phase: 41
+Milestone: v1.3 Cutover Approval and Reference Demotion Trial - archived
+Phase: 41 (Terminal Milestone Metadata Coherence) - COMPLETE
 Plan: 4 of 4
-Status: Complete
-Last activity: 2026-08-01
+Status: Milestone archived; next milestone not yet defined
+Last activity: 2026-08-02
 
 Progress: [##########] 100% (11/11 v1.3 phases complete)
 
@@ -61,7 +61,7 @@ Progress: [##########] 100% (11/11 v1.3 phases complete)
 **Recent Trend:**
 
 - Last 5 completed plans: Phase 39 P01, Phase 41 P01, Phase 41 P02, Phase 41 P03, Phase 41 P04
-- Trend: Phase 41 passed 7/7 verification after closing terminal metadata, Nyquist, audit, and fail-closed projection gaps.
+- Trend: v1.3 completed its cutover-decision trial, terminal metadata reconciliation, passed audit, and phase-history archival; next milestone planning should create fresh requirements from the decision route.
 
 **Recent Completed Plan Detail:**
 
@@ -189,6 +189,7 @@ Recent decisions affecting current work:
 - [Phase 41]: Derive active and terminal projection expectations from exact on-disk plan/summary inventory instead of stale declared totals.
 - [Phase 41]: Keep filesystem and Markdown parsing in bounded adapters while immutable projection records feed the pure consistency policy.
 - [Phase 41]: Parse only the YAML mapping, scalar, and inline-integer-list subset required by the audit projection and reject malformed nesting or case-normalized duplicates.
+- [v1.3-complete]: Archived the v1.3 roadmap, requirements, passed audit, and Phase 31-41 history under `.planning/milestones/`; the live requirements surface will be removed before the next milestone.
 
 ### Pending Todos
 
@@ -205,6 +206,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-08-01T20:33:54.717Z
-Stopped at: Phase 41 verified complete; pre-archive confirmation passed
+Last session: 2026-08-02T19:26:39.208Z
+Stopped at: Archived v1.3 milestone
 Resume file: None

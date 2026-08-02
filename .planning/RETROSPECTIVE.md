@@ -148,6 +148,60 @@
 
 ---
 
+## Milestone: v1.3 — Cutover Approval and Reference Demotion Trial
+
+**Shipped:** 2026-08-02
+**Phases:** 11 | **Plans:** 37 | **Tasks:** 86
+
+### What Was Built
+
+- Secret-safe final evidence intake over simulator, hardware/media/safety, live-service, and release/signing packets.
+- A canonical blocker register and explicit retained-code, residual-risk, exception, readiness, and reference-demotion decision inputs.
+- Exact typed decision reconciliation into a readiness ledger that rejects stale, ambiguous, conflicting, malformed, and hard-blocker authority.
+- Attempt-correlated Phase 34/35 publication that replaces stale approval with durable blocked authority on every upstream or installation failure.
+- A completed file-length campaign covering 92 oversized owned files, with exactly 841 permanent exceptions and zero managed findings.
+- Terminal roadmap, requirements, state, inventory, Nyquist, verification, and audit consistency enforced by a pure policy and bounded adapters.
+
+### What Worked
+
+- Exact typed identities prevented similar-looking evidence or decisions from authorizing the wrong blocker row.
+- Publishing blocking authority before payloads made failed cutover attempts safe without misreporting operational success.
+- Keeping raw filesystem and Markdown parsing outside pure policies made mutation testing comprehensive and diagnostics deterministic.
+- The shrink-only file-length ledger allowed a large refactor campaign to converge without broadening exceptions.
+- Independent verification followed by a fresher audit and pre-archive rerun produced a trustworthy terminal handoff.
+
+### What Was Inefficient
+
+- Initial Phase 41 verification exposed three terminal projections that the first checker version did not independently parse, requiring Plan 41-04.
+- Summary one-line extraction still surfaced low-level review-fix notes, so milestone accomplishments required manual curation.
+- Five summaries lacked explicit task totals; exact milestone statistics had to be derived from the 37 PLAN task blocks.
+- The milestone completion helper could not update one customized STATE field automatically, requiring a bounded manual state refresh.
+- The 280-commit, 580-file change range made archive review and final verification materially heavier than earlier milestones.
+
+### Patterns Established
+
+- Parse terminal planning projections once into immutable records before applying one pure fail-closed policy.
+- Use isolated mutation probes for every duplicated count, status, inventory, freshness, and authority projection.
+- Publish safe blocking authority first and correlate every subsequent artifact to the exact workflow attempt.
+- Treat plan task blocks as the task-count authority when summary metadata is incomplete.
+- Require independent verification, a newer audit, and a final pre-archive pass in that order.
+
+### Key Lessons
+
+1. Terminal metadata must be verified as behavior, not trusted because each document looks plausible in isolation.
+2. Exact identity and attempt correlation are reusable defenses against stale or adjacent authorization.
+3. Large refactor campaigns need monotonic ledgers and stable public facades to remain reviewable.
+4. Archive generators need curated accomplishment and task-count inputs even when the underlying lifecycle data is complete.
+5. Production cutover and reference demotion remain decisions; complete evidence machinery cannot authorize either by implication.
+
+### Cost Observations
+
+- Model mix: not measured in repo-local metadata.
+- Sessions: multiple GSD phase sessions across 11 phases.
+- Notable: 280 commits over 30 elapsed days changed 580 files; deterministic focused suites and terminal consistency checks kept the archive boundary auditable despite the scale.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -157,6 +211,7 @@
 | v1.0 | Multiple | 12 | Established source-backed parity evidence and archived a clean requirements/roadmap baseline. |
 | v1.1 | Multiple | 10 | Converted non-local cutover blockers into durable evidence gates and archived a passed audit rerun. |
 | v1.2 | Multiple | 8 | Executed evidence and acceptance flows, closed upstream row propagation into final readiness, and archived a passed audit. |
+| v1.3 | Multiple | 11 | Reconciled real evidence and explicit decisions into fail-closed cutover routing, eliminated temporary file-length debt, and enforced terminal metadata coherence. |
 
 ### Cumulative Quality
 
@@ -165,6 +220,7 @@
 | v1.0 | Phase verifier suites plus 34 Phase 11 regression tests at archival | 30/30 v1 requirements mapped and complete | Standard-library verifier scripts and manifest checks for evidence gates. |
 | v1.1 | Phase verifier suites plus aggregate, release, final-readiness, and metadata reconciliation tests | 18/18 v1.1 gate-capability requirements mapped and complete | Standard-library evidence contracts, redaction/path guards, result manifests, and audit-readiness checks. |
 | v1.2 | Phase verifier suites plus focused Phase 23-29 evidence, decision, final-readiness, and metadata cleanup checks | 10/10 v1.2 execution and acceptance requirements mapped and complete | Standard-library evidence execution validators, retained output writers, upstream row ingestion, and final readiness packet generation. |
+| v1.3 | 96 Phase 41 tests, 323 cross-phase audit tests, 136 Rust tests, and six Bazel terminal targets at archival | 16/16 v1.3 requirements coherent with 11/11 phases and 37/37 plan summaries | Standard-library typed adapters, pure terminal policy, mutation probes, and attempt-correlated authority checks. |
 
 ### Top Lessons (Verified Across Milestones)
 
@@ -172,3 +228,4 @@
 2. Requirement, roadmap, validation, and manifest metadata should be reconciled before milestone archival, not after the next milestone starts.
 3. Final cutover approval should consume upstream machine-readable results, not prose links to contract files.
 4. Milestone archive summaries need curated outcome language because raw extractors can surface implementation-detail bug notes.
+5. Terminal planning projections need isolated mutation tests and enforced verification/audit freshness ordering.
