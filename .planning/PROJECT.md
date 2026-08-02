@@ -22,13 +22,17 @@ The replacement firmware is not yet cut over. Final reference demotion remains i
 
 Milestone v1.3 Cutover Approval and Reference Demotion Trial shipped on 2026-08-02 with all 11 phases, 37 plans, and 16 requirements complete. Final sanitized evidence intake, blocker triage, explicit maintainer decisions, contract-complete readiness generation, fail-closed reference-demotion behavior, the cutover artifact, exact decision reconciliation, file-length refactoring, and terminal metadata reconciliation are verified. The roadmap, requirements, audit, and phase history are archived under `.planning/milestones/`; production cutover and reference demotion remain separately authorized decisions.
 
-## Next Milestone Goals
+## Current Milestone: v1.4 Bazel-Native Rust Firmware Bring-Up
 
-No next milestone is scoped yet. `/gsd-new-milestone` should create a fresh requirements surface from the v1.3 cutover decision route:
+**Goal:** Produce the first real Bazel-built, cross-compiled Rust firmware image for `MINI/BUDDY/STM32F407VG`, boot it to a deterministic safe state, and generate genuine embedded artifacts without authorizing production cutover.
 
-- An approved cutover artifact may route to production-cutover planning.
-- A blocked or follow-up-bearing artifact routes to targeted blocker repair.
-- Reference demotion remains a distinct explicit maintainer authorization regardless of the selected route.
+**Target features:**
+
+- Repair post-archive Bazel graph drift and make developer commands truthful about whether firmware was built or tested.
+- Add a real embedded Rust toolchain and a Bazel-owned `no_std`/`no_main` firmware target.
+- Establish a Rust-owned MINI safe-boot runtime with explicit retained startup, HAL, CMSIS, ASM, and RTOS boundaries where replacement is not yet justified.
+- Produce linked ELF, map, bin, and unsigned development BBF artifacts from the embedded target rather than fixture payloads.
+- Run deterministic simulator and CI evidence for safe startup, faults, watchdog behavior, and hazardous-output inhibition through the existing fail-closed evidence machinery.
 
 ## Requirements
 
@@ -81,7 +85,10 @@ No next milestone is scoped yet. `/gsd-new-milestone` should create a fresh requ
 
 <!-- Current scope. Building toward these. -->
 
-No active requirement remains. The next milestone will define fresh requirements.
+- [ ] Bazel can cross-compile a real embedded Rust firmware target for `MINI/BUDDY/STM32F407VG`.
+- [ ] The Rust-owned runtime reaches a deterministic safe-boot state with motion and thermal outputs inhibited.
+- [ ] Developer workflows emit genuine embedded artifacts or fail instead of returning success after printing reference commands.
+- [ ] Simulator and CI checks exercise the real embedded image while preserving explicit non-local hardware boundaries.
 
 ### Out of Scope
 
@@ -157,6 +164,7 @@ Known concerns to prioritize during planning include global build target couplin
 | Resolve decision readiness only through exact typed identity | Similar row, gate, path, prefix, axis, or subject values must never authorize a canonical blocker row. | Phase 37 binds `row_ref`, `decision_axis`, and `decision_subject_id` as one exact target, keeps demotion orthogonal, and rejects ambiguous, stale, invalid, hard-blocker, or symlink-escaped authority inputs. |
 | Make failed cutover publication authority attempt-correlated and status-truthful | A safe fallback bundle must block stale approval without converting the failed operation into success or allowing prior authority to become effective. | Phase 38 publishes blocking shells before payloads, correlates failed Phase 34 authority to the exact attempt and safe reason, protects every Phase 35 reader, and preserves nonzero Phase 35 validation failures. |
 | Archive v1.3 only after terminal metadata is independently coherent | Roadmap, requirements, state, exact plan inventories, Nyquist evidence, verification, and audit freshness must agree before archival. | Phase 41 passed 7/7 verification and the pre-archive gate; v1.3 archives preserve all 11 phases, 37 plans, 16 requirements, and the passed audit. |
+| Treat v1.4 as executable Rust bring-up, not production cutover | The blocked v1.3 route needs targeted repair, and the highest-leverage blocker is the absence of a Bazel-native embedded Rust image to qualify. | Scope the first real firmware slice to `MINI/BUDDY/STM32F407VG`; keep C/C++ as the reference oracle and keep production rollout and reference demotion blocked. |
 
 ## Evolution
 
@@ -179,4 +187,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ______________________________________________________________________
 
-*Last updated: 2026-08-02 after v1.3 milestone archival*
+*Last updated: 2026-08-02 after starting milestone v1.4*

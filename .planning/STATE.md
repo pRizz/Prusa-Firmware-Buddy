@@ -1,17 +1,17 @@
 ---
 gsd_state_version: "1.0"
-milestone: v1.3
-milestone_name: Cutover Approval and Reference Demotion Trial
-status: complete
-stopped_at: Archived v1.3 milestone
-last_updated: "2026-08-02T19:26:39.208Z"
+milestone: v1.4
+milestone_name: Bazel-Native Rust Firmware Bring-Up
+status: defining_requirements
+stopped_at: Defining v1.4 requirements
+last_updated: "2026-08-02T19:47:29Z"
 last_activity: "2026-08-02"
 progress:
-  total_phases: 11
-  completed_phases: 11
-  total_plans: 37
-  completed_plans: 37
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,17 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-02)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Planning next milestone
+**Current focus:** v1.4 Bazel-native Rust firmware bring-up requirements
 
 ## Current Position
 
-Milestone: v1.3 Cutover Approval and Reference Demotion Trial - archived
-Phase: 41 (Terminal Milestone Metadata Coherence) - COMPLETE
-Plan: 4 of 4
-Status: Milestone archived; next milestone not yet defined
-Last activity: 2026-08-02
+Milestone: v1.4 Bazel-Native Rust Firmware Bring-Up
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-08-02 — Milestone v1.4 started
 
-Progress: [##########] 100% (11/11 v1.3 phases complete)
+Progress: [----------] 0% (roadmap not yet defined)
 
 ## Performance Metrics
 
@@ -190,6 +190,7 @@ Recent decisions affecting current work:
 - [Phase 41]: Keep filesystem and Markdown parsing in bounded adapters while immutable projection records feed the pure consistency policy.
 - [Phase 41]: Parse only the YAML mapping, scalar, and inline-integer-list subset required by the audit projection and reject malformed nesting or case-normalized duplicates.
 - [v1.3-complete]: Archived the v1.3 roadmap, requirements, passed audit, and Phase 31-41 history under `.planning/milestones/`; the live requirements surface will be removed before the next milestone.
+- [v1.4-start]: Target the first real Bazel-built embedded Rust firmware image at `MINI/BUDDY/STM32F407VG`, retain C/C++ only as the reference oracle, and keep production cutover and reference demotion blocked.
 
 ### Pending Todos
 
@@ -206,6 +207,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-08-02T19:26:39.208Z
-Stopped at: Archived v1.3 milestone
+Last session: 2026-08-02T19:47:29Z
+Stopped at: Defining v1.4 requirements
 Resume file: None
