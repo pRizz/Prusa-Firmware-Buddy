@@ -119,7 +119,7 @@ Full phase details are archived in `.planning/milestones/v1.3-ROADMAP.md`; requi
 Plans:
 - [x] 42-01-PLAN.md — Pin exact module/tool versions, checksum-backed repositories, rules_python, and stable lock provenance.
 - [x] 42-02-PLAN.md — Define the canonical hard-float MINI platform and executable host/toolchain provider contract.
-- [ ] 42-03-PLAN.md — Produce and inspect the genuine Cortex-M4 hard-float ARM link smoke.
+- [x] 42-03-PLAN.md — Produce and inspect the genuine Cortex-M4 hard-float ARM link smoke.
 - [ ] 42-04-PLAN.md — Enforce the negative platform matrix and configured/action/provider graph isolation.
 - [ ] 42-05-PLAN.md — Gate false authority, split reference semantics, and deliver the canonical aggregate verifier.
 **Research**: No standalone phase research expected; use the pinned-toolchain, explicit-platform, and truthful-facade patterns already established by repository research and official Bazel/rules documentation.
@@ -229,7 +229,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 42. Truthful Bazel Graph and Executable MINI Toolchain | 2/5 | In Progress | - |
+| 42. Truthful Bazel Graph and Executable MINI Toolchain | 3/5 | In Progress | - |
 | 43. Pure Safe-Boot Policy | 0/TBD | Not started | - |
 | 44. Retained Reset, Vector, and Link Boundary | 0/TBD | Not started | - |
 | 45. MINI Hazardous-Output Adapter | 0/TBD | Not started | - |
