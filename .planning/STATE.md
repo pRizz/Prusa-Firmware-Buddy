@@ -3,15 +3,15 @@ gsd_state_version: "1.0"
 milestone: v1.4
 milestone_name: Bazel-Native Rust Firmware Bring-Up
 status: executing
-stopped_at: Phase 42 context gathered
-last_updated: "2026-08-03T20:24:44.809Z"
-last_activity: 2026-08-03 -- Phase 42 planning complete
+stopped_at: Completed 42-01-PLAN.md
+last_updated: "2026-08-03T20:39:50.592Z"
+last_activity: "2026-08-03"
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 5
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 20
 ---
 
 # Project State
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-02)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Plan Phase 42 of the v1.4 Bazel-native Rust firmware bring-up
+**Current focus:** Phase 42 — truthful-bazel-graph-and-executable-mini-toolchain
 
 ## Current Position
 
 Milestone: v1.4 Bazel-Native Rust Firmware Bring-Up
-Phase: 42 of 49 — Truthful Bazel Graph and Executable MINI Toolchain
-Plan: —
+Phase: 42 (truthful-bazel-graph-and-executable-mini-toolchain) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-08-03 -- Phase 42 planning complete
+Last activity: 2026-08-03
 
 Progress: [----------] 0% (0/8 phases complete)
 
@@ -97,6 +97,7 @@ Progress: [----------] 0% (0/8 phases complete)
 | Phase 41 P02 | 13min | 2 tasks | 6 files |
 | Phase 41 P03 | 15min | 2 tasks | 8 files |
 | Phase 41 P04 | 23min | 2 tasks | 9 files |
+| Phase 42 P01 | 13min | 1 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -197,6 +198,9 @@ Recent decisions affecting current work:
 - [v1.4-roadmap]: Preserve CMake/C++ through separately named reference and rollback commands that can never satisfy Rust qualification.
 - [v1.4-roadmap]: Require focused research before Phases 44, 45, 47, 48, and 49 for reset/link facts, GPIO sequencing, BBF lineage, Mini404 observability, and evidence-root semantics respectively.
 - [v1.4-roadmap]: Physical qualification, release signing, production flashing, behavior parity, cutover, and reference demotion remain explicitly blocked after milestone completion.
+- [Phase 42]: Use only checksum-backed Linux x86_64 archives for Arm GNU and Mini404, with no Darwin, PATH, local-repository, or .dependencies substitute.
+- [Phase 42]: Supply rules_python 2.2.0 with checksum-pinned Python 3.12.10 standalone archives for Darwin arm64 host validation and canonical Linux x86_64 execution.
+- [Phase 42]: Keep embedded executable toolchain registration and canonical platform selection in Plan 42-02.
 
 ### Pending Todos
 
@@ -214,6 +218,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-08-03T19:41:05.840Z
-Stopped at: Phase 42 context gathered
-Resume file: .planning/phases/42-truthful-bazel-graph-and-executable-mini-toolchain/42-CONTEXT.md
+Last session: 2026-08-03T20:39:50.588Z
+Stopped at: Completed 42-01-PLAN.md
+Resume file: None
