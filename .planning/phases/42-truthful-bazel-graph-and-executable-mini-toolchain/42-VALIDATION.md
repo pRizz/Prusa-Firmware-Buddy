@@ -18,7 +18,7 @@ ______________________________________________________________________
 
 | Property | Value |
 | --- | --- |
-| **Framework** | Bazel analysis/toolchain tests plus focused Python subprocess assertions and pinned Arm binary inspection |
+| **Framework** | Bazel analysis/toolchain tests plus rules_python 3.12.10 `py_test`/`py_binary` subprocess assertions and pinned Arm binary inspection |
 | **Config files** | `.bazelrc`, `MODULE.bazel`, `platforms/BUILD.bazel`, `tools/bazel/toolchains/BUILD.bazel` |
 | **Quick run command** | `bazel test //tools/bazel/phase42:phase42_verifier_tests` |
 | **Full suite command** | `just phase42-verify` on canonical Linux x86_64 |
@@ -28,12 +28,12 @@ ______________________________________________________________________
 
 ## Sampling Rate
 
-- **After every task commit:** Run the focused Bazel/Python test for the changed boundary and a positive MINI control when Linux is available.
+- **After every task commit:** Run the focused Bazel target for the changed boundary; every Phase 42 Python acceptance surface resolves rules_python 3.12.10, and a positive MINI control runs when Linux is available.
 - **After every plan wave:** Run `bazel test //tools/bazel/phase42:phase42_verifier_tests` plus the affected `just` facade checks.
 - **Before `/gsd-verify-work`:** The repository gates and canonical Linux `just phase42-verify` must be green.
 - **Max feedback latency:** 120 seconds after repositories have been populated.
 
-Darwin development may run host/reference checks, but it cannot approve embedded qualification. Embedded authority commands must fail there with the detected host and an actionable Linux CI/container remedy.
+Darwin development may run host/reference checks, but it cannot approve embedded qualification. A non-qualifying `HostPolicyInfo` contract must make exact smoke, direct build/test/package/simulator labels, all four corresponding stable `just` recipes, and the aggregate fail with detected OS/architecture plus an actionable Linux CI/container remedy; it must never export `EmbeddedToolchainInfo` or enable Darwin target execution.
 
 ______________________________________________________________________
 
@@ -41,13 +41,14 @@ ______________________________________________________________________
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 42-01-01 | 01 | 0 | TOOL-01 | T-42-01 / T-42-02 | Exact checksum-pinned versions resolve without ambient or `.dependencies` fallback | provenance | `bazel test //tools/bazel/phase42:toolchain_provenance_tests` | ❌ W0 | ⬜ pending |
-| 42-01-02 | 01 | 1 | TOOL-01 | T-42-01 / T-42-02 | Resolved tools create and inspect a genuine Cortex-M4 hard-float link-smoke output | integration | `bazel build --config=mini --noskip_incompatible_explicit_targets //tools/bazel/phase42:arm_link_smoke` | ❌ W0 | ⬜ pending |
-| 42-02-01 | 02 | 1 | BUILD-03 | T-42-03 / T-42-06 | Only the exact MINI/BUDDY/STM32F407VG/hard-float tuple on the supported host resolves | negative integration | `bazel test //tools/bazel/phase42:platform_rejection_tests` | ❌ W0 | ⬜ pending |
-| 42-02-02 | 02 | 1 | BUILD-03, TOOL-01 | T-42-02 / T-42-04 | Positive action/provider graph excludes reference, Cargo, CMake, fixtures, archives, and undeclared tools | graph audit | `bazel test //tools/bazel/phase42:graph_isolation_tests` | ❌ W0 | ⬜ pending |
-| 42-03-01 | 03 | 1 | BUILD-02 | T-42-04 | Stable authority verbs either do genuine work or fail during analysis with owner and remedy | contract | `bazel test //tools/bazel/phase42:facade_contract_tests` | ❌ W0 | ⬜ pending |
-| 42-03-02 | 03 | 1 | BUILD-04 | T-42-04 | Explicit reference execution and preview names cannot satisfy Rust authority gates | contract | `bazel test //tools/bazel/phase42:reference_separation_tests` | ❌ W0 | ⬜ pending |
-| 42-03-03 | 03 | 2 | BUILD-02, BUILD-03, BUILD-04, TOOL-01 | T-42-01—T-42-06 | Aggregate verifier reproduces old false positives and proves the complete fail-closed contract | phase integration | `just phase42-verify` | ❌ W0 | ⬜ pending |
+| 42-01-01 | 01 | 1 | TOOL-01 | T-42-01 / T-42-02 | Exact checksum-pinned module/archive inputs, declared Python 3.12.10, and stable lock state exclude ambient fallback | provenance | `bazel test //tools/bazel/phase42:toolchain_provenance_tests` | ❌ W0 | ⬜ pending |
+| 42-02-01 | 02 | 2 | TOOL-01, BUILD-03 | T-42-02 / T-42-03 / T-42-06 | Canonical hard-float platform exists before registration; executable providers are Linux-only while HostPolicyInfo provides deterministic Darwin rejection | analysis contract | `bazel test //tools/bazel/phase42:embedded_toolchain_contract_tests //tools/bazel/phase42:host_policy_contract_tests` | ❌ W0 | ⬜ pending |
+| 42-03-01 | 03 | 3 | TOOL-01, BUILD-03 | T-42-02 / T-42-05 / T-42-06 | Resolved Rust and Arm tools create and inspect a genuine Cortex-M4 hard-float link-smoke output | integration | `bazel test //tools/bazel/phase42:arm_link_smoke_tests` | ❌ W0 | ⬜ pending |
+| 42-04-01 | 04 | 4 | BUILD-03 | T-42-03 / T-42-06 | Only the exact MINI/BUDDY/STM32F407VG/hard-float tuple on the supported host resolves | negative integration | `bazel test //tools/bazel/phase42:platform_rejection_tests` | ❌ W0 | ⬜ pending |
+| 42-04-02 | 04 | 4 | BUILD-03, TOOL-01 | T-42-02 / T-42-04 | Positive action/provider graph excludes forbidden provenance and requires rules_python Python 3.12.10 for every Phase 42 Python action | graph audit | `bazel test //tools/bazel/phase42:graph_isolation_tests` | ❌ W0 | ⬜ pending |
+| 42-05-01 | 05 | 5 | BUILD-02, BUILD-03 | T-42-04 / T-42-06 | Authority verbs fail build/run during analysis; Darwin routes use exact HostPolicyInfo diagnostics | contract | `bazel test //tools/bazel/phase42:facade_contract_tests` | ❌ W0 | ⬜ pending |
+| 42-05-02 | 05 | 5 | BUILD-04 | T-42-04 | Explicit reference execution and preview names cannot satisfy Rust authority gates | contract | `bazel test //tools/bazel/phase42:reference_separation_tests` | ❌ W0 | ⬜ pending |
+| 42-05-03 | 05 | 5 | BUILD-02, BUILD-03, BUILD-04, TOOL-01 | T-42-01—T-42-06 | Declared-Python aggregate reproduces old false positives, proves route-specific Darwin rejection, and completes only on canonical Linux | phase integration | `bazel test //tools/bazel/phase42:phase42_verifier_tests` plus canonical-Linux `just phase42-verify` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -55,12 +56,14 @@ ______________________________________________________________________
 
 ## Wave 0 Requirements
 
-- [ ] `tools/bazel/phase42/` — minimal ARM link-smoke source/link input and executable Bazel rule/target.
-- [ ] Focused subprocess support preserving stdout, stderr, exit status, and exact-target behavior.
-- [ ] Fixture platforms/toolchain selections for wrong tuple, triple, ABI, host, and missing-tool failures.
-- [ ] Stable `cquery`/`aquery` graph isolation matcher.
-- [ ] Analysis-time unavailable-capability rule and build/run contract tests.
-- [ ] Aggregate `phase42-verify` Bazel target and `just` recipe.
+- [ ] Task 42-01-01 creates the provenance test before accepting module/archive declarations.
+- [ ] Task 42-02-01 creates the canonical rust-target/MINI constraint and HostPolicyInfo tests before registering executable toolchains; wrong-triple/soft-float fixtures remain absent until Plan 42-04.
+- [ ] Task 42-03-01 creates the ARM link-smoke output/host tests before its rule implementation.
+- [ ] Task 42-04-01 creates declared-Python status-preserving subprocess support plus wrong-triple/soft-float/tuple/toolchain fixtures without modifying the canonical platform.
+- [ ] Task 42-04-02 creates stable `cquery`/`aquery` matcher mutation tests before accepting the graph audit.
+- [ ] Task 42-05-01 creates analysis-time build/run contract tests before rewiring authority labels.
+- [ ] Task 42-05-02 creates reference naming/provider isolation tests before changing the dispatcher and revises `tools/bazel/phase2_verify.py` expectations.
+- [ ] Task 42-05-03 creates aggregate platform-injected tests before wiring `phase42-verify` and the `just` recipes.
 
 ______________________________________________________________________
 
@@ -72,7 +75,7 @@ Every negative invokes an exact target with `--noskip_incompatible_explicit_targ
 - `//platforms:host_tools`;
 - every non-MINI product platform;
 - wrong printer, board, MCU, target triple, and soft-float ABI;
-- unsupported Darwin execution host;
+- unsupported Darwin x86_64 and arm64 execution hosts through non-qualifying `HostPolicyInfo`, asserting detected OS/architecture and the canonical Linux x86_64 CI/container remedy for exact smoke, direct build/test/package/simulator labels, and all four corresponding stable `just` recipes;
 - unavailable Rust, Arm, Python, or Mini404 resolution;
 - generic build/test/package/simulator authority labels under both `bazel build` and `bazel run`;
 - `just build`, `just test`, `just release-package`, and `just simulator-parity` false-positive regressions.
@@ -81,16 +84,25 @@ The harness must fail if Bazel skips the exact target, builds a host variant, co
 
 ______________________________________________________________________
 
+## Qualification Python Contract
+
+- Every Phase 42 `.py` test/helper/verifier that contributes acceptance evidence is declared through rules_python `py_test`, `py_binary`, or a library consumed exclusively by those targets.
+- The registered interpreter is Python 3.12.10; `aquery` must positively identify that toolchain/interpreter for every Phase 42 Python action.
+- Ambient `python3`, `/usr/bin/python3`, `/usr/local/bin/python3`, `/opt/homebrew`, `env python3`, and PATH interpreter lookup are forbidden in the qualification graph.
+- `tools/bazel/phase2_verify.py` may remain directly runnable as a non-authoritative legacy helper, but Phase 42 tests own its revised expectations and the aggregate must not consume its standalone host-Python result.
+
+______________________________________________________________________
+
 ## Threat Model
 
 | Ref | Threat | Mitigation | Required proof |
 | --- | --- | --- | --- |
 | T-42-01 | Compiler or simulator archive substitution | Exact versions, checksums, and committed lock state | Checksum/lock audit and clean Linux resolution |
-| T-42-02 | Ambient/local tool substitution | Toolchain-resolved declared executables only | `aquery` inputs/executables and scrubbed-environment negative |
+| T-42-02 | Ambient/local tool or Python interpreter substitution | Toolchain-resolved declared executables plus rules_python Python 3.12.10 only | `aquery` identities/inputs/executables and scrubbed-environment negatives |
 | T-42-03 | Wrong platform silently accepted | Exact MINI allowlist and fail-closed resolution | Positive/negative platform matrix |
 | T-42-04 | Reference or fixture result presented as Rust success | Separate names/providers and graph isolation | Provider/action denylist plus facade regression tests |
 | T-42-05 | Tool identity or output cannot be reconstructed | Emit output path, identities, target metadata, and stable lock state | Phase verifier report and lock hash |
-| T-42-06 | Unsupported host quietly selects another toolchain | Linux x86_64 execution constraint | Darwin failure with Linux remedy |
+| T-42-06 | Unsupported host quietly selects another toolchain | Linux x86_64 executable constraint plus non-qualifying HostPolicyInfo | Route-complete Darwin OS/architecture failure with Linux remedy and no EmbeddedToolchainInfo |
 
 ______________________________________________________________________
 

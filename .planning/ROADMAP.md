@@ -114,7 +114,14 @@ Full phase details are archived in `.planning/milestones/v1.3-ROADMAP.md`; requi
 3. Unsupported product, board, MCU, target, or host combinations fail during analysis or toolchain resolution instead of selecting host code, fixtures, CMake outputs, or archived artifacts.
 4. Separately named CMake/C++ reference commands and labels remain usable as the comparison and rollback oracle but cannot satisfy any Rust firmware success gate.
 
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 42-01-PLAN.md — Pin exact module/tool versions, checksum-backed repositories, rules_python, and stable lock provenance.
+- [ ] 42-02-PLAN.md — Define the canonical hard-float MINI platform and executable host/toolchain provider contract.
+- [ ] 42-03-PLAN.md — Produce and inspect the genuine Cortex-M4 hard-float ARM link smoke.
+- [ ] 42-04-PLAN.md — Enforce the negative platform matrix and configured/action/provider graph isolation.
+- [ ] 42-05-PLAN.md — Gate false authority, split reference semantics, and deliver the canonical aggregate verifier.
 **Research**: No standalone phase research expected; use the pinned-toolchain, explicit-platform, and truthful-facade patterns already established by repository research and official Bazel/rules documentation.
 
 ### Phase 43: Pure Safe-Boot Policy
