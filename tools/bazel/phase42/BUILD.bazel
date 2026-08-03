@@ -192,3 +192,13 @@ py_test(
     python_version = "PY3",
     deps = [":phase42_test_support"],
 )
+
+py_test(
+    name = "facade_contract_tests",
+    srcs = ["facade_contract_test.py"],
+    env = {"PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"},
+    legacy_create_init = 0,
+    main = "facade_contract_test.py",
+    python_version = "PY3",
+    deps = [":phase42_test_support"],
+)
