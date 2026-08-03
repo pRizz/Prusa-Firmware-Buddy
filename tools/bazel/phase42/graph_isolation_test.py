@@ -1,4 +1,5 @@
 import platform
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -63,26 +64,82 @@ PYTHON_TEST_TARGETS = (
     "//tools/bazel/phase42:graph_isolation_tests",
 )
 PYTHON_312_REPOSITORY_MARKER = "rules_python++python+python_3_12_10"
+ABSOLUTE_EXECUTABLE_PATTERN = re.compile(
+    r"(?<![A-Za-z0-9_./+-])(/[A-Za-z0-9_./+-]+/(?:cargo|cmake|python3|rustc|arm-none-eabi-[A-Za-z0-9_-]+))(?![A-Za-z0-9_.-])",
+    re.IGNORECASE,
+)
+
+
+def _forbidden_provenance_errors(text: str) -> list[str]:
+    lowered = text.lower()
+    errors = [
+        f"forbidden provenance marker: {marker}"
+        for marker in FORBIDDEN_MARKERS
+        if marker.lower() in lowered
+    ]
+    for match in ABSOLUTE_EXECUTABLE_PATTERN.finditer(text):
+        executable = match.group(1)
+        normalized = executable.lower()
+        if "/external/" in normalized or "/execroot/" in normalized:
+            continue
+        errors.append(f"undeclared absolute executable: {executable}")
+    return errors
 
 
 def audit_configured_graph(text: str) -> list[str]:
-    del text
-    return []
+    errors = _forbidden_provenance_errors(text)
+    for constraint in CANONICAL_CONSTRAINTS:
+        if constraint not in text:
+            errors.append(f"configured graph is missing constraint {constraint}")
+    for identity in LOCKED_IDENTITIES:
+        if identity not in text:
+            errors.append(f"configured graph is missing locked identity {identity}")
+    return errors
 
 
 def audit_action_graph(text: str) -> list[str]:
-    del text
-    return []
+    errors = _forbidden_provenance_errors(text)
+    for action in REQUIRED_ACTIONS:
+        if action not in text:
+            errors.append(f"action graph is missing {action}")
+    for output in REQUIRED_OUTPUTS:
+        if output not in text:
+            errors.append(f"action graph is missing output {output}")
+    return errors
 
 
 def audit_provider_boundary(text: str) -> list[str]:
-    del text
+    if "EmbeddedToolchainInfo" in text:
+        return ["reference or fixture target exports EmbeddedToolchainInfo"]
     return []
+
+
+def _python_execution_surface(text: str) -> str:
+    lines: list[str] = []
+    skipping_substitution = False
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped == "substitutions {":
+            skipping_substitution = True
+            continue
+        if skipping_substitution:
+            if stripped == "}":
+                skipping_substitution = False
+            continue
+        if stripped.startswith("template_content:"):
+            continue
+        lines.append(line)
+    return "\n".join(lines)
 
 
 def audit_python_action(target: str, text: str) -> list[str]:
-    del target, text
-    return []
+    action_surface = _python_execution_surface(text)
+    errors = _forbidden_provenance_errors(action_surface)
+    if target not in action_surface:
+        errors.append(f"Python action graph is missing owner {target}")
+    if PYTHON_312_REPOSITORY_MARKER not in action_surface:
+        errors.append(f"Python action graph is missing {PYTHON_312_REPOSITORY_MARKER}")
+    return errors
 
 
 class GraphIsolationMatcherTest(unittest.TestCase):
@@ -163,6 +220,23 @@ class GraphIsolationMatcherTest(unittest.TestCase):
                 # Assert
                 self.assertTrue(errors)
 
+    def test_rules_python_template_metadata_is_not_execution_provenance(self) -> None:
+        # Arrange
+        action = "\n".join((
+            PYTHON_TEST_TARGETS[0],
+            PYTHON_312_REPOSITORY_MARKER,
+            'template_content: "#!/usr/bin/env python3\\n"',
+            "substitutions {",
+            '  value: "#!/usr/bin/env python3"',
+            "}",
+        ))
+
+        # Act
+        errors = audit_python_action(PYTHON_TEST_TARGETS[0], action)
+
+        # Assert
+        self.assertEqual(errors, [])
+
 
 class GraphIsolationExecutionTest(unittest.TestCase):
     output_base: Path
@@ -187,6 +261,11 @@ class GraphIsolationExecutionTest(unittest.TestCase):
         )
         return run_command(command, cwd=workspace_root())
 
+    def _require_success(self, action: str, target: str, *options: str) -> str:
+        result = self._run_bazel(action, target, *options)
+        self.assertEqual(result.returncode, 0, msg=result.output)
+        return result.output
+
     def test_configured_action_provider_and_python_closure(self) -> None:
         if platform.system() == "Darwin":
             # Arrange
@@ -201,6 +280,45 @@ class GraphIsolationExecutionTest(unittest.TestCase):
             return
 
         self.assertEqual((platform.system(), platform.machine()), ("Linux", "x86_64"))
+
+        configured_graph = self._require_success(
+            "cquery",
+            f"deps({SMOKE_TARGET}) + //tools/bazel/toolchains:phase42_qualification_linux_x86_64",
+            MINI_CONFIG,
+            "--output=starlark",
+            "--starlark:expr=str(target.label) + ' ' + str(providers(target))",
+        )
+        configured_errors = audit_configured_graph(configured_graph)
+        self.assertEqual(configured_errors, [])
+
+        action_graph = self._require_success(
+            "aquery",
+            SMOKE_TARGET,
+            MINI_CONFIG,
+            "--output=textproto",
+        )
+        self.assertEqual(audit_action_graph(action_graph), [])
+
+        provider_targets = (
+            "//tools/bazel/toolchains:rust_firmware_info",
+            "//tools/bazel:representative_release_artifacts",
+        )
+        provider_text = self._require_success(
+            "cquery",
+            f"set({' '.join(provider_targets)})",
+            "--output=starlark",
+            "--starlark:expr=str(target.label) + ' ' + str(providers(target))",
+        )
+        self.assertEqual(audit_provider_boundary(provider_text), [])
+
+        python_action = self._require_success(
+            "aquery",
+            f"set({' '.join(PYTHON_TEST_TARGETS)})",
+            "--output=textproto",
+        )
+        for python_target in PYTHON_TEST_TARGETS:
+            with self.subTest(python_target=python_target):
+                self.assertEqual(audit_python_action(python_target, python_action), [])
 
 
 if __name__ == "__main__":
