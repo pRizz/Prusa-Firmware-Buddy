@@ -1,8 +1,15 @@
+load("@rules_python//python:py_library.bzl", "py_library")
 load("@rules_python//python:py_test.bzl", "py_test")
 load(":arm_link_smoke.bzl", "arm_link_smoke")
 load(":platform_contract.bzl", "PHASE42_MINI_CONSTRAINTS")
 
 package(default_visibility = ["//visibility:private"])
+
+py_library(
+    name = "phase42_test_support",
+    srcs = ["phase42_test_support.py"],
+    imports = ["."],
+)
 
 arm_link_smoke(
     name = "arm_link_smoke",
@@ -41,4 +48,13 @@ py_test(
     legacy_create_init = 0,
     main = "arm_link_smoke_test.py",
     python_version = "PY3",
+)
+
+py_test(
+    name = "platform_rejection_tests",
+    srcs = ["platform_rejection_test.py"],
+    legacy_create_init = 0,
+    main = "platform_rejection_test.py",
+    python_version = "PY3",
+    deps = [":phase42_test_support"],
 )
