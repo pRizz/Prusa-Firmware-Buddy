@@ -54,8 +54,8 @@ def bazel_command(
 ) -> tuple[str, ...]:
     return (
         "bazel",
-        "--batch",
         f"--output_base={output_base}",
+        "--max_idle_secs=5",
         action,
         target,
         *options,

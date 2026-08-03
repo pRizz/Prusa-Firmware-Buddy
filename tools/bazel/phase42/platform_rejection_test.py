@@ -32,11 +32,11 @@ WRONG_TUPLE_PLATFORMS = (
     "//tools/bazel/phase42:wrong_triple_platform",
     "//tools/bazel/phase42:soft_float_platform",
 )
-MISSING_CAPABILITY_TARGETS = (
-    "//tools/bazel/phase42:missing_rust_capability",
-    "//tools/bazel/phase42:missing_arm_capability",
-    "//tools/bazel/phase42:missing_python_capability",
-    "//tools/bazel/phase42:missing_mini404_capability",
+MISSING_CAPABILITY_CASES = (
+    ("//tools/bazel/phase42:missing_rust_capability", "Phase 42 missing Rust capability"),
+    ("//tools/bazel/phase42:missing_arm_capability", "Phase 42 missing Arm capability"),
+    ("//tools/bazel/phase42:missing_python_capability", "Phase 42 missing Python capability"),
+    ("//tools/bazel/phase42:missing_mini404_capability", "Phase 42 missing Mini404 capability"),
 )
 
 
@@ -78,8 +78,8 @@ def _negative_cases() -> tuple[tuple[NegativeCase, ...], ...]:
             target.rsplit(":", 1)[-1],
             target,
             (MINI_CONFIG,),
-            target.rsplit(":", 1)[-1].replace("_capability", "_toolchain_type"),
-        ) for target in MISSING_CAPABILITY_TARGETS
+            diagnostic,
+        ) for target, diagnostic in MISSING_CAPABILITY_CASES
     )
     return selection_cases, product_cases, tuple_cases, capability_cases
 
@@ -110,7 +110,7 @@ class PlatformRejectionContractTest(unittest.TestCase):
                 EXACT_TARGET_OPTION,
                 *NON_MINI_PLATFORMS,
                 *WRONG_TUPLE_PLATFORMS,
-                *MISSING_CAPABILITY_TARGETS,
+                *(target for target, _ in MISSING_CAPABILITY_CASES),
             ) if marker not in source
         ]
         build_missing = [
@@ -126,6 +126,10 @@ class PlatformRejectionContractTest(unittest.TestCase):
                 'name = "missing_arm_capability"',
                 'name = "missing_python_capability"',
                 'name = "missing_mini404_capability"',
+                'no_match_error = "Phase 42 missing Rust capability',
+                'no_match_error = "Phase 42 missing Arm capability',
+                'no_match_error = "Phase 42 missing Python capability',
+                'no_match_error = "Phase 42 missing Mini404 capability',
             ) if marker not in build
         ]
         contract_missing = [

@@ -5,6 +5,131 @@ load(":platform_contract.bzl", "PHASE42_MINI_CONSTRAINTS")
 
 package(default_visibility = ["//visibility:private"])
 
+constraint_value(
+    name = "thumbv7em_none_eabi",
+    constraint_setting = "//platforms:rust_target",
+)
+
+constraint_value(
+    name = "wrong_triple",
+    constraint_setting = "//platforms:rust_target",
+)
+
+platform(
+    name = "wrong_printer_platform",
+    constraint_values = [
+        "//platforms:runtime_embedded",
+        "//platforms:printer_mk4",
+        "//platforms:board_buddy",
+        "//platforms:mcu_stm32f407vg",
+        "//platforms:thumbv7em_none_eabihf",
+    ],
+)
+
+platform(
+    name = "wrong_board_platform",
+    constraint_values = [
+        "//platforms:runtime_embedded",
+        "//platforms:printer_mini",
+        "//platforms:board_xbuddy",
+        "//platforms:mcu_stm32f407vg",
+        "//platforms:thumbv7em_none_eabihf",
+    ],
+)
+
+platform(
+    name = "wrong_mcu_platform",
+    constraint_values = [
+        "//platforms:runtime_embedded",
+        "//platforms:printer_mini",
+        "//platforms:board_buddy",
+        "//platforms:mcu_stm32f427zi",
+        "//platforms:thumbv7em_none_eabihf",
+    ],
+)
+
+platform(
+    name = "wrong_triple_platform",
+    constraint_values = [
+        "//platforms:runtime_embedded",
+        "//platforms:printer_mini",
+        "//platforms:board_buddy",
+        "//platforms:mcu_stm32f407vg",
+        ":wrong_triple",
+    ],
+)
+
+platform(
+    name = "soft_float_platform",
+    constraint_values = [
+        "//platforms:runtime_embedded",
+        "//platforms:printer_mini",
+        "//platforms:board_buddy",
+        "//platforms:mcu_stm32f407vg",
+        ":thumbv7em_none_eabi",
+    ],
+)
+
+config_setting(
+    name = "rust_capability_available",
+    define_values = {"phase42_rust_capability": "available"},
+)
+
+config_setting(
+    name = "arm_capability_available",
+    define_values = {"phase42_arm_capability": "available"},
+)
+
+config_setting(
+    name = "python_capability_available",
+    define_values = {"phase42_python_capability": "available"},
+)
+
+config_setting(
+    name = "mini404_capability_available",
+    define_values = {"phase42_mini404_capability": "available"},
+)
+
+genrule(
+    name = "missing_rust_capability",
+    outs = ["missing_rust_capability.txt"],
+    cmd = select(
+        {":rust_capability_available": "touch $@"},
+        no_match_error = "Phase 42 missing Rust capability: Plan 42-01 owns declared Rust 1.85.0 resolution; use the canonical Linux x86_64 MINI toolchain",
+    ),
+    target_compatible_with = PHASE42_MINI_CONSTRAINTS,
+)
+
+genrule(
+    name = "missing_arm_capability",
+    outs = ["missing_arm_capability.txt"],
+    cmd = select(
+        {":arm_capability_available": "touch $@"},
+        no_match_error = "Phase 42 missing Arm capability: Plan 42-01 owns declared Arm GNU 13.2.Rel1 resolution; use the canonical Linux x86_64 MINI toolchain",
+    ),
+    target_compatible_with = PHASE42_MINI_CONSTRAINTS,
+)
+
+genrule(
+    name = "missing_python_capability",
+    outs = ["missing_python_capability.txt"],
+    cmd = select(
+        {":python_capability_available": "touch $@"},
+        no_match_error = "Phase 42 missing Python capability: Plan 42-01 owns rules_python Python 3.12.10 resolution; use the canonical Linux x86_64 MINI toolchain",
+    ),
+    target_compatible_with = PHASE42_MINI_CONSTRAINTS,
+)
+
+genrule(
+    name = "missing_mini404_capability",
+    outs = ["missing_mini404_capability.txt"],
+    cmd = select(
+        {":mini404_capability_available": "touch $@"},
+        no_match_error = "Phase 42 missing Mini404 capability: Plan 42-01 owns declared Mini404 0.9.10 resolution; use the canonical Linux x86_64 MINI toolchain",
+    ),
+    target_compatible_with = PHASE42_MINI_CONSTRAINTS,
+)
+
 py_library(
     name = "phase42_test_support",
     srcs = ["phase42_test_support.py"],
