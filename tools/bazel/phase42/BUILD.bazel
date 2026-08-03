@@ -25,3 +25,11 @@ py_test(
     main = "host_policy_contract_test.py",
     python_version = "PY3",
 )
+
+py_test(
+    name = "arm_link_smoke_tests",
+    srcs = ["arm_link_smoke_test.py"],
+    legacy_create_init = 0,
+    main = "arm_link_smoke_test.py",
+    python_version = "PY3",
+)
