@@ -3,15 +3,15 @@ gsd_state_version: "1.0"
 milestone: v1.4
 milestone_name: Bazel-Native Rust Firmware Bring-Up
 status: executing
-stopped_at: Completed 42-01-PLAN.md
-last_updated: "2026-08-03T20:39:50.592Z"
+stopped_at: Completed 42-02-PLAN.md
+last_updated: "2026-08-03T20:50:47.699Z"
 last_activity: "2026-08-03"
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 5
-  completed_plans: 1
-  percent: 20
+  completed_plans: 2
+  percent: 40
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-08-02)
 
 Milestone: v1.4 Bazel-Native Rust Firmware Bring-Up
 Phase: 42 (truthful-bazel-graph-and-executable-mini-toolchain) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-08-03
 
@@ -98,6 +98,7 @@ Progress: [----------] 0% (0/8 phases complete)
 | Phase 41 P03 | 15min | 2 tasks | 8 files |
 | Phase 41 P04 | 23min | 2 tasks | 9 files |
 | Phase 42 P01 | 13min | 1 tasks | 6 files |
+| Phase 42 P02 | 8min | 1 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -201,6 +202,9 @@ Recent decisions affecting current work:
 - [Phase 42]: Use only checksum-backed Linux x86_64 archives for Arm GNU and Mini404, with no Darwin, PATH, local-repository, or .dependencies substitute.
 - [Phase 42]: Supply rules_python 2.2.0 with checksum-pinned Python 3.12.10 standalone archives for Darwin arm64 host validation and canonical Linux x86_64 execution.
 - [Phase 42]: Keep embedded executable toolchain registration and canonical platform selection in Plan 42-02.
+- [Phase 42]: Centralize the authoritative Phase 42 target allowlist as exactly five hard-float MINI constraints and reuse it for every qualification toolchain registration.
+- [Phase 42]: Expose embedded executables only from the Linux x86_64 implementation; Darwin implementations return HostPolicyInfo only and create no actions.
+- [Phase 42]: Import the exact generated rules_rust Linux hard-float tools repository under a stable apparent name while keeping rules_python registration separate.
 
 ### Pending Todos
 
@@ -218,6 +222,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-08-03T20:39:50.588Z
-Stopped at: Completed 42-01-PLAN.md
+Last session: 2026-08-03T20:50:47.696Z
+Stopped at: Completed 42-02-PLAN.md
 Resume file: None
