@@ -1,64 +1,66 @@
 ---
 phase: 42
-fixed_at: "2026-08-03T23:37:27Z"
+fixed_at: "2026-08-03T23:51:20Z"
 review_path: ".planning/phases/42-truthful-bazel-graph-and-executable-mini-toolchain/42-REVIEW.md"
-iteration: 1
-findings_in_scope: 4
-fixed: 4
+iteration: 2
+findings_in_scope: 1
+fixed: 1
 skipped: 0
 status: all_fixed
 ---
 
 # Phase 42: Code Review Fix Report
 
-**Fixed at:** 2026-08-03T23:37:27Z  
+**Fixed at:** 2026-08-03T23:51:20Z
 **Source review:** `.planning/phases/42-truthful-bazel-graph-and-executable-mini-toolchain/42-REVIEW.md`  
-**Iteration:** 1
+**Iteration:** 2
 
 **Summary:**
 
-- Findings in scope: 4
-- Fixed: 4
+- Findings in scope: 1
+- Fixed: 1
 - Skipped: 0
 
 ## Fixed Issues
 
-### WR-01: Python provenance verification omits five Phase 42 entrypoints
+### WR-01: Parent-relative Bazel interpreter paths bypass repository provenance checks
 
 **Files modified:** `tools/bazel/phase42/graph_isolation_test.py`  
-**Commits:** `e83c98330`, `76fd51999`  
-**Applied fix:** Expanded the audit to every Phase 42 `py_test` and `py_binary`, added declaration-parity coverage, and queried each Python entrypoint independently. The executable audit now recognizes the exact Bzlmod canonical identity of the pinned Arm repository while continuing to reject unapproved external repositories. The follow-up allowlist correction was validated by the real Linux action graph before the canonical qualification passed.
+**Commit:** `1b2a01b2f`
+**Status:** fixed: requires human verification
+**Applied fix:** Added Python-interpreter owner extraction for both `external/<repository>/bin/python3` and Bazel's real `(?:../)+<repository>/bin/python3` symlink-target form. Each extracted owner must match one of the three exact pinned Python 3.12.10 platform repositories; an unrelated pinned input can no longer satisfy interpreter provenance. Per-target action queries and the existing exact executable-owner allowlist remain intact.
 
-### WR-02: A pinned interpreter in one action masks wrong provenance in another
+## Adversarial Proof
 
-**Files modified:** `tools/bazel/phase42/graph_isolation_test.py`  
-**Commit:** `e83c98330`  
-**Status:** fixed: requires human verification  
-**Applied fix:** Replaced the batched action query with per-owner queries, narrowed executable provenance to exact approved repositories, and added a mutation test proving that a correctly pinned owner cannot mask another owner using `external/evil_python/bin/python3`.
+The reviewer's reproduced input now fails closed:
 
-### WR-03: The simulator reference route is not executable
+```text
+target: //tools/bazel/phase42:facade_contract_tests
+unresolved_symlink_target: "../../../../../../evil_python/bin/python3"
+input: external/rules_python++python+python_3_12_10_aarch64-apple-darwin/lib/python3.12/os.py
+```
 
-**Files modified:** `justfile`, `tools/bazel/phase2_verify.py`, `tools/bazel/phase42/reference_separation_test.py`, `tools/bazel/reference_contract.sh`  
-**Commit:** `2799ed190`  
-**Applied fix:** Made the reference simulator recipe accept a firmware argument, validated that it names an existing file, resolved relative paths from the workspace, and invoked `pytest tests/integration --firmware "$firmware"` directly. Tests now retain the real shell, fake only `pytest`, and cover paths containing spaces plus missing and nonexistent firmware arguments.
+`audit_python_action(...)` returns exactly:
 
-### WR-04: Darwin x86_64 cannot run the promised host-only diagnostic
+```text
+['unapproved Python interpreter repository evil_python: ../../../../../../evil_python/bin/python3']
+```
 
-**Files modified:** `MODULE.bazel`, `tools/bazel/phase42/BUILD.bazel`, `tools/bazel/phase42/phase42_verify_test.py`, `tools/bazel/phase42/toolchain_provenance_test.py`  
-**Commit:** `800dcc85e`  
-**Applied fix:** Added the independently verified Python 3.12.10 Intel-Darwin checksum, mutation coverage for every pinned Python archive, and a simulated `darwin_x86_64_host` analysis contract. An explicit `aquery` reached the host-check target with `rules_python++python+python_3_12_10_x86_64-apple-darwin/bin/python3`, preserving the exact canonical-Linux remedy.
+The focused matcher suite also proves the approved external and parent-relative forms still normalize to exact pinned owners.
 
 ## Verification Evidence
 
-- `bazel test //tools/bazel/phase42:phase42_verifier_tests --lockfile_mode=error --nocache_test_results --test_output=errors`: 9 of 9 tests passed on Darwin arm64.
-- `just phase42-host-check`: passed all ten Darwin-arm64 rejection routes with the required `HostPolicyInfo` diagnostic.
-- `just phase42-verify` on Darwin arm64: produced the expected nonzero unsupported-host result and canonical Linux x86_64 remedy.
-- Canonical Linux x86_64 qualification in `gcr.io/bazel-public/bazel:9.2.0`: passed all toolchain, Arm link smoke, platform-negative, graph-isolation, facade, reference-separation, aggregate, identity, output, and lock-stability checks.
+- `PYTHONPATH=tools/bazel/phase42 python3 -m unittest graph_isolation_test.GraphIsolationMatcherTest`: 11 tests passed, including the exact parent-relative evil-interpreter mutation.
+- `bazel test //tools/bazel/phase42:graph_isolation_tests --lockfile_mode=error --nocache_test_results --test_output=errors`: passed against the real Darwin arm64 action graph.
+- Real Linux x86_64 `graph_isolation_tests` in `gcr.io/bazel-public/bazel:9.2.0`: passed after inspecting every Phase 42 Python action independently.
+- Canonical Linux x86_64 `//tools/bazel/phase42:phase42_verify`: passed toolchain, smoke, platform-negative, graph-isolation, facade, reference-separation, aggregate, identity, output, and lock-stability checks.
 - `MODULE.bazel.lock` remained stable at SHA-256 `5b18570e4fa8283ef15c861a3d3a8d5a5d94f1e8b41baf6594e3c3bc16e3d4c9` during canonical qualification.
-- Before each fix commit, `git diff --check`, `bun scripts/bright-builds-check.ts all`, `cargo fmt --all`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo build --all-targets --all-features`, and `cargo test --all-features` passed.
+- Darwin arm64 `//tools/bazel/phase42:phase42_verifier_tests`: 9 of 9 tests passed.
+- `just phase42-host-check`: passed all ten expected-failure Darwin-arm64 rejection routes with the required `HostPolicyInfo` diagnostic.
+- Before commit, `git diff --check`, `bun scripts/bright-builds-check.ts all`, `cargo fmt --all`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo build --all-targets --all-features`, and `cargo test --all-features` passed.
 
 ***
 
-_Fixed: 2026-08-03T23:37:27Z_  
+_Fixed: 2026-08-03T23:51:20Z_
 _Fixer: the agent (gsd-code-fixer)_  
-_Iteration: 1_
+_Iteration: 2_
