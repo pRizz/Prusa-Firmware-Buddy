@@ -95,7 +95,7 @@ REQUIRED_STRINGS = {
         "reference_package_plan)",
         "reference_simulator)",
         "reference_simulator_plan)",
-        "pytest tests/integration --firmware <firmware.bin>",
+        "pytest tests/integration --firmware",
     ],
     "justfile": [
         "phase2-verify:",
@@ -105,7 +105,7 @@ REQUIRED_STRINGS = {
         "reference-test-plan:",
         "reference-package:",
         "reference-package-plan:",
-        "reference-simulator:",
+        "reference-simulator firmware:",
         "reference-simulator-plan:",
     ],
 }

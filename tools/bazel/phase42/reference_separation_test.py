@@ -77,9 +77,15 @@ def validate_reference_sources(
                 errors.append(f"{label} must carry descriptive reference provenance")
 
             recipe = label.replace("_", "-")
-            recipe_pattern = re.compile(
-                rf"(?m)^{re.escape(recipe)}:\n    bazel run //tools/bazel:{re.escape(label)}$"
-            )
+            if label == "reference_simulator":
+                recipe_pattern = re.compile(
+                    r"(?m)^reference-simulator firmware:\n"
+                    r"    bazel run //tools/bazel:reference_simulator -- \{\{quote\(firmware\)\}\}$"
+                )
+            else:
+                recipe_pattern = re.compile(
+                    rf"(?m)^{re.escape(recipe)}:\n    bazel run //tools/bazel:{re.escape(label)}$"
+                )
             if not recipe_pattern.search(justfile):
                 errors.append(f"{recipe} must be one thin bazel run recipe")
 
@@ -153,7 +159,7 @@ class ReferenceExecutionTests(unittest.TestCase):
         fake_bin = temporary / "bin"
         fake_bin.mkdir(exist_ok=True)
         fake_command = "#!/usr/bin/env bash\nprintf 'reference-executed:%s\\n' \"$*\" >&2\nexit 23\n"
-        for command in ("python3", "sh"):
+        for command in ("python3", "pytest", "sh"):
             fake_path = fake_bin / command
             fake_path.write_text(fake_command, encoding="utf-8")
             fake_path.chmod(0o755)
@@ -168,6 +174,8 @@ class ReferenceExecutionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="phase42-reference-") as temporary_name:
             temporary = Path(temporary_name)
             output_base = temporary / "output-base"
+            firmware = temporary / "reference firmware.bin"
+            firmware.write_bytes(b"firmware")
 
             for switch_value in ("0", "1"):
                 environment = self._fake_environment(temporary, switch_value)
@@ -177,6 +185,7 @@ class ReferenceExecutionTests(unittest.TestCase):
                             output_base,
                             "run",
                             f"//tools/bazel:{route.label}",
+                            *(("--", str(firmware)) if route.label == "reference_simulator" else ()),
                         )
                         plan_command = bazel_command(
                             output_base,
@@ -202,9 +211,70 @@ class ReferenceExecutionTests(unittest.TestCase):
                         self.assertIn(route.command_marker, execute_result.output)
                         self.assertEqual(0, plan_result.returncode, plan_result.output)
                         self.assertIn("reference command:", plan_result.output)
-                        escaped_marker = route.command_marker.replace(" ", "\\ ")
-                        self.assertIn(escaped_marker, plan_result.output)
+                        if route.label == "reference_simulator":
+                            self.assertIn(route.command_marker, plan_result.output)
+                        else:
+                            escaped_marker = route.command_marker.replace(" ", "\\ ")
+                            self.assertIn(escaped_marker, plan_result.output)
                         self.assertNotIn("reference-executed:", plan_result.output)
+
+    def test_simulator_executes_pytest_with_exact_firmware_argument(self) -> None:
+        # Arrange
+        root = workspace_root()
+        with tempfile.TemporaryDirectory(prefix="phase42-reference-simulator-") as temporary_name:
+            temporary = Path(temporary_name)
+            output_base = temporary / "output-base"
+            firmware = temporary / "firmware with spaces.bin"
+            firmware.write_bytes(b"firmware")
+            fake_bin = temporary / "bin"
+            fake_bin.mkdir()
+            fake_pytest = fake_bin / "pytest"
+            fake_pytest.write_text(
+                "#!/usr/bin/env bash\nprintf 'pytest-arg:<%s>\\n' \"$@\" >&2\nexit 23\n",
+                encoding="utf-8",
+            )
+            fake_pytest.chmod(0o755)
+            environment = {"PATH": f"{fake_bin}:{os.environ['PATH']}"}
+            command = bazel_command(
+                output_base,
+                "run",
+                "//tools/bazel:reference_simulator",
+                "--",
+                str(firmware),
+            )
+
+            # Act
+            result = run_command(command, cwd=root, environment=environment)
+
+            # Assert
+            self.assertEqual(23, result.returncode, result.output)
+            self.assertIn("pytest-arg:<tests/integration>", result.output)
+            self.assertIn("pytest-arg:<--firmware>", result.output)
+            self.assertIn(f"pytest-arg:<{firmware}>", result.output)
+
+    def test_simulator_rejects_missing_or_nonexistent_firmware(self) -> None:
+        # Arrange
+        root = workspace_root()
+        with tempfile.TemporaryDirectory(prefix="phase42-reference-simulator-invalid-") as temporary_name:
+            output_base = Path(temporary_name) / "output-base"
+            commands = (
+                bazel_command(output_base, "run", "//tools/bazel:reference_simulator"),
+                bazel_command(
+                    output_base,
+                    "run",
+                    "//tools/bazel:reference_simulator",
+                    "--",
+                    "missing-firmware.bin",
+                ),
+            )
+
+            # Act
+            results = [run_command(command, cwd=root) for command in commands]
+
+            # Assert
+            self.assertTrue(all(result.returncode == 2 for result in results))
+            self.assertIn("Usage:", results[0].output)
+            self.assertIn("does not exist", results[1].output)
 
     def test_reference_closure_actions_and_runfiles_are_non_qualifying(self) -> None:
         # Arrange

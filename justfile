@@ -21,8 +21,8 @@ reference-package:
 reference-package-plan:
     bazel run //tools/bazel:reference_package_plan
 
-reference-simulator:
-    bazel run //tools/bazel:reference_simulator
+reference-simulator firmware:
+    bazel run //tools/bazel:reference_simulator -- {{quote(firmware)}}
 
 reference-simulator-plan:
     bazel run //tools/bazel:reference_simulator_plan
