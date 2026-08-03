@@ -183,3 +183,12 @@ py_test(
     python_version = "PY3",
     deps = [":phase42_test_support"],
 )
+
+py_test(
+    name = "graph_isolation_tests",
+    srcs = ["graph_isolation_test.py"],
+    legacy_create_init = 0,
+    main = "graph_isolation_test.py",
+    python_version = "PY3",
+    deps = [":phase42_test_support"],
+)
