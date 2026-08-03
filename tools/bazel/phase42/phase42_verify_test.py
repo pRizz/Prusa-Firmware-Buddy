@@ -160,7 +160,7 @@ class AggregateHostPolicyTests(unittest.TestCase):
             system="Darwin",
             machine="arm64",
             runner=runner,
-            root=Path("/workspace"),
+            maybe_root=Path("/workspace"),
         )
 
         # Assert
@@ -189,7 +189,7 @@ class AggregateHostPolicyTests(unittest.TestCase):
             system="Darwin",
             machine="x86_64",
             runner=runner,
-            root=Path("/workspace"),
+            maybe_root=Path("/workspace"),
         )
 
         # Assert

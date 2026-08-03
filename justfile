@@ -158,26 +158,38 @@ phase41-verify *args:
     bazel run //tools/bazel:phase41_terminal_consistency -- {{args}}
     bun scripts/bright-builds-check.ts all
 
+phase42-toolchain-resolution:
+    bazel test //tools/bazel/phase42:phase42_toolchain_resolution
+
+phase42-arm-link-smoke:
+    bazel build //tools/bazel/phase42:phase42_arm_link_smoke --config=mini --noskip_incompatible_explicit_targets
+
+phase42-platform-negatives:
+    bazel test //tools/bazel/phase42:phase42_platform_negatives
+
+phase42-host-check:
+    bazel run //tools/bazel/phase42:phase42_host_check
+
+phase42-verify:
+    bazel run //tools/bazel/phase42:phase42_verify
+
 phase17-release-artifacts-smoke:
     bazel build //tools/bazel:phase17_representative_release_smoke
 
 bazel-query:
     bazel query "//tools/bazel/... + //platforms/..."
 
-bootstrap:
-    bazel run //tools/bazel:bootstrap
-
 build:
-    bazel run //tools/bazel:build_firmware
+    bazel run //tools/bazel:build_firmware --config=mini --noskip_incompatible_explicit_targets
 
 test:
-    bazel run //tools/bazel:test_host
+    bazel run //tools/bazel:test_firmware --config=mini --noskip_incompatible_explicit_targets
 
 format:
-    bazel run //tools/bazel:format
+    bazel run //tools/bazel:rust_format_check
 
 lint:
-    bazel run //tools/bazel:lint
+    bazel run //tools/bazel:rust_lint
 
 rust-format:
     bazel run //tools/bazel:rust_format_check
@@ -201,7 +213,7 @@ generated-update:
     bazel run //tools/bazel:generated_update
 
 simulator-parity:
-    bazel run //tools/bazel:simulator_parity
+    bazel run //tools/bazel:simulator_parity --config=mini --noskip_incompatible_explicit_targets
 
 release-package:
-    bazel build //tools/bazel:representative_release_artifacts
+    bazel run //tools/bazel:release_package --config=mini --noskip_incompatible_explicit_targets

@@ -1,3 +1,4 @@
+load("@rules_python//python:py_binary.bzl", "py_binary")
 load("@rules_python//python:py_library.bzl", "py_library")
 load("@rules_python//python:py_test.bzl", "py_test")
 load(":arm_link_smoke.bzl", "arm_link_smoke")
@@ -221,4 +222,60 @@ py_test(
     main = "phase42_verify_test.py",
     python_version = "PY3",
     deps = [":phase42_test_support"],
+)
+
+test_suite(
+    name = "phase42_toolchain_resolution",
+    tests = [
+        ":embedded_toolchain_contract_tests",
+        ":host_policy_contract_tests",
+        ":toolchain_provenance_tests",
+    ],
+)
+
+alias(
+    name = "phase42_arm_link_smoke",
+    actual = ":arm_link_smoke",
+)
+
+test_suite(
+    name = "phase42_platform_negatives",
+    tests = [
+        ":graph_isolation_tests",
+        ":platform_rejection_tests",
+    ],
+)
+
+py_binary(
+    name = "phase42_host_check",
+    srcs = ["phase42_verify.py"],
+    args = ["--host-check"],
+    legacy_create_init = 0,
+    main = "phase42_verify.py",
+    python_version = "PY3",
+    deps = [":phase42_test_support"],
+)
+
+py_binary(
+    name = "phase42_verify",
+    srcs = ["phase42_verify.py"],
+    legacy_create_init = 0,
+    main = "phase42_verify.py",
+    python_version = "PY3",
+    deps = [":phase42_test_support"],
+)
+
+test_suite(
+    name = "phase42_verifier_tests",
+    tests = [
+        ":arm_link_smoke_tests",
+        ":embedded_toolchain_contract_tests",
+        ":facade_contract_tests",
+        ":graph_isolation_tests",
+        ":host_policy_contract_tests",
+        ":phase42_verify_contract_tests",
+        ":platform_rejection_tests",
+        ":reference_separation_tests",
+        ":toolchain_provenance_tests",
+    ],
 )
