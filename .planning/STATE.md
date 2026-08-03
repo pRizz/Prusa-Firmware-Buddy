@@ -3,15 +3,15 @@ gsd_state_version: "1.0"
 milestone: v1.4
 milestone_name: Bazel-Native Rust Firmware Bring-Up
 status: executing
-stopped_at: Completed 42-03-PLAN.md
-last_updated: "2026-08-03T21:47:12.634Z"
+stopped_at: Completed 42-04-PLAN.md
+last_updated: "2026-08-03T22:28:04.780Z"
 last_activity: "2026-08-03"
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 5
-  completed_plans: 3
-  percent: 60
+  completed_plans: 4
+  percent: 80
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-08-02)
 
 Milestone: v1.4 Bazel-Native Rust Firmware Bring-Up
 Phase: 42 (truthful-bazel-graph-and-executable-mini-toolchain) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-08-03
 
@@ -100,6 +100,7 @@ Progress: [----------] 0% (0/8 phases complete)
 | Phase 42 P01 | 13min | 1 tasks | 6 files |
 | Phase 42 P02 | 8min | 1 tasks | 9 files |
 | Phase 42 P03 | 47min | 1 tasks | 10 files |
+| Phase 42 P04 | 37min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -209,6 +210,9 @@ Recent decisions affecting current work:
 - [Phase 42]: Expose the checksum-backed Arm archive runtime through EmbeddedToolchainInfo, but use it only on the GCC link action.
 - [Phase 42]: Require all four pinned Arm inspections before publishing the phase42-arm-link-smoke report.
 - [Phase 42]: Treat native Darwin results only as expected-failure host-policy evidence; positive qualification remains Linux x86_64.
+- [Phase 42]: Model missing embedded capabilities as exact analysis-time select failures with actionable owner/remedy diagnostics.
+- [Phase 42]: Bracket every negative platform category with a passing exact MINI control on canonical Linux x86_64.
+- [Phase 42]: Audit rules_python execution fields while excluding non-executed TemplateExpand source and substitution metadata.
 
 ### Pending Todos
 
@@ -226,6 +230,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-08-03T21:47:12.631Z
-Stopped at: Completed 42-03-PLAN.md
+Last session: 2026-08-03T22:28:04.777Z
+Stopped at: Completed 42-04-PLAN.md
 Resume file: None
