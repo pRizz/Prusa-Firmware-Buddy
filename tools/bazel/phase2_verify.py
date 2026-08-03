@@ -8,6 +8,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
+RETIRED_REFERENCE_SWITCH = "BUDDY_BAZEL_EXECUTE_REFERENCE"
 
 REQUIRED_FILES = [
     "MODULE.bazel",
@@ -67,46 +68,52 @@ REQUIRED_STRINGS = {
     ],
     "tools/bazel/BUILD.bazel": [
         "phase2_verify",
-        "bootstrap",
         "build_firmware",
-        "rust_firmware",
-        "retained_foreign_code",
-        "generated_assets",
-        "host_tools",
+        "test_firmware",
         "test_host",
-        "unit_tests",
-        "simulator_inputs",
-        "format",
-        "lint",
-        "generated_check",
         "simulator_parity",
         "release_package",
         "release_packages",
+        "unavailable_capability",
+        "reference_build",
+        "reference_build_plan",
+        "reference_test",
+        "reference_test_plan",
+        "reference_package",
+        "reference_package_plan",
+        "reference_simulator",
+        "reference_simulator_plan",
+        "//tools/bazel/toolchains:cc_firmware_info",
     ],
     "tools/bazel/reference_contract.sh": [
-        "BUDDY_BAZEL_EXECUTE_REFERENCE",
         "python3 utils/build.py",
-        "python3 utils/build.py --generate-cmake-presets",
-        "rust_firmware",
-        "retained_foreign_code",
-        "generated_assets",
-        "host_tools",
-        "unit_tests",
-        "simulator_inputs",
-        "release_packages",
+        "reference_build)",
+        "reference_build_plan)",
+        "reference_test)",
+        "reference_test_plan)",
+        "reference_package)",
+        "reference_package_plan)",
+        "reference_simulator)",
+        "reference_simulator_plan)",
         "pytest tests/integration --firmware <firmware.bin>",
     ],
     "justfile": [
-        "bootstrap:",
-        "build:",
-        "test:",
-        "format:",
-        "lint:",
-        "generated-check:",
-        "simulator-parity:",
-        "release-package:",
         "phase2-verify:",
+        "reference-build:",
+        "reference-build-plan:",
+        "reference-test:",
+        "reference-test-plan:",
+        "reference-package:",
+        "reference-package-plan:",
+        "reference-simulator:",
+        "reference-simulator-plan:",
     ],
+}
+
+FORBIDDEN_STRINGS = {
+    ".bazelrc": [RETIRED_REFERENCE_SWITCH],
+    "tools/bazel/BUILD.bazel": [RETIRED_REFERENCE_SWITCH],
+    "tools/bazel/reference_contract.sh": [RETIRED_REFERENCE_SWITCH],
 }
 
 
@@ -123,6 +130,14 @@ def require_strings() -> None:
         for needle in needles:
             if needle not in text:
                 raise AssertionError(f"{path} missing required text: {needle}")
+
+
+def reject_forbidden_strings() -> None:
+    for path, needles in FORBIDDEN_STRINGS.items():
+        text = read(path)
+        for needle in needles:
+            if needle in text:
+                raise AssertionError(f"{path} retains forbidden text: {needle}")
 
 
 def require_files() -> None:
@@ -152,10 +167,11 @@ def main() -> int:
     try:
         require_files()
         require_strings()
+        reject_forbidden_strings()
         run_optional([
             "bazel",
             "query",
-            "//tools/bazel:phase2_verify + //platforms:host_tools + //tools/bazel/toolchains:rust_firmware_toolchain",
+            "//tools/bazel:phase2_verify + //tools/bazel:reference_build + //tools/bazel:reference_build_plan + //tools/bazel:reference_test + //tools/bazel:reference_test_plan + //tools/bazel:reference_package + //tools/bazel:reference_package_plan + //tools/bazel:reference_simulator + //tools/bazel:reference_simulator_plan + //platforms:host_tools + //tools/bazel/toolchains:rust_firmware_toolchain",
         ])
         run_optional(["just", "--list"])
     except AssertionError as error:

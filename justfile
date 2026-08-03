@@ -3,6 +3,30 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 phase2-verify:
     python3 tools/bazel/phase2_verify.py
 
+reference-build:
+    bazel run //tools/bazel:reference_build
+
+reference-build-plan:
+    bazel run //tools/bazel:reference_build_plan
+
+reference-test:
+    bazel run //tools/bazel:reference_test
+
+reference-test-plan:
+    bazel run //tools/bazel:reference_test_plan
+
+reference-package:
+    bazel run //tools/bazel:reference_package
+
+reference-package-plan:
+    bazel run //tools/bazel:reference_package_plan
+
+reference-simulator:
+    bazel run //tools/bazel:reference_simulator
+
+reference-simulator-plan:
+    bazel run //tools/bazel:reference_simulator_plan
+
 phase3-verify:
     bazel run //tools/bazel:phase3_verify
 

@@ -1626,12 +1626,6 @@ shell_binary(
     ],
 )
 
-shell_binary(
-    name = "bootstrap",
-    src = "reference_contract.sh",
-    data = ["//:reference_matrix_sources"],
-)
-
 unavailable_capability(
     name = "build_firmware",
     available_command = "bazel build //tools/bazel/phase42:arm_link_smoke --config=mini --noskip_incompatible_explicit_targets",
@@ -1651,12 +1645,20 @@ shell_binary(
 )
 
 shell_binary(
-    name = "retained_foreign_code",
+    name = "reference_build",
     src = "reference_contract.sh",
     data = [
-        "manifests/foreign_code_inventory.json",
-        "//:phase5_runtime_boundary_docs",
         "//:reference_matrix_sources",
+        "//tools/bazel/toolchains:cc_firmware_info",
+    ],
+)
+
+shell_binary(
+    name = "reference_build_plan",
+    src = "reference_contract.sh",
+    data = [
+        "//:reference_matrix_sources",
+        "//tools/bazel/toolchains:cc_firmware_info",
     ],
 )
 
@@ -1671,9 +1673,12 @@ shell_binary(
 )
 
 shell_binary(
-    name = "host_tools",
+    name = "reference_test",
     src = "reference_contract.sh",
-    data = ["//:reference_matrix_sources"],
+    data = [
+        "//:reference_matrix_sources",
+        "//tools/bazel/toolchains:cc_firmware_info",
+    ],
 )
 
 unavailable_capability(
@@ -1683,27 +1688,48 @@ unavailable_capability(
 )
 
 shell_binary(
-    name = "unit_tests",
+    name = "reference_test_plan",
     src = "reference_contract.sh",
-    data = ["//:reference_matrix_sources"],
+    data = [
+        "//:reference_matrix_sources",
+        "//tools/bazel/toolchains:cc_firmware_info",
+    ],
 )
 
 shell_binary(
-    name = "simulator_inputs",
+    name = "reference_package",
     src = "reference_contract.sh",
-    data = ["//:phase1_reference_baseline"],
+    data = [
+        "//:reference_matrix_sources",
+        "//tools/bazel/toolchains:cc_firmware_info",
+    ],
 )
 
 shell_binary(
-    name = "format",
+    name = "reference_package_plan",
     src = "reference_contract.sh",
-    data = ["//:reference_matrix_sources"],
+    data = [
+        "//:reference_matrix_sources",
+        "//tools/bazel/toolchains:cc_firmware_info",
+    ],
 )
 
 shell_binary(
-    name = "lint",
+    name = "reference_simulator",
     src = "reference_contract.sh",
-    data = ["//:reference_matrix_sources"],
+    data = [
+        "//:phase1_reference_baseline",
+        "//tools/bazel/toolchains:cc_firmware_info",
+    ],
+)
+
+shell_binary(
+    name = "reference_simulator_plan",
+    src = "reference_contract.sh",
+    data = [
+        "//:phase1_reference_baseline",
+        "//tools/bazel/toolchains:cc_firmware_info",
+    ],
 )
 
 phase3_generated_surface("product_profiles")

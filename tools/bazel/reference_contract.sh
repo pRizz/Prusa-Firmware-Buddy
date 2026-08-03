@@ -4,7 +4,7 @@ set -euo pipefail
 root="${BUILD_WORKSPACE_DIRECTORY:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 command_name="$(basename "$0")"
 
-run_or_print() {
+run_reference() {
   local description="$1"
   shift
 
@@ -12,57 +12,43 @@ run_or_print() {
   printf 'reference command:'
   printf ' %q' "$@"
   printf '\n'
+  (cd "$root" && "$@")
+}
 
-  if [[ "${BUDDY_BAZEL_EXECUTE_REFERENCE:-0}" == "1" ]]; then
-    (cd "$root" && "$@")
-  fi
+print_reference_plan() {
+  local description="$1"
+  shift
+
+  printf '%s\n' "$description"
+  printf 'reference command:'
+  printf ' %q' "$@"
+  printf '\n'
 }
 
 case "$command_name" in
-  bootstrap)
-    run_or_print "Bootstrap current reference dependencies." python3 utils/bootstrap.py
+  reference_build)
+    run_reference "Execute the CMake/Python reference firmware build." python3 utils/build.py
     ;;
-  build_firmware)
-    run_or_print "Build firmware through the current reference contract." python3 utils/build.py
+  reference_build_plan)
+    print_reference_plan "Preview the CMake/Python reference firmware build." python3 utils/build.py
     ;;
-  rust_firmware)
-    run_or_print "Build Rust firmware authority target; Phase 4 owns crate implementation while this target preserves the product build contract." python3 tools/bazel/phase2_verify.py
+  reference_test)
+    run_reference "Execute the retained host-test reference workflow." sh -c 'mkdir -p build-tests && cd build-tests && cmake .. -DBOARD=BUDDY && make tests && ctest .'
     ;;
-  retained_foreign_code)
-    run_or_print "Validate retained C, C++, ASM, generated, and vendor boundary inputs for the Bazel authority graph." python3 tools/bazel/phase2_verify.py
+  reference_test_plan)
+    print_reference_plan "Preview the retained host-test reference workflow." sh -c 'mkdir -p build-tests && cd build-tests && cmake .. -DBOARD=BUDDY && make tests && ctest .'
     ;;
-  generated_assets)
-    run_or_print "Check generated asset reference contracts." sh -c 'python3 utils/build.py --generate-cmake-presets && python3 utils/logging/generate_overview.py'
+  reference_package)
+    run_reference "Execute the retained reference packaging workflow." python3 utils/build.py --generate-dfu
     ;;
-  host_tools)
-    run_or_print "Build host tools through the current reference contract." python3 utils/build.py --help
+  reference_package_plan)
+    print_reference_plan "Preview the retained reference packaging workflow." python3 utils/build.py --generate-dfu
     ;;
-  test_host)
-    run_or_print "Run host test reference contract." sh -c 'mkdir -p build-tests && cd build-tests && cmake .. -DBOARD=BUDDY && make tests && ctest .'
+  reference_simulator)
+    run_reference "Execute the retained simulator reference workflow." sh -c 'pytest tests/integration --firmware <firmware.bin>'
     ;;
-  unit_tests)
-    run_or_print "Run unit test reference contract." sh -c 'mkdir -p build-tests && cd build-tests && cmake .. -DBOARD=BUDDY && make tests && ctest .'
-    ;;
-  simulator_inputs)
-    run_or_print "Validate simulator input reference contract." sh -c 'pytest tests/integration --firmware <firmware.bin>'
-    ;;
-  format)
-    run_or_print "Run formatting reference contract." pre-commit run cmake-format yapf clang-format
-    ;;
-  lint)
-    run_or_print "Run lint/reference static checks." python3 tools/bazel/phase2_verify.py
-    ;;
-  generated_check)
-    run_or_print "Check generated-file reference contracts." sh -c 'python3 utils/build.py --generate-cmake-presets && python3 utils/logging/generate_overview.py'
-    ;;
-  simulator_parity)
-    run_or_print "Run simulator parity reference contract." sh -c 'pytest tests/integration --firmware <firmware.bin>'
-    ;;
-  release_package)
-    run_or_print "Run release package reference contract." python3 utils/build.py --generate-dfu
-    ;;
-  release_packages)
-    run_or_print "Run release package reference contract." python3 utils/build.py --generate-dfu
+  reference_simulator_plan)
+    print_reference_plan "Preview the retained simulator reference workflow." sh -c 'pytest tests/integration --firmware <firmware.bin>'
     ;;
   *)
     printf 'Unknown Bazel reference contract target: %s\n' "$command_name" >&2

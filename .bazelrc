@@ -1,8 +1,6 @@
 common --announce_rc
-common --repo_env=BUDDY_BAZEL_EXECUTE_REFERENCE=0
 
 build --enable_platform_specific_config
-build --action_env=BUDDY_BAZEL_EXECUTE_REFERENCE=0
 build --show_timestamps
 
 build:host --platforms=//platforms:host_tools

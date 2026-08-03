@@ -28,6 +28,12 @@ REFERENCE_ROUTES = (
     ReferenceRoute("reference_package", "--generate-dfu"),
     ReferenceRoute("reference_simulator", "pytest tests/integration"),
 )
+FORBIDDEN_QUALIFICATION_EDGES = (
+    "EmbeddedToolchainInfo",
+    "phase42_qualification",
+    "arm_link_smoke",
+    "phase42_verify",
+)
 
 
 def _read(relative_path: str) -> str:
@@ -196,8 +202,50 @@ class ReferenceExecutionTests(unittest.TestCase):
                         self.assertIn(route.command_marker, execute_result.output)
                         self.assertEqual(0, plan_result.returncode, plan_result.output)
                         self.assertIn("reference command:", plan_result.output)
-                        self.assertIn(route.command_marker, plan_result.output)
+                        escaped_marker = route.command_marker.replace(" ", "\\ ")
+                        self.assertIn(escaped_marker, plan_result.output)
                         self.assertNotIn("reference-executed:", plan_result.output)
+
+    def test_reference_closure_actions_and_runfiles_are_non_qualifying(self) -> None:
+        # Arrange
+        labels = [
+            f"//tools/bazel:{label}"
+            for route in REFERENCE_ROUTES
+            for label in (route.label, route.plan_label)
+        ]
+        target_set = f"set({' '.join(labels)})"
+        root = workspace_root()
+        with tempfile.TemporaryDirectory(prefix="phase42-reference-graph-") as temporary_name:
+            output_base = Path(temporary_name) / "output-base"
+
+            # Act
+            closure = run_command(
+                bazel_command(output_base, "query", f"deps({target_set})"),
+                cwd=root,
+            )
+            actions = run_command(
+                bazel_command(output_base, "aquery", f"deps({target_set})"),
+                cwd=root,
+            )
+            runfiles = run_command(
+                bazel_command(
+                    output_base,
+                    "cquery",
+                    target_set,
+                    "--output=starlark",
+                    "--starlark:expr=str(target.default_runfiles.files.to_list())",
+                ),
+                cwd=root,
+            )
+
+            # Assert
+            for result in (closure, actions, runfiles):
+                self.assertEqual(0, result.returncode, result.output)
+                for forbidden in FORBIDDEN_QUALIFICATION_EDGES:
+                    self.assertNotIn(forbidden, result.stdout)
+            self.assertIn(REFERENCE_PROVIDER, closure.stdout)
+            self.assertIn("//tools/bazel:reference_contract.sh", closure.stdout)
+            self.assertIn("tools/bazel/reference_contract.sh", runfiles.stdout)
 
     def test_unknown_dispatch_name_exits_two(self) -> None:
         # Arrange
