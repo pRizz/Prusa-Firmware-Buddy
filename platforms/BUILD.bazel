@@ -30,6 +30,12 @@ constraint_value(name = "mcu_stm32f427zi", constraint_setting = ":mcu")
 constraint_value(name = "mcu_stm32g070rbt6", constraint_setting = ":mcu")
 constraint_value(name = "mcu_stm32h503cbu7", constraint_setting = ":mcu")
 
+constraint_setting(name = "rust_target")
+constraint_value(
+    name = "thumbv7em_none_eabihf",
+    constraint_setting = ":rust_target",
+)
+
 platform(
     name = "host_tools",
     constraint_values = [
@@ -45,6 +51,7 @@ platform(
         ":printer_mini",
         ":board_buddy",
         ":mcu_stm32f407vg",
+        ":thumbv7em_none_eabihf",
     ],
 )
 

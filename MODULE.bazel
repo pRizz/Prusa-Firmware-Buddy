@@ -4,6 +4,7 @@ module(
 )
 
 bazel_dep(name = "rules_cc", version = "0.2.22")
+bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_python", version = "2.2.0")
 bazel_dep(name = "rules_rust", version = "0.71.3")
 
@@ -13,7 +14,11 @@ rust.toolchain(
     extra_target_triples = ["thumbv7em-none-eabihf"],
     versions = ["1.85.0"],
 )
-use_repo(rust, "rust_toolchains")
+use_repo(
+    rust,
+    "rust_toolchains",
+    rust_linux_x86_64_thumbv7em_none_eabihf_tools = "rust_linux_x86_64__thumbv7em-none-eabihf__stable_tools",
+)
 register_toolchains("@rust_toolchains//:all")
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
@@ -45,6 +50,12 @@ use_repo(
     embedded,
     "arm_gnu_linux_x86_64",
     "mini404_linux_x86_64",
+)
+
+register_toolchains(
+    "//tools/bazel/toolchains:phase42_qualification_linux_x86_64_toolchain",
+    "//tools/bazel/toolchains:phase42_qualification_darwin_x86_64_toolchain",
+    "//tools/bazel/toolchains:phase42_qualification_darwin_arm64_toolchain",
 )
 
 register_toolchains(

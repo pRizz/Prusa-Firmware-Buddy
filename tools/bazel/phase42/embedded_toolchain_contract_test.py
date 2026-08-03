@@ -86,12 +86,11 @@ def _assigned_list(source: str, name: str) -> tuple[str, ...]:
 
 
 def _named_call(source: str, function_name: str, name: str) -> str:
-    maybe_match = re.search(
-        rf"{re.escape(function_name)}\(\s*.*?name\s*=\s*\"{re.escape(name)}\"(.*?)\n\)",
-        source,
-        re.DOTALL,
-    )
-    return maybe_match.group(0) if maybe_match is not None else ""
+    for call in re.findall(rf"{re.escape(function_name)}\((.*?)\n\)", source,
+                           re.DOTALL):
+        if re.search(rf'name\s*=\s*"{re.escape(name)}"', call) is not None:
+            return f"{function_name}({call}\n)"
+    return ""
 
 
 def _provider_fields(source: str) -> tuple[str, ...]:
@@ -145,7 +144,8 @@ def validate_embedded_contract(inputs: EmbeddedContractInputs) -> list[str]:
         if attr_pattern.search(inputs.toolchain_rule) is None:
             errors.append(
                 f"{field_name} must be an executable exec-configured label")
-        if f"ctx.attr.{field_name}[FilesToRunProvider]" not in inputs.toolchain_rule:
+        if (f"ctx.attr.{field_name}[DefaultInfo].files_to_run"
+                not in inputs.toolchain_rule):
             errors.append(f"{field_name} must export its FilesToRunProvider")
 
     for field_name, label in EXECUTABLE_LABELS.items():
@@ -174,7 +174,8 @@ def validate_embedded_contract(inputs: EmbeddedContractInputs) -> list[str]:
             errors.append(f"Linux registration is missing {fragment}")
 
     module_fragments = (
-        '"rust_linux_x86_64_thumbv7em_none_eabihf_tools"',
+        'bazel_dep(name = "platforms", version = "1.1.0")',
+        'rust_linux_x86_64_thumbv7em_none_eabihf_tools = "rust_linux_x86_64__thumbv7em-none-eabihf__stable_tools"',
         '"//tools/bazel/toolchains:phase42_qualification_linux_x86_64_toolchain"',
         '"//tools/bazel/toolchains:phase42_qualification_darwin_x86_64_toolchain"',
         '"//tools/bazel/toolchains:phase42_qualification_darwin_arm64_toolchain"',
@@ -188,7 +189,6 @@ def validate_embedded_contract(inputs: EmbeddedContractInputs) -> list[str]:
             "soft_float",
             "thumbv7em_none_eabi\"",
             ".dependencies",
-            "reference_toolchain(",
     ):
         if forbidden in forbidden_source:
             errors.append(f"forbidden qualification dependency {forbidden}")

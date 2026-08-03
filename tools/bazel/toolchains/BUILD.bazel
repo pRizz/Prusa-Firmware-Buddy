@@ -1,3 +1,12 @@
+load(
+    "//tools/bazel/phase42:platform_contract.bzl",
+    "PHASE42_MINI_CONSTRAINTS",
+)
+load(
+    ":embedded_toolchain.bzl",
+    "phase42_darwin_qualification_toolchain",
+    "phase42_linux_x86_64_qualification_toolchain",
+)
 load(":reference_toolchain.bzl", "reference_toolchain")
 
 package(default_visibility = ["//visibility:public"])
@@ -6,6 +15,7 @@ toolchain_type(name = "rust_firmware_toolchain_type")
 toolchain_type(name = "cc_firmware_toolchain_type")
 toolchain_type(name = "asm_firmware_toolchain_type")
 toolchain_type(name = "asset_generator_toolchain_type")
+toolchain_type(name = "phase42_qualification_toolchain_type")
 
 reference_toolchain(
     name = "rust_firmware_info",
@@ -78,4 +88,60 @@ toolchain(
     name = "asset_generator_toolchain",
     toolchain = ":asset_generator_info",
     toolchain_type = ":asset_generator_toolchain_type",
+)
+
+phase42_linux_x86_64_qualification_toolchain(
+    name = "phase42_qualification_linux_x86_64",
+    arm_gcc = "@arm_gnu_linux_x86_64//:bin/arm-none-eabi-gcc",
+    arm_nm = "@arm_gnu_linux_x86_64//:bin/arm-none-eabi-nm",
+    arm_objcopy = "@arm_gnu_linux_x86_64//:bin/arm-none-eabi-objcopy",
+    arm_objdump = "@arm_gnu_linux_x86_64//:bin/arm-none-eabi-objdump",
+    arm_readelf = "@arm_gnu_linux_x86_64//:bin/arm-none-eabi-readelf",
+    arm_size = "@arm_gnu_linux_x86_64//:bin/arm-none-eabi-size",
+    mini404 = "@mini404_linux_x86_64//:qemu-system-buddy",
+    python = "@python_3_12_10//:python3",
+    rustc = "@rust_linux_x86_64_thumbv7em_none_eabihf_tools//:rustc",
+)
+
+phase42_darwin_qualification_toolchain(
+    name = "phase42_qualification_darwin_x86_64",
+    arch = "x86_64",
+)
+
+phase42_darwin_qualification_toolchain(
+    name = "phase42_qualification_darwin_arm64",
+    arch = "arm64",
+)
+
+toolchain(
+    name = "phase42_qualification_linux_x86_64_toolchain",
+    exec_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+    target_compatible_with = PHASE42_MINI_CONSTRAINTS,
+    toolchain = ":phase42_qualification_linux_x86_64",
+    toolchain_type = ":phase42_qualification_toolchain_type",
+)
+
+toolchain(
+    name = "phase42_qualification_darwin_x86_64_toolchain",
+    exec_compatible_with = [
+        "@platforms//os:osx",
+        "@platforms//cpu:x86_64",
+    ],
+    target_compatible_with = PHASE42_MINI_CONSTRAINTS,
+    toolchain = ":phase42_qualification_darwin_x86_64",
+    toolchain_type = ":phase42_qualification_toolchain_type",
+)
+
+toolchain(
+    name = "phase42_qualification_darwin_arm64_toolchain",
+    exec_compatible_with = [
+        "@platforms//os:osx",
+        "@platforms//cpu:aarch64",
+    ],
+    target_compatible_with = PHASE42_MINI_CONSTRAINTS,
+    toolchain = ":phase42_qualification_darwin_arm64",
+    toolchain_type = ":phase42_qualification_toolchain_type",
 )
