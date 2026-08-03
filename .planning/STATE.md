@@ -2,16 +2,16 @@
 gsd_state_version: "1.0"
 milestone: v1.4
 milestone_name: Bazel-Native Rust Firmware Bring-Up
-status: executing
-stopped_at: Completed 42-04-PLAN.md
-last_updated: "2026-08-03T22:28:04.780Z"
+status: verifying
+stopped_at: Completed 42-05-PLAN.md
+last_updated: "2026-08-03T23:05:36.393Z"
 last_activity: "2026-08-03"
 progress:
   total_phases: 8
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 5
-  completed_plans: 4
-  percent: 80
+  completed_plans: 5
+  percent: 100
 ---
 
 # Project State
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-08-02)
 Milestone: v1.4 Bazel-Native Rust Firmware Bring-Up
 Phase: 42 (truthful-bazel-graph-and-executable-mini-toolchain) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-08-03
 
 Progress: [----------] 0% (0/8 phases complete)
@@ -101,6 +101,7 @@ Progress: [----------] 0% (0/8 phases complete)
 | Phase 42 P02 | 8min | 1 tasks | 9 files |
 | Phase 42 P03 | 47min | 1 tasks | 10 files |
 | Phase 42 P04 | 37min | 2 tasks | 4 files |
+| Phase 42 P05 | 34min | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -213,6 +214,9 @@ Recent decisions affecting current work:
 - [Phase 42]: Model missing embedded capabilities as exact analysis-time select failures with actionable owner/remedy diagnostics.
 - [Phase 42]: Bracket every negative platform category with a passing exact MINI control on canonical Linux x86_64.
 - [Phase 42]: Audit rules_python execution fields while excluding non-executed TemplateExpand source and substitution metadata.
+- [Phase 42]: Unavailable public capabilities fail from rule analysis after HostPolicyInfo resolution and publish no actions, outputs, DefaultInfo, or qualification providers.
+- [Phase 42]: Reference execution and preview semantics are fixed by eight label basenames; environment values cannot switch behavior.
+- [Phase 42]: Only canonical Linux x86_64 may return successful Phase 42 qualification; Darwin host-check is rejection-only.
 
 ### Pending Todos
 
@@ -230,6 +234,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-08-03T22:28:04.777Z
-Stopped at: Completed 42-04-PLAN.md
+Last session: 2026-08-03T23:05:36.390Z
+Stopped at: Completed 42-05-PLAN.md
 Resume file: None

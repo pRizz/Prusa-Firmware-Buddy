@@ -10,9 +10,9 @@ These requirements deliver one executable, development-only Rust firmware bring-
 ### Build Authority and Toolchains
 
 - [ ] **BUILD-01**: Developer can build a real embedded Rust firmware image for the explicit `MINI/BUDDY/STM32F407VG` platform through Bazel from a clean checkout.
-- [ ] **BUILD-02**: Developer-facing build, test, package, and simulator commands either perform the named work and emit genuine outputs or exit nonzero with an actionable error.
+- [x] **BUILD-02**: Developer-facing build, test, package, and simulator commands either perform the named work and emit genuine outputs or exit nonzero with an actionable error.
 - [x] **BUILD-03**: Unsupported product, board, MCU, or host combinations fail during Bazel analysis or toolchain resolution without silently selecting a host build, fixture, CMake result, or reference artifact.
-- [ ] **BUILD-04**: Developer can invoke the CMake/C++ reference path through separately named commands and labels that cannot satisfy Rust firmware success criteria.
+- [x] **BUILD-04**: Developer can invoke the CMake/C++ reference path through separately named commands and labels that cannot satisfy Rust firmware success criteria.
 - [x] **TOOL-01**: Maintainer can reproduce the embedded target with pinned, checksum-verified Rust, Arm GNU, Python, and simulator tools without undeclared `PATH` or `.dependencies` fallback.
 - [ ] **TOOL-02**: Maintainer can prove every Rust and retained native object in the image uses the compatible Cortex-M4 hard-float `thumbv7em-none-eabihf` ABI, with mismatches rejected before packaging.
 
@@ -85,9 +85,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | BUILD-01 | Phase 46 | Pending |
-| BUILD-02 | Phase 42 | Pending |
+| BUILD-02 | Phase 42 | Complete |
 | BUILD-03 | Phase 42 | Complete |
-| BUILD-04 | Phase 42 | Pending |
+| BUILD-04 | Phase 42 | Complete |
 | TOOL-01 | Phase 42 | Complete |
 | TOOL-02 | Phase 46 | Pending |
 | LINK-01 | Phase 44 | Pending |
