@@ -145,6 +145,44 @@ class AggregateDefinitionTests(unittest.TestCase):
 
 
 class AggregateHostPolicyTests(unittest.TestCase):
+    def test_intel_darwin_host_check_analyzes_with_pinned_python_and_reports_remedy(
+            self) -> None:
+        # Arrange
+        verifier = _load_verifier()
+        module = _read("MODULE.bazel")
+        build = _read("tools/bazel/phase42/BUILD.bazel")
+        diagnostic = (
+            "unsupported embedded qualification host: detected Darwin-x86_64; "
+            f"use {LINUX_REMEDY}"
+        )
+
+        def runner(command, *, cwd):
+            return CommandResult(tuple(command), 1, "", diagnostic)
+
+        # Act
+        result = verifier.verify(
+            mode="host-check",
+            system="Darwin",
+            machine="x86_64",
+            runner=runner,
+            maybe_root=Path("/workspace"),
+        )
+
+        # Assert
+        self.assertIn(
+            '"x86_64-apple-darwin": '
+            '"d0d51fa22c0e99b58de1b1b4baeca467d6fd0a1424c7509ea280c0796306c481"',
+            module,
+        )
+        self.assertRegex(
+            build,
+            r'(?s)platform\(\s*name = "darwin_x86_64_host".*?'
+            r'"@platforms//cpu:x86_64".*?"@platforms//os:osx".*?\)',
+        )
+        self.assertEqual(0, result.returncode, result.output)
+        self.assertIn("detected Darwin-x86_64", diagnostic)
+        self.assertIn(LINUX_REMEDY, diagnostic)
+
     def test_darwin_aggregate_stops_before_positive_commands(self) -> None:
         # Arrange
         verifier = _load_verifier()

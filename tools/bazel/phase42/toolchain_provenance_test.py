@@ -31,6 +31,14 @@ EXPECTED_MODULE_VERSIONS = {
     "rules_python": "2.2.0",
     "rules_rust": "0.71.3",
 }
+EXPECTED_PYTHON_SHA256 = {
+    "aarch64-apple-darwin":
+    "2d6477ecd10191675b7e7979e4b9e811fef36833ef3a7f3aa445eec305ce59a2",
+    "x86_64-apple-darwin":
+    "d0d51fa22c0e99b58de1b1b4baeca467d6fd0a1424c7509ea280c0796306c481",
+    "x86_64-unknown-linux-gnu":
+    "e9cf6f7da499a4400ba30ae1da8f7ef25ce97827bd8c1084717aa05438035186",
+}
 FORBIDDEN_DECLARATION_PATTERNS = {
     "archive output": r"(?i)(?:^|[/_-])archives?(?:[/_.-]|$)",
     "Cargo": r"(?i)\bcargo(?:\s+|_)(?:build|test|run)\b",
@@ -90,8 +98,8 @@ def validate_provenance(inputs: ProvenanceInputs) -> list[str]:
         'extra_target_triples = ["thumbv7em-none-eabihf"]',
         'versions = ["1.85.0"]',
         'python_version = "3.12.10"',
-        '"aarch64-apple-darwin": "2d6477ecd10191675b7e7979e4b9e811fef36833ef3a7f3aa445eec305ce59a2"',
-        '"x86_64-unknown-linux-gnu": "e9cf6f7da499a4400ba30ae1da8f7ef25ce97827bd8c1084717aa05438035186"',
+        *(f'"{platform}": "{sha256}"'
+          for platform, sha256 in EXPECTED_PYTHON_SHA256.items()),
         'strip_prefix = "python"',
         "https://github.com/astral-sh/python-build-standalone/releases/download/20250409/",
         '"//tools/bazel/toolchains:embedded_repositories.bzl"',
@@ -211,6 +219,23 @@ class ToolchainProvenanceTest(unittest.TestCase):
 
                     # Assert
                     self.assertTrue(errors)
+
+    def test_each_python_archive_checksum_mutation_is_rejected(self) -> None:
+        for platform, checksum in EXPECTED_PYTHON_SHA256.items():
+            with self.subTest(platform=platform):
+                # Arrange
+                mutated = ProvenanceInputs(
+                    bazel_version=self.inputs.bazel_version,
+                    lock=self.inputs.lock,
+                    module=self.inputs.module.replace(checksum, "0" * 64),
+                    repositories=self.inputs.repositories,
+                )
+
+                # Act
+                errors = validate_provenance(mutated)
+
+                # Assert
+                self.assertTrue(errors)
 
     def test_each_forbidden_fallback_class_is_rejected(self) -> None:
         forbidden_mutations = (
