@@ -69,13 +69,16 @@ PYTHON_TEST_TARGETS = (
     "//tools/bazel/phase42:phase42_verify",
 )
 PYTHON_312_REPOSITORY_MARKER = "rules_python++python+python_3_12_10"
+APPROVED_PYTHON_INTERPRETER_REPOSITORIES = frozenset((
+    "rules_python++python+python_3_12_10_aarch64-apple-darwin",
+    "rules_python++python+python_3_12_10_x86_64-apple-darwin",
+    "rules_python++python+python_3_12_10_x86_64-unknown-linux-gnu",
+))
 APPROVED_EXECUTABLE_REPOSITORIES = frozenset((
     "+embedded_repositories+arm_gnu_linux_x86_64",
     "arm_gnu_linux_x86_64",
     "rules_python+",
-    "rules_python++python+python_3_12_10_aarch64-apple-darwin",
-    "rules_python++python+python_3_12_10_x86_64-apple-darwin",
-    "rules_python++python+python_3_12_10_x86_64-unknown-linux-gnu",
+    *APPROVED_PYTHON_INTERPRETER_REPOSITORIES,
     "rules_rust++rust+rust_linux_x86_64__thumbv7em-none-eabihf__stable_tools",
     "rust_linux_x86_64_thumbv7em_none_eabihf_tools",
 ))
@@ -86,6 +89,11 @@ ABSOLUTE_EXECUTABLE_PATTERN = re.compile(
 EXTERNAL_EXECUTABLE_PATTERN = re.compile(
     r"(?<![A-Za-z0-9_+.-])(?P<executable>external/(?P<repository>[A-Za-z0-9_+.-]+)/[A-Za-z0-9_./+-]*(?:cargo|cmake|python3|rustc|arm-none-eabi-[A-Za-z0-9_-]+))(?![A-Za-z0-9_.-])",
     re.IGNORECASE,
+)
+PYTHON_INTERPRETER_PATTERN = re.compile(
+    r"(?<![A-Za-z0-9_+./-])"
+    r"(?P<executable>(?:external/|(?:\.\./)+)(?P<repository>[A-Za-z0-9_+.-]+)/bin/python3)"
+    r"(?![A-Za-z0-9_.-])",
 )
 PYTHON_ENTRYPOINT_PATTERN = re.compile(
     r'py_(?:test|binary)\(\s*name\s*=\s*"(?P<name>[^"]+)"',
@@ -103,6 +111,13 @@ def declared_python_entrypoint_targets(build_source: str) -> tuple[str, ...]:
 def _external_repository(executable: str) -> str | None:
     maybe_match = re.search(r"(?:^|/)external/(?P<repository>[^/]+)/", executable)
     return maybe_match.group("repository") if maybe_match is not None else None
+
+
+def _python_interpreter_repositories(text: str) -> tuple[tuple[str, str], ...]:
+    return tuple(
+        (match.group("repository"), match.group("executable"))
+        for match in PYTHON_INTERPRETER_PATTERN.finditer(text)
+    )
 
 
 def _forbidden_provenance_errors(text: str) -> list[str]:
@@ -182,6 +197,14 @@ def audit_python_action(target: str, text: str) -> list[str]:
         errors.append(f"Python action graph is missing owner {target}")
     if PYTHON_312_REPOSITORY_MARKER not in action_surface:
         errors.append(f"Python action graph is missing {PYTHON_312_REPOSITORY_MARKER}")
+    interpreter_repositories = _python_interpreter_repositories(action_surface)
+    if not interpreter_repositories:
+        errors.append("Python action graph is missing a repository-owned interpreter")
+    for repository, executable in interpreter_repositories:
+        if repository not in APPROVED_PYTHON_INTERPRETER_REPOSITORIES:
+            errors.append(
+                f"unapproved Python interpreter repository {repository}: {executable}"
+            )
     return errors
 
 
@@ -295,6 +318,7 @@ class GraphIsolationMatcherTest(unittest.TestCase):
         action = "\n".join((
             PYTHON_TEST_TARGETS[0],
             PYTHON_312_REPOSITORY_MARKER,
+            'unresolved_symlink_target: "../../../../../../rules_python++python+python_3_12_10_x86_64-unknown-linux-gnu/bin/python3"',
             'template_content: "#!/usr/bin/env python3\\n"',
             "substitutions {",
             '  value: "#!/usr/bin/env python3"',
@@ -310,7 +334,10 @@ class GraphIsolationMatcherTest(unittest.TestCase):
     def test_pinned_owner_cannot_mask_wrong_external_python_owner(self) -> None:
         # Arrange
         pinned_target, wrong_target = PYTHON_TEST_TARGETS[:2]
-        pinned_action = f"{pinned_target} {PYTHON_312_REPOSITORY_MARKER}"
+        pinned_action = (
+            f"{pinned_target} "
+            "external/rules_python++python+python_3_12_10_x86_64-unknown-linux-gnu/bin/python3"
+        )
         wrong_action = (
             f"{wrong_target} "
             "external/evil_python/bin/python3"
@@ -323,6 +350,25 @@ class GraphIsolationMatcherTest(unittest.TestCase):
         # Assert
         self.assertEqual(pinned_errors, [])
         self.assertTrue(wrong_errors)
+
+    def test_parent_relative_interpreter_cannot_be_masked_by_pinned_input(self) -> None:
+        # Arrange
+        target = "//tools/bazel/phase42:facade_contract_tests"
+        action = "\n".join((
+            f"target: {target}",
+            'unresolved_symlink_target: "../../../../../../evil_python/bin/python3"',
+            "input: external/rules_python++python+python_3_12_10_aarch64-apple-darwin/lib/python3.12/os.py",
+        ))
+
+        # Act
+        errors = audit_python_action(target, action)
+
+        # Assert
+        self.assertIn(
+            "unapproved Python interpreter repository evil_python: "
+            "../../../../../../evil_python/bin/python3",
+            errors,
+        )
 
 
 class GraphIsolationExecutionTest(unittest.TestCase):
