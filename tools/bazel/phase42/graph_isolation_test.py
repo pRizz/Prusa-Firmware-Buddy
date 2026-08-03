@@ -49,7 +49,7 @@ FORBIDDEN_MARKERS = (
     ".planning/archive",
     ".planning/milestones",
     ".dependencies",
-    "representative_release_artifacts",
+    "phase3_fixture_release_artifacts",
     "/usr/bin/python3",
     "/usr/local/bin/python3",
     "/opt/homebrew",
@@ -301,7 +301,7 @@ class GraphIsolationExecutionTest(unittest.TestCase):
 
         provider_targets = (
             "//tools/bazel/toolchains:rust_firmware_info",
-            "//tools/bazel:representative_release_artifacts",
+            "//tools/bazel:phase3_fixture_release_artifacts",
         )
         provider_text = self._require_success(
             "cquery",

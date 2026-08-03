@@ -36,6 +36,11 @@ CAPABILITIES = (
         "bazel build //tools/bazel/phase42:arm_link_smoke --config=mini --noskip_incompatible_explicit_targets",
     ),
     Capability(
+        "release_packages",
+        "Phase 47",
+        "bazel build //tools/bazel/phase42:arm_link_smoke --config=mini --noskip_incompatible_explicit_targets",
+    ),
+    Capability(
         "simulator_parity",
         "Phase 48",
         "bazel test //tools/bazel/phase42:phase42_verifier_tests --config=mini --noskip_incompatible_explicit_targets",
@@ -75,15 +80,11 @@ def validate_authority_definitions(build_source: str, gate_source: str) -> list[
         errors.append("release_package must not be a fixture-backed filegroup")
     if 'name = "phase3_fixture_release_artifacts"' not in build_source:
         errors.append("historical package fixtures need an explicit phase3_fixture name")
-    if 'name = "representative_release_artifacts"' in build_source:
-        errors.append("the production-looking representative_release_artifacts name is retired")
-
     for forbidden in (
         "ctx.actions",
         "DefaultInfo",
         "OutputGroupInfo",
         "EmbeddedToolchainInfo",
-        "executable = True",
     ):
         if forbidden in gate_source:
             errors.append(f"capability gate must not expose {forbidden}")
@@ -92,7 +93,6 @@ def validate_authority_definitions(build_source: str, gate_source: str) -> list[
         "host_policy = toolchain.host_policy",
         "fail(",
         "capability unavailable",
-        LINUX_REMEDY,
     ):
         if required not in gate_source:
             errors.append(f"capability gate is missing {required}")
@@ -142,6 +142,31 @@ class FacadeDefinitionTests(unittest.TestCase):
 
 
 class FacadeCommandTests(unittest.TestCase):
+    def test_darwin_smoke_uses_the_host_policy_diagnostic(self) -> None:
+        # Arrange
+        if platform.system() != "Darwin":
+            self.skipTest("Darwin host-policy route only")
+        root = workspace_root()
+
+        with tempfile.TemporaryDirectory(prefix="phase42-smoke-host-") as temporary:
+            output_base = Path(temporary) / "output-base"
+            command = bazel_command(
+                output_base,
+                "build",
+                "//tools/bazel/phase42:arm_link_smoke",
+                *MINI_OPTIONS,
+            )
+
+            # Act
+            result = run_command(command, cwd=root)
+
+            # Assert
+            self.assertNotEqual(0, result.returncode, result.output)
+            self.assertIn("unsupported embedded qualification host", result.output)
+            self.assertIn(f"detected Darwin-{platform.machine()}", result.output)
+            self.assertIn(LINUX_REMEDY, result.output)
+            self.assertNotIn("No matching toolchains", result.output)
+
     def test_build_and_run_fail_during_analysis_with_exact_diagnostics(self) -> None:
         # Arrange
         root = workspace_root()

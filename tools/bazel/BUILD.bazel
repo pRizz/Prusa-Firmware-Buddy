@@ -1,6 +1,7 @@
 load(":artifact_rules.bzl", "phase3_release_artifacts")
 load(":generator_rules.bzl", "phase3_generated_surface")
 load(":shell_rules.bzl", "shell_binary", "shell_test")
+load("//tools/bazel/phase42:capability_gate.bzl", "unavailable_capability")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -522,7 +523,7 @@ filegroup(
 
 filegroup(
     name = "phase17_representative_release_smoke",
-    srcs = [":representative_release_artifacts"],
+    srcs = [":phase3_fixture_release_artifacts"],
 )
 
 filegroup(
@@ -1555,7 +1556,7 @@ phase3_release_artifacts(
 )
 
 filegroup(
-    name = "representative_release_artifacts",
+    name = "phase3_fixture_release_artifacts",
     srcs = [
         ":mini_boot_artifacts",
         ":mini_noboot_artifacts",
@@ -1599,14 +1600,16 @@ filegroup(
     ],
 )
 
-filegroup(
+unavailable_capability(
     name = "release_package",
-    srcs = [":mini_boot_artifacts"],
+    available_command = "bazel build //tools/bazel/phase42:arm_link_smoke --config=mini --noskip_incompatible_explicit_targets",
+    owning_phase = "Phase 47",
 )
 
-filegroup(
+unavailable_capability(
     name = "release_packages",
-    srcs = [":representative_release_artifacts"],
+    available_command = "bazel build //tools/bazel/phase42:arm_link_smoke --config=mini --noskip_incompatible_explicit_targets",
+    owning_phase = "Phase 47",
 )
 
 shell_binary(
@@ -1619,7 +1622,7 @@ shell_binary(
         "artifact_rules.bzl",
         "phase3_verify.py",
         "manifests/representative_products.json",
-        ":representative_release_artifacts",
+        ":phase3_fixture_release_artifacts",
     ],
 )
 
@@ -1629,10 +1632,16 @@ shell_binary(
     data = ["//:reference_matrix_sources"],
 )
 
-shell_binary(
+unavailable_capability(
     name = "build_firmware",
-    src = "reference_contract.sh",
-    data = ["//:reference_matrix_sources"],
+    available_command = "bazel build //tools/bazel/phase42:arm_link_smoke --config=mini --noskip_incompatible_explicit_targets",
+    owning_phase = "Phase 46",
+)
+
+unavailable_capability(
+    name = "test_firmware",
+    available_command = "bazel test //tools/bazel/phase42:phase42_verifier_tests --config=mini --noskip_incompatible_explicit_targets",
+    owning_phase = "Phase 43/46",
 )
 
 shell_binary(
@@ -1667,10 +1676,10 @@ shell_binary(
     data = ["//:reference_matrix_sources"],
 )
 
-shell_binary(
+unavailable_capability(
     name = "test_host",
-    src = "reference_contract.sh",
-    data = ["//:reference_matrix_sources"],
+    available_command = "use //tools/bazel:test_firmware or explicit //tools/bazel:reference_test",
+    owning_phase = "Phase 43/46",
 )
 
 shell_binary(
@@ -1736,13 +1745,13 @@ shell_binary(
         "artifact_metadata_compare.py",
         "generated_drift.py",
         "manifests/representative_products.json",
-        ":representative_release_artifacts",
+        ":phase3_fixture_release_artifacts",
         "//:phase1_reference_baseline",
     ],
 )
 
-shell_binary(
+unavailable_capability(
     name = "simulator_parity",
-    src = "reference_contract.sh",
-    data = ["//:phase1_reference_baseline"],
+    available_command = "bazel test //tools/bazel/phase42:phase42_verifier_tests --config=mini --noskip_incompatible_explicit_targets",
+    owning_phase = "Phase 48",
 )
