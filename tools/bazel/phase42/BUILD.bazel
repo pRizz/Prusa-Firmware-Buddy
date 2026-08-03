@@ -1,0 +1,15 @@
+load("@rules_python//python:py_test.bzl", "py_test")
+
+package(default_visibility = ["//visibility:private"])
+
+py_test(
+    name = "toolchain_provenance_tests",
+    srcs = ["toolchain_provenance_test.py"],
+    data = [
+        "//:.bazelversion",
+        "//:MODULE.bazel",
+        "//:MODULE.bazel.lock",
+        "//tools/bazel/toolchains:embedded_repositories.bzl",
+    ],
+    python_version = "PY3",
+)
