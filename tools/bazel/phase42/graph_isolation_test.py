@@ -70,6 +70,7 @@ PYTHON_TEST_TARGETS = (
 )
 PYTHON_312_REPOSITORY_MARKER = "rules_python++python+python_3_12_10"
 APPROVED_EXECUTABLE_REPOSITORIES = frozenset((
+    "+embedded_repositories+arm_gnu_linux_x86_64",
     "arm_gnu_linux_x86_64",
     "rules_python+",
     "rules_python++python+python_3_12_10_aarch64-apple-darwin",
@@ -225,6 +226,7 @@ class GraphIsolationMatcherTest(unittest.TestCase):
         graph = "\n".join((
             *CANONICAL_CONSTRAINTS,
             *LOCKED_IDENTITIES,
+            "/tmp/output/execroot/_main/external/+embedded_repositories+arm_gnu_linux_x86_64/bin/arm-none-eabi-gcc",
             "/tmp/output/execroot/_main/external/rules_rust++rust+rust_linux_x86_64__thumbv7em-none-eabihf__stable_tools/bin/rustc",
             "/tmp/output/external/rules_python++python+python_3_12_10_x86_64-unknown-linux-gnu/bin/python3",
         ))
