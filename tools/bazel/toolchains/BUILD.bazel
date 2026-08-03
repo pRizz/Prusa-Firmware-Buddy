@@ -98,6 +98,7 @@ phase42_linux_x86_64_qualification_toolchain(
     arm_objdump = "@arm_gnu_linux_x86_64//:bin/arm-none-eabi-objdump",
     arm_readelf = "@arm_gnu_linux_x86_64//:bin/arm-none-eabi-readelf",
     arm_size = "@arm_gnu_linux_x86_64//:bin/arm-none-eabi-size",
+    arm_toolchain_files = "@arm_gnu_linux_x86_64//:all_files",
     mini404 = "@mini404_linux_x86_64//:qemu-system-buddy",
     python = "@python_3_12_10//:python3",
     rustc = "@rust_linux_x86_64_thumbv7em_none_eabihf_tools//:rustc",

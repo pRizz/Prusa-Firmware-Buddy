@@ -20,6 +20,7 @@ EMBEDDED_PROVIDER_FIELDS = (
     "arm_readelf",
     "arm_nm",
     "arm_size",
+    "arm_toolchain_files",
     "python",
     "mini404",
     "versions",
@@ -151,6 +152,13 @@ def validate_embedded_contract(inputs: EmbeddedContractInputs) -> list[str]:
     for field_name, label in EXECUTABLE_LABELS.items():
         if f'{field_name} = "{label}"' not in inputs.toolchain_build:
             errors.append(f"{field_name} must use declared label {label}")
+
+    if 'arm_toolchain_files = attr.label(mandatory = True)' not in inputs.toolchain_rule:
+        errors.append("Arm GCC driver must declare its complete runtime files")
+    if 'arm_toolchain_files = "@arm_gnu_linux_x86_64//:all_files"' not in inputs.toolchain_build:
+        errors.append("Arm GCC driver must use the declared archive runtime")
+    if "ctx.attr.arm_toolchain_files[DefaultInfo].files" not in inputs.toolchain_rule:
+        errors.append("embedded provider must export Arm GCC runtime files")
 
     for fragment in VERSION_FRAGMENTS:
         if fragment not in inputs.toolchain_rule:

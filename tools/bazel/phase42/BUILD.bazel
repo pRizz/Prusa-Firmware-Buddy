@@ -1,6 +1,15 @@
 load("@rules_python//python:py_test.bzl", "py_test")
+load(":arm_link_smoke.bzl", "arm_link_smoke")
+load(":platform_contract.bzl", "PHASE42_MINI_CONSTRAINTS")
 
 package(default_visibility = ["//visibility:private"])
+
+arm_link_smoke(
+    name = "arm_link_smoke",
+    src = "arm_link_smoke.rs",
+    linker_script = "arm_link_smoke.ld",
+    target_compatible_with = PHASE42_MINI_CONSTRAINTS,
+)
 
 py_test(
     name = "toolchain_provenance_tests",

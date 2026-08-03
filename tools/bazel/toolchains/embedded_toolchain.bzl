@@ -12,6 +12,7 @@ EmbeddedToolchainInfo = provider(fields = {
     "arm_readelf": "Arm GNU readelf",
     "arm_nm": "Arm GNU nm",
     "arm_size": "Arm GNU size",
+    "arm_toolchain_files": "complete Arm GNU runtime needed by the compiler driver",
     "python": "rules_python-resolved Python 3.12.10 interpreter",
     "mini404": "Mini404 0.9.10 executable",
     "versions": "locked identity dictionary",
@@ -36,6 +37,7 @@ def _linux_x86_64_qualification_toolchain_impl(ctx):
         arm_readelf = ctx.attr.arm_readelf[DefaultInfo].files_to_run,
         arm_nm = ctx.attr.arm_nm[DefaultInfo].files_to_run,
         arm_size = ctx.attr.arm_size[DefaultInfo].files_to_run,
+        arm_toolchain_files = ctx.attr.arm_toolchain_files[DefaultInfo].files,
         python = ctx.attr.python[DefaultInfo].files_to_run,
         mini404 = ctx.attr.mini404[DefaultInfo].files_to_run,
         versions = _LOCKED_VERSIONS,
@@ -73,7 +75,10 @@ _EXECUTABLE_ATTRS = {
 
 phase42_linux_x86_64_qualification_toolchain = rule(
     implementation = _linux_x86_64_qualification_toolchain_impl,
-    attrs = _EXECUTABLE_ATTRS,
+    attrs = dict(
+        _EXECUTABLE_ATTRS,
+        arm_toolchain_files = attr.label(mandatory = True),
+    ),
 )
 
 phase42_darwin_qualification_toolchain = rule(

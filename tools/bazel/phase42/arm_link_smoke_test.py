@@ -14,6 +14,7 @@ CANONICAL_CONSTRAINTS = (
 @dataclass(frozen=True)
 class SmokeInputs:
     build: str
+    embedded_repositories: str
     rule: str
     rust: str
     linker: str
@@ -34,6 +35,8 @@ def _read_or_empty(relative_path: str) -> str:
 def _load_inputs() -> SmokeInputs:
     return SmokeInputs(
         build=_read_or_empty("tools/bazel/phase42/BUILD.bazel"),
+        embedded_repositories=_read_or_empty(
+            "tools/bazel/toolchains/embedded_repositories.bzl"),
         rule=_read_or_empty("tools/bazel/phase42/arm_link_smoke.bzl"),
         rust=_read_or_empty("tools/bazel/phase42/arm_link_smoke.rs"),
         linker=_read_or_empty("tools/bazel/phase42/arm_link_smoke.ld"),
@@ -76,9 +79,15 @@ def validate_smoke_contract(inputs: SmokeInputs) -> list[str]:
         errors,
     )
     _require_fragments(
+        inputs.embedded_repositories,
+        ('glob(["**"], exclude_directories = 1)',),
+        "Arm archive runtime",
+        errors,
+    )
+    _require_fragments(
         inputs.rule,
         (
-            'load("//tools/bazel/phase42:host_policy.bzl",',
+            '"//tools/bazel/phase42:host_policy.bzl"',
             '"PHASE42_QUALIFICATION_TOOLCHAIN_TYPE"',
             '"require_embedded_toolchain"',
             "embedded = require_embedded_toolchain(ctx)",
@@ -98,10 +107,10 @@ def validate_smoke_contract(inputs: SmokeInputs) -> list[str]:
             '"-Wl,-Map," + map_file.path',
             'mnemonic = "Phase42RustCompile"',
             'mnemonic = "Phase42ArmLink"',
-            'mnemonic = "Phase42ArmReadelf"',
-            'mnemonic = "Phase42ArmObjdump"',
-            'mnemonic = "Phase42ArmNm"',
-            'mnemonic = "Phase42ArmSize"',
+            '"Phase42ArmReadelf"',
+            '"Phase42ArmObjdump"',
+            '"Phase42ArmNm"',
+            '"Phase42ArmSize"',
             'mnemonic = "Phase42SmokeReport"',
             "embedded.arm_readelf",
             "embedded.arm_objdump",

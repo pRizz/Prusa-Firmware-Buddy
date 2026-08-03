@@ -203,7 +203,7 @@
   "moduleExtensions": {
     "//tools/bazel/toolchains:embedded_repositories.bzl%embedded_repositories": {
       "general": {
-        "bzlTransitiveDigest": "M/BHve+Ea/aS3hKlAspTDHnmalS9giaFchKAexjT7SE=",
+        "bzlTransitiveDigest": "y8z8uVekFD4YqhPxVMkDmvmcVnRzXDwSCeJgv/lEKnw=",
         "usagesDigest": "UaQ/jLBfJvE4hvdt/zBnYiC0ZC5uEnRquoTVjWYPiHY=",
         "recordedInputs": [
           "REPO_MAPPING:,bazel_tools bazel_tools"
@@ -212,7 +212,7 @@
           "arm_gnu_linux_x86_64": {
             "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
             "attributes": {
-              "build_file_content": "\npackage(default_visibility = [\"//visibility:public\"])\n\nexports_files([\n    \"bin/arm-none-eabi-ar\",\n    \"bin/arm-none-eabi-as\",\n    \"bin/arm-none-eabi-g++\",\n    \"bin/arm-none-eabi-gcc\",\n    \"bin/arm-none-eabi-ld\",\n    \"bin/arm-none-eabi-nm\",\n    \"bin/arm-none-eabi-objcopy\",\n    \"bin/arm-none-eabi-objdump\",\n    \"bin/arm-none-eabi-readelf\",\n    \"bin/arm-none-eabi-size\",\n])\n\nfilegroup(\n    name = \"all_files\",\n    srcs = glob([\"**\"], exclude_directories = 0),\n)\n",
+              "build_file_content": "\npackage(default_visibility = [\"//visibility:public\"])\n\nexports_files([\n    \"bin/arm-none-eabi-ar\",\n    \"bin/arm-none-eabi-as\",\n    \"bin/arm-none-eabi-g++\",\n    \"bin/arm-none-eabi-gcc\",\n    \"bin/arm-none-eabi-ld\",\n    \"bin/arm-none-eabi-nm\",\n    \"bin/arm-none-eabi-objcopy\",\n    \"bin/arm-none-eabi-objdump\",\n    \"bin/arm-none-eabi-readelf\",\n    \"bin/arm-none-eabi-size\",\n])\n\nfilegroup(\n    name = \"all_files\",\n    srcs = glob([\"**\"], exclude_directories = 1),\n)\n",
               "sha256": "6cd1bbc1d9ae57312bcd169ae283153a9572bd6a8e4eeae2fedfbc33b115fdbb",
               "strip_prefix": "arm-gnu-toolchain-13.2.Rel1-x86_64-arm-none-eabi",
               "url": "https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz"

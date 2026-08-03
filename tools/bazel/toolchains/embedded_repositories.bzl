@@ -19,7 +19,7 @@ exports_files([
 
 filegroup(
     name = "all_files",
-    srcs = glob(["**"], exclude_directories = 0),
+    srcs = glob(["**"], exclude_directories = 1),
 )
 """
 
