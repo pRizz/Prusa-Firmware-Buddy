@@ -212,3 +212,13 @@ py_test(
     python_version = "PY3",
     deps = [":phase42_test_support"],
 )
+
+py_test(
+    name = "phase42_verify_contract_tests",
+    srcs = ["phase42_verify_test.py"],
+    data = ["phase42_verify.py"],
+    legacy_create_init = 0,
+    main = "phase42_verify_test.py",
+    python_version = "PY3",
+    deps = [":phase42_test_support"],
+)
