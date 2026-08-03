@@ -62,12 +62,46 @@ PYTHON_TEST_TARGETS = (
     "//tools/bazel/phase42:arm_link_smoke_tests",
     "//tools/bazel/phase42:platform_rejection_tests",
     "//tools/bazel/phase42:graph_isolation_tests",
+    "//tools/bazel/phase42:facade_contract_tests",
+    "//tools/bazel/phase42:reference_separation_tests",
+    "//tools/bazel/phase42:phase42_verify_contract_tests",
+    "//tools/bazel/phase42:phase42_host_check",
+    "//tools/bazel/phase42:phase42_verify",
 )
 PYTHON_312_REPOSITORY_MARKER = "rules_python++python+python_3_12_10"
+APPROVED_EXECUTABLE_REPOSITORIES = frozenset((
+    "arm_gnu_linux_x86_64",
+    "rules_python+",
+    "rules_python++python+python_3_12_10_aarch64-apple-darwin",
+    "rules_python++python+python_3_12_10_x86_64-apple-darwin",
+    "rules_python++python+python_3_12_10_x86_64-unknown-linux-gnu",
+    "rules_rust++rust+rust_linux_x86_64__thumbv7em-none-eabihf__stable_tools",
+    "rust_linux_x86_64_thumbv7em_none_eabihf_tools",
+))
 ABSOLUTE_EXECUTABLE_PATTERN = re.compile(
     r"(?<![A-Za-z0-9_./+-])(/[A-Za-z0-9_./+-]+/(?:cargo|cmake|python3|rustc|arm-none-eabi-[A-Za-z0-9_-]+))(?![A-Za-z0-9_.-])",
     re.IGNORECASE,
 )
+EXTERNAL_EXECUTABLE_PATTERN = re.compile(
+    r"(?<![A-Za-z0-9_+.-])(?P<executable>external/(?P<repository>[A-Za-z0-9_+.-]+)/[A-Za-z0-9_./+-]*(?:cargo|cmake|python3|rustc|arm-none-eabi-[A-Za-z0-9_-]+))(?![A-Za-z0-9_.-])",
+    re.IGNORECASE,
+)
+PYTHON_ENTRYPOINT_PATTERN = re.compile(
+    r'py_(?:test|binary)\(\s*name\s*=\s*"(?P<name>[^"]+)"',
+    re.DOTALL,
+)
+
+
+def declared_python_entrypoint_targets(build_source: str) -> tuple[str, ...]:
+    return tuple(
+        f"//tools/bazel/phase42:{match.group('name')}"
+        for match in PYTHON_ENTRYPOINT_PATTERN.finditer(build_source)
+    )
+
+
+def _external_repository(executable: str) -> str | None:
+    maybe_match = re.search(r"(?:^|/)external/(?P<repository>[^/]+)/", executable)
+    return maybe_match.group("repository") if maybe_match is not None else None
 
 
 def _forbidden_provenance_errors(text: str) -> list[str]:
@@ -77,10 +111,18 @@ def _forbidden_provenance_errors(text: str) -> list[str]:
         for marker in FORBIDDEN_MARKERS
         if marker.lower() in lowered
     ]
+    for match in EXTERNAL_EXECUTABLE_PATTERN.finditer(text):
+        repository = match.group("repository")
+        if repository in APPROVED_EXECUTABLE_REPOSITORIES:
+            continue
+        errors.append(
+            f"unapproved external executable repository {repository}: "
+            f"{match.group('executable')}"
+        )
     for match in ABSOLUTE_EXECUTABLE_PATTERN.finditer(text):
         executable = match.group(1)
-        normalized = executable.lower()
-        if "/external/" in normalized or "/execroot/" in normalized:
+        maybe_repository = _external_repository(executable)
+        if maybe_repository is not None:
             continue
         errors.append(f"undeclared absolute executable: {executable}")
     return errors
@@ -144,6 +186,18 @@ def audit_python_action(target: str, text: str) -> list[str]:
 
 class GraphIsolationMatcherTest(unittest.TestCase):
 
+    def test_audited_python_targets_match_declared_entrypoints(self) -> None:
+        # Arrange
+        build_source = (workspace_root() / "tools/bazel/phase42/BUILD.bazel").read_text(
+            encoding="utf-8"
+        )
+
+        # Act
+        declared_targets = declared_python_entrypoint_targets(build_source)
+
+        # Assert
+        self.assertEqual(set(PYTHON_TEST_TARGETS), set(declared_targets))
+
     def test_each_forbidden_marker_is_rejected(self) -> None:
         for marker in FORBIDDEN_MARKERS:
             with self.subTest(marker=marker):
@@ -166,13 +220,13 @@ class GraphIsolationMatcherTest(unittest.TestCase):
         # Assert
         self.assertTrue(errors)
 
-    def test_bazel_external_and_execroot_paths_are_allowed(self) -> None:
+    def test_approved_external_and_execroot_repositories_are_allowed(self) -> None:
         # Arrange
         graph = "\n".join((
             *CANONICAL_CONSTRAINTS,
             *LOCKED_IDENTITIES,
-            "/tmp/output/execroot/_main/external/rules_rust/rustc",
-            "/tmp/output/external/rules_python/python3",
+            "/tmp/output/execroot/_main/external/rules_rust++rust+rust_linux_x86_64__thumbv7em-none-eabihf__stable_tools/bin/rustc",
+            "/tmp/output/external/rules_python++python+python_3_12_10_x86_64-unknown-linux-gnu/bin/python3",
         ))
 
         # Act
@@ -180,6 +234,20 @@ class GraphIsolationMatcherTest(unittest.TestCase):
 
         # Assert
         self.assertEqual(errors, [])
+
+    def test_unapproved_external_repository_is_rejected(self) -> None:
+        # Arrange
+        graph = "\n".join((
+            *CANONICAL_CONSTRAINTS,
+            *LOCKED_IDENTITIES,
+            "/tmp/output/execroot/_main/external/evil_python/bin/python3",
+        ))
+
+        # Act
+        errors = audit_configured_graph(graph)
+
+        # Assert
+        self.assertTrue(errors)
 
     def test_missing_action_or_output_is_rejected(self) -> None:
         for marker in (*REQUIRED_ACTIONS, *REQUIRED_OUTPUTS):
@@ -236,6 +304,23 @@ class GraphIsolationMatcherTest(unittest.TestCase):
 
         # Assert
         self.assertEqual(errors, [])
+
+    def test_pinned_owner_cannot_mask_wrong_external_python_owner(self) -> None:
+        # Arrange
+        pinned_target, wrong_target = PYTHON_TEST_TARGETS[:2]
+        pinned_action = f"{pinned_target} {PYTHON_312_REPOSITORY_MARKER}"
+        wrong_action = (
+            f"{wrong_target} "
+            "external/evil_python/bin/python3"
+        )
+
+        # Act
+        pinned_errors = audit_python_action(pinned_target, pinned_action)
+        wrong_errors = audit_python_action(wrong_target, wrong_action)
+
+        # Assert
+        self.assertEqual(pinned_errors, [])
+        self.assertTrue(wrong_errors)
 
 
 class GraphIsolationExecutionTest(unittest.TestCase):
@@ -311,13 +396,13 @@ class GraphIsolationExecutionTest(unittest.TestCase):
         )
         self.assertEqual(audit_provider_boundary(provider_text), [])
 
-        python_action = self._require_success(
-            "aquery",
-            f"set({' '.join(PYTHON_TEST_TARGETS)})",
-            "--output=textproto",
-        )
         for python_target in PYTHON_TEST_TARGETS:
             with self.subTest(python_target=python_target):
+                python_action = self._require_success(
+                    "aquery",
+                    python_target,
+                    "--output=textproto",
+                )
                 self.assertEqual(audit_python_action(python_target, python_action), [])
 
 
