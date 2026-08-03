@@ -5,11 +5,7 @@ package(default_visibility = ["//visibility:private"])
 py_test(
     name = "toolchain_provenance_tests",
     srcs = ["toolchain_provenance_test.py"],
-    data = [
-        "//:.bazelversion",
-        "//:MODULE.bazel",
-        "//:MODULE.bazel.lock",
-        "//tools/bazel/toolchains:embedded_repositories.bzl",
-    ],
+    legacy_create_init = 0,
+    main = "toolchain_provenance_test.py",
     python_version = "PY3",
 )

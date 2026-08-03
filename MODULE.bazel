@@ -3,6 +3,50 @@ module(
     version = "0.1.0",
 )
 
+bazel_dep(name = "rules_cc", version = "0.2.22")
+bazel_dep(name = "rules_python", version = "2.2.0")
+bazel_dep(name = "rules_rust", version = "0.71.3")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2024",
+    extra_target_triples = ["thumbv7em-none-eabihf"],
+    versions = ["1.85.0"],
+)
+use_repo(rust, "rust_toolchains")
+register_toolchains("@rust_toolchains//:all")
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.defaults(python_version = "3.12.10")
+python.single_version_override(
+    python_version = "3.12.10",
+    sha256 = {
+        "aarch64-apple-darwin": "2d6477ecd10191675b7e7979e4b9e811fef36833ef3a7f3aa445eec305ce59a2",
+        "x86_64-unknown-linux-gnu": "e9cf6f7da499a4400ba30ae1da8f7ef25ce97827bd8c1084717aa05438035186",
+    },
+    strip_prefix = "python",
+    urls = [
+        "https://github.com/astral-sh/python-build-standalone/releases/download/20250409/cpython-{python_version}%2B20250409-{platform}-{build}.{ext}",
+    ],
+)
+python.toolchain(python_version = "3.12.10")
+use_repo(
+    python,
+    "python_3_12_10",
+    "pythons_hub",
+)
+register_toolchains("@pythons_hub//:all")
+
+embedded = use_extension(
+    "//tools/bazel/toolchains:embedded_repositories.bzl",
+    "embedded_repositories",
+)
+use_repo(
+    embedded,
+    "arm_gnu_linux_x86_64",
+    "mini404_linux_x86_64",
+)
+
 register_toolchains(
     "//tools/bazel/toolchains:rust_firmware_toolchain",
     "//tools/bazel/toolchains:cc_firmware_toolchain",
