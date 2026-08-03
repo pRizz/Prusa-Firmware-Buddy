@@ -9,3 +9,19 @@ py_test(
     main = "toolchain_provenance_test.py",
     python_version = "PY3",
 )
+
+py_test(
+    name = "embedded_toolchain_contract_tests",
+    srcs = ["embedded_toolchain_contract_test.py"],
+    legacy_create_init = 0,
+    main = "embedded_toolchain_contract_test.py",
+    python_version = "PY3",
+)
+
+py_test(
+    name = "host_policy_contract_tests",
+    srcs = ["host_policy_contract_test.py"],
+    legacy_create_init = 0,
+    main = "host_policy_contract_test.py",
+    python_version = "PY3",
+)
