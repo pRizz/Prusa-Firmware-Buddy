@@ -2,10 +2,10 @@
 gsd_state_version: "1.0"
 milestone: v1.4
 milestone_name: Bazel-Native Rust Firmware Bring-Up
-status: verifying
-stopped_at: Completed 42-05-PLAN.md
-last_updated: "2026-08-03T23:05:36.393Z"
-last_activity: "2026-08-03"
+status: ready_to_plan
+stopped_at: Phase 42 verified; ready to discuss Phase 43
+last_updated: "2026-08-04T00:09:20.758Z"
+last_activity: "2026-08-04"
 progress:
   total_phases: 8
   completed_phases: 1
@@ -21,17 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-02)
 
 **Core value:** Deliver a Rust+Bazel firmware replacement that preserves existing printer behavior and release outputs while making the firmware safer to evolve, test, and verify.
-**Current focus:** Phase 42 — truthful-bazel-graph-and-executable-mini-toolchain
+**Current focus:** Phase 43 — pure-safe-boot-policy
 
 ## Current Position
 
 Milestone: v1.4 Bazel-Native Rust Firmware Bring-Up
-Phase: 42 (truthful-bazel-graph-and-executable-mini-toolchain) — EXECUTING
-Plan: 5 of 5
-Status: Phase complete — ready for verification
-Last activity: 2026-08-03
+Phase: 43
+Plan: Not started
+Status: Phase 42 verified — ready to discuss Phase 43
+Last activity: 2026-08-04
 
-Progress: [----------] 0% (0/8 phases complete)
+Progress: [#---------] 12% (1/8 phases complete)
 
 ## Performance Metrics
 
@@ -57,11 +57,12 @@ Progress: [----------] 0% (0/8 phases complete)
 | 39 | 1 | - | - |
 | 40. File Length Refactoring | 18/18 | - | - |
 | 41 | 4 | - | - |
+| 42 | 5 | - | - |
 
 **Recent Trend:**
 
-- Last 5 completed plans: Phase 39 P01, Phase 41 P01, Phase 41 P02, Phase 41 P03, Phase 41 P04
-- Trend: v1.3 completed its cutover-decision trial, terminal metadata reconciliation, passed audit, and phase-history archival; v1.4 now has an eight-phase roadmap and is ready to plan Phase 42.
+- Last 5 completed plans: Phase 42 P01, Phase 42 P02, Phase 42 P03, Phase 42 P04, Phase 42 P05
+- Trend: v1.4 completed its first phase with a truthful Bazel graph, a pinned executable MINI toolchain, and canonical Linux x86_64 qualification; Phase 43 is ready for discussion and planning.
 
 **Recent Completed Plan Detail:**
 
